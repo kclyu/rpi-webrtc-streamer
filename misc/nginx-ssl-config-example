@@ -1,0 +1,68 @@
+###
+### Nginx with SSL as a Reverse Proxy
+###
+server {
+    listen 80;
+	server_name example.server.com; # change your domain name
+    rewrite ^(.*) https://$server_name$1 permanent;
+}
+
+server {
+	listen 443 ssl;
+
+	server_name example.server.com; # change your domain name
+
+	ssl on;
+	ssl_session_cache  builtin:1000  shared:SSL:10m;
+	ssl_protocols  TLSv1 TLSv1.1 TLSv1.2;
+	ssl_ciphers HIGH:!aNULL:!eNULL:!EXPORT:!CAMELLIA:!DES:!MD5:!PSK:!RC4;
+	ssl_prefer_server_ciphers on;
+
+	ssl_certificate /etc/nginx/ssl/nginx.crt;
+        ssl_certificate_key /etc/nginx/ssl/nginx.key;
+
+	root /usr/share/nginx/html;
+	index index.html index.htm;
+
+	# Make site accessible from http://localhost/
+	server_name localhost;
+
+	location / {
+		# First attempt to serve request as file, then
+		# as directory, then fall back to displaying a 404.
+		try_files $uri $uri/ =404;
+		# Uncomment to enable naxsi on this location
+		# include /etc/nginx/naxsi.rules
+	}
+}
+
+server {
+	listen 8080 ssl;
+
+	server_name example.server.com; # change your domain name
+
+	ssl on;
+	ssl_session_cache  builtin:1000  shared:SSL:10m;
+	ssl_protocols  TLSv1 TLSv1.1 TLSv1.2;
+	ssl_ciphers HIGH:!aNULL:!eNULL:!EXPORT:!CAMELLIA:!DES:!MD5:!PSK:!RC4;
+	ssl_prefer_server_ciphers on;
+
+	ssl_certificate /etc/nginx/ssl/nginx.crt;
+	ssl_certificate_key /etc/nginx/ssl/nginx.key;
+
+	location / {
+		  ## proxy setting for RWS(Rpi-WebRTC-Streamer)
+		  ## it will bind 8888 port on localhost
+          proxy_pass          http://localhost:8888
+          proxy_set_header    Host             $host;
+          proxy_set_header    X-Real-IP        $remote_addr;
+          proxy_set_header    X-Forwarded-For  $proxy_add_x_forwarded_for;
+          proxy_set_header    X-Client-Verify  SUCCESS;
+          proxy_set_header    X-Client-DN      $ssl_client_s_dn;
+          proxy_set_header    X-SSL-Subject    $ssl_client_s_dn;
+          proxy_set_header    X-SSL-Issuer     $ssl_client_i_dn;
+          proxy_read_timeout 1800;
+          proxy_connect_timeout 1800;
+	}
+}
+

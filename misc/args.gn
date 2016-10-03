@@ -1,0 +1,33 @@
+# Build arguments go here. Examples:
+#   is_component_build = true
+#   is_debug = false
+# See "gn args <out_dir> --list" for available build arguments.
+
+is_component_build=true
+#is_official_build=true
+#is_debug=false # Relese Version
+
+host_toolchain="//build/toolchain/linux:arm"
+target_os="linux"
+target_cpu="arm"
+is_clang=false
+target_sysroot="/home/kclyu/Workspace/rpi_rootfs"
+system_libdir="/home/kclyu/Workspace/rpi_rootfs/usr/lib"
+#
+#
+enable_nacl=false
+enable_pdf=false
+enable_plugins=false
+enable_print_preview=false
+enable_webvr=false
+rtc_use_h264=true
+use_openh264=true
+rtc_include_tests=false
+rtc_desktop_capture_supported=false
+rtc_build_with_neon=true
+rtc_enable_protobuf=false
+treat_warnings_as_errors=false
+
+
+
+
