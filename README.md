@@ -18,7 +18,7 @@ The Raspberry camera module can record video as H.264, baseline, main and high-p
 To get the camera feed from Raspberry PI, i.e. H.264 video stream, RWS(rpi-webrtc-streamer) use MMAL(Multi-Media Abstraction Layer) library can be found on [ARM side libraries for interfacing to Raspberry Pi GPU](https://github.com/raspberrypi/userland). it provides lower level API to multi-media components running on Broadcom VideoCore. For  convenience,  this streamer directly integrated  [raspivid](https://github.com/raspberrypi/userland/tree/master/host_applications/linux/apps/raspicam)
 with encoding parameter changing in H.264 stream and passing video frame through WebRTC native code package.
 
-####  WebRTC H.264 Codec supported browsers
+####  Demo Video
 Demo Video
 
 [![Rpi-WebRTC-Streamer Demo Video](https://i.ytimg.com/vi/I1E8MrA5lhw/2.jpg?time=1475582528883)](https://youtu.be/I1E8MrA5lhw "Rpi-WebRTC-Streamer Demo Video")
