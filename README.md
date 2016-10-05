@@ -21,8 +21,8 @@ with encoding parameter changing in H.264 stream and passing video frame through
 ####  Demo Video
 Demo Video
 
-[![Rpi-WebRTC-Streamer Demo Video](https://i.ytimg.com/vi/I1E8MrA5lhw/2.jpg?time=1475582528883)](https://youtu.be/I1E8MrA5lhw "Rpi-WebRTC-Streamer Demo Video")
-
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=I1E8MrA5lhw" target="_blank"><img src="http://img.youtube.com/vi/I1E8MrA5lhw/0.jpg" 
+alt="" width="560" height="315" border="10" /></a>
 
 ####  WebRTC H.264 Codec supported browsers
 
@@ -39,10 +39,10 @@ TBD
 
 ## Cross Compile on Ubuntu Linux
 #### Cross Compiler setup	
-Please refer to BUILD_ubuntu.md document.
+Please refer to [BUILD_ubuntu.md document](../blob/master/BUILD_ubuntu.md).
 
 ## Running on Raspberry PI
-Please refer to CONFIGURE_rws.md document.
+Please refer to [CONFIGURE_rws.md document](../blob/master/CONFIGURE_rws.md).
 
 ## Known Issues and Bugs
 TBD
