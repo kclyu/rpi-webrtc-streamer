@@ -39,10 +39,10 @@ TBD
 
 ## Cross Compile on Ubuntu Linux
 #### Cross Compiler setup	
-Please refer to [BUILD_ubuntu.md document](../blob/master/BUILD_ubuntu.md).
+Please refer to [BUILD_ubuntu.md document](../master/BUILD_ubuntu.md).
 
 ## Running on Raspberry PI
-Please refer to [CONFIGURE_rws.md document](../blob/master/CONFIGURE_rws.md).
+Please refer to [CONFIGURE_rws.md document](../master/CONFIGURE_rws.md).
 
 ## Known Issues and Bugs
 TBD
