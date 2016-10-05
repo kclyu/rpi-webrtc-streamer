@@ -48,10 +48,7 @@ all: $(TARGET)
 .cc.o : $(OBJECTS.CC) 
 	$(CXX) -I. $(CFLAGS) $(CCFLAGS) $(CCFLAGS_DEFS) $(INCLUDE_WEBRTC_LIB) $(MMAL_CFLAGS) $(MMAL_INCLUDES)  -c $< -o $@
 
-$(H264BITSTREAM_LIB):
-	$(shell ../scripts/config_h264bitstream.sh)
-
-$(TARGET): $(OBJECTS) $(H264BITSTREAM_LIB)
+$(TARGET): $(OBJECTS) 
 	$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) -Wl,--end-group $(SYS_LIBS)
 
 clean:

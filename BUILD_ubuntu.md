@@ -152,7 +152,7 @@ After compilation is finished without an error, go to the next step to compile r
  ```
 cd ~/Workspace/
 git clone https://github.com/kclyu/rpi-webrtc-streamer.git
-cd rpi-webrtc-streamer/src/h264bitstream
+cd rpi-webrtc-streamer/src
 sh ../../scripts/config_h264bitstream.sh 
 cd ..
 make
