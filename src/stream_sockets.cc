@@ -50,54 +50,54 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // StreamSocketListen
 ////////////////////////////////////////////////////////////////////////////////
 
-StreamSocketListen::StreamSocketListen() 
-	: listener_(nullptr) {
+StreamSocketListen::StreamSocketListen()
+    : listener_(nullptr) {
 }
 StreamSocketListen::~StreamSocketListen() {}
 
 bool StreamSocketListen::Listen(const rtc::SocketAddress& address) {
-	LOG(INFO) << __FUNCTION__;
-	rtc::Thread *thread = rtc::Thread::Current();
-	RTC_DCHECK(thread != NULL);
-	rtc::AsyncSocket* sock = 
-		thread->socketserver()->CreateAsyncSocket(address.family(), SOCK_STREAM);
-	if (!sock) {
-		return false;
-	}
-	listener_.reset(sock);
-	listener_->SignalReadEvent.connect(this, &StreamSocketListen::OnAccept);
-	if ((listener_->Bind(address) != SOCKET_ERROR) &&
-			(listener_->Listen(5) != SOCKET_ERROR)) {
-		LOG(INFO) << "Start listening " << address  << ".";
-		return true;
-	}
-	LOG(LS_ERROR) << "Failed to listen " << address  << ".";
-	return false;
+    LOG(INFO) << __FUNCTION__;
+    rtc::Thread *thread = rtc::Thread::Current();
+    RTC_DCHECK(thread != NULL);
+    rtc::AsyncSocket* sock =
+        thread->socketserver()->CreateAsyncSocket(address.family(), SOCK_STREAM);
+    if (!sock) {
+        return false;
+    }
+    listener_.reset(sock);
+    listener_->SignalReadEvent.connect(this, &StreamSocketListen::OnAccept);
+    if ((listener_->Bind(address) != SOCKET_ERROR) &&
+            (listener_->Listen(5) != SOCKET_ERROR)) {
+        LOG(INFO) << "Start listening " << address  << ".";
+        return true;
+    }
+    LOG(LS_ERROR) << "Failed to listen " << address  << ".";
+    return false;
 }
 
 
 void StreamSocketListen::StopListening(void) {
-  if (listener_) {
-    listener_->Close();
-  }
+    if (listener_) {
+        listener_->Close();
+    }
 }
 
 void StreamSocketListen::OnAccept(rtc::AsyncSocket* socket) {
-	LOG(INFO) << __FUNCTION__;
-	RTC_DCHECK(socket == listener_.get());
-	rtc::AsyncSocket* incoming = listener_->Accept(NULL);
-	RTC_DCHECK(incoming != NULL );
-	// Close event will be handled in StreamSocketListen
-	incoming->SignalCloseEvent.connect(this, &StreamSocketListen::OnClose);
-	stream_sockets_.CreateStreamConnection(incoming);
-	// stream_sockets_.DumpStreamConnectionsAll();
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK(socket == listener_.get());
+    rtc::AsyncSocket* incoming = listener_->Accept(NULL);
+    RTC_DCHECK(incoming != NULL );
+    // Close event will be handled in StreamSocketListen
+    incoming->SignalCloseEvent.connect(this, &StreamSocketListen::OnClose);
+    stream_sockets_.CreateStreamConnection(incoming);
+    // stream_sockets_.DumpStreamConnectionsAll();
 }
 
 void StreamSocketListen::OnClose(rtc::AsyncSocket* socket, int err) {
-	LOG(INFO) << __FUNCTION__ << ", Error: " << err ;
-	socket->SignalCloseEvent.disconnect(this);
-	stream_sockets_.DestroyStreamConnection(socket);
-	socket->Close();
+    LOG(INFO) << __FUNCTION__ << ", Error: " << err ;
+    socket->SignalCloseEvent.disconnect(this);
+    stream_sockets_.DestroyStreamConnection(socket);
+    socket->Close();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -106,76 +106,76 @@ void StreamSocketListen::OnClose(rtc::AsyncSocket* socket, int err) {
 StreamSockets::StreamSockets()  {
 }
 StreamSockets::~StreamSockets() {
-	for (std::vector<StreamConnection *>::const_iterator it = stream_connections_.begin();
-			it != stream_connections_.end(); ++it) {
-		delete *it;
-	}
-	stream_connections_.clear();
+    for (std::vector<StreamConnection *>::const_iterator it = stream_connections_.begin();
+            it != stream_connections_.end(); ++it) {
+        delete *it;
+    }
+    stream_connections_.clear();
 }
 
 bool StreamSockets::CreateStreamConnection(rtc::AsyncSocket* socket) {
-	LOG(INFO) << __FUNCTION__;
-	RTC_DCHECK( socket != NULL );
-	StreamConnection *sc = new StreamConnection(socket);
-	stream_connections_.push_back(sc);
-	socket->SignalReadEvent.connect(this, &StreamSockets::OnRead);
-	return true;
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( socket != NULL );
+    StreamConnection *sc = new StreamConnection(socket);
+    stream_connections_.push_back(sc);
+    socket->SignalReadEvent.connect(this, &StreamSockets::OnRead);
+    return true;
 }
 
 bool StreamSockets::DestroyStreamConnection(rtc::AsyncSocket* socket) {
-	LOG(INFO) << __FUNCTION__;
-	RTC_DCHECK( socket != NULL );
-	socket->SignalReadEvent.disconnect(this);
-	StreamConnection *sc =  Lookup(socket);
-	stream_connections_.erase(std::remove(stream_connections_.begin(), stream_connections_.end(), sc), 
-			stream_connections_.end());
-	return false;
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( socket != NULL );
+    socket->SignalReadEvent.disconnect(this);
+    StreamConnection *sc =  Lookup(socket);
+    stream_connections_.erase(std::remove(stream_connections_.begin(), stream_connections_.end(), sc),
+                              stream_connections_.end());
+    return false;
 }
 
 void StreamSockets::DumpStreamConnections(StreamConnection *sc) {
-	sc->DumpStreamConnection();
+    sc->DumpStreamConnection();
 }
 
 
 void StreamSockets::DumpStreamConnectionsAll(void) {
-	LOG(INFO) << __FUNCTION__;
-	LOG(INFO) << "StreamConnection count: " << stream_connections_.size();
-	for (std::vector<StreamConnection *>::const_iterator it = stream_connections_.begin();
-			it != stream_connections_.end(); ++it) {
-		DumpStreamConnections( *it );
-	}
+    LOG(INFO) << __FUNCTION__;
+    LOG(INFO) << "StreamConnection count: " << stream_connections_.size();
+    for (std::vector<StreamConnection *>::const_iterator it = stream_connections_.begin();
+            it != stream_connections_.end(); ++it) {
+        DumpStreamConnections( *it );
+    }
 }
 
 StreamConnection *StreamSockets::Lookup(rtc::AsyncSocket* socket) {
-	LOG(INFO) << __FUNCTION__;
-	RTC_DCHECK( socket != NULL );
-	for (std::vector<StreamConnection *>::const_iterator it = stream_connections_.begin();
-			it != stream_connections_.end(); ++it) {
-		if( (*it)->Match(socket) ) return *it;
-	}
-	return nullptr;
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( socket != NULL );
+    for (std::vector<StreamConnection *>::const_iterator it = stream_connections_.begin();
+            it != stream_connections_.end(); ++it) {
+        if( (*it)->Match(socket) ) return *it;
+    }
+    return nullptr;
 }
 
 
 void StreamSockets::OnRead(rtc::AsyncSocket* socket) {
-	LOG(INFO) << __FUNCTION__;
-	RTC_DCHECK( socket != NULL );
-	StreamConnection *sc =  Lookup(socket);
-	RTC_DCHECK( sc->Match(socket));
-	RTC_DCHECK( sc->Valid() );
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( socket != NULL );
+    StreamConnection *sc =  Lookup(socket);
+    RTC_DCHECK( sc->Match(socket));
+    RTC_DCHECK( sc->Valid() );
 
-	char buffer[4096]={0x00};
-	int	bytes = 0;
-	bytes = socket->Recv(buffer, sizeof(buffer), nullptr);
-	// mark additional null termiantion 
-	buffer[bytes+1] = 0x00;
+    char buffer[4096]= {0x00};
+    int	bytes = 0;
+    bytes = socket->Recv(buffer, sizeof(buffer), nullptr);
+    // mark additional null termiantion
+    buffer[bytes+1] = 0x00;
 
-	if( bytes > 0 ) {
-		if( sc->HandleReceivedData(buffer, bytes) ) {
-			DumpStreamConnectionsAll();
-			sc->HandleRequest();
-		}
-	}
+    if( bytes > 0 ) {
+        if( sc->HandleReceivedData(buffer, bytes) ) {
+            DumpStreamConnectionsAll();
+            sc->HandleRequest();
+        }
+    }
 }
 
 

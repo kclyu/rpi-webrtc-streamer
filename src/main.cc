@@ -35,57 +35,57 @@
 #include "streamer.h"
 
 
-class StreamingSocketServer : public rtc::PhysicalSocketServer, 
-		public sigslot::has_slots<> {
-	public:
-		StreamingSocketServer(rtc::Thread* thread)
-			: thread_(thread)  {}
-		virtual ~StreamingSocketServer() {}
+class StreamingSocketServer : public rtc::PhysicalSocketServer,
+    public sigslot::has_slots<> {
+public:
+    StreamingSocketServer(rtc::Thread* thread)
+        : thread_(thread)  {}
+    virtual ~StreamingSocketServer() {}
 
-	protected:
-		std::unique_ptr<rtc::AsyncSocket> listener_;
-		rtc::Thread* thread_;
+protected:
+    std::unique_ptr<rtc::AsyncSocket> listener_;
+    rtc::Thread* thread_;
 };
 
 
 int main(int argc, char** argv) {
 
-	rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
-	if (FLAG_help) {
-		rtc::FlagList::Print(NULL, false);
-		return 0;
-	}
+    rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+    if (FLAG_help) {
+        rtc::FlagList::Print(NULL, false);
+        return 0;
+    }
 
-	// Abort if the user specifies a port that is outside the allowed
-	// range [1, 65535].
-	if ((FLAG_port < 1) || (FLAG_port > 65535)) {
-		printf("Error: %i is not a valid port.\n", FLAG_port);
-		return -1;
-	}
+    // Abort if the user specifies a port that is outside the allowed
+    // range [1, 65535].
+    if ((FLAG_port < 1) || (FLAG_port > 65535)) {
+        printf("Error: %i is not a valid port.\n", FLAG_port);
+        return -1;
+    }
 
-	rtc::AutoThread auto_thread;
-	rtc::Thread* thread = rtc::Thread::Current();
-	StreamingSocketServer socket_server(thread);
-	rtc::SocketAddress addr( FLAG_bind, FLAG_port );
-	thread->set_socketserver(&socket_server);
+    rtc::AutoThread auto_thread;
+    rtc::Thread* thread = rtc::Thread::Current();
+    StreamingSocketServer socket_server(thread);
+    rtc::SocketAddress addr( FLAG_bind, FLAG_port );
+    thread->set_socketserver(&socket_server);
 
-	rtc::InitializeSSL();
+    rtc::InitializeSSL();
 
-	// Must be constructed after we set the socketserver.
-	StreamSocketListen stream_listen;
+    // Must be constructed after we set the socketserver.
+    StreamSocketListen stream_listen;
 
-	rtc::scoped_refptr<Streamer> streamer(
-			new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance()));
+    rtc::scoped_refptr<Streamer> streamer(
+        new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance()));
 
-	stream_listen.Listen(addr);
-	// Running Loop
-	thread->Run();
+    stream_listen.Listen(addr);
+    // Running Loop
+    thread->Run();
 
-	// Terminating clean-up
-	thread->set_socketserver(NULL);
-	rtc::CleanupSSL();
+    // Terminating clean-up
+    thread->set_socketserver(NULL);
+    rtc::CleanupSSL();
 
-	return 0;
+    return 0;
 }
 
 

@@ -36,146 +36,152 @@ namespace cricket {
 
 // Fake video capturer that allows the test to manually pump in frames.
 class DummyVideoCapturer : public cricket::VideoCapturer {
- public:
-  DummyVideoCapturer(bool is_screencast)
-      : running_(false),
-        initial_timestamp_(rtc::TimeNanos()),
-        next_timestamp_(rtc::kNumNanosecsPerMillisec),
-        is_screencast_(is_screencast),
-        rotation_(webrtc::kVideoRotation_0) {
+public:
+    DummyVideoCapturer(bool is_screencast)
+        : running_(false),
+          initial_timestamp_(rtc::TimeNanos()),
+          next_timestamp_(rtc::kNumNanosecsPerMillisec),
+          is_screencast_(is_screencast),
+          rotation_(webrtc::kVideoRotation_0) {
 #ifdef HAVE_WEBRTC_VIDEO
-    set_frame_factory(new cricket::WebRtcVideoFrameFactory());
+        set_frame_factory(new cricket::WebRtcVideoFrameFactory());
 #endif
 
-    // Default supported formats. Use ResetSupportedFormats to over write.
-    std::vector<cricket::VideoFormat> formats;
-    formats.push_back(cricket::VideoFormat(1280, 720,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
-    formats.push_back(cricket::VideoFormat(1024, 768,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
-    formats.push_back(cricket::VideoFormat(800, 600,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
-    formats.push_back(cricket::VideoFormat(640, 480,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
-    formats.push_back(cricket::VideoFormat(320, 288,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
-    ResetSupportedFormats(formats);
-  }
-  // DummyVideoCapturer() : DummyVideoCapturer(false) {}
+        // Default supported formats. Use ResetSupportedFormats to over write.
+        std::vector<cricket::VideoFormat> formats;
+        formats.push_back(cricket::VideoFormat(1280, 720,
+                                               cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
+        formats.push_back(cricket::VideoFormat(1024, 768,
+                                               cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
+        formats.push_back(cricket::VideoFormat(800, 600,
+                                               cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
+        formats.push_back(cricket::VideoFormat(640, 480,
+                                               cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
+        formats.push_back(cricket::VideoFormat(320, 288,
+                                               cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_NV21));
+        ResetSupportedFormats(formats);
+    }
+    // DummyVideoCapturer() : DummyVideoCapturer(false) {}
 
-  ~DummyVideoCapturer() {
-	LOG(INFO) << __FUNCTION__ ;
-    SignalDestroyed(this);
-  }
-
-  void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats) {
-	LOG(INFO) << __FUNCTION__ ;
-    SetSupportedFormats(formats);
-  }
-  bool CaptureFrame() {
-	LOG(INFO) << __FUNCTION__ ;
-    if (!GetCaptureFormat()) {
-      return false;
-    }
-    return CaptureCustomFrame(GetCaptureFormat()->width,
-                              GetCaptureFormat()->height,
-                              GetCaptureFormat()->interval,
-                              GetCaptureFormat()->fourcc);
-  }
-  bool CaptureCustomFrame(int width, int height, uint32_t fourcc) {
-	LOG(INFO) << __FUNCTION__ ;
-    // default to 30fps
-    return CaptureCustomFrame(width, height, 33333333, fourcc);
-  }
-  bool CaptureCustomFrame(int width,
-                          int height,
-                          int64_t timestamp_interval,
-                          uint32_t fourcc) {
-	LOG(INFO) << __FUNCTION__ ;
-    if (!running_) {
-      return false;
-    }
-    // Currently, |fourcc| is always I420 or ARGB.
-    uint32_t size = 0u;
-    if (fourcc == cricket::FOURCC_ARGB) {
-      size = width * 4 * height;
-    } else if (fourcc == cricket::FOURCC_I420) {
-      size = width * height + 2 * ((width + 1) / 2) * ((height + 1) / 2);
-    } else {
-      return false;  // Unsupported FOURCC.
-    }
-    if (size == 0u) {
-      return false;  // Width and/or Height were zero.
+    ~DummyVideoCapturer() {
+        LOG(INFO) << __FUNCTION__ ;
+        SignalDestroyed(this);
     }
 
-    cricket::CapturedFrame frame;
-    frame.width = width;
-    frame.height = height;
-    frame.fourcc = fourcc;
-    frame.data_size = size;
-    frame.time_stamp = initial_timestamp_ + next_timestamp_;
-    next_timestamp_ += timestamp_interval;
-
-    std::unique_ptr<char[]> data(new char[size]);
-    frame.data = data.get();
-    // Copy something non-zero into the buffer so Validate wont complain that
-    // the frame is all duplicate.
-    memset(frame.data, 1, size / 2);
-    memset(reinterpret_cast<uint8_t*>(frame.data) + (size / 2), 2,
-           size - (size / 2));
-    memcpy(frame.data, reinterpret_cast<const uint8_t*>(&fourcc), 4);
-    frame.rotation = rotation_;
-    // TODO(zhurunz): SignalFrameCaptured carry returned value to be able to
-    // capture results from downstream.
-    SignalFrameCaptured(this, &frame);
-    return true;
-  }
-
-  void SignalCapturedFrame(cricket::CapturedFrame* frame) {
-	LOG(INFO) << __FUNCTION__ ;
-    SignalFrameCaptured(this, frame);
-  }
-
-  sigslot::signal1<DummyVideoCapturer*> SignalDestroyed;
-
-  virtual cricket::CaptureState Start(const cricket::VideoFormat& format) {
-	LOG(INFO) << __FUNCTION__ ;
-    cricket::VideoFormat supported;
-    if (GetBestCaptureFormat(format, &supported)) {
-      SetCaptureFormat(&supported);
+    void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats) {
+        LOG(INFO) << __FUNCTION__ ;
+        SetSupportedFormats(formats);
     }
-    running_ = true;
-    SetCaptureState(cricket::CS_RUNNING);
-    return cricket::CS_RUNNING;
-  }
-  virtual void Stop() {
-	LOG(INFO) << __FUNCTION__ ;
-    running_ = false;
-    SetCaptureFormat(NULL);
-    SetCaptureState(cricket::CS_STOPPED);
-  }
-  virtual bool IsRunning() { return running_; }
-  virtual bool IsScreencast() const { return is_screencast_; }
-  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
-	LOG(INFO) << __FUNCTION__ ;
-    fourccs->push_back(cricket::FOURCC_I420);
-    fourccs->push_back(cricket::FOURCC_MJPG);
-    return true;
-  }
+    bool CaptureFrame() {
+        LOG(INFO) << __FUNCTION__ ;
+        if (!GetCaptureFormat()) {
+            return false;
+        }
+        return CaptureCustomFrame(GetCaptureFormat()->width,
+                                  GetCaptureFormat()->height,
+                                  GetCaptureFormat()->interval,
+                                  GetCaptureFormat()->fourcc);
+    }
+    bool CaptureCustomFrame(int width, int height, uint32_t fourcc) {
+        LOG(INFO) << __FUNCTION__ ;
+        // default to 30fps
+        return CaptureCustomFrame(width, height, 33333333, fourcc);
+    }
+    bool CaptureCustomFrame(int width,
+                            int height,
+                            int64_t timestamp_interval,
+                            uint32_t fourcc) {
+        LOG(INFO) << __FUNCTION__ ;
+        if (!running_) {
+            return false;
+        }
+        // Currently, |fourcc| is always I420 or ARGB.
+        uint32_t size = 0u;
+        if (fourcc == cricket::FOURCC_ARGB) {
+            size = width * 4 * height;
+        } else if (fourcc == cricket::FOURCC_I420) {
+            size = width * height + 2 * ((width + 1) / 2) * ((height + 1) / 2);
+        } else {
+            return false;  // Unsupported FOURCC.
+        }
+        if (size == 0u) {
+            return false;  // Width and/or Height were zero.
+        }
 
-  void SetRotation(webrtc::VideoRotation rotation) {
-	LOG(INFO) << __FUNCTION__ ;
-    rotation_ = rotation;
-  }
+        cricket::CapturedFrame frame;
+        frame.width = width;
+        frame.height = height;
+        frame.fourcc = fourcc;
+        frame.data_size = size;
+        frame.time_stamp = initial_timestamp_ + next_timestamp_;
+        next_timestamp_ += timestamp_interval;
 
-  webrtc::VideoRotation GetRotation() { return rotation_; }
+        std::unique_ptr<char[]> data(new char[size]);
+        frame.data = data.get();
+        // Copy something non-zero into the buffer so Validate wont complain that
+        // the frame is all duplicate.
+        memset(frame.data, 1, size / 2);
+        memset(reinterpret_cast<uint8_t*>(frame.data) + (size / 2), 2,
+               size - (size / 2));
+        memcpy(frame.data, reinterpret_cast<const uint8_t*>(&fourcc), 4);
+        frame.rotation = rotation_;
+        // TODO(zhurunz): SignalFrameCaptured carry returned value to be able to
+        // capture results from downstream.
+        SignalFrameCaptured(this, &frame);
+        return true;
+    }
 
- private:
-  bool running_;
-  int64_t initial_timestamp_;
-  int64_t next_timestamp_;
-  const bool is_screencast_;
-  webrtc::VideoRotation rotation_;
+    void SignalCapturedFrame(cricket::CapturedFrame* frame) {
+        LOG(INFO) << __FUNCTION__ ;
+        SignalFrameCaptured(this, frame);
+    }
+
+    sigslot::signal1<DummyVideoCapturer*> SignalDestroyed;
+
+    virtual cricket::CaptureState Start(const cricket::VideoFormat& format) {
+        LOG(INFO) << __FUNCTION__ ;
+        cricket::VideoFormat supported;
+        if (GetBestCaptureFormat(format, &supported)) {
+            SetCaptureFormat(&supported);
+        }
+        running_ = true;
+        SetCaptureState(cricket::CS_RUNNING);
+        return cricket::CS_RUNNING;
+    }
+    virtual void Stop() {
+        LOG(INFO) << __FUNCTION__ ;
+        running_ = false;
+        SetCaptureFormat(NULL);
+        SetCaptureState(cricket::CS_STOPPED);
+    }
+    virtual bool IsRunning() {
+        return running_;
+    }
+    virtual bool IsScreencast() const {
+        return is_screencast_;
+    }
+    bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
+        LOG(INFO) << __FUNCTION__ ;
+        fourccs->push_back(cricket::FOURCC_I420);
+        fourccs->push_back(cricket::FOURCC_MJPG);
+        return true;
+    }
+
+    void SetRotation(webrtc::VideoRotation rotation) {
+        LOG(INFO) << __FUNCTION__ ;
+        rotation_ = rotation;
+    }
+
+    webrtc::VideoRotation GetRotation() {
+        return rotation_;
+    }
+
+private:
+    bool running_;
+    int64_t initial_timestamp_;
+    int64_t next_timestamp_;
+    const bool is_screencast_;
+    webrtc::VideoRotation rotation_;
 };
 
 }  // namespace cricket

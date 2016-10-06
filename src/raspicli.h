@@ -2,7 +2,7 @@
  *  Lyu,KeunChang
  *
  * This is a stripped down version of the original RaspiCLI module from the
- * raspberry pi userland-master branch, 
+ * raspberry pi userland-master branch,
  * Original copyright info below
  */
 /*
@@ -38,18 +38,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 typedef struct
 {
-   int id;
-   char *command;
-   char *abbrev;
-   char *help;
-   int num_parameters;
+    int id;
+    char *command;
+    char *abbrev;
+    char *help;
+    int num_parameters;
 } COMMAND_LIST;
 
 /// Cross reference structure, mode string against mode id
 typedef struct xref_t
 {
-   char *mode;
-   int mmal_mode;
+    char *mode;
+    int mmal_mode;
 } XREF_T;
 
 

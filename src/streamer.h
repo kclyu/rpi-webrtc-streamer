@@ -38,66 +38,66 @@ class VideoCaptureModule;
 
 
 class Streamer
-  : public webrtc::PeerConnectionObserver,
-    public webrtc::CreateSessionDescriptionObserver,
-    public StreamSessionObserver
+    : public webrtc::PeerConnectionObserver,
+  public webrtc::CreateSessionDescriptionObserver,
+  public StreamSessionObserver
 {
-	public:
-		Streamer(StreamSession *session);
-		bool connection_active() const;
-		virtual void Close();
+public:
+    Streamer(StreamSession *session);
+    bool connection_active() const;
+    virtual void Close();
 
-	protected:
-		~Streamer();
-		bool InitializePeerConnection();
-		bool CreatePeerConnection();
-		void DeletePeerConnection();
-		void AddStreams();
-		cricket::VideoCapturer* OpenVideoCaptureDevice();
+protected:
+    ~Streamer();
+    bool InitializePeerConnection();
+    bool CreatePeerConnection();
+    void DeletePeerConnection();
+    void AddStreams();
+    cricket::VideoCapturer* OpenVideoCaptureDevice();
 
-		//
-		// PeerConnectionObserver implementation.
-		//
-		void OnSignalingChange(
-				webrtc::PeerConnectionInterface::SignalingState new_state) override{};
-		void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-		void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-		void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
-		void OnRenegotiationNeeded() override {}
-		void OnIceConnectionChange(
-				webrtc::PeerConnectionInterface::IceConnectionState new_state) override{};
-		void OnIceGatheringChange(
-				webrtc::PeerConnectionInterface::IceGatheringState new_state) override{};
-		void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
-		void OnIceConnectionReceivingChange(bool receiving) override {}
+    //
+    // PeerConnectionObserver implementation.
+    //
+    void OnSignalingChange(
+        webrtc::PeerConnectionInterface::SignalingState new_state) override {};
+    void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
+    void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
+    void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
+    void OnRenegotiationNeeded() override {}
+    void OnIceConnectionChange(
+        webrtc::PeerConnectionInterface::IceConnectionState new_state) override {};
+    void OnIceGatheringChange(
+        webrtc::PeerConnectionInterface::IceGatheringState new_state) override {};
+    void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
+    void OnIceConnectionReceivingChange(bool receiving) override {}
 
-		//
-		// CreateSessionDescriptionObserver implementation.
-		// 
-		virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-		virtual void OnFailure(const std::string& error) override;
+    //
+    // CreateSessionDescriptionObserver implementation.
+    //
+    virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
+    virtual void OnFailure(const std::string& error) override;
 
-		//
-		// StreamerSessionObserver implementation.
-		//
-		virtual void OnPeerConnected(int peer_id, const std::string& name) override;
-		virtual void OnPeerDisconnected(int peer_id) override;
-		virtual void OnMessageFromPeer(int peer_id, const std::string& message) override;
-		virtual void OnMessageSent(int err) override;
+    //
+    // StreamerSessionObserver implementation.
+    //
+    virtual void OnPeerConnected(int peer_id, const std::string& name) override;
+    virtual void OnPeerDisconnected(int peer_id) override;
+    virtual void OnMessageFromPeer(int peer_id, const std::string& message) override;
+    virtual void OnMessageSent(int err) override;
 
-	protected:
-		// Send a message to the remote peer.
-		void SendMessage(const std::string& json_object);
+protected:
+    // Send a message to the remote peer.
+    void SendMessage(const std::string& json_object);
 
-		int peer_id_;
-		rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
-		rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-			peer_connection_factory_;
-		std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
-			active_streams_;
+    int peer_id_;
+    rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
+    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+    peer_connection_factory_;
+    std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
+    active_streams_;
 
-		bool dtls_enable_;
-		StreamSession* session_;
+    bool dtls_enable_;
+    StreamSession* session_;
 };
 
 

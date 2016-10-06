@@ -20,135 +20,135 @@
 namespace webrtc {
 
 class ClientConstraints : public webrtc::MediaConstraintsInterface {
- public:
-  ClientConstraints() { }
-  virtual ~ClientConstraints() { }
+public:
+    ClientConstraints() { }
+    virtual ~ClientConstraints() { }
 
-  virtual const Constraints& GetMandatory() const {
-    return mandatory_;
-  }
-
-  virtual const Constraints& GetOptional() const {
-    return optional_;
-  }
-
-  template <class T>
-  void AddMandatory(const std::string& key, const T& value) {
-    mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
-  }
-
-  template <class T>
-  void SetMandatory(const std::string& key, const T& value) {
-    std::string value_str;
-    if (mandatory_.FindFirst(key, &value_str)) {
-      for (Constraints::iterator iter = mandatory_.begin();
-           iter != mandatory_.end(); ++iter) {
-        if (iter->key == key) {
-          mandatory_.erase(iter);
-          break;
-        }
-      }
+    virtual const Constraints& GetMandatory() const {
+        return mandatory_;
     }
-    mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
-  }
 
-  template <class T>
-  void AddOptional(const std::string& key, const T& value) {
-    optional_.push_back(Constraint(key, rtc::ToString<T>(value)));
-  }
+    virtual const Constraints& GetOptional() const {
+        return optional_;
+    }
 
-	
-  //
-  // Video Constraints
-  //
-  void SetMandatoryMinAspectRatio(double ratio) {
-    SetMandatory(MediaConstraintsInterface::kMinAspectRatio, ratio);
-  }
+    template <class T>
+    void AddMandatory(const std::string& key, const T& value) {
+        mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
+    }
 
-  void SetMandatoryMaxAspectRatio(double ratio) {
-    SetMandatory(MediaConstraintsInterface::kMaxAspectRatio, ratio);
-  }
+    template <class T>
+    void SetMandatory(const std::string& key, const T& value) {
+        std::string value_str;
+        if (mandatory_.FindFirst(key, &value_str)) {
+            for (Constraints::iterator iter = mandatory_.begin();
+                    iter != mandatory_.end(); ++iter) {
+                if (iter->key == key) {
+                    mandatory_.erase(iter);
+                    break;
+                }
+            }
+        }
+        mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
+    }
 
-  void SetMandatoryMinWidth(int width) {
-    SetMandatory(MediaConstraintsInterface::kMinWidth, width);
-  }
+    template <class T>
+    void AddOptional(const std::string& key, const T& value) {
+        optional_.push_back(Constraint(key, rtc::ToString<T>(value)));
+    }
 
-  void SetMandatoryMinHeight(int height) {
-    SetMandatory(MediaConstraintsInterface::kMinHeight, height);
-  }
 
-  void SetMandatoryMaxWidth(int width) {
-    AddOptional(MediaConstraintsInterface::kMaxWidth, width);
-  }
-  
-  void SetMandatoryMaxHeight(int height) {
-    AddOptional(MediaConstraintsInterface::kMaxWidth, height);
-  }
+    //
+    // Video Constraints
+    //
+    void SetMandatoryMinAspectRatio(double ratio) {
+        SetMandatory(MediaConstraintsInterface::kMinAspectRatio, ratio);
+    }
 
-  void SetMandatoryMaxFrameRate(int frame_rate) {
-    SetMandatory(MediaConstraintsInterface::kMaxFrameRate, frame_rate);
-  }
+    void SetMandatoryMaxAspectRatio(double ratio) {
+        SetMandatory(MediaConstraintsInterface::kMaxAspectRatio, ratio);
+    }
 
-  void SetMandatoryMinFrameRate(int frame_rate) {
-    SetMandatory(MediaConstraintsInterface::kMinFrameRate, frame_rate);
-  }
+    void SetMandatoryMinWidth(int width) {
+        SetMandatory(MediaConstraintsInterface::kMinWidth, width);
+    }
 
-  //
-  // Audio Constraints
-  //
-  void SetMandatoryEchoCancellation(bool enable) {
-    SetMandatory(MediaConstraintsInterface::kGoogEchoCancellation, enable);
-  }
-  
-  void SetMandatoryAudoGainControl(bool enable) {
-    SetMandatory(MediaConstraintsInterface::kAutoGainControl, enable);
-  }
+    void SetMandatoryMinHeight(int height) {
+        SetMandatory(MediaConstraintsInterface::kMinHeight, height);
+    }
 
-  void SetMandatoryNoiseSuppression(bool enable) {
-    SetMandatory(MediaConstraintsInterface::kNoiseSuppression, enable);
-  }
+    void SetMandatoryMaxWidth(int width) {
+        AddOptional(MediaConstraintsInterface::kMaxWidth, width);
+    }
 
-  void SetMandatoryHighpassFilter(bool enable) {
-    SetMandatory(MediaConstraintsInterface::kHighpassFilter, enable);
-  }
-  
-  //
-  // SDP Constraints
-  //
-  void SetMandatoryReceiveAudio(bool enable) {
-    SetMandatory(MediaConstraintsInterface::kOfferToReceiveAudio, enable);
-  }
+    void SetMandatoryMaxHeight(int height) {
+        AddOptional(MediaConstraintsInterface::kMaxWidth, height);
+    }
 
-  void SetMandatoryReceiveVideo(bool enable) {
-    SetMandatory(MediaConstraintsInterface::kOfferToReceiveVideo, enable);
-  }
+    void SetMandatoryMaxFrameRate(int frame_rate) {
+        SetMandatory(MediaConstraintsInterface::kMaxFrameRate, frame_rate);
+    }
 
-  void SetMandatoryUseRtpMux(bool enable) {
-    SetMandatory(MediaConstraintsInterface::kUseRtpMux, enable);
-  }
+    void SetMandatoryMinFrameRate(int frame_rate) {
+        SetMandatory(MediaConstraintsInterface::kMinFrameRate, frame_rate);
+    }
 
-  void SetMandatoryIceRestart(bool enable) {
-    SetMandatory(MediaConstraintsInterface::kIceRestart, enable);
-  }
+    //
+    // Audio Constraints
+    //
+    void SetMandatoryEchoCancellation(bool enable) {
+        SetMandatory(MediaConstraintsInterface::kGoogEchoCancellation, enable);
+    }
 
-  void SetAllowRtpDataChannels() {
-    SetMandatory(MediaConstraintsInterface::kEnableRtpDataChannels, true);
-    SetMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, false);
-  }
+    void SetMandatoryAudoGainControl(bool enable) {
+        SetMandatory(MediaConstraintsInterface::kAutoGainControl, enable);
+    }
 
-  void SetOptionalVAD(bool enable) {
-    AddOptional(MediaConstraintsInterface::kVoiceActivityDetection, enable);
-  }
+    void SetMandatoryNoiseSuppression(bool enable) {
+        SetMandatory(MediaConstraintsInterface::kNoiseSuppression, enable);
+    }
 
-  //
-  // PeerConnection Constraints
-  void SetAllowDtlsSctpDataChannels() {
-    SetMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, true);
-  }
+    void SetMandatoryHighpassFilter(bool enable) {
+        SetMandatory(MediaConstraintsInterface::kHighpassFilter, enable);
+    }
 
- private:
-  Constraints mandatory_;
-  Constraints optional_;
+    //
+    // SDP Constraints
+    //
+    void SetMandatoryReceiveAudio(bool enable) {
+        SetMandatory(MediaConstraintsInterface::kOfferToReceiveAudio, enable);
+    }
+
+    void SetMandatoryReceiveVideo(bool enable) {
+        SetMandatory(MediaConstraintsInterface::kOfferToReceiveVideo, enable);
+    }
+
+    void SetMandatoryUseRtpMux(bool enable) {
+        SetMandatory(MediaConstraintsInterface::kUseRtpMux, enable);
+    }
+
+    void SetMandatoryIceRestart(bool enable) {
+        SetMandatory(MediaConstraintsInterface::kIceRestart, enable);
+    }
+
+    void SetAllowRtpDataChannels() {
+        SetMandatory(MediaConstraintsInterface::kEnableRtpDataChannels, true);
+        SetMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, false);
+    }
+
+    void SetOptionalVAD(bool enable) {
+        AddOptional(MediaConstraintsInterface::kVoiceActivityDetection, enable);
+    }
+
+    //
+    // PeerConnection Constraints
+    void SetAllowDtlsSctpDataChannels() {
+        SetMandatory(MediaConstraintsInterface::kEnableDtlsSrtp, true);
+    }
+
+private:
+    Constraints mandatory_;
+    Constraints optional_;
 };
 
 }  // namespace webrtc

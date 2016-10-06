@@ -36,40 +36,40 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace webrtc {
 
-struct NalUnit{
-	uint32_t offset_;
-	uint32_t length_;
+struct NalUnit {
+    uint32_t offset_;
+    uint32_t length_;
 
-	NalUnit() {};
-	NalUnit( int offset, int length ) {
-		offset_ = offset; 
-		length_ = length;
-	};
+    NalUnit() {};
+    NalUnit( int offset, int length ) {
+        offset_ = offset;
+        length_ = length;
+    };
 };
 
 
 class H264StreamParser {
-	private:
-		void printNalType( void );
-		void GetNalUnitList(const uint8_t *buffer, const uint32_t length, std::vector<NalUnit>* nal_list);
-		int NextNalUnit(const uint8_t *buffer, const uint32_t length,const int offset );
+private:
+    void printNalType( void );
+    void GetNalUnitList(const uint8_t *buffer, const uint32_t length, std::vector<NalUnit>* nal_list);
+    int NextNalUnit(const uint8_t *buffer, const uint32_t length,const int offset );
 
-    	h264_stream_t* parser_internal_;
-		bool verbose_;
-		bool inited_;
-		uint32_t pic_init_qp_minus26_;
-		uint32_t slice_qp_delta_;
-		bool pps_parsed_;
-		bool slice_parsed_;
+    h264_stream_t* parser_internal_;
+    bool verbose_;
+    bool inited_;
+    uint32_t pic_init_qp_minus26_;
+    uint32_t slice_qp_delta_;
+    bool pps_parsed_;
+    bool slice_parsed_;
 
-	public: 
-		H264StreamParser();
-		 ~H264StreamParser();
-		bool Init( void );
+public:
+    H264StreamParser();
+    ~H264StreamParser();
+    bool Init( void );
 
-		void ParseBitstream(uint8_t* bitstream, size_t length, std::vector<NalUnit>* nal_list);
-		bool GetLastSliceQp( int *qp );
-		void Verbose(bool flag);
+    void ParseBitstream(uint8_t* bitstream, size_t length, std::vector<NalUnit>* nal_list);
+    bool GetLastSliceQp( int *qp );
+    void Verbose(bool flag);
 };
 
 

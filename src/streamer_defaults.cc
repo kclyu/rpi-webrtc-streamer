@@ -41,7 +41,7 @@ const size_t kMaxConnections = (FD_SETSIZE - 2);
 const char kStunIceServer[] = "stun:stun.l.google.com:19302";
 
 //
-// TURN Server 
+// TURN Server
 //
 // Not used
 const char kTurnIceServer[] = "turn:turn.hostname:3478?transport=tcp";
@@ -49,64 +49,64 @@ const char kTurnUsername[] = "username";
 const char kTurnPassword[] = "password";
 
 std::string GetEnvVarOrDefault(const char* env_var_name, const char* default_value) {
-	std::string value;
-	const char* env_var = getenv(env_var_name);
-	if (env_var)
-		value = env_var;
+    std::string value;
+    const char* env_var = getenv(env_var_name);
+    if (env_var)
+        value = env_var;
 
-	if (value.empty())
-		value = default_value;
+    if (value.empty())
+        value = default_value;
 
-	return value;
+    return value;
 }
 
 bool GetEnvVarOrDefaultBool(const char* env_var_name, const char* default_value) {
-	std::string value;
-	const char* env_var = getenv(env_var_name);
-	if (env_var)
-		value = env_var;
+    std::string value;
+    const char* env_var = getenv(env_var_name);
+    if (env_var)
+        value = env_var;
 
-	if (value.empty())
-		value = default_value;
+    if (value.empty())
+        value = default_value;
 
-	if( value.compare("TRUE") == 0 ) return true;
-	return false;
+    if( value.compare("TRUE") == 0 ) return true;
+    return false;
 }
 
 std::string GetPeerConnectionString() {
-	return GetEnvVarOrDefault("WEBRTC_CONNECT", "stun:stun.l.google.com:19302");
+    return GetEnvVarOrDefault("WEBRTC_CONNECT", "stun:stun.l.google.com:19302");
 }
 
 bool GetDTLSEnableBool() {
-	return GetEnvVarOrDefaultBool("WEBRTC_DTLS", "TRUE");
+    return GetEnvVarOrDefaultBool("WEBRTC_DTLS", "TRUE");
 }
 
 std::string GetDefaultTurnServerString() {
-	return GetEnvVarOrDefault("WEBRTC_TURN", kTurnIceServer);
+    return GetEnvVarOrDefault("WEBRTC_TURN", kTurnIceServer);
 }
 
 std::string GetDefaultTurnServerUserString() {
-	return GetEnvVarOrDefault("WEBRTC_TURN_USER",kTurnUsername );
+    return GetEnvVarOrDefault("WEBRTC_TURN_USER",kTurnUsername );
 }
 
 std::string GetDefaultTurnServerPassString() {
-	return GetEnvVarOrDefault("WEBRTC_TURN_PASS", kTurnPassword );
+    return GetEnvVarOrDefault("WEBRTC_TURN_PASS", kTurnPassword );
 }
 
 std::string GetDefaultServerName() {
-	return GetEnvVarOrDefault("WEBRTC_SERVER", "10.0.0.10");
+    return GetEnvVarOrDefault("WEBRTC_SERVER", "10.0.0.10");
 }
 
 std::string GetPeerName() {
-	char computer_name[256];
-	std::string ret(GetEnvVarOrDefault("USERNAME", "user"));
-	ret += '@';
-	if (gethostname(computer_name, arraysize(computer_name)) == 0) {
-		ret += computer_name;
-	} else {
-		ret += "host";
-	}
-	return ret;
+    char computer_name[256];
+    std::string ret(GetEnvVarOrDefault("USERNAME", "user"));
+    ret += '@';
+    if (gethostname(computer_name, arraysize(computer_name)) == 0) {
+        ret += computer_name;
+    } else {
+        ret += "host";
+    }
+    return ret;
 }
 
 

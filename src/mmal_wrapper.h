@@ -40,40 +40,40 @@ namespace webrtc {
 
 
 class FrameQueue {
-	private:
-		CriticalSectionWrapper* crit_sect_;
+private:
+    CriticalSectionWrapper* crit_sect_;
 
-		int num_, size_;
+    int num_, size_;
 
-		MMAL_QUEUE_T *encoded_frame_queue_;
-		MMAL_POOL_T *pool_internal_;
-		uint8_t		*keyframe_buf_;
-		uint8_t		*frame_buf_;
-		int			frame_buf_pos_;
-		int			frame_segment_cnt_;
-		bool		inited_;
+    MMAL_QUEUE_T *encoded_frame_queue_;
+    MMAL_POOL_T *pool_internal_;
+    uint8_t		*keyframe_buf_;
+    uint8_t		*frame_buf_;
+    int			frame_buf_pos_;
+    int			frame_segment_cnt_;
+    bool		inited_;
 
-		uint32_t	frame_count_;
-		uint32_t	frame_drop_;
-		uint32_t	frame_queue_drop_;
+    uint32_t	frame_count_;
+    uint32_t	frame_drop_;
+    uint32_t	frame_queue_drop_;
 
-	public: 
-		FrameQueue();
-		 ~FrameQueue();
-		bool Init( void );
-		void Reset( void );
-		bool Isinitialized( void );
+public:
+    FrameQueue();
+    ~FrameQueue();
+    bool Init( void );
+    void Reset( void );
+    bool Isinitialized( void );
 
-		// Queueuing and Assembling frame
-		void ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer );
-		int Length( void );
+    // Queueuing and Assembling frame
+    void ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer );
+    int Length( void );
 
-		// Buffer header handling
-		MMAL_BUFFER_HEADER_T * GetBufferFromPool( void );
-		void ReturnToPool( MMAL_BUFFER_HEADER_T *buffer );
-		void QueueingFrame( MMAL_BUFFER_HEADER_T *buffer );
-		MMAL_BUFFER_HEADER_T *DequeueFrame( void );
-		void dumpFrameQueueInfo( void );
+    // Buffer header handling
+    MMAL_BUFFER_HEADER_T * GetBufferFromPool( void );
+    void ReturnToPool( MMAL_BUFFER_HEADER_T *buffer );
+    void QueueingFrame( MMAL_BUFFER_HEADER_T *buffer );
+    MMAL_BUFFER_HEADER_T *DequeueFrame( void );
+    void dumpFrameQueueInfo( void );
 };
 
 
@@ -81,39 +81,39 @@ class MMALEncoderWrapper : public FrameQueue {
 
 public:
 
-	MMALEncoderWrapper();
-	~MMALEncoderWrapper();
+    MMALEncoderWrapper();
+    ~MMALEncoderWrapper();
 
-	int getWidth(void);
-	int getHeight(void);
-	bool SetFrame(int width, int height);
-	bool SetRate(int framerate, int bitrate);
-	bool InitEncoder(int width, int height, int framerate, int bitrate);
-	bool ReinitEncoder(int width, int height, int framerate, int bitrate);
-	bool UninitEncoder(void);
-	bool ForceKeyFrame(void);
-	bool IsKeyFrame(void);
-	bool StartCapture(void);
-	bool StopCapture(void);
+    int getWidth(void);
+    int getHeight(void);
+    bool SetFrame(int width, int height);
+    bool SetRate(int framerate, int bitrate);
+    bool InitEncoder(int width, int height, int framerate, int bitrate);
+    bool ReinitEncoder(int width, int height, int framerate, int bitrate);
+    bool UninitEncoder(void);
+    bool ForceKeyFrame(void);
+    bool IsKeyFrame(void);
+    bool StartCapture(void);
+    bool StopCapture(void);
 
-	// Callback Functions
-	void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
-	static void BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
+    // Callback Functions
+    void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
+    static void BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
 
 
 private:
-	MMAL_PORT_T *camera_preview_port_;
-	MMAL_PORT_T *camera_video_port_;
-	MMAL_PORT_T *camera_still_port_;
-	MMAL_PORT_T *preview_input_port_;
-	MMAL_PORT_T *encoder_input_port_;
-	MMAL_PORT_T *encoder_output_port_;
-	RASPIVID_STATE state_;
+    MMAL_PORT_T *camera_preview_port_;
+    MMAL_PORT_T *camera_video_port_;
+    MMAL_PORT_T *camera_still_port_;
+    MMAL_PORT_T *preview_input_port_;
+    MMAL_PORT_T *encoder_input_port_;
+    MMAL_PORT_T *encoder_output_port_;
+    RASPIVID_STATE state_;
 
-	CriticalSectionWrapper* crit_sect_;
+    CriticalSectionWrapper* crit_sect_;
 };
 
-// singleton wrappper 
+// singleton wrappper
 MMALEncoderWrapper* getMMALEncoderWrapper(void);
 
 }	// namespace webrtc

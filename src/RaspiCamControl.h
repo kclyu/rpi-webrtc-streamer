@@ -107,56 +107,56 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // There isn't actually a MMAL structure for the following, so make one
 typedef struct
 {
-   int enable;       /// Turn colourFX on or off
-   int u,v;          /// U and V to use
+    int enable;       /// Turn colourFX on or off
+    int u,v;          /// U and V to use
 } MMAL_PARAM_COLOURFX_T;
 
 typedef struct
 {
-   int enable;
-   int width,height;
-   int quality;
+    int enable;
+    int width,height;
+    int quality;
 } MMAL_PARAM_THUMBNAIL_CONFIG_T;
 
 typedef struct
 {
-   double x;
-   double y;
-   double w;
-   double h;
+    double x;
+    double y;
+    double w;
+    double h;
 } PARAM_FLOAT_RECT_T;
 
 /// struct contain camera settings
 typedef struct
 {
-   int sharpness;             /// -100 to 100
-   int contrast;              /// -100 to 100
-   int brightness;            ///  0 to 100
-   int saturation;            ///  -100 to 100
-   int ISO;                   ///  TODO : what range?
-   int videoStabilisation;    /// 0 or 1 (false or true)
-   int exposureCompensation;  /// -10 to +10 ?
-   MMAL_PARAM_EXPOSUREMODE_T exposureMode;
-   MMAL_PARAM_EXPOSUREMETERINGMODE_T exposureMeterMode;
-   MMAL_PARAM_AWBMODE_T awbMode;
-   MMAL_PARAM_IMAGEFX_T imageEffect;
-   MMAL_PARAMETER_IMAGEFX_PARAMETERS_T imageEffectsParameters;
-   MMAL_PARAM_COLOURFX_T colourEffects;
-   int rotation;              /// 0-359
-   int hflip;                 /// 0 or 1
-   int vflip;                 /// 0 or 1
-   PARAM_FLOAT_RECT_T  roi;   /// region of interest to use on the sensor. Normalised [0,1] values in the rect
-   int shutter_speed;         /// 0 = auto, otherwise the shutter speed in ms
-   float awb_gains_r;         /// AWB red gain
-   float awb_gains_b;         /// AWB blue gain
-   MMAL_PARAMETER_DRC_STRENGTH_T drc_level;  // Strength of Dynamic Range compression to apply
-   MMAL_BOOL_T stats_pass;    /// Stills capture statistics pass on/off
-   int enable_annotate;       /// Flag to enable the annotate, 0 = disabled, otherwise a bitmask of what needs to be displayed
-   char annotate_string[MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2]; /// String to use for annotate - overrides certain bitmask settings
-   int annotate_text_size;    // Text size for annotation
-   int annotate_text_colour;  // Text colour for annotation
-   int annotate_bg_colour;    // Background colour for annotation
-   MMAL_PARAMETER_STEREOSCOPIC_MODE_T stereo_mode;
+    int sharpness;             /// -100 to 100
+    int contrast;              /// -100 to 100
+    int brightness;            ///  0 to 100
+    int saturation;            ///  -100 to 100
+    int ISO;                   ///  TODO : what range?
+    int videoStabilisation;    /// 0 or 1 (false or true)
+    int exposureCompensation;  /// -10 to +10 ?
+    MMAL_PARAM_EXPOSUREMODE_T exposureMode;
+    MMAL_PARAM_EXPOSUREMETERINGMODE_T exposureMeterMode;
+    MMAL_PARAM_AWBMODE_T awbMode;
+    MMAL_PARAM_IMAGEFX_T imageEffect;
+    MMAL_PARAMETER_IMAGEFX_PARAMETERS_T imageEffectsParameters;
+    MMAL_PARAM_COLOURFX_T colourEffects;
+    int rotation;              /// 0-359
+    int hflip;                 /// 0 or 1
+    int vflip;                 /// 0 or 1
+    PARAM_FLOAT_RECT_T  roi;   /// region of interest to use on the sensor. Normalised [0,1] values in the rect
+    int shutter_speed;         /// 0 = auto, otherwise the shutter speed in ms
+    float awb_gains_r;         /// AWB red gain
+    float awb_gains_b;         /// AWB blue gain
+    MMAL_PARAMETER_DRC_STRENGTH_T drc_level;  // Strength of Dynamic Range compression to apply
+    MMAL_BOOL_T stats_pass;    /// Stills capture statistics pass on/off
+    int enable_annotate;       /// Flag to enable the annotate, 0 = disabled, otherwise a bitmask of what needs to be displayed
+    char annotate_string[MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2]; /// String to use for annotate - overrides certain bitmask settings
+    int annotate_text_size;    // Text size for annotation
+    int annotate_text_colour;  // Text colour for annotation
+    int annotate_bg_colour;    // Background colour for annotation
+    MMAL_PARAMETER_STEREOSCOPIC_MODE_T stereo_mode;
 } RASPICAM_CAMERA_PARAMETERS;
 
 

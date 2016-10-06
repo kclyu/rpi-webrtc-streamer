@@ -63,7 +63,7 @@ extern "C" {
 #define DEBUG_LOG(format,args...) \
 		printf("(%s:%d):", __FILE__, __LINE__);\
 		printf(format, args)
-#else 
+#else
 #define DEBUG_LOG(format,args...)
 #endif /* __MMAL_ENCODER_DEBUG__ */
 
@@ -103,10 +103,10 @@ typedef struct RASPIVID_STATE_S RASPIVID_STATE;
 
 typedef struct
 {
-   RASPIVID_STATE *pstate;              /// pointer to our state in case required in callback
-   int abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
-   int   frame_buff[FRAME_BUFSIZE];    /// frame buffer to assemble segmented frame from encoder
-   int   frame_buff_pos;
+    RASPIVID_STATE *pstate;              /// pointer to our state in case required in callback
+    int abort;                           /// Set to 1 in callback if an error occurs to attempt to abort the capture
+    int   frame_buff[FRAME_BUFSIZE];    /// frame buffer to assemble segmented frame from encoder
+    int   frame_buff_pos;
 } PORT_USERDATA;
 
 
@@ -114,45 +114,45 @@ typedef struct
  */
 struct RASPIVID_STATE_S
 {
-   int width;                          /// Requested width of image
-   int height;                         /// requested height of image
-   MMAL_FOURCC_T encoding;             /// Requested codec video encoding (MJPEG or H264)
-   int bitrate;                        /// Requested bitrate
-   int framerate;                      /// Requested frame rate (fps)
-   int intraperiod;                    /// Intra-refresh period (key frame rate)
-   int quantisationParameter;          /// Quantisation parameter - quality. Set bitrate 0 and set this for variable bitrate
-   int quantisationInitialParameter;   // Initial quantization parameter
-   int quantisationMaxParameter;       /// Maximum quantization parameter
-   int quantisationMinParameter;       /// Minimum quantization parameter
-   										// this is 
-   int videoRateControl;				/// Video Rate Control
-   int bInlineHeaders;                  /// Insert inline headers to stream (SPS, PPS)
-   int verbose;                        /// !0 if want detailed run information
-   int immutableInput;                 /// Flag to specify whether encoder works in place or creates a new buffer. Result is preview can display either
-                                       /// the camera output or the encoder output (with compression artifacts)
-   int profile;                        /// H264 profile to use for encoding
+    int width;                          /// Requested width of image
+    int height;                         /// requested height of image
+    MMAL_FOURCC_T encoding;             /// Requested codec video encoding (MJPEG or H264)
+    int bitrate;                        /// Requested bitrate
+    int framerate;                      /// Requested frame rate (fps)
+    int intraperiod;                    /// Intra-refresh period (key frame rate)
+    int quantisationParameter;          /// Quantisation parameter - quality. Set bitrate 0 and set this for variable bitrate
+    int quantisationInitialParameter;   // Initial quantization parameter
+    int quantisationMaxParameter;       /// Maximum quantization parameter
+    int quantisationMinParameter;       /// Minimum quantization parameter
+    // this is
+    int videoRateControl;				/// Video Rate Control
+    int bInlineHeaders;                  /// Insert inline headers to stream (SPS, PPS)
+    int verbose;                        /// !0 if want detailed run information
+    int immutableInput;                 /// Flag to specify whether encoder works in place or creates a new buffer. Result is preview can display either
+    /// the camera output or the encoder output (with compression artifacts)
+    int profile;                        /// H264 profile to use for encoding
 
-   RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
-   RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
+    RASPIPREVIEW_PARAMETERS preview_parameters;   /// Preview setup parameters
+    RASPICAM_CAMERA_PARAMETERS camera_parameters; /// Camera setup parameters
 
-   MMAL_COMPONENT_T *camera_component;    /// Pointer to the camera component
-   MMAL_COMPONENT_T *encoder_component;   /// Pointer to the encoder component
-   MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
-   MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
+    MMAL_COMPONENT_T *camera_component;    /// Pointer to the camera component
+    MMAL_COMPONENT_T *encoder_component;   /// Pointer to the encoder component
+    MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
+    MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
 
-   MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
+    MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
 
-   PORT_USERDATA callback_data;        /// Used to move data to the encoder callback
+    PORT_USERDATA callback_data;        /// Used to move data to the encoder callback
 
-   int bCapturing;                     /// State of capture/pause
+    int bCapturing;                     /// State of capture/pause
 
-   int cameraNum;                       /// Camera number
-   int settings;                        /// Request settings from the camera
-   int sensor_mode;			            /// Sensor mode. 0=auto. Check docs/forum for modes selected by other values.
-   int intra_refresh_type;              /// What intra refresh type to use. -1 to not set.
-   int frame;
-   int64_t starttime;
-   int64_t lasttime;
+    int cameraNum;                       /// Camera number
+    int settings;                        /// Request settings from the camera
+    int sensor_mode;			            /// Sensor mode. 0=auto. Check docs/forum for modes selected by other values.
+    int intra_refresh_type;              /// What intra refresh type to use. -1 to not set.
+    int frame;
+    int64_t starttime;
+    int64_t lasttime;
 };
 
 

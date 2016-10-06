@@ -31,23 +31,23 @@ using rtc::ToString;
 using rtc::sprintfn;
 
 std::string int2str(int i) {
-  return ToString<int>(i);
+    return ToString<int>(i);
 }
 
 std::string size_t2str(size_t i) {
-  return ToString<size_t>(i);
+    return ToString<size_t>(i);
 }
 
 const char *str_stream_connection_method(const long request_method) {
-	switch( request_method ) {
-		case METHOD_INVALID:
-			return "METHOD_INVALID";
-		case METHOD_GET:
-			return  "METHOD_GET";
-		case METHOD_POST:
-			return  "METHOD_POST";
-		case METHOD_OPTIONS:
-			return "METHOD_OPTIONS";
-	}
-	return "METHOD_UNKNOWN";
+    switch( request_method ) {
+    case METHOD_INVALID:
+        return "METHOD_INVALID";
+    case METHOD_GET:
+        return  "METHOD_GET";
+    case METHOD_POST:
+        return  "METHOD_POST";
+    case METHOD_OPTIONS:
+        return "METHOD_OPTIONS";
+    }
+    return "METHOD_UNKNOWN";
 }
