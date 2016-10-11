@@ -3,7 +3,7 @@
 #   is_debug = false
 # See "gn args <out_dir> --list" for available build arguments.
 
-is_component_build=true
+is_component_build=false
 #is_official_build=true
 #is_debug=false # Relese Version
 
