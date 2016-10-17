@@ -17,21 +17,7 @@ Before going to next step,  verify that you can access the following command.
  - arm-linux-gnueabihf-ranlib
 
 #### Raspberry PI sysroot 
-Once the cross-compiler installation is complete, you must create a sysroot for the cross compile environment.  
- please refer to this [stackoverflow answer](http://stackoverflow.com/questions/19162072/installing-raspberry-pi-cross-compiler/19269715#19269715)
-
-Libraries required by WebRTC native-code package should be included in the sysroot. Please install the following package before making sysroot.
-```
-sudo apt-get install libasound2-dev libcairo2-dev  libffi-dev libglib2.0-dev  \
-libgtk2.0-dev libpam0g-dev libpulse-dev  libudev-dev  libxtst-dev  \
-ttf-dejavu-core libatk1.0-0 libc6 libasound2  libcairo2 libcap2 libcups2  \
-libexpat1 libffi6 libfontconfig1 libfreetype6  libglib2.0-0 libgnome-keyring0  \
-libgtk2.0-0 libpam0g libpango1.0-0  libpcre3 libpixman-1-0 libpng12-0 libstdc++6  \
-libx11-6 libx11-xcb1 libxau6 libxcb1 libxcomposite1 libxcursor1 libxdamage1   \
-libxdmcp6 libxext6 libxfixes3 libxi6 libxinerama1 libxrandr2 libxrender1  \
-libxtst6 zlib1g 
-```
-*The above package was selected which is related with development and run-time package in WebRTC native-code package*.
+Once the cross-compiler installation is complete, you must create a sysroot for the cross compile environment.  please refer to this [rpi_rootfs](https://github.com/kclyu/rpi_rootfs.git) repo.
 
 ## Notes before download source code
 First, it seems better to describe the location of the directory that developer use before you download the source code. There may be a location is fixed in current code and script itself, if possible, it is recommended to start at the same directory location during compilation. (After confirming that there is no fixed location issue, this section will be removed.)
