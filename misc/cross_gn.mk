@@ -11,6 +11,13 @@ LD=arm-linux-gnueabihf-ld
 AS=arm-linux-gnueabihf-as
 RANLIB=arm-linux-gnueabihf-ranlib
 
+#CC=arm-rpi-linux-gnueabihf-gcc $(SYSROOTFLAG) $(BACKTRACE) $(ARMIFY)
+#CXX=arm-rpi-linux-gnueabihf-g++ -fPIC $(SYSROOTFLAG) $(BACKGRACE) $(ARMIFY)
+#AR=arm-rpi-linux-gnueabihf-ar
+#LD=arm-rpi-linux-gnueabihf-ld
+#AS=arm-rpi-linux-gnueabihf-as
+#RANLIB=arm-rpi-linux-gnueabihf-ranlib
+
 #
 # WebRTC source tree and object directory 
 # 
