@@ -3,12 +3,12 @@
 #
 include ../misc/cross_gn.mk
 
-
 #
-# library h264bitstream
+# h264bitstream & openssl library
 #
 H264BITSTREAM_LIB = ../lib/h264bitstream/.libs/libh264bitstream.a
-CCFLAGS +=  -I../lib/h264bitstream 
+OPENSSL_LIB = -lssl -lcrypto
+CCFLAGS +=  -I../lib
 
 #
 # Variables for MMAL(raspivid) compilation
@@ -21,11 +21,15 @@ MMAL_INCLUDES+=-I$(PI_INCLUDE)/interface/vcos/pthreads -I$(PI_INCLUDE)/interface
 MMAL_LDFLAGS+=-L$(SYSROOT)/opt/vc/lib/ -lmmal_core -lmmal -lmmal_util -lvcos -lcontainers -lbcm_host -lmmal_vc_client -lmmal_components -lvchiq_arm -lvcsm -lvcfiled_check -lpthread -ldl -lrt -lm 
 
 #
-# WebSocket++ Compiler Definition
+# websocketpp Compiler Definition
 #
-WSPP_INCLUDE=-I../lib/websocketpp -I$(SYSROOT)/usr/local/include -D_WEBSOCKETPP_CPP11_STL_
+#WSPP_INCLUDE=-I../lib/websocketpp -I$(SYSROOT)/usr/local/include -D_WEBSOCKETPP_CPP11_STL_
+#WSPP_CCFLAGS= -fno-threadsafe-statics -fvisibility-inlines-hidden -std=gnu++11 -Wno-narrowing -fno-rtti -Wnon-virtual-dtor -Woverloaded-virtual
+#WSPP_LDFLAGS= $(SYSROOT)/usr/local/boost/lib/libboost_system.a $(SYSROOT)/usr/local/boost/lib/libboost_thread.a $(SYSROOT)/usr/local/boost/lib/libboost_random.a -Wl,-rpath,$(SYSROOT)/usr/local/boost/lib
+UWEBSOCKET=$(HOME)/Workspace/uWebSockets
+WSPP_INCLUDE=-I$(UWEBSOCKET)/src -I$(SYSROOT)/usr/local/include 
 WSPP_CCFLAGS= -fno-threadsafe-statics -fvisibility-inlines-hidden -std=gnu++11 -Wno-narrowing -fno-rtti -Wnon-virtual-dtor -Woverloaded-virtual
-WSPP_LDFLAGS= $(SYSROOT)/usr/local/boost/lib/libboost_system.a $(SYSROOT)/usr/local/boost/lib/libboost_thread.a $(SYSROOT)/usr/local/boost/lib/libboost_random.a -Wl,-rpath,/usr/local/boost/lib
+WSPP_LDFLAGS= $(UWEBSOCKET)/build/libuWS.a -Wl,-Bstatic -luv -Wl,-Bdynamic -lssl -lcrypto -lz
 
 #
 # TARGET
@@ -35,9 +39,10 @@ TARGET = ../webrtc-streamer
 #
 # source & object list definition
 #
-SOURCES.CC = streamer.cc streamer_defaults.cc main.cc raspi_encoder.cc mmal_wrapper.cc h264bitstream_parser.cc utils.cc
-SOURCES.CPP = ws_server.cpp
+SOURCES.CC = stream_data_sockets.cc stream_sockets.cc streamer.cc streamer_defaults.cc main.cc raspi_encoder.cc mmal_wrapper.cc h264bitstream_parser.cc utils.cc
+#SOURCES.CPP = wspp_client.cpp
 SOURCES.C = mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c raspicamcontrol.c raspipreview.c 
+#SOURCES.CPP = echo.cpp
 
 
 OBJECTS.CC = $(SOURCES.CC:.cc=.o) 
@@ -61,7 +66,7 @@ all: $(TARGET)
 	$(CXX) -I. $(WSPP_CCFLAGS) $(WSPP_INCLUDE) -c $< -o $@
 
 $(TARGET): $(OBJECTS) 
-	$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) $(WSPP_LDFLAGS) -Wl,--end-group $(SYS_LIBS)
+	$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) $(WSPP_LDFLAGS) -Wl,--end-group $(OPENSSL_LIB) $(SYS_LIBS) 
 
 clean:
 	rm -f *.o $(TARGET)
