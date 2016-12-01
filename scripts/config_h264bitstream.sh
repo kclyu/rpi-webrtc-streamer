@@ -8,11 +8,21 @@ export RANLIB=arm-linux-gnueabihf-ranlib
 
 if [ -e ../misc/h264bitstream-0.1.9.tar.gz ]
 then
-	tar xvzf ../misc/h264bitstream-0.1.9.tar.gz
-	mv h264bitstream-0.1.9 h264bitstream
-	cd h264bitstream
-	./configure --host=x86_64-unknown-linux-gnu --build=arm-linux-gnueabi --target=arm-linux-gnueabi --with-sysroot=${HOME}/Workspace/rpi_rootfs
-	make 
+    # checking h264bitstream library directory  
+    if [ ! -d ../lib/h264bitstream ]
+    then
+	    echo "extracting h264bitstream library in lib"
+        cd ../lib && tar xvzf ../misc/h264bitstream-0.1.9.tar.gz && mv h264bitstream-0.1.9 h264bitstream
+    fi
+
+    # checking h264bitstream library archive file
+    if [ ! -f ../lib/h264bitstream/.libs/libh264bitstream.a ]
+    then
+	    echo "start building h264bitstream library"
+        cd ../lib/h264bitstream && ./configure --host=x86_64-unknown-linux-gnu --build=arm-linux-gnueabi --target=arm-linux-gnueabi --with-sysroot=${HOME}/Workspace/rpi_rootfs && make 
+    else
+	    echo "h264bitstream.a already exist"
+    fi
 else
 	echo "../misc/h264bitstream-0.1.9.tar.gz not found"
 fi

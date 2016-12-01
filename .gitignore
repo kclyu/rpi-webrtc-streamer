@@ -29,5 +29,5 @@
 *.app
 webrtc-streamer
 h264_analyze
-lib/h264bitstream
+lib/h264bitstream/
 
