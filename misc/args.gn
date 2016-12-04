@@ -10,9 +10,15 @@ is_component_build=false
 host_toolchain="//build/toolchain/linux:arm"
 target_os="linux"
 target_cpu="arm"
+arm_float_abi="hard"
+arm_use_neon=true
+arm_tune="cortex-a7"
 is_clang=false
+use_sysroot=true
 target_sysroot="/home/kclyu/Workspace/rpi_rootfs"
-system_libdir="/home/kclyu/Workspace/rpi_rootfs/usr/lib"
+system_libdir="/home/kclyu/Workspace/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
+gold_path = "/home/kclyu/tools/rpi_tools/arm-linux-gnueabihf/bin"
+
 #
 #
 enable_nacl=false

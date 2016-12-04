@@ -40,7 +40,9 @@ CCFLAGS += -Wl,--export-dynamic -pthread -fno-strict-aliasing  -Wl,-z,noexecstac
 CCFLAGS += -I$(WEBRTCROOT)/src -I$(SYSROOT)/usr/lib/arm-linux-gnueabihf/glib-2.0/include -I$(WEBRTCROOT)/src/chromium/src/third_party/jsoncpp/source/include
 #CCFLAGS += $(shell $(WEBRTC_LIBRARY_BUILD) includes)
 
-SYS_LIBS += -lX11 -lXcomposite -lXext -lXrender -lpcre -lrt -lm -ldl -lexpat
+# puluse_audio need X11 library
+#SYS_LIBS += -lX11 -lXcomposite -lXext -lXrender -lpcre -lrt -lm -ldl -lexpat
+SYS_LIBS += -lpcre -lrt -lm -ldl -lexpat
 LDFLAGS += -Wl,-z,now -Wl,-z,relro -Wl,-z,defs -pthread -Wl,-z,noexecstack -fPIC -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib/ -L$(SYSROOT)/usr/lib/arm-linux-gnueabihf/ $(SYSROOTFLAG) -L$(SYSROOT)/lib/arm-linux-gnueabihf -Wl,-rpath-link=$(SYSROOT)/lib/arm-linux-gnueabihf -L$(SYSROOT)/usr/lib/arm-linux-gnueabihf -Wl,-rpath-link=$(SYSROOT)/usr/lib/arm-linux-gnueabihf 
 
 INCLUDE_WEBRTC_LIB_LIST=$(shell $(WEBRTC_LIBRARY_BUILD) libs)

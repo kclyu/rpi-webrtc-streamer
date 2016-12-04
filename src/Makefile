@@ -29,7 +29,7 @@ MMAL_LDFLAGS+=-L$(SYSROOT)/opt/vc/lib/ -lmmal_core -lmmal -lmmal_util -lvcos -lc
 UWEBSOCKET=$(HOME)/Workspace/uWebSockets
 WSPP_INCLUDE=-I$(UWEBSOCKET)/src -I$(SYSROOT)/usr/local/include 
 WSPP_CCFLAGS= -fno-threadsafe-statics -fvisibility-inlines-hidden -std=gnu++11 -Wno-narrowing -fno-rtti -Wnon-virtual-dtor -Woverloaded-virtual
-WSPP_LDFLAGS= $(UWEBSOCKET)/build/libuWS.a -Wl,-Bstatic -luv -Wl,-Bdynamic -lssl -lcrypto -lz
+WSPP_LDFLAGS= $(UWEBSOCKET)/build/libuWS.a -Wl,-Bstatic -luv -Wl,-Bdynamic $(OPENSSL_LIB) -lz
 
 #
 # TARGET
@@ -66,7 +66,9 @@ all: $(TARGET)
 	$(CXX) -I. $(WSPP_CCFLAGS) $(WSPP_INCLUDE) -c $< -o $@
 
 $(TARGET): $(OBJECTS) 
-	$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) $(WSPP_LDFLAGS) -Wl,--end-group $(OPENSSL_LIB) $(SYS_LIBS) 
+	# TODO will core dump when ssl library linked with webrtc-streamer
+	#$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) $(WSPP_LDFLAGS) -Wl,--end-group $(OPENSSL_LIB) $(SYS_LIBS) 
+	$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) -Wl,--end-group $(OPENSSL_LIB) $(SYS_LIBS) 
 
 clean:
 	rm -f *.o $(TARGET)

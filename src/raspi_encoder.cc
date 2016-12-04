@@ -314,7 +314,6 @@ bool RaspiEncoderImpl::DrainProcess()
 
         if (drop_next_frame_) {
             drop_next_frame_ = false;
-            OnDroppedFrame();
             // if( buf ) mmal_encoder_->ReturnToPool(buf);
             // return true;
         }
@@ -388,12 +387,14 @@ bool RaspiEncoderImpl::DrainProcess()
         }
 
         // Deliver encoded image.
-        callback_status =
-            encoded_image_callback_->Encoded(encoded_image_, &codec_specific, &frag_header);
-        if( callback_status > 0 ) {
-            // TODO(kclyu) Need to check callback_status return value,
-            // Android APP do drop the frame but, MMAL encode could't do it.
-            // LOG(INFO) << "Encoded callback non-zero value: " << callback_status;
+        EncodedImageCallback::Result result =
+            // Changing API from branch-heads/56
+            //  . 'Encoded'--> 'OnEncodedImage' from 
+            //  . EncodedImageCallback Result 
+            //  . OnDroppedFrame move to EncodedImageCallback
+            encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific, &frag_header);
+        if( result.drop_next_frame == true ) {
+            LOG(INFO) << "OnEncodedImage request dropping next frame";
             drop_next_frame_ = true;
         }
     }
@@ -403,6 +404,10 @@ bool RaspiEncoderImpl::DrainProcess()
 
     // TODO: if encoded_size is zero, we need to reset encoder itself
     return true;
+}
+
+const char* RaspiEncoderImpl::ImplementationName() const {
+    return "RASPIH264";
 }
 
 bool RaspiEncoderImpl::IsInitialized() const {
@@ -438,13 +443,10 @@ int32_t RaspiEncoderImpl::SetPeriodicKeyFrames(bool enable) {
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void RaspiEncoderImpl::OnDroppedFrame() {
-#ifdef RASPI_QUALITY
-    if (resolution_scale_)
-        quality_scaler_.ReportDroppedFrame();
-#endif // RASPI_QUALITY
+VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
+    // TODO(kclyu) check scaling setting parameter action
+    return VideoEncoder::ScalingSettings(false);
 }
-
 
 MMALVideoEncoderFactory::MMALVideoEncoderFactory() {
     supported_codecs_.clear();

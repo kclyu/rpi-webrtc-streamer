@@ -82,10 +82,13 @@ public:
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<FrameType>* frame_types) override;
 
+    const char* ImplementationName() const override;
+
+    VideoEncoder::ScalingSettings GetScalingSettings() const override;
+
     // Unsupported / Do nothing.
     int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
     int32_t SetPeriodicKeyFrames(bool enable) override;
-    void OnDroppedFrame() override;
 
 private:
     bool IsInitialized() const;
