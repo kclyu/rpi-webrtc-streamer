@@ -26,13 +26,11 @@
 
 extern const uint16_t kDefaultServerPort;  // From defaults.[h|cc]
 
-// Define flags for the peerconnect_client testing tool, in a separate
-// header file so that they can be shared across the different main.cc's
-// for each platform.
-
+// Define flags for the streamer, in a separate
 DEFINE_bool(help, false, "Prints this message");
 DEFINE_string(bind, "127.0.0.1", "The default binding IP address.");
 DEFINE_int(port, kDefaultServerPort,
            "The port on which the server is listening.");
+DEFINE_bool(directtcp, false, "Enable android direct tcp socket feature support");
 
 #endif  // RPI_STREAMER_FLAGSDEFS_H_

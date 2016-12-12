@@ -29,12 +29,16 @@
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/ssladapter.h"
 
+#include "streamer_observer.h"
+#include "direct_socket.h"
 #include "stream_data_sockets.h"
 #include "streamer_defaults.h"
 #include "streamer_flagdefs.h"
 #include "streamer.h"
 
 
+// 
+//
 class StreamingSocketServer : public rtc::PhysicalSocketServer,
     public sigslot::has_slots<> {
 public:
@@ -60,27 +64,55 @@ int main(int argc, char** argv) {
     // Abort if the user specifies a port that is outside the allowed
     // range [1, 65535].
     if ((FLAG_port < 1) || (FLAG_port > 65535)) {
+        // TODO(kclyu): remove printf
         printf("Error: %i is not a valid port.\n", FLAG_port);
         return -1;
     }
 
     rtc::AutoThread auto_thread;
     rtc::Thread* thread = rtc::Thread::Current();
-    StreamingSocketServer socket_server(thread);
     rtc::SocketAddress addr( FLAG_bind, FLAG_port );
+
+    StreamingSocketServer socket_server(thread);
     thread->set_socketserver(&socket_server);
 
     rtc::InitializeSSL();
 
-    // Must be constructed after we set the socketserver.
-    StreamSocketListen stream_listen;
+     if (FLAG_directtcp ) {
+        // Android Direct Socket Channel
+        // Must be constructed after we set the socketserver.
+        DirectSocketServer directsocket_server;
 
-    rtc::scoped_refptr<Streamer> streamer(
-        new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance()));
+        rtc::scoped_refptr<Streamer> streamer(
+            new rtc::RefCountedObject<Streamer>(&directsocket_server, TYPE_ANDROID_DIRECT ));
 
-    stream_listen.Listen(addr);
-    // Running Loop
-    thread->Run();
+        if (directsocket_server.Listen(addr) == false) {
+            // Terminating clean-up
+            thread->set_socketserver(NULL);
+            rtc::CleanupSSL();
+            return 0;
+        }
+        // Running Loop
+        thread->Run();
+    }
+    else {
+        // Linux PeerConnection Channel
+        // Must be constructed after we set the socketserver.
+        StreamSocketListen stream_listen;
+
+
+        rtc::scoped_refptr<Streamer> streamer(
+            new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance(), TYPE_LINUX ));
+
+        if ( stream_listen.Listen(addr) == false) {
+            // Terminating clean-up
+            thread->set_socketserver(NULL);
+            rtc::CleanupSSL();
+            return 0;
+        }
+        // Running Loop
+        thread->Run();
+    }
 
     // Terminating clean-up
     thread->set_socketserver(NULL);

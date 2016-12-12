@@ -27,16 +27,7 @@
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/sigslot.h"
-
-struct StreamSessionObserver {
-    virtual void OnPeerConnected(int id, const std::string& name) = 0;
-    virtual void OnPeerDisconnected(int peer_id) = 0;
-    virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
-    virtual void OnMessageSent(int err) = 0;
-
-protected:
-    virtual ~StreamSessionObserver() {}
-};
+#include "streamer_observer.h"
 
 class PeerId {
 public :
@@ -44,7 +35,6 @@ public :
 private:
     static int peer_id_ ;
 };
-
 
 enum RequestMethod {
     METHOD_INVALID = 0,
@@ -91,7 +81,7 @@ enum StreamEvent {
 
 class StreamConnection;	// forward
 // Singletone StreamSession
-class StreamSession {
+class StreamSession : public SocketServerObserver {
 private:
     static StreamSession* stream_session_;
     StreamSession() {};

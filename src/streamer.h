@@ -29,7 +29,9 @@
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "clientconstraints.h"
+#include "streamer_observer.h"
 #include "stream_data_sockets.h"
+#include "direct_socket.h"
 
 
 namespace webrtc {
@@ -37,13 +39,19 @@ class VideoCaptureModule;
 }  // namespace webrtc
 
 
+enum SdpNegotiationType {
+    TYPE_INVALID = 0,
+    TYPE_ANDROID_DIRECT,
+    TYPE_LINUX,
+};
+
+
 class Streamer
-    : public webrtc::PeerConnectionObserver,
-  public webrtc::CreateSessionDescriptionObserver,
-  public StreamSessionObserver
+    : public webrtc::PeerConnectionObserver, public webrtc::CreateSessionDescriptionObserver,
+      public StreamSessionObserver
 {
 public:
-    Streamer(StreamSession *session);
+    Streamer(SocketServerObserver *session, SdpNegotiationType type);
     bool connection_active() const;
     virtual void Close();
 
@@ -97,7 +105,8 @@ protected:
     active_streams_;
 
     bool dtls_enable_;
-    StreamSession* session_;
+    SocketServerObserver* session_;
+    SdpNegotiationType nego_type_;
 };
 
 

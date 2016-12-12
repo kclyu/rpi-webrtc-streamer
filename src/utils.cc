@@ -16,7 +16,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "stream_data_sockets.h"
 #include "utils.h"
 
 #include <stdio.h>
@@ -26,6 +25,9 @@
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/stringencode.h"
+
+#include "streamer_observer.h"
+#include "stream_data_sockets.h"
 
 using rtc::ToString;
 using rtc::sprintfn;
