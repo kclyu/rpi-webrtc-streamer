@@ -34,8 +34,9 @@ function createPeerConnection(peer_id) {
 		pc = new RTCPeerConnection(pcConfig, pcOptions);
 		pc.onicecandidate = function(event) {
 			if (event.candidate) {
-				var candidate = { sdpMLineIndex: event.candidate.sdpMLineIndex,
-					sdpMid: event.candidate.sdpMid,
+				var candidate = { type: 'candidate',
+					label: event.candidate.sdpMLineIndex,
+					id: event.candidate.sdpMid,
 					candidate: event.candidate.candidate
 				};
 				sendToPeer(peer_id, JSON.stringify(candidate));
@@ -500,7 +501,7 @@ window.setInterval(function() {
             <video id="remote-video" width="80%" height="80%"></video>
         </div>
     </div>
-    Server: <input type="text" id="server" value="https://example.server.com:8080" /><br>
+    Server: <input type="text" id="server" value="https://changhome.dlinkddns.com:8080" /><br>
     Your name: <input type="text" id="local" value="myclient"/>
     <button id="connect" onclick="connect();">Connect</button>
     <button disabled="true" id="disconnect" onclick="disconnect();">Disconnect</button>

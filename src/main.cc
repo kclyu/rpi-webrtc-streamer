@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
         DirectSocketServer directsocket_server;
 
         rtc::scoped_refptr<Streamer> streamer(
-            new rtc::RefCountedObject<Streamer>(&directsocket_server, TYPE_ANDROID_DIRECT ));
+            new rtc::RefCountedObject<Streamer>(&directsocket_server ));
 
         if (directsocket_server.Listen(addr) == false) {
             // Terminating clean-up
@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
 
 
         rtc::scoped_refptr<Streamer> streamer(
-            new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance(), TYPE_LINUX ));
+            new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance() ));
 
         if ( stream_listen.Listen(addr) == false) {
             // Terminating clean-up

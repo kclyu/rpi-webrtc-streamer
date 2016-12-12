@@ -157,7 +157,6 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
         bytes = socket->Recv(buffer, sizeof(buffer), nullptr);
         if (bytes <= 0)
             break;
-        LOG(INFO) << "Message from client: \"" << buffered_read_ << "\""; 
         buffered_read_.append(buffer, bytes);
     } while (true);
 

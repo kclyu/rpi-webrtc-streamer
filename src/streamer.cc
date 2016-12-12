@@ -45,16 +45,11 @@
 
 using webrtc::PeerConnectionInterface;
 
-// Names used for a IceCandidate JSON object.
-const char kCandidateSdpMidName[] = "sdpMid";
-const char kCandidateSdpMlineIndexName[] = "sdpMLineIndex";
-const char kCandidateSdpName[] = "candidate";
-
 // Names used for a Android Direct IceCandidate JSON object.
-const char kAndroidDirectCandidateSdpMidName[] = "id";
-const char kAndroidDirectCandidateSdpMlineIndexName[] = "label";
-const char kAndroidDirectCandidateSdpName[] = "candidate";
-const char kAndroidDirectCandidateType[] = "type";
+const char kCandidateSdpMidName[] = "id";
+const char kCandidateSdpMlineIndexName[] = "label";
+const char kCandidateSdpName[] = "candidate";
+const char kCandidateType[] = "type";
 
 // Names used for a SessionDescription JSON object.
 const char kSessionDescriptionTypeName[] = "type";
@@ -85,8 +80,8 @@ protected:
     ~DummySetSessionDescriptionObserver() {}
 };
 
-Streamer::Streamer(SocketServerObserver *session, SdpNegotiationType type)
-    : peer_id_(-1), session_(session),  nego_type_(type) {
+Streamer::Streamer(SocketServerObserver *session)
+    : peer_id_(-1), session_(session)  {
     dtls_enable_ = GetDTLSEnableBool();
     session->RegisterObserver(this);
 }
@@ -116,15 +111,6 @@ bool Streamer::InitializePeerConnection() {
     signaling_thread->SetName("signaling_thread", NULL);
     RTC_CHECK(worker_thread->Start() && signaling_thread->Start())
             << "Failed to start threads";
-
-    /***
-    WebRtcVideoEncoderFactory* encoder_factory = nullptr;
-    WebRtcVideoDecoderFactory* decoder_factory = nullptr;
-    rtc::NetworkMonitorFactory* network_monitor_factory = nullptr;
-
-    encoder_factory = new MediaCodecVideoEncoderFactory();
-    decoder_factory = new MediaCodecVideoDecoderFactory();
-    ****/
 
     cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
     encoder_factory = new webrtc::MMALVideoEncoderFactory;
@@ -210,54 +196,18 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
     Json::StyledWriter writer;
     Json::Value jmessage;
 
-    /*********
-      private static JSONObject toJsonCandidate(final IceCandidate candidate) {
-    JSONObject json = new JSONObject();
-    jsonPut(json, "label", candidate.sdpMLineIndex);
-    jsonPut(json, "id", candidate.sdpMid);
-    jsonPut(json, "candidate", candidate.sdp);
 
-// Names used for a IceCandidate JSON object.
-const char kCandidateSdpMidName[] = "sdpMid";
-const char kCandidateSdpMlineIndexName[] = "sdpMLineIndex";
-const char kCandidateSdpName[] = "candidate";
-
-// Names used for a SessionDescription JSON object.
-const char kSessionDescriptionTypeName[] = "type";
-const char kSessionDescriptionSdpName[] = "sdp";
-   "candidate" : "candidate:2062479575 1 udp 1686052607 125.130.92.212 40365 typ srflx raddr 10.0.0.11 rport 40365 generation 0 ufrag tRLS network-id 1 network-cost 50",   "sdpMLineIndex" : 1,   "sdpMid" : "video"}
-
-// Names used for a Android Direct IceCandidate JSON object.
-const char kAndroidDirectCandidateSdpMidName[] = "id";
-const char kAndroidDirectCandidateSdpMlineIndexName[] = "label";
-const char kAndroidDirectCandidateSdpName[] = "candidate";
-const char kAndroidDirectCandidateType[] = "candidate";
-    ***********/
-// Names used for a Android Direct IceCandidate JSON object.
-
-    if( nego_type_ == TYPE_ANDROID_DIRECT ) {
-        jmessage[kAndroidDirectCandidateType] = kAndroidDirectCandidateSdpName;
-        jmessage[kAndroidDirectCandidateSdpMidName] = candidate->sdp_mid();
-        jmessage[kAndroidDirectCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
-        std::string sdp;
-        if (!candidate->ToString(&sdp)) {
-            LOG(LS_ERROR) << "Failed to serialize candidate";
-            return;
-        }
-        jmessage[kAndroidDirectCandidateSdpName] = sdp;
-        SendMessage(writer.write(jmessage));
+    // Names used for a Android Direct IceCandidate JSON object.
+    jmessage[kCandidateType] = kCandidateSdpName;
+    jmessage[kCandidateSdpMidName] = candidate->sdp_mid();
+    jmessage[kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
+    std::string sdp;
+    if (!candidate->ToString(&sdp)) {
+        LOG(LS_ERROR) << "Failed to serialize candidate";
+        return;
     }
-    else {
-        jmessage[kCandidateSdpMidName] = candidate->sdp_mid();
-        jmessage[kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
-        std::string sdp;
-        if (!candidate->ToString(&sdp)) {
-            LOG(LS_ERROR) << "Failed to serialize candidate";
-            return;
-        }
-        jmessage[kCandidateSdpName] = sdp;
-        SendMessage(writer.write(jmessage));
-    }
+    jmessage[kCandidateSdpName] = sdp;
+    SendMessage(writer.write(jmessage));
 }
 
 //
@@ -353,26 +303,16 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         std::string sdp_mid;
         int sdp_mlineindex = 0;
         std::string sdp;
-        if( nego_type_ == TYPE_ANDROID_DIRECT ) {
-            if (!rtc::GetStringFromJsonObject(jmessage, kAndroidDirectCandidateSdpMidName,
-                                              &sdp_mid) ||
-                    !rtc::GetIntFromJsonObject(jmessage, kAndroidDirectCandidateSdpMlineIndexName,
-                                               &sdp_mlineindex) ||
-                    !rtc::GetStringFromJsonObject(jmessage, kAndroidDirectCandidateSdpName, &sdp)) {
-                LOG(WARNING) << "Can't parse received message.";
-                return;
-            }
+
+        if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName,
+                                          &sdp_mid) ||
+                !rtc::GetIntFromJsonObject(jmessage, kCandidateSdpMlineIndexName,
+                                           &sdp_mlineindex) ||
+                !rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName, &sdp)) {
+            LOG(WARNING) << "Can't parse received message.";
+            return;
         }
-        else {
-            if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName,
-                                              &sdp_mid) ||
-                    !rtc::GetIntFromJsonObject(jmessage, kCandidateSdpMlineIndexName,
-                                               &sdp_mlineindex) ||
-                    !rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName, &sdp)) {
-                LOG(WARNING) << "Can't parse received message.";
-                return;
-            }
-        }
+
         webrtc::SdpParseError error;
         std::unique_ptr<webrtc::IceCandidateInterface> candidate(
             webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, &error));

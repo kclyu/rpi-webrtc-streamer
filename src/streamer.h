@@ -51,7 +51,7 @@ class Streamer
       public StreamSessionObserver
 {
 public:
-    Streamer(SocketServerObserver *session, SdpNegotiationType type);
+    Streamer(SocketServerObserver *session );
     bool connection_active() const;
     virtual void Close();
 
