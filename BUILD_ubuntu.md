@@ -80,9 +80,10 @@ the below command will open the vi editor.
 ```
 gn args arm/out/Debug 
 ```
-update the contents with the following 
+update the contents with the following.(You can find lastest args.gn file in misc/args.gn, 
+        You need to replace '/home/kclyu/' with your account's home path.)
 ```
- Build arguments go here. Examples:
+# Build arguments go here. Examples:
 #   is_component_build = true
 #   is_debug = false
 # See "gn args <out_dir> --list" for available build arguments.
@@ -94,23 +95,35 @@ is_component_build=false
 host_toolchain="//build/toolchain/linux:arm"
 target_os="linux"
 target_cpu="arm"
+arm_float_abi="hard"
+arm_use_neon=true
+arm_tune="cortex-a7"
 is_clang=false
+use_sysroot=true
 target_sysroot="/home/kclyu/Workspace/rpi_rootfs"
-system_libdir="/home/kclyu/Workspace/rpi_rootfs/usr/lib"
+system_libdir="/home/kclyu/Workspace/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
+gold_path = "/home/kclyu/tools/rpi_tools/arm-linux-gnueabihf/bin"
+
 #
 #
+use_ozone=true
+is_desktop_linux=false
+rtc_desktop_capture_supported=false
+
+#
+#
+rtc_build_with_neon=true
 enable_nacl=false
 enable_pdf=false
-enable_plugins=false
-enable_print_preview=false
 enable_webvr=false
 rtc_use_h264=true
 use_openh264=true
 rtc_include_tests=false
 rtc_desktop_capture_supported=false
-rtc_build_with_neon=true
+rtc_include_pulse_audio=false
 rtc_enable_protobuf=false
 treat_warnings_as_errors=false
+
 ```
 3. building WebRTC library
 
