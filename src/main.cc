@@ -1,5 +1,4 @@
-/*
- *  Copyright (c) 2016, rpi-webrtc-streamer  Lyu,KeunChang
+/* *  Copyright (c) 2016, rpi-webrtc-streamer  Lyu,KeunChang
  *
  * main.cc
  *
@@ -21,13 +20,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+#include <iostream>
 #include <vector>
 
+#include "webrtc/base/network.h"
 #include "webrtc/base/nethelpers.h"
+#include "webrtc/base/networkmonitor.h"
 #include "webrtc/base/physicalsocketserver.h"
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/sigslot.h"
 #include "webrtc/base/ssladapter.h"
+#if defined(WEBRTC_POSIX)
+#include <sys/types.h>
+#include <net/if.h>
+#include "webrtc/base/ifaddrs_converter.h"
+#endif  // defined(WEBRTC_POSIX)
+
+#include "webrtc/p2p/base/basicpacketsocketfactory.h"
 
 #include "streamer_observer.h"
 #include "direct_socket.h"
@@ -72,47 +82,56 @@ int main(int argc, char** argv) {
     rtc::AutoThread auto_thread;
     rtc::Thread* thread = rtc::Thread::Current();
     rtc::SocketAddress addr( FLAG_bind, FLAG_port );
+    std::unique_ptr<DirectSocketServer> direct_socket_server;
 
     StreamingSocketServer socket_server(thread);
     thread->set_socketserver(&socket_server);
 
     rtc::InitializeSSL();
 
-     if (FLAG_directtcp ) {
-        // Android Direct Socket Channel
-        // Must be constructed after we set the socketserver.
-        DirectSocketServer directsocket_server;
+    // Linux PeerConnection Channel
+    // Must be constructed after we set the socketserver.
+    StreamSocketListen stream_listen;
 
-        rtc::scoped_refptr<Streamer> streamer(
-            new rtc::RefCountedObject<Streamer>(&directsocket_server ));
+    rtc::scoped_refptr<Streamer> streamer(
+        new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance() ));
 
-        if (directsocket_server.Listen(addr) == false) {
+    if ( stream_listen.Listen(addr) == false) {
+        // Terminating clean-up
+        thread->set_socketserver(NULL);
+        rtc::CleanupSSL();
+        return 0;
+    }
+
+    if(FLAG_directtcp == true) {
+        rtc::IPAddress ipaddr;
+        rtc::NetworkManager::NetworkList networks;
+        std::unique_ptr<rtc::BasicNetworkManager> network_manager(
+            new rtc::BasicNetworkManager());
+        network_manager->StartUpdating();
+        if( rtc::Thread::Current()->ProcessMessages(0) == false ) {
+            LOG(LS_ERROR) << "Failed to get response from network manager";
+            return 0;
+        }
+        if( network_manager->GetDefaultLocalAddress(AF_INET, &ipaddr))  {
+            LOG(INFO) << "Using Local IP address : " << ipaddr;
+        }
+
+        rtc::SocketAddress addr( ipaddr.ToString(), FLAG_port );
+        direct_socket_server.reset(new DirectSocketServer);
+
+        streamer->AddObserver(direct_socket_server.get());
+
+        if (direct_socket_server->Listen(addr) == false) {
             // Terminating clean-up
             thread->set_socketserver(NULL);
             rtc::CleanupSSL();
             return 0;
         }
-        // Running Loop
-        thread->Run();
     }
-    else {
-        // Linux PeerConnection Channel
-        // Must be constructed after we set the socketserver.
-        StreamSocketListen stream_listen;
 
-
-        rtc::scoped_refptr<Streamer> streamer(
-            new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance() ));
-
-        if ( stream_listen.Listen(addr) == false) {
-            // Terminating clean-up
-            thread->set_socketserver(NULL);
-            rtc::CleanupSSL();
-            return 0;
-        }
-        // Running Loop
-        thread->Run();
-    }
+    // Running Loop
+    thread->Run();
 
     // Terminating clean-up
     thread->set_socketserver(NULL);
@@ -120,5 +139,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
-
 
