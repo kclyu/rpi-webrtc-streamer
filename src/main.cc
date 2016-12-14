@@ -113,9 +113,11 @@ int main(int argc, char** argv) {
             LOG(LS_ERROR) << "Failed to get response from network manager";
             return 0;
         }
-        if( network_manager->GetDefaultLocalAddress(AF_INET, &ipaddr))  {
-            LOG(INFO) << "Using Local IP address : " << ipaddr;
+        if( network_manager->GetDefaultLocalAddress(AF_INET, &ipaddr) == false )  {
+            LOG(LS_ERROR) << "Failed to get default local address";
+            return 0;
         }
+        LOG(INFO) << "Using Local IP address : " << ipaddr;
 
         rtc::SocketAddress addr( ipaddr.ToString(), FLAG_port );
         direct_socket_server.reset(new DirectSocketServer);

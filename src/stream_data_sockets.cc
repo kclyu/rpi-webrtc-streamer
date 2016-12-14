@@ -129,7 +129,7 @@ void StreamSession::SignalEvent(int peer_id, bool target, QueuedResponse &resp) 
     SignalEvent_(peer_id, target, resp);
 }
 
-void StreamSession::RegisterObserver(StreamSessionObserver* callback) {
+void StreamSession::RegisterObserver(StreamerObserver* callback) {
     LOG(INFO) << __FUNCTION__;
     streamer_callback_ = callback;
 }

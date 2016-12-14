@@ -54,7 +54,7 @@ public:
     bool Listen(const rtc::SocketAddress& address);
     void StopListening(void);
 
-    void RegisterObserver(StreamSessionObserver* callback) override;
+    void RegisterObserver(StreamerObserver* callback) override;
     bool SendMessageToPeer(const int peer_id, const std::string &message) override;
 
 private:
@@ -67,7 +67,7 @@ private:
     void DeactivateStreamSession();
     bool ReceiveMessageFromPeer(const std::string &message);
 
-    StreamSessionObserver *streamer_callback_;
+    StreamerObserver *streamer_callback_;
     std::unique_ptr<rtc::AsyncSocket> listener_;
     std::unique_ptr<rtc::AsyncSocket> direct_socket_;
 

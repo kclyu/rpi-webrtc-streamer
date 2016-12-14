@@ -31,18 +31,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RPI_STREAMER_OBSERVER_
 #pragma once
 
-struct StreamSessionObserver {
+struct StreamerObserver {
     virtual void OnPeerConnected(int id, const std::string& name) = 0;
     virtual void OnPeerDisconnected(int peer_id) = 0;
     virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
     virtual void OnMessageSent(int err) = 0;
 
 protected:
-    virtual ~StreamSessionObserver() {}
+    virtual ~StreamerObserver() {}
 };
 
 struct SocketServerObserver {
-    virtual void RegisterObserver(StreamSessionObserver* callback) = 0;
+    virtual void RegisterObserver(StreamerObserver* callback) = 0;
     virtual bool SendMessageToPeer(const int peer_id, const std::string &message) = 0;
 protected:
     virtual ~SocketServerObserver() {}

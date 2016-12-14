@@ -48,10 +48,11 @@ enum SdpNegotiationType {
 
 class Streamer
     : public webrtc::PeerConnectionObserver, public webrtc::CreateSessionDescriptionObserver,
-      public StreamSessionObserver
+      public StreamerObserver
 {
 public:
     Streamer(SocketServerObserver *session );
+    void AddObserver(SocketServerObserver *session);
     bool connection_active() const;
     virtual void Close();
 

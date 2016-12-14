@@ -94,7 +94,7 @@ private:
 
     struct StreamSessionEntry *active_session_entry_;
     int   active_peer_id_;
-    StreamSessionObserver *streamer_callback_;
+    StreamerObserver *streamer_callback_;
 
 public:
     static StreamSession* GetInstance();
@@ -105,7 +105,7 @@ public:
     void DestroySessionEntry(const int peer_id);
     size_t GetSessionSize(void);
 
-    void RegisterObserver(StreamSessionObserver* callback);
+    void RegisterObserver(StreamerObserver* callback);
     bool ActivateStreamerSession(const int peer_id);
     void DeactivateStreamerSession(const int peer_id);
     bool SendMessageToPeer(int peer_id, const std::string &message);

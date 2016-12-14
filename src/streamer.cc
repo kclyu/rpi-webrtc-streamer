@@ -83,11 +83,15 @@ protected:
 Streamer::Streamer(SocketServerObserver *session)
     : peer_id_(-1), session_(session)  {
     dtls_enable_ = GetDTLSEnableBool();
-    session->RegisterObserver(this);
+    if( session ) session->RegisterObserver(this);
 }
 
 Streamer::~Streamer() {
     ASSERT(peer_connection_.get() == NULL);
+}
+
+void Streamer::AddObserver(SocketServerObserver *session){
+    session->RegisterObserver(this);
 }
 
 bool Streamer::connection_active() const {
@@ -211,7 +215,7 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 }
 
 //
-// StreamSessionObserver implementation.
+// StreamerObserver implementation.
 //
 void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
     RTC_CHECK(peer_id_ == -1);

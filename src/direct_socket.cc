@@ -100,7 +100,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
         connection_reject_count_ = 0;       // reinitialize the reject counter
 
         peer_id_ = DIRECTSOCKET_FAKE_PEERID;
-        peer_name_ = DIRECTSOCKET_FAKE_NAME_PREFIX + socket->GetRemoteAddress().ToString();
+        peer_name_ = DIRECTSOCKET_FAKE_NAME_PREFIX + incoming->GetRemoteAddress().ToString();
         LOG(INFO) << "New Session Name: " << peer_name_;
 
         direct_socket_.reset(incoming);
@@ -121,7 +121,8 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
             last_reject_time_ms_  = rtc::TimeMillis();
             LOG(INFO) << "Forced Connection Counter: " << connection_reject_count_;
             if ( connection_reject_count_ >  FORCED_CONNECTION_ALLOWED_COUNT  )
-                LOG(INFO) << "Forced Connection close performed, counter reached to threahold.";
+                LOG(INFO) << "Forced Connection close performed, " 
+                    << " counter reached to threahold.";
                 // Release the current active stream session
                 OnClose(  direct_socket_.get(), 0);
         }
@@ -169,7 +170,7 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
     }
 }
 
-void DirectSocketServer::RegisterObserver(StreamSessionObserver* callback) {
+void DirectSocketServer::RegisterObserver(StreamerObserver* callback) {
     LOG(INFO) << __FUNCTION__;
     streamer_callback_ = callback;
 }
@@ -194,14 +195,18 @@ void DirectSocketServer::DeactivateStreamSession() {
 }
 
 
-bool DirectSocketServer::SendMessageToPeer(const int peer_id, const std::string &message) {
+bool DirectSocketServer::SendMessageToPeer(const int peer_id, 
+        const std::string &message) {
     LOG(INFO) << __FUNCTION__;
     std::string trimmed_message( message );
-    trimmed_message.erase(std::remove(trimmed_message.begin(), trimmed_message.end(), '\n'), trimmed_message.end());
+    trimmed_message.erase(
+            std::remove(trimmed_message.begin(), trimmed_message.end(), '\n'), 
+            trimmed_message.end());
     trimmed_message.append("\n");
 
     LOG(INFO) << "Message OUT to client: \"" << trimmed_message << "\""; 
-    return (direct_socket_->Send(trimmed_message.data(), trimmed_message.length()) != SOCKET_ERROR);
+    return (direct_socket_->Send(trimmed_message.data(), 
+                trimmed_message.length()) != SOCKET_ERROR);
 }
 
 
