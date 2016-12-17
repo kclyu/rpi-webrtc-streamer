@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 struct StreamerObserver {
-    virtual void OnPeerConnected(int id, const std::string& name) = 0;
+    virtual void OnPeerConnected(int peer_id, const std::string& name) = 0;
     virtual void OnPeerDisconnected(int peer_id) = 0;
     virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
     virtual void OnMessageSent(int err) = 0;
@@ -47,5 +47,34 @@ struct SocketServerObserver {
 protected:
     virtual ~SocketServerObserver() {}
 };
+
+//  TODO remove or merge StreamSession in stream_data_sockets
+//  TODO streamer using single threaded main event-loop, 
+//       and need to implement some criticlal section protection when multi threaded model 
+//       used in socket server 
+class StreamerBridge : public SocketServerObserver {
+public:
+    static StreamerBridge* GetInstance();
+    bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id, const std::string& name ); 
+    void ReleaseStreamer(SocketServerObserver *socket_server, int peer_id ); 
+    void MessageFromPeer( int peer_id, const std::string& message );
+    void MessageSent(int err);
+
+    // SocketServerObserver
+    void RegisterObserver(StreamerObserver* callback);
+    bool SendMessageToPeer(int peer_id, const std::string &message);
+
+private:
+    StreamerBridge() {}
+    StreamerBridge(const StreamerBridge &) {}
+    ~StreamerBridge() {}
+
+    static StreamerBridge* stream_bridge_;
+    SocketServerObserver *active_socket_observer_;
+    StreamerObserver *streamer_callback_;           // streamer callback 
+    int active_peer_id_;
+    std::string active_peer_name_;
+};
+
 
 #endif  // RPI_STREAMER_OBSERVER_

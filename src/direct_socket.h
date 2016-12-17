@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/signalthread.h"
 #include "webrtc/base/sigslot.h"
 
+#include "streamer_observer.h"
+
 #define FORCED_CONNECTION_ALLOWED_INTERVAL  3000
 #define FORCED_CONNECTION_ALLOWED_COUNT     3
 
@@ -68,6 +70,7 @@ private:
     bool ReceiveMessageFromPeer(const std::string &message);
 
     StreamerObserver *streamer_callback_;
+    StreamerBridge *streamer_bridge_;
     std::unique_ptr<rtc::AsyncSocket> listener_;
     std::unique_ptr<rtc::AsyncSocket> direct_socket_;
 

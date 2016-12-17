@@ -45,7 +45,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "utils.h"
 
-#include "streamer_observer.h"
 #include "direct_socket.h"
 
 
@@ -55,9 +54,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 
 DirectSocketServer::DirectSocketServer()
-    : listener_(nullptr), direct_socket_(nullptr), streamer_callback_(nullptr) {
+    : listener_(nullptr), direct_socket_(nullptr) {
     last_reject_time_ms_ = connection_reject_count_ = 0;
+    streamer_bridge_ = StreamerBridge::GetInstance();
     streamsession_active_ = false;
+    RTC_CHECK(streamer_bridge_);
 }
 DirectSocketServer::~DirectSocketServer() {}
 
@@ -90,7 +91,7 @@ void DirectSocketServer::StopListening(void) {
 
 void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
     LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(streamer_callback_ != nullptr );
+    RTC_DCHECK(streamer_bridge_ != nullptr );
     RTC_DCHECK(socket == listener_.get());
     rtc::AsyncSocket* incoming = listener_->Accept(NULL);
     RTC_CHECK(incoming != nullptr );
@@ -136,7 +137,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
 
 void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
     LOG(INFO) << __FUNCTION__ << ", Error: " << err ;
-    RTC_DCHECK(streamer_callback_ != nullptr );
+    RTC_DCHECK(streamer_bridge_ != nullptr );
 
     // Close the stream session
     socket->SignalCloseEvent.disconnect(this);
@@ -149,7 +150,7 @@ void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
 void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK( socket != NULL );
-    RTC_DCHECK(streamer_callback_ != nullptr );
+    RTC_DCHECK(streamer_bridge_ != nullptr );
 
     char buffer[4096]= {0x00};
     int	bytes = 0;
@@ -165,33 +166,28 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
     if ( index != std::string::npos ) {
         LOG(INFO) << "Message IN from client: \"" << buffered_read_ << "\""; 
         // '\n' delimiter found in read buffer
-        streamer_callback_->OnMessageFromPeer(peer_id_, buffered_read_);
+        streamer_bridge_->MessageFromPeer(peer_id_, buffered_read_);
         buffered_read_.clear();
     }
 }
 
-void DirectSocketServer::RegisterObserver(StreamerObserver* callback) {
-    LOG(INFO) << __FUNCTION__;
-    streamer_callback_ = callback;
-}
-
 bool DirectSocketServer::ActivateStreamSession() {
     LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK( streamer_callback_ != nullptr );
+    RTC_DCHECK( streamer_bridge_ != nullptr );
     RTC_DCHECK( streamsession_active_ != true );
 
     streamsession_active_ = true;
-    streamer_callback_->OnPeerConnected(peer_id_, peer_name_ );
+    streamer_bridge_->ObtainStreamer(this, peer_id_, peer_name_ );
 
     return true;
 };
 
 void DirectSocketServer::DeactivateStreamSession() {
     LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK( streamer_callback_ != nullptr );
+    RTC_DCHECK( streamer_bridge_ != nullptr );
     RTC_DCHECK( streamsession_active_ );
     streamsession_active_ = false;
-    streamer_callback_->OnPeerDisconnected(peer_id_);
+    streamer_bridge_->ReleaseStreamer(this, peer_id_);
 }
 
 
@@ -209,4 +205,8 @@ bool DirectSocketServer::SendMessageToPeer(const int peer_id,
                 trimmed_message.length()) != SOCKET_ERROR);
 }
 
+//  
+void DirectSocketServer::RegisterObserver(StreamerObserver* callback) {
+    LOG(INFO) << __FUNCTION__;
+}
 

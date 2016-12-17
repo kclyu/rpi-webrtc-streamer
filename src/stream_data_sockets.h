@@ -82,20 +82,6 @@ enum StreamEvent {
 class StreamConnection;	// forward
 // Singletone StreamSession
 class StreamSession : public SocketServerObserver {
-private:
-    static StreamSession* stream_session_;
-    StreamSession() {};
-    StreamSession(const StreamSession&) {};
-    ~StreamSession() {};
-
-    std::vector<struct StreamSessionEntry *> session_holder_;
-    sigslot::signal3<int, bool, QueuedResponse &,
-            sigslot::multi_threaded_local> SignalEvent_;
-
-    struct StreamSessionEntry *active_session_entry_;
-    int   active_peer_id_;
-    StreamerObserver *streamer_callback_;
-
 public:
     static StreamSession* GetInstance();
 
@@ -112,6 +98,20 @@ public:
 
     void ConnectSignalEvent(StreamConnection *sc);
     void SignalEvent(int peer_id, bool target, QueuedResponse &resp );
+
+private:
+    static StreamSession* stream_session_;
+    StreamSession() {};
+    StreamSession(const StreamSession&) {};
+    ~StreamSession() {};
+
+    std::vector<struct StreamSessionEntry *> session_holder_;
+    sigslot::signal3<int, bool, QueuedResponse &,
+            sigslot::multi_threaded_local> SignalEvent_;
+
+    struct StreamSessionEntry *active_session_entry_;
+    int   active_peer_id_;
+    StreamerObserver *streamer_callback_;
 };
 
 class StreamConnection : public sigslot::has_slots<> {

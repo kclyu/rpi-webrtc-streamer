@@ -39,7 +39,7 @@ TARGET = ../webrtc-streamer
 #
 # source & object list definition
 #
-SOURCES.CC = stream_data_sockets.cc stream_sockets.cc direct_socket.cc streamer.cc streamer_defaults.cc main.cc raspi_encoder.cc mmal_wrapper.cc h264bitstream_parser.cc utils.cc
+SOURCES.CC = stream_data_sockets.cc stream_sockets.cc direct_socket.cc streamer_observer.cc streamer.cc streamer_defaults.cc main.cc raspi_encoder.cc mmal_wrapper.cc h264bitstream_parser.cc utils.cc
 #SOURCES.CPP = wspp_client.cpp
 SOURCES.C = mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c raspicamcontrol.c raspipreview.c 
 

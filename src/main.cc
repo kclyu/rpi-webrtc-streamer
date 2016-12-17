@@ -64,7 +64,6 @@ protected:
 
 
 int main(int argc, char** argv) {
-
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
     if (FLAG_help) {
         rtc::FlagList::Print(NULL, false);
@@ -94,7 +93,7 @@ int main(int argc, char** argv) {
     StreamSocketListen stream_listen;
 
     rtc::scoped_refptr<Streamer> streamer(
-        new rtc::RefCountedObject<Streamer>(StreamSession::GetInstance() ));
+        new rtc::RefCountedObject<Streamer>(StreamerBridge::GetInstance()));
 
     if ( stream_listen.Listen(addr) == false) {
         // Terminating clean-up
@@ -118,11 +117,9 @@ int main(int argc, char** argv) {
             return 0;
         }
         LOG(INFO) << "Using Local IP address : " << ipaddr;
-
         rtc::SocketAddress addr( ipaddr.ToString(), FLAG_port );
-        direct_socket_server.reset(new DirectSocketServer);
 
-        streamer->AddObserver(direct_socket_server.get());
+        direct_socket_server.reset(new DirectSocketServer);
 
         if (direct_socket_server->Listen(addr) == false) {
             // Terminating clean-up

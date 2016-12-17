@@ -14,7 +14,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "stream_data_sockets.h"
 #include "utils.h"
 
 #include <ctype.h>
@@ -31,6 +30,9 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/stringencode.h"
+
+#include "stream_data_sockets.h"
+#include "streamer_observer.h"
 
 
 static const char kHeaderTerminator[] = "\r\n\r\n";

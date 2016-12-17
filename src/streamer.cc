@@ -81,17 +81,15 @@ protected:
 };
 
 Streamer::Streamer(SocketServerObserver *session)
-    : peer_id_(-1), session_(session)  {
+    : peer_id_(-1) {
+    ASSERT(session != nullptr);
+    session_ = session;
     dtls_enable_ = GetDTLSEnableBool();
-    if( session ) session->RegisterObserver(this);
+    session->RegisterObserver(this);
 }
 
 Streamer::~Streamer() {
     ASSERT(peer_connection_.get() == NULL);
-}
-
-void Streamer::AddObserver(SocketServerObserver *session){
-    session->RegisterObserver(this);
 }
 
 bool Streamer::connection_active() const {
@@ -119,7 +117,8 @@ bool Streamer::InitializePeerConnection() {
     cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
     encoder_factory = new webrtc::MMALVideoEncoderFactory;
     peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
-                                    worker_thread, signaling_thread, NULL, encoder_factory, NULL );
+                                    worker_thread, signaling_thread, NULL, 
+                                    encoder_factory, NULL );
 
     if (!peer_connection_factory_.get()) {
         LOG(LS_ERROR) << __FUNCTION__ << "Failed to initialize PeerConnectionFactory";
