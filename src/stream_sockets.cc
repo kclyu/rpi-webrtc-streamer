@@ -27,7 +27,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "stream_data_sockets.h"
 #include "utils.h"
 
 #include <ctype.h>
@@ -44,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/timeutils.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/stringencode.h"
+#include "stream_data_sockets.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -111,7 +111,7 @@ private:
 
     struct StreamSessionEntry *active_session_entry_;
     int   active_peer_id_;
-    StreamerObserver *streamer_callback_;
+    StreamerBridge *streamer_bridge_;
 };
 
 class StreamConnection : public sigslot::has_slots<> {

@@ -32,8 +32,6 @@
 #include "webrtc/base/stringencode.h"
 
 #include "stream_data_sockets.h"
-#include "streamer_observer.h"
-
 
 static const char kHeaderTerminator[] = "\r\n\r\n";
 static const int kHeaderTerminatorLength = sizeof(kHeaderTerminator) - 1;
@@ -75,7 +73,7 @@ StreamSession *StreamSession::GetInstance() {
         stream_session_ = new StreamSession();
         stream_session_->active_session_entry_ = nullptr;
         stream_session_->active_peer_id_ = 0;
-        stream_session_->streamer_callback_ = nullptr;
+        stream_session_->streamer_bridge_ = StreamerBridge::GetInstance();
     }
     return stream_session_;
 }
@@ -133,14 +131,13 @@ void StreamSession::SignalEvent(int peer_id, bool target, QueuedResponse &resp) 
 
 void StreamSession::RegisterObserver(StreamerObserver* callback) {
     LOG(INFO) << __FUNCTION__;
-    streamer_callback_ = callback;
 }
 
 
 // TODO auth code validation
 bool StreamSession::ActivateStreamerSession(const int peer_id) {
     LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK( streamer_callback_ != nullptr );
+    RTC_DCHECK( streamer_bridge_ != nullptr );
     StreamSessionEntry *entry = GetSessionEntry(peer_id);
 
     // streamer session is not active
@@ -152,7 +149,7 @@ bool StreamSession::ActivateStreamerSession(const int peer_id) {
         active_peer_id_ = peer_id;
         active_session_entry_ = entry;
 
-        streamer_callback_->OnPeerConnected(peer_id, entry->name_ );
+        streamer_bridge_->ObtainStreamer(this, peer_id, entry->name_ );
         return true;
     }
     else { // streamer session occupied by another session id
@@ -177,7 +174,7 @@ void StreamSession::DeactivateStreamerSession(const int peer_id) {
         active_peer_id_ = 0;
         active_session_entry_ = nullptr;
 
-        streamer_callback_->OnPeerDisconnected(peer_id);
+        streamer_bridge_->ReleaseStreamer(this, peer_id);
     }
 }
 
@@ -221,7 +218,7 @@ bool StreamSession::ReceiveMessageFromPeer(int peer_id, const std::string &messa
         RTC_DCHECK( entry->peer_id_ == active_peer_id_ );
         RTC_DCHECK( entry == active_session_entry_ );
 
-        streamer_callback_->OnMessageFromPeer(peer_id, message);
+        streamer_bridge_->MessageFromPeer(peer_id, message);
 
         return true;
     }

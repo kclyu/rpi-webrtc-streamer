@@ -104,12 +104,16 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
         peer_name_ = DIRECTSOCKET_FAKE_NAME_PREFIX + incoming->GetRemoteAddress().ToString();
         LOG(INFO) << "New Session Name: " << peer_name_;
 
-        direct_socket_.reset(incoming);
-        // Close event will be handled in DirectSocketServer
-        incoming->SignalCloseEvent.connect(this, &DirectSocketServer::OnClose);
-        incoming->SignalReadEvent.connect(this, &DirectSocketServer::OnRead);
-
-        ActivateStreamSession();
+        if( ActivateStreamSession() == true) {
+            direct_socket_.reset(incoming);
+            // Close event will be handled in DirectSocketServer
+            incoming->SignalCloseEvent.connect(this, &DirectSocketServer::OnClose);
+            incoming->SignalReadEvent.connect(this, &DirectSocketServer::OnRead);
+        }
+        else {
+            // reject the direct socket request from client
+            incoming->Close();
+        }
     }
     else {
         // reject the direct socket request from client

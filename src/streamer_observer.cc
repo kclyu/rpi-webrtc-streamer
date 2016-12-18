@@ -66,6 +66,7 @@ StreamerBridge *StreamerBridge::GetInstance() {
 ////////////////////////////////////////////////////////////////////////////////
 // StreamerBridge Streamer Socket Server Observer bridging
 ////////////////////////////////////////////////////////////////////////////////
+
 void StreamerBridge::RegisterObserver(StreamerObserver* callback) {
     LOG(INFO) << __FUNCTION__;
     streamer_callback_ = callback;
@@ -73,8 +74,8 @@ void StreamerBridge::RegisterObserver(StreamerObserver* callback) {
 
 bool StreamerBridge::SendMessageToPeer(const int peer_id, const std::string &message) {
     LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(streamer_callback_ != NULL);
-    RTC_DCHECK(active_socket_observer_ != NULL);
+    RTC_DCHECK(streamer_callback_ != nullptr);
+    RTC_DCHECK(active_socket_observer_ != nullptr);
     active_socket_observer_->SendMessageToPeer(peer_id, message);
 }
 
@@ -86,10 +87,9 @@ bool StreamerBridge::ObtainStreamer(SocketServerObserver *socket_server,
         int peer_id, const std::string& name ) {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(streamer_callback_ != nullptr);
-    RTC_DCHECK(active_socket_observer_ == nullptr);
-    RTC_DCHECK(active_peer_id_ == 0);
     if( active_socket_observer_ != nullptr ) {
         LOG(INFO) << "Streamer already occupied by another socket server";
+        return false;
     }
     else {
         active_peer_id_ = peer_id;
@@ -97,13 +97,11 @@ bool StreamerBridge::ObtainStreamer(SocketServerObserver *socket_server,
         streamer_callback_->OnPeerConnected(peer_id, name );
         return true;
     }
-    return false;
 }
 
 void StreamerBridge::ReleaseStreamer(SocketServerObserver *socket_server, int peer_id ) {
     LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(active_socket_observer_ == socket_server);
-    if( active_socket_observer_ ) {
+    if( active_socket_observer_ && active_socket_observer_ == socket_server) {
         active_socket_observer_ = nullptr;
         active_peer_id_ = 0;
         streamer_callback_->OnPeerDisconnected(peer_id);
