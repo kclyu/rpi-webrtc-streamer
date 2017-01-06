@@ -2,6 +2,7 @@
 # 
 #
 include ../misc/cross_gn.mk
+include ../misc/libwebsocket_cross.mk
 
 #
 # h264bitstream & openssl library
@@ -19,17 +20,6 @@ MMAL_CFLAGS+=-Wno-multichar -Wno-unused-but-set-variable -fPIC -O3 -DDEBUG -DEGL
 MMAL_INCLUDES+=-I$(PI_INCLUDE)/interface/vcos/pthreads -I$(PI_INCLUDE)/interface/vmcs_host/linux -I$(PI_INCLUDE)/interface/vmcs_host -I$(PI_INCLUDE)/interface/vmcs_host/khronos -I$(PI_INCLUDE)/interface/khronos/include -I$(PI_INCLUDE)/interface/vchiq_arm -I$(PI_INCLUDE) -I$(PI_INCLUDE)/interface/mmal 
 
 MMAL_LDFLAGS+=-L$(SYSROOT)/opt/vc/lib/ -lmmal_core -lmmal -lmmal_util -lvcos -lcontainers -lbcm_host -lmmal_vc_client -lmmal_components -lvchiq_arm -lvcsm -lvcfiled_check -lpthread -ldl -lrt -lm 
-
-#
-# websocketpp Compiler Definition
-#
-#WSPP_INCLUDE=-I../lib/websocketpp -I$(SYSROOT)/usr/local/include -D_WEBSOCKETPP_CPP11_STL_
-#WSPP_CCFLAGS= -fno-threadsafe-statics -fvisibility-inlines-hidden -std=gnu++11 -Wno-narrowing -fno-rtti -Wnon-virtual-dtor -Woverloaded-virtual
-#WSPP_LDFLAGS= $(SYSROOT)/usr/local/boost/lib/libboost_system.a $(SYSROOT)/usr/local/boost/lib/libboost_thread.a $(SYSROOT)/usr/local/boost/lib/libboost_random.a -Wl,-rpath,$(SYSROOT)/usr/local/boost/lib
-#UWEBSOCKET=$(HOME)/Workspace/uWebSockets
-#WSPP_INCLUDE=-I$(UWEBSOCKET)/src -I$(SYSROOT)/usr/local/include 
-#WSPP_CCFLAGS= -fno-threadsafe-statics -fvisibility-inlines-hidden -std=gnu++11 -Wno-narrowing -fno-rtti -Wnon-virtual-dtor -Woverloaded-virtual
-#WSPP_LDFLAGS= $(UWEBSOCKET)/build/libuWS.a -Wl,-Bstatic -luv -Wl,-Bdynamic $(OPENSSL_LIB) -lz
 
 #
 # TARGET
@@ -65,8 +55,6 @@ all: $(TARGET)
 	$(CXX) -I. $(WSPP_CCFLAGS) $(WSPP_INCLUDE) -c $< -o $@
 
 $(TARGET): $(OBJECTS) 
-	# TODO will core dump when ssl library linked with webrtc-streamer
-	#$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) -Wl,--end-group $(OPENSSL_LIB) $(SYS_LIBS) 
 	$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) -Wl,--end-group $(OPENSSL_LIB) $(SYS_LIBS) 
 
 clean:
