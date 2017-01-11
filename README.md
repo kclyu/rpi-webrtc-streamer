@@ -50,7 +50,13 @@ TBD
 ## TODO
 TBD
 
-## Version
+## Version History
+ * 2017/01/10 v0.57 : 
+     - adding initial android direct socket feature
+     - fixing branch-heads/55
+     - removing unused GYP building scripts and files
+     - webrtc build directory changed from 'arm/out/Debug' to 'arm_build'
  * 2016/09/20 v0.56 : Initial Version
 
+ 
 
