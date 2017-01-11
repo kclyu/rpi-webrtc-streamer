@@ -6,6 +6,15 @@ export LD=arm-linux-gnueabihf-ld
 export AS=arm-linux-gnueabihf-as
 export RANLIB=arm-linux-gnueabihf-ranlib
 
+##
+## Check whether rpi_rootfs repo exist
+if [ -e ${HOME}/Workspace/rpi_rootfs/PI.cmake ]
+then
+	echo "rpi_rootfs does not exists"
+	echo "You need to configure rpi_rootfs repo to build"
+	echo "Please check https://github.com/kclyu/rpi_rootfs"
+    exit -1
+fi
 if [ -e ../misc/h264bitstream-0.1.9.tar.gz ]
 then
     # checking h264bitstream library directory  

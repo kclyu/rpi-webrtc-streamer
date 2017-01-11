@@ -394,7 +394,7 @@ bool RaspiEncoderImpl::DrainProcess()
             //  . OnDroppedFrame move to EncodedImageCallback
             encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific, &frag_header);
         if( result.drop_next_frame == true ) {
-            LOG(INFO) << "OnEncodedImage request dropping next frame";
+            // LOG(INFO) << "OnEncodedImage request dropping next frame";
             drop_next_frame_ = true;
         }
     }
