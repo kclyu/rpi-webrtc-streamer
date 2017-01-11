@@ -82,9 +82,9 @@ _WebRTC native-code package start to use only GN build, it does not use GYP buil
 cd ~/Workspace/webrtc/src
 mkdir arm_build
 cp ~/Workspace/rpi-webrtc-streamer/misc/webrtc_build_args.gn arm_build/args.gn
-gn gen arm_build
+gn gen arm_build   
 ```
-
+- note:  You need to replace the whole absolute path in args.gn before doing 'gn gen arm_build'
 
 3. building WebRTC library
 
@@ -116,7 +116,6 @@ sh ../../scripts/config_h264bitstream.sh
 cd ..
 make
 ```
-
 
 ## Version History
  * 2017/01/10 v0.57 : 
