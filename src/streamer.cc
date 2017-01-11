@@ -339,9 +339,7 @@ void Streamer::OnMessageSent(int err) {
 
 cricket::VideoCapturer* Streamer::OpenVideoCaptureDevice() {
     webrtc::Trace::CreateTrace();
-
 #ifdef __0
-
     FakeWebRtcDeviceInfo fake_device_info;
     const std::string device_name("raspi_cam");
     const std::string device_id("0");
@@ -431,6 +429,8 @@ void Streamer::AddStreams() {
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(
             kVideoLabel,
+            // peer_connection_factory_->CreateVideoSource(new cricket::DummyVideoCapturer(false),
+            //       &videoConstraints)));
             peer_connection_factory_->CreateVideoSource(new cricket::DummyVideoCapturer(false),
                     &videoConstraints)));
 

@@ -189,11 +189,11 @@ static COMMAND_LIST  cmdline_commands[] =
     {CommandShutterSpeed,"-shutter",   "ss", "Set shutter speed in microseconds", 1},
     {CommandAwbGains,    "-awbgains",  "awbg", "Set AWB gains - AWB mode must be off", 1},
     {CommandDRCLevel,    "-drc",       "drc", "Set DRC Level", 1},
-    {CommandStatsPass,   "-stats",     "st", "Force recomputation of statistics on stills capture pass"},
+    {CommandStatsPass,   "-stats",     "st", "Force recomputation of statistics on stills capture pass", 0},
     {CommandAnnotate,    "-annotate",  "a",  "Enable/Set annotate flags or text", 1},
     {CommandStereoMode,  "-stereo",    "3d", "Select stereoscopic mode", 1},
-    {CommandStereoDecimate,"-decimate","dec", "Half width/height of stereo image"},
-    {CommandStereoSwap,  "-3dswap",    "3dswap", "Swap camera order for stereoscopic"},
+    {CommandStereoDecimate,"-decimate","dec", "Half width/height of stereo image", 0},
+    {CommandStereoSwap,  "-3dswap",    "3dswap", "Swap camera order for stereoscopic", 0},
     {CommandAnnotateExtras,"-annotateex","ae",  "Set extra annotation parameters (text size, text colour(hex YUV), bg colour(hex YUV))", 2},
 };
 
