@@ -443,11 +443,6 @@ int32_t RaspiEncoderImpl::SetPeriodicKeyFrames(bool enable) {
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
-    // TODO(kclyu) check scaling setting parameter action
-    return VideoEncoder::ScalingSettings(false);
-}
-
 MMALVideoEncoderFactory::MMALVideoEncoderFactory() {
     supported_codecs_.clear();
 

@@ -27,7 +27,7 @@
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/video_frame.h"
+#include "webrtc/media/base/videoframe.h"
 
 namespace cricket {
 
@@ -105,9 +105,8 @@ class DummyVideoCapturer : public cricket::VideoCapturer {
           webrtc::I420Buffer::Create(adapted_width, adapted_height));
       buffer->InitializeData();
 
-      OnFrame(webrtc::VideoFrame(
-                  buffer, rotation_,
-                  next_timestamp_ / rtc::kNumNanosecsPerMicrosec),
+      OnFrame(WebRtcVideoFrame(buffer, rotation_,
+                               next_timestamp_ / rtc::kNumNanosecsPerMicrosec),
               width, height);
     }
     next_timestamp_ += timestamp_interval;
@@ -130,6 +129,9 @@ class DummyVideoCapturer : public cricket::VideoCapturer {
   }
   bool IsRunning() override { return running_; }
   bool IsScreencast() const override { return is_screencast_; }
+  rtc::Optional<bool> NeedsDenoising() const override {
+    return needs_denoising_;
+  }
   bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override {
     fourccs->push_back(cricket::FOURCC_I420);
     fourccs->push_back(cricket::FOURCC_MJPG);
@@ -142,11 +144,16 @@ class DummyVideoCapturer : public cricket::VideoCapturer {
 
   webrtc::VideoRotation GetRotation() { return rotation_; }
 
+  void SetNeedsDenoising(rtc::Optional<bool> needs_denoising) {
+    needs_denoising_ = needs_denoising;
+  }
+
  private:
   bool running_;
   int64_t initial_timestamp_;
   int64_t next_timestamp_;
   const bool is_screencast_;
+  rtc::Optional<bool> needs_denoising_;
   webrtc::VideoRotation rotation_;
 };
 
