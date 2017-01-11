@@ -19,6 +19,7 @@ Before going to next step,  verify that you can access the following command.
 #### Raspberry PI sysroot 
 Once the cross-compiler installation is complete, you must create a sysroot for the cross compile environment.  please refer to this [rpi_rootfs](https://github.com/kclyu/rpi_rootfs.git) repo.
 
+
 ## Notes before download source code
 First, it seems better to describe the location of the directory that developer use before you download the source code. There may be a location is fixed in current code and script itself, if possible, it is recommended to start at the same directory location during compilation. (After confirming that there is no fixed location issue, this section will be removed.)
 
@@ -33,6 +34,11 @@ First, it seems better to describe the location of the directory that developer 
 #### Install Prerequisite Software tool
 To build the WebRTC native-code package, [Prerequisite Software tool](https://webrtc.org/native-code/development/prerequisite-sw/)  must be installed at first.
 
+#### WebRTC native code package branch notice 
+In fact, the WebRTC native code package adds code commit almost every day. Because the RWS repo can not be modified daily according to the WebRTC native code package, which is updated daily, this repo is modified to match the specific WebRTC native code branch.
+
+The WebRTC branch for RWS compilation should use the branch version in the misc/WEBRTC_BRANCH.conf file.
+
 #### Download WebRTC native-code package 
 To download webrtc source code please use the following command: 
 
@@ -40,6 +46,9 @@ To download webrtc source code please use the following command:
 mkdir -p ~/Workspace/webrtc
 cd ~/Workspace/webrtc
 fetch --nohooks webrtc
+cd src
+gclient sync
+git checkout -b rel55 branch-heads/55
 gclient sync
 ```
 When the syncing is complete, in order to verify, re-enter the following command **gclient sync** . check the following message comes out. 
@@ -50,8 +59,8 @@ Syncing projects: 100% (2/2), done.
 
 ________ running '/usr/bin/python -c import os,sys;script = os.path.join("trunk","check_root_dir.py");_ = os.system("%s %s" % (sys.executable,script)) if os.path.exists(script) else 0' in '/home/kclyu/Workspace/webrtc'
 
-________ running '/usr/bin/python -u src/sync_chromium.py --target-revision cede888c27275835e5aaadf5dac49379eb3ac106' in '/home/kclyu/Workspace/webrtc'
-Chromium already up to date:  cede888c27275835e5aaadf5dac49379eb3ac106
+________ running '/usr/bin/python -u src/sync_chromium.py --target-revision 316b880c55452eb694a27ba4d1aa9e74ec9ef342' in '/home/kclyu/Workspace/webrtc'
+Chromium already up to date:  316b880c55452eb694a27ba4d1aa9e74ec9ef342
 
 ________ running '/usr/bin/python src/setup_links.py' in '/home/kclyu/Workspace/webrtc'
 
@@ -71,65 +80,17 @@ _WebRTC native-code package start to use only GN build, it does not use GYP buil
   
 ```
 cd ~/Workspace/webrtc/src
-gn gen arm/out/Debug 
+mkdir arm_build
+cp ~/Workspace/rpi-webrtc-streamer/misc/webrtc_build_args.gn arm_build/args.gn
+gn gen arm_build
 ```
 
-2. change build setting 
 
-the below command will open the vi editor.
-```
-gn args arm/out/Debug 
-```
-update the contents with the following.(You can find lastest args.gn file in misc/args.gn, 
-        You need to replace '/home/kclyu/' with your account's home path.)
-```
-# Build arguments go here. Examples:
-#   is_component_build = true
-#   is_debug = false
-# See "gn args <out_dir> --list" for available build arguments.
-
-is_component_build=false
-#is_official_build=true
-#is_debug=false # Relese Version
-
-host_toolchain="//build/toolchain/linux:arm"
-target_os="linux"
-target_cpu="arm"
-arm_float_abi="hard"
-arm_use_neon=true
-arm_tune="cortex-a7"
-is_clang=false
-use_sysroot=true
-target_sysroot="/home/kclyu/Workspace/rpi_rootfs"
-system_libdir="/home/kclyu/Workspace/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
-gold_path = "/home/kclyu/tools/rpi_tools/arm-linux-gnueabihf/bin"
-
-#
-#
-use_ozone=true
-is_desktop_linux=false
-rtc_desktop_capture_supported=false
-
-#
-#
-rtc_build_with_neon=true
-enable_nacl=false
-enable_pdf=false
-enable_webvr=false
-rtc_use_h264=true
-use_openh264=true
-rtc_include_tests=false
-rtc_desktop_capture_supported=false
-rtc_include_pulse_audio=false
-rtc_enable_protobuf=false
-treat_warnings_as_errors=false
-
-```
 3. building WebRTC library
 
 the below command will start to build.
 ```
-ninja -C arm/out/Debug 
+ninja -C arm_build
 ```
 After compilation is finished without an error, go to the next step to compile rws.
 
@@ -140,12 +101,11 @@ After compilation is finished without an error, go to the next step to compile r
 |Item|file|description|
 |----------------|-----------------|-----|
 |Builder Type|Makefile|cross_gn.mk for GN builder, cross_gyp.mk for GYP builder|
-|SYSROOT|cross_*.mk|sysroot for raspberry pi |
-|WEBRTCROOT|cross_*.mk|WebRTC root directory path|
-|WEBRTCOUTPUT|cross_*.mk|WebRTC build output path|
+|SYSROOT|cross_gn.mk|sysroot for raspberry pi |
+|WEBRTCROOT|cross_gn.mk|WebRTC root directory path|
+|WEBRTCOUTPUT|cross_gn.mk|WebRTC build output path|
 
 
- 
    
 *  build rws
  ```
@@ -157,53 +117,13 @@ cd ..
 make
 ```
 
-## Building WebRTC with _GYP build_
-_GYP build is no longer used. Thiis GYP build should be used only if you need to use a branch/54 or previous version._
-
-#### Building WebRTC native-code package
-1. changing to last gyp version
-  
-```
-cd ~/Workspace/webrtc/
-git checkout -b rel54 branch-heads/54
-gclient 
-```
-    
-2. source environment variables 
-```
-##
-export SYSROOT=$HOME/Workspace/
-export SYSROOTFLAG="--sysroot=$SYSROOT"
-	
-##
-export GYP_CROSSCOMPILE=1 
-export GYP_DEFINES="OS=linux target_arch=arm clang=0 arm_version=7 arm_use_neon=1 disable_fatal_linker_warnings=1 target_sysroot=/home/kclyu/Workspace/rpi_rootfs"
-export GYP_DEFINES="$GYP_DEFINES enable_tracing=1 disable_nacl=0 enable_svg=0 webrtc_h264=1 rtc_use_h264=1 use_v4l2_codec=1 rtc_initialize_ffmpeg=1 media_use_ffmpeg=1 disable_fatal_linker_warnings=1"
-export GYP_GENERATOR_OUTPUT='arm'
-	
-##
-##
-export ARMIFY="-mfpu=neon-vfpv4 -mfloat-abi=hard -funsafe-math-optimizations"
-export BACKTRACE="-funwind-tables -rdynamic"
-	
-##
-## PATH : /opt/rpi_tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin
-export CC="arm-linux-gnueabihf-gcc -O4 $SYSROOTFLAG $BACKTRACE $ARMIFY"
-export CXX="arm-linux-gnueabihf-g++ -O4 $SYSROOTFLAG $BACKGRACE $ARMIFY"
-export AR=arm-linux-gnueabihf-ar
-export LD=arm-linux-gnueabihf-ld
-export AS=arm-linux-gnueabihf-as
-export RANLIB=arm-linux-gnueabihf-ranlib
-```
-
-3. source environment 
-```
-cd ~/Workspace/webrtc
-gclient sync
-ninja -C arm/out/Debug
-```
 
 ## Version History
+ * 2017/01/10 v0.57 : 
+     - adding initial android direct socket feature
+     - fixing branch-heads/55
+     - removing unused GYP building scripts and files
+     - webrtc build directory changed from 'arm/out/Debug' to 'arm_build'
  * 2016/09/20 v0.56 : Initial Version
 
 
