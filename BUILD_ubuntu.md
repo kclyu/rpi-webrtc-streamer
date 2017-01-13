@@ -51,7 +51,7 @@ gclient sync
 git checkout -b rel55 branch-heads/55
 gclient sync
 ```
-When the syncing is complete, in order to verify, re-enter the following command **gclient sync** . check the following message comes out. 
+When the syncing is completed, in order to verify, re-enter the following command **gclient sync** . check the following message comes out. 
 
 ```
 $ gclient sync

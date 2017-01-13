@@ -49,7 +49,6 @@ namespace webrtc {
 class RaspiEncoder : public VideoEncoder {
 public:
     static RaspiEncoder* Create();
-    // If H.264 is supported (any implementation).
     static bool IsSupported();
 
     ~RaspiEncoder() override {}
@@ -69,7 +68,7 @@ public:
     // - height
     int32_t InitEncode(const VideoCodec* codec_settings,
                        int32_t number_of_cores,
-                       size_t /*max_payload_size*/) override;
+                       size_t max_payload_size) override;
     int32_t Release() override;
 
     int32_t RegisterEncodeCompleteCallback(
@@ -92,6 +91,7 @@ public:
     int32_t SetPeriodicKeyFrames(bool enable) override;
 
 private:
+    const float kMaxRaspiFPS = 30.0f;
     bool IsInitialized() const;
 
     MMALEncoderWrapper *mmal_encoder_;
@@ -108,8 +108,6 @@ private:
     void ReportInit();
     void ReportError();
 
-    //
-    VideoCodec codec_settings_;
     EncodedImageCallback* encoded_image_callback_;
     EncodedImage encoded_image_;
     bool drop_next_frame_;
@@ -123,19 +121,21 @@ private:
     const int64_t delta_ntp_internal_ms_;
     int64_t base_internal_ms_;
     int64_t last_keyframe_request_;
+    uint64_t framedrop_counter_;
+    uint64_t last_dropconter_show_;
 
-    // Settings that are used within this encoder.
+    // Parameters that are used within this encoder.
     int width_, height_;
     float max_frame_rate_;
     uint32_t target_bps_, max_bps_;
     VideoCodecMode mode_;
+    size_t max_payload_size_;
 
     // H.264 specifc parameters
     bool frame_dropping_on_;
     int key_frame_interval_;
     H264PacketizationMode packetization_mode_;
 
-    size_t max_payload_size_;
 };
 
 

@@ -128,7 +128,7 @@ void default_status(RASPIVID_STATE *state)
     // state->bitrate = 17000000; 			// This is a decent default bitrate for 1080p
     state->bitrate = 0; 			// For variable bitrate setttings
     state->framerate = VIDEO_FRAME_RATE_NUM;
-    state->intra_refresh_type = 0;		// cyclic intra rehash type
+    state->intra_refresh_type = MMAL_VIDEO_INTRA_REFRESH_BOTH;		// cyclic intra rehash type
     // state->intraperiod = VIDEO_FRAME_RATE_NUM * 3;	// every 3 second
     state->intraperiod = 0;                 // disable intra
     state->bInlineHeaders = MMAL_TRUE;			// enabling Inline Header
@@ -145,7 +145,7 @@ void default_status(RASPIVID_STATE *state)
     state->quantisationMinParameter  = 24;       /// Minimum quantization parameter
 #else
     state->videoRateControl = MMAL_TRUE;
-    state->quantisationParameter = MMAL_TRUE;
+    state->quantisationParameter = MMAL_FALSE;   // disable quatization, Not working
     state->quantisationInitialParameter = 26;   // Initial quantization parameter
     state->quantisationMaxParameter	= 35;       /// Maximum quantization parameter
     state->quantisationMinParameter  = 22;       /// Minimum quantization parameter
@@ -267,7 +267,8 @@ void update_annotation_data(RASPIVID_STATE *state)
     if (state->camera_parameters.enable_annotate & ANNOTATE_APP_TEXT)
     {
         char *text;
-        const char *refresh = raspicli_unmap_xref(state->intra_refresh_type, intra_refresh_map, intra_refresh_map_size);
+        const char *refresh = raspicli_unmap_xref(state->intra_refresh_type, 
+                intra_refresh_map, intra_refresh_map_size);
 
         asprintf(&text,  "%dk,%df,%s,%d,%s",
                  state->bitrate / 1000,  state->framerate,
@@ -275,19 +276,22 @@ void update_annotation_data(RASPIVID_STATE *state)
                  state->intraperiod,
                  raspicli_unmap_xref(state->profile, profile_map, profile_map_size));
 
-        raspicamcontrol_set_annotate(state->camera_component, state->camera_parameters.enable_annotate, text,
-                                     state->camera_parameters.annotate_text_size,
-                                     state->camera_parameters.annotate_text_colour,
-                                     state->camera_parameters.annotate_bg_colour);
+        raspicamcontrol_set_annotate(state->camera_component, 
+                state->camera_parameters.enable_annotate, text,
+                state->camera_parameters.annotate_text_size,
+                state->camera_parameters.annotate_text_colour,
+                state->camera_parameters.annotate_bg_colour);
 
         free(text);
     }
     else
     {
-        raspicamcontrol_set_annotate(state->camera_component, state->camera_parameters.enable_annotate, state->camera_parameters.annotate_string,
-                                     state->camera_parameters.annotate_text_size,
-                                     state->camera_parameters.annotate_text_colour,
-                                     state->camera_parameters.annotate_bg_colour);
+        raspicamcontrol_set_annotate(state->camera_component, 
+                state->camera_parameters.enable_annotate, 
+                state->camera_parameters.annotate_string,
+                state->camera_parameters.annotate_text_size,
+                state->camera_parameters.annotate_text_colour,
+                state->camera_parameters.annotate_bg_colour);
     }
 }
 
@@ -299,8 +303,7 @@ void update_annotation_data(RASPIVID_STATE *state)
  * @return MMAL_SUCCESS if all OK, something else otherwise
  *
  */
-MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
-{
+MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state) {
     MMAL_COMPONENT_T *camera = 0;
     MMAL_ES_FORMAT_T *format;
     MMAL_PORT_T *preview_port = NULL, *video_port = NULL, *still_port = NULL;
@@ -309,18 +312,19 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
 
     /* Create the component */
     status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA, &camera);
-    if (status != MMAL_SUCCESS)
-    {
+    if (status != MMAL_SUCCESS) {
         vcos_log_error("Failed to create camera component");
         goto error;
     }
 
-    status = raspicamcontrol_set_stereo_mode(camera->output[0], &state->camera_parameters.stereo_mode);
-    status += raspicamcontrol_set_stereo_mode(camera->output[1], &state->camera_parameters.stereo_mode);
-    status += raspicamcontrol_set_stereo_mode(camera->output[2], &state->camera_parameters.stereo_mode);
+    status = raspicamcontrol_set_stereo_mode(camera->output[0], 
+            &state->camera_parameters.stereo_mode);
+    status += raspicamcontrol_set_stereo_mode(camera->output[1], 
+            &state->camera_parameters.stereo_mode);
+    status += raspicamcontrol_set_stereo_mode(camera->output[2], 
+            &state->camera_parameters.stereo_mode);
 
-    if (status != MMAL_SUCCESS)
-    {
+    if (status != MMAL_SUCCESS) {
         vcos_log_error("Could not set stereo mode : error %d", status);
         goto error;
     }
@@ -329,21 +333,19 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
     {{MMAL_PARAMETER_CAMERA_NUM, sizeof(camera_num)}, state->cameraNum};
 
     status = mmal_port_parameter_set(camera->control, &camera_num.hdr);
-
-    if (status != MMAL_SUCCESS)
-    {
+    if (status != MMAL_SUCCESS) {
         vcos_log_error("Could not select camera : error %d", status);
         goto error;
     }
 
-    if (!camera->output_num)
-    {
+    if (!camera->output_num) {
         status = MMAL_ENOSYS;
         vcos_log_error("Camera doesn't have output ports");
         goto error;
     }
 
-    status = mmal_port_parameter_set_uint32(camera->control, MMAL_PARAMETER_CAMERA_CUSTOM_SENSOR_CONFIG, state->sensor_mode);
+    status = mmal_port_parameter_set_uint32(camera->control, 
+            MMAL_PARAMETER_CAMERA_CUSTOM_SENSOR_CONFIG, state->sensor_mode);
 
     if (status != MMAL_SUCCESS)
     {
@@ -355,16 +357,14 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
     video_port = camera->output[MMAL_CAMERA_VIDEO_PORT];
     still_port = camera->output[MMAL_CAMERA_CAPTURE_PORT];
 
-    if (state->settings)
-    {
+    if (state->settings) {
         MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T change_event_request =
         {   {MMAL_PARAMETER_CHANGE_EVENT_REQUEST, sizeof(MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T)},
             MMAL_PARAMETER_CAMERA_SETTINGS, 1
         };
 
         status = mmal_port_parameter_set(camera->control, &change_event_request.hdr);
-        if ( status != MMAL_SUCCESS )
-        {
+        if ( status != MMAL_SUCCESS ) {
             vcos_log_error("No camera settings events");
         }
     }
@@ -375,8 +375,7 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state)
     // Enable the camera, and tell it its control callback function
     status = mmal_port_enable(camera->control, camera_control_callback);
 
-    if (status != MMAL_SUCCESS)
-    {
+    if (status != MMAL_SUCCESS) {
         vcos_log_error("Unable to enable control port : error %d", status);
         goto error;
     }
