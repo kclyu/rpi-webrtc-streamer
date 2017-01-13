@@ -20,8 +20,8 @@ system_libdir="/home/kclyu/Workspace/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
 gold_path = "/home/kclyu/tools/rpi_tools/arm-linux-gnueabihf/bin"
 
 # SSL related config
-rtc_build_ssl=true   # disable rtc ssl package, and force to compile OpenSSL
-rtc_ssl_root="/home/kclyu/Workspace/rpi_rootfs/usr/include/openssl"
+#rtc_build_ssl=true   # disable rtc ssl package, and force to compile OpenSSL
+#rtc_ssl_root="/home/kclyu/Workspace/rpi_rootfs/usr/include/openssl"
 
 
 
@@ -36,7 +36,7 @@ rtc_desktop_capture_supported=false
 is_chrome_branded=true
 rtc_build_with_neon=true
 enable_nacl=false
-enable_pdf=false
+#enable_pdf=false
 enable_webvr=false
 rtc_use_h264=true
 use_openh264=true

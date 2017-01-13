@@ -129,7 +129,8 @@ void default_status(RASPIVID_STATE *state)
     state->bitrate = 0; 			// For variable bitrate setttings
     state->framerate = VIDEO_FRAME_RATE_NUM;
     state->intra_refresh_type = 0;		// cyclic intra rehash type
-    state->intraperiod = VIDEO_FRAME_RATE_NUM * 3;	// every 3 second
+    // state->intraperiod = VIDEO_FRAME_RATE_NUM * 3;	// every 3 second
+    state->intraperiod = 0;                 // disable intra
     state->bInlineHeaders = MMAL_TRUE;			// enabling Inline Header
     state->profile = MMAL_VIDEO_PROFILE_H264_BASELINE;
     state->verbose = MMAL_TRUE;
@@ -740,16 +741,14 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
     }
 
     if (mmal_port_parameter_set_boolean(encoder_input,
-                                        MMAL_PARAMETER_VIDEO_IMMUTABLE_INPUT, state->immutableInput) != MMAL_SUCCESS)
-    {
+        MMAL_PARAMETER_VIDEO_IMMUTABLE_INPUT, state->immutableInput) != MMAL_SUCCESS) {
         vcos_log_error("Unable to set immutable input flag");
         // Continue rather than abort..
     }
 
     //set INLINE HEADER flag to generate SPS and PPS for every IDR if requested
     if (mmal_port_parameter_set_boolean(encoder_output,
-                                        MMAL_PARAMETER_VIDEO_ENCODE_INLINE_HEADER, state->bInlineHeaders) != MMAL_SUCCESS)
-    {
+        MMAL_PARAMETER_VIDEO_ENCODE_INLINE_HEADER, state->bInlineHeaders) != MMAL_SUCCESS) {
         vcos_log_error("failed to set INLINE HEADER FLAG parameters");
         // Continue rather than abort..
     }
@@ -758,8 +757,7 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
     // set CABAC disable
     // MMAL_PARAMETER_VIDEO_ENCODE_H264_DISABLE_CABAC false
     if (mmal_port_parameter_set_boolean(encoder_output,
-                                        MMAL_PARAMETER_VIDEO_ENCODE_H264_DISABLE_CABAC, MMAL_TRUE) != MMAL_SUCCESS)
-    {
+        MMAL_PARAMETER_VIDEO_ENCODE_H264_DISABLE_CABAC, MMAL_TRUE) != MMAL_SUCCESS) {
         vcos_log_error("failed to set CABAC DISABLE parameters");
         // Continue rather than abort..
     }
@@ -767,32 +765,28 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
 
     //set Encode SPS Timing
     if (mmal_port_parameter_set_boolean(encoder_output,
-                                        MMAL_PARAMETER_VIDEO_ENCODE_SPS_TIMING, MMAL_TRUE) != MMAL_SUCCESS)
-    {
+        MMAL_PARAMETER_VIDEO_ENCODE_SPS_TIMING, MMAL_TRUE) != MMAL_SUCCESS) {
         vcos_log_error("failed to set SPS TIMING HEADER FLAG parameters");
         // Continue rather than abort..
     }
 
     // set Minimise Fragmentation
     if (mmal_port_parameter_set_boolean(encoder_output,
-                                        MMAL_PARAMETER_MINIMISE_FRAGMENTATION, MMAL_FALSE) != MMAL_SUCCESS)
-    {
+        MMAL_PARAMETER_MINIMISE_FRAGMENTATION, MMAL_FALSE) != MMAL_SUCCESS) {
         vcos_log_error("failed to set SPS TIMING HEADER FLAG parameters");
         // Continue rather than abort..
     }
 
     // Adaptive intra refresh settings
     if (state->encoding == MMAL_ENCODING_H264 &&
-            state->intra_refresh_type != -1)
-    {
+            state->intra_refresh_type != -1) {
         MMAL_PARAMETER_VIDEO_INTRA_REFRESH_T  param;
         param.hdr.id = MMAL_PARAMETER_VIDEO_INTRA_REFRESH;
         param.hdr.size = sizeof(param);
 
         // Get first so we don't overwrite anything unexpectedly
         status = mmal_port_parameter_get(encoder_output, &param.hdr);
-        if (status != MMAL_SUCCESS)
-        {
+        if (status != MMAL_SUCCESS) {
             vcos_log_warn("Unable to get existing H264 intra-refresh values. Please update your firmware");
             // Set some defaults, don't just pass random stack data
             param.air_mbs = param.air_ref = param.cir_mbs = param.pir_mbs = 0;
@@ -801,11 +795,10 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
         param.refresh_mode = state->intra_refresh_type;
 
         //if (state->intra_refresh_type == MMAL_VIDEO_INTRA_REFRESH_CYCLIC_MROWS)
-        //   param.cir_mbs = 10;
+        //  param.cir_mbs = 10;
 
         status = mmal_port_parameter_set(encoder_output, &param.hdr);
-        if (status != MMAL_SUCCESS)
-        {
+        if (status != MMAL_SUCCESS) {
             vcos_log_error("Unable to set H264 intra-refresh values");
             goto error;
         }
@@ -814,8 +807,7 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
     //  Enable component
     status = mmal_component_enable(encoder);
 
-    if (status != MMAL_SUCCESS)
-    {
+    if (status != MMAL_SUCCESS) {
         vcos_log_error("Unable to enable video encoder component");
         goto error;
     }
@@ -823,8 +815,7 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
     /* Create pool of buffer headers for the output port to consume */
     pool = mmal_port_pool_create(encoder_output, encoder_output->buffer_num, encoder_output->buffer_size);
 
-    if (!pool)
-    {
+    if (!pool) {
         vcos_log_error("Failed to create buffer header pool for encoder output port %s", encoder_output->name);
     }
 
@@ -851,13 +842,11 @@ error:
 void destroy_encoder_component(RASPIVID_STATE *state)
 {
     // Get rid of any port buffers first
-    if (state->encoder_pool)
-    {
+    if (state->encoder_pool) {
         mmal_port_pool_destroy(state->encoder_component->output[0], state->encoder_pool);
     }
 
-    if (state->encoder_component)
-    {
+    if (state->encoder_component) {
         mmal_component_destroy(state->encoder_component);
         state->encoder_component = NULL;
     }
@@ -872,14 +861,14 @@ void destroy_encoder_component(RASPIVID_STATE *state)
  * @return Returns a MMAL_STATUS_T giving result of operation
  *
  */
-MMAL_STATUS_T connect_ports(MMAL_PORT_T *output_port, MMAL_PORT_T *input_port, MMAL_CONNECTION_T **connection)
-{
+MMAL_STATUS_T connect_ports(MMAL_PORT_T *output_port, MMAL_PORT_T *input_port, 
+        MMAL_CONNECTION_T **connection) {
     MMAL_STATUS_T status;
 
-    status =  mmal_connection_create(connection, output_port, input_port, MMAL_CONNECTION_FLAG_TUNNELLING | MMAL_CONNECTION_FLAG_ALLOCATION_ON_INPUT);
+    status =  mmal_connection_create(connection, output_port, input_port, 
+            MMAL_CONNECTION_FLAG_TUNNELLING | MMAL_CONNECTION_FLAG_ALLOCATION_ON_INPUT);
 
-    if (status == MMAL_SUCCESS)
-    {
+    if (status == MMAL_SUCCESS) {
         status =  mmal_connection_enable(*connection);
         if (status != MMAL_SUCCESS)
             mmal_connection_destroy(*connection);
@@ -894,8 +883,7 @@ MMAL_STATUS_T connect_ports(MMAL_PORT_T *output_port, MMAL_PORT_T *input_port, M
  * @param port  Pointer the port
  *
  */
-void check_disable_port(MMAL_PORT_T *port)
-{
+void check_disable_port(MMAL_PORT_T *port) {
     if (port && port->is_enabled)
         mmal_port_disable(port);
 }

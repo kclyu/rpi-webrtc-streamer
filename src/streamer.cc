@@ -271,17 +271,21 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         LOG(WARNING) << "Received unknown message. " << message;
         return;
     }
-    std::string type;
+    std::string sdp;
     std::string json_object;
 
-    rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName, &type);
-    if (!type.empty()) {
+    rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName, &sdp);
+    if (!sdp.empty()) {
         std::string sdp;
         if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
                                           &sdp)) {
             LOG(WARNING) << "Can't parse received session description message.";
+            LOG(WARNING) << ":" << message << ":";
             return;
         }
+        std::string type;
+        rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName, &type);
+
         webrtc::SdpParseError error;
         webrtc::SessionDescriptionInterface* session_description(
             webrtc::CreateSessionDescription(type, sdp, &error));
@@ -368,7 +372,7 @@ cricket::VideoCapturer* Streamer::OpenVideoCaptureDevice() {
     std::vector<std::string> device_names;
     {
         std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
-            webrtc::VideoCaptureFactory::CreateDeviceInfo(0));
+            webrtc::VideoCaptureFactory::CreateDeviceInfo());
         if (!info) {
             return nullptr;
         }
@@ -429,8 +433,6 @@ void Streamer::AddStreams() {
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(
             kVideoLabel,
-            // peer_connection_factory_->CreateVideoSource(new cricket::DummyVideoCapturer(false),
-            //       &videoConstraints)));
             peer_connection_factory_->CreateVideoSource(new cricket::DummyVideoCapturer(false),
                     &videoConstraints)));
 

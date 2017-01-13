@@ -1,13 +1,4 @@
 /*
- * Copyright (c) 2016, rpi-webrtc-streamer  Lyu,KeunChang
- *
- * dummyvideocapture.h
- *
- * Modified version of webrtc/src/webrtc/base/fakevideocapture.h in WebRTC source tree
- * The origianl copyright info below.
-*/
-/*
- *  Copyright (c) 2004 The WebRTC project authors. All Rights Reserved.
  *  Copyright (c) 2004 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
@@ -25,13 +16,11 @@
 #include <memory>
 #include <vector>
 
+#include "webrtc/api/video/i420_buffer.h"
+#include "webrtc/api/video/video_frame.h"
 #include "webrtc/base/timeutils.h"
 #include "webrtc/media/base/videocapturer.h"
 #include "webrtc/media/base/videocommon.h"
-#include "webrtc/media/base/videoframe.h"
-#ifdef HAVE_WEBRTC_VIDEO
-#include "webrtc/media/engine/webrtcvideoframefactory.h"
-#endif
 
 namespace cricket {
 
@@ -44,9 +33,6 @@ class DummyVideoCapturer : public cricket::VideoCapturer {
         next_timestamp_(rtc::kNumNanosecsPerMillisec),
         is_screencast_(is_screencast),
         rotation_(webrtc::kVideoRotation_0) {
-#ifdef HAVE_WEBRTC_VIDEO
-    set_frame_factory(new cricket::WebRtcVideoFrameFactory());
-#endif
     // Default supported formats. Use ResetSupportedFormats to over write.
     std::vector<cricket::VideoFormat> formats;
     formats.push_back(cricket::VideoFormat(1280, 720,
@@ -90,44 +76,36 @@ class DummyVideoCapturer : public cricket::VideoCapturer {
     if (!running_) {
       return false;
     }
-    // Currently, |fourcc| is always I420 or ARGB.
-    uint32_t size = 0u;
-    if (fourcc == cricket::FOURCC_ARGB) {
-      size = width * 4 * height;
-    } else if (fourcc == cricket::FOURCC_I420) {
-      size = width * height + 2 * ((width + 1) / 2) * ((height + 1) / 2);
-    } else {
-      return false;  // Unsupported FOURCC.
-    }
-    if (size == 0u) {
-      return false;  // Width and/or Height were zero.
-    }
+    RTC_CHECK(fourcc == FOURCC_I420);
+    RTC_CHECK(width > 0);
+    RTC_CHECK(height > 0);
 
-    cricket::CapturedFrame frame;
-    frame.width = width;
-    frame.height = height;
-    frame.fourcc = fourcc;
-    frame.data_size = size;
-    frame.time_stamp = initial_timestamp_ + next_timestamp_;
+    int adapted_width;
+    int adapted_height;
+    int crop_width;
+    int crop_height;
+    int crop_x;
+    int crop_y;
+
+    // TODO(nisse): It's a bit silly to have this logic in a fake
+    // class. Child classes of VideoCapturer are expected to call
+    // AdaptFrame, and the test case
+    // VideoCapturerTest.SinkWantsMaxPixelAndMaxPixelCountStepUp
+    // depends on this.
+    if (AdaptFrame(width, height, 0, 0, &adapted_width, &adapted_height,
+                   &crop_width, &crop_height, &crop_x, &crop_y, nullptr)) {
+      rtc::scoped_refptr<webrtc::I420Buffer> buffer(
+          webrtc::I420Buffer::Create(adapted_width, adapted_height));
+      buffer->InitializeData();
+
+      OnFrame(webrtc::VideoFrame(
+                  buffer, rotation_,
+                  next_timestamp_ / rtc::kNumNanosecsPerMicrosec),
+              width, height);
+    }
     next_timestamp_ += timestamp_interval;
 
-    std::unique_ptr<char[]> data(new char[size]);
-    frame.data = data.get();
-    // Copy something non-zero into the buffer so Validate wont complain that
-    // the frame is all duplicate.
-    memset(frame.data, 1, size / 2);
-    memset(reinterpret_cast<uint8_t*>(frame.data) + (size / 2), 2,
-           size - (size / 2));
-    memcpy(frame.data, reinterpret_cast<const uint8_t*>(&fourcc), 4);
-    frame.rotation = rotation_;
-    // TODO(zhurunz): SignalFrameCaptured carry returned value to be able to
-    // capture results from downstream.
-    SignalFrameCaptured(this, &frame);
     return true;
-  }
-
-  void SignalCapturedFrame(cricket::CapturedFrame* frame) {
-    SignalFrameCaptured(this, frame);
   }
 
   sigslot::signal1<DummyVideoCapturer*> SignalDestroyed;
@@ -145,12 +123,8 @@ class DummyVideoCapturer : public cricket::VideoCapturer {
   }
   bool IsRunning() override { return running_; }
   bool IsScreencast() const override { return is_screencast_; }
-  rtc::Optional<bool> NeedsDenoising() const override {
-    return needs_denoising_;
-  }
   bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override {
-    fourccs->push_back(cricket::FOURCC_I420);
-    fourccs->push_back(cricket::FOURCC_MJPG);
+    fourccs->push_back(cricket::FOURCC_H264);
     return true;
   }
 
@@ -160,32 +134,12 @@ class DummyVideoCapturer : public cricket::VideoCapturer {
 
   webrtc::VideoRotation GetRotation() { return rotation_; }
 
-  void SetNeedsDenoising(rtc::Optional<bool> needs_denoising) {
-    needs_denoising_ = needs_denoising;
-  }
-
-    void RemoveSink(
-        rtc::VideoSinkInterface<cricket::VideoFrame>* sink) {
-      broadcaster_.RemoveSink(sink);
-      // OnSinkWantsChanged(broadcaster_.wants());
-    }
-
-    void AddOrUpdateSink(
-        rtc::VideoSinkInterface<cricket::VideoFrame>* sink,
-        const rtc::VideoSinkWants& wants) {
-      broadcaster_.AddOrUpdateSink(sink, wants);
-      // OnSinkWantsChanged(broadcaster_.wants());
-    }
-
  private:
   bool running_;
   int64_t initial_timestamp_;
   int64_t next_timestamp_;
   const bool is_screencast_;
-  rtc::Optional<bool> needs_denoising_;
   webrtc::VideoRotation rotation_;
-  // branch-heads/56 need VideoSinkInterface
-  rtc::VideoBroadcaster broadcaster_;
 };
 
 }  // namespace cricket

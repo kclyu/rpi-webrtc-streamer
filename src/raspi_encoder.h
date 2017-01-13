@@ -57,7 +57,7 @@ public:
 
 class RaspiEncoderImpl : public RaspiEncoder {
 public:
-    RaspiEncoderImpl();
+    explicit RaspiEncoderImpl(const cricket::VideoCodec& codec);
     ~RaspiEncoderImpl() override;
 
     // |max_payload_size| is ignored.
@@ -74,7 +74,8 @@ public:
 
     int32_t RegisterEncodeCompleteCallback(
         EncodedImageCallback* callback) override;
-    int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;
+    int32_t SetRateAllocation(const BitrateAllocation& bitrate_allocation,
+            uint32_t framerate) override;
 
     // The result of encoding - an EncodedImage and RTPFragmentationHeader - are
     // passed to the encode complete callback.
@@ -83,6 +84,8 @@ public:
                    const std::vector<FrameType>* frame_types) override;
 
     const char* ImplementationName() const override;
+
+    VideoEncoder::ScalingSettings GetScalingSettings() const override;
 
     // Unsupported / Do nothing.
     int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
@@ -114,16 +117,27 @@ private:
     // H264 bitstream parser, used to extract QP from encoded bitstreams.
     H264StreamParser h264_stream_parser_;
 
-#ifdef RASPI_QUALITY
-    RaspiQualityScaler quality_scaler_;
-#endif // RASPI_QUALITY
-    int	res_width_, res_height_;
-    bool resolution_scale_;
-
     bool has_reported_init_;
     bool has_reported_error_;
     Clock* const clock_;
+    const int64_t delta_ntp_internal_ms_;
+    int64_t base_internal_ms_;
+    int64_t last_keyframe_request_;
+
+    // Settings that are used within this encoder.
+    int width_, height_;
+    float max_frame_rate_;
+    uint32_t target_bps_, max_bps_;
+    VideoCodecMode mode_;
+
+    // H.264 specifc parameters
+    bool frame_dropping_on_;
+    int key_frame_interval_;
+    H264PacketizationMode packetization_mode_;
+
+    size_t max_payload_size_;
 };
+
 
 //
 // Implementation of Raspberry MMAL based encoder factory.
@@ -134,16 +148,14 @@ public:
     virtual ~MMALVideoEncoderFactory();
 
     // WebRtcVideoEncoderFactory implementation.
-    VideoEncoder* CreateVideoEncoder(webrtc::VideoCodecType type)
-    override;
-    const std::vector<VideoCodec>& codecs() const override;
+    VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override;
+    const std::vector<cricket::VideoCodec>& supported_codecs() const override;
     void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
     bool EncoderTypeHasInternalSource(VideoCodecType type) const override;
 
 private:
-
     // Empty if platform support is lacking, const after ctor returns.
-    std::vector<VideoCodec> supported_codecs_;
+    std::vector<cricket::VideoCodec> supported_codecs_;
 };
 
 

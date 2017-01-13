@@ -138,11 +138,10 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
     RTC_DCHECK(buffer != NULL);
     RTC_DCHECK_GE((mmal_queue_length(encoded_frame_queue_)+
                    mmal_queue_length(pool_internal_->queue)), FRAME_QUEUE_LENGTH - 1);
-    // it should be same as FRAME_QUEUE_LENGTH except one queue in the encoder
 
+    // it should be same as FRAME_QUEUE_LENGTH except one queue in the encoder
     // there is something in the buffer
     if( buffer->length < FRAME_BUFFER_SIZE && buffer->length > 0 ) {
-
         // end of frame marked
         if( buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END ) {
             if( (int)(frame_buf_pos_ + buffer->length) >= size_) {
@@ -178,9 +177,8 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
                 frame_drop_ ++;
             }
         }
-        // there is end of frame mark in this buffer, so keep it in the internal buffer
+        // there is no end of frame mark in this buffer, so keep it in the internal buffer
         else if( !(buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END) ) {
-
             RTC_DCHECK(frame_buf_pos_ < size_);
             mmal_buffer_header_mem_lock(buffer);
             // save partial frame data to assemble frame at next time
@@ -259,26 +257,22 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
     state_.framerate =  framerate;
     state_.bitrate =  bitrate * 1000;
 
-    if ((status = create_camera_component(&state_)) != MMAL_SUCCESS)
-    {
+    if ((status = create_camera_component(&state_)) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create camera component";
         return false;
     }
-    else if ((status = raspipreview_create(&state_.preview_parameters)) != MMAL_SUCCESS)
-    {
+    else if ((status = raspipreview_create(&state_.preview_parameters)) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create preview component";
         destroy_camera_component(&state_);
         return false;
     }
-    else if ((status = create_encoder_component(&state_)) != MMAL_SUCCESS)
-    {
+    else if ((status = create_encoder_component(&state_)) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create encode component";
         raspipreview_destroy(&state_.preview_parameters);
         destroy_camera_component(&state_);
         return false;
     }
-    else
-    {
+    else {
         if (state_.verbose)
             LOG(INFO) << "Starting component connection stage";
 
@@ -309,8 +303,7 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
 
         // Now connect the camera to the encoder
         status = connect_ports(camera_video_port_, encoder_input_port_, &state_.encoder_connection);
-        if (status != MMAL_SUCCESS)
-        {
+        if (status != MMAL_SUCCESS) {
             state_.encoder_connection = nullptr;
             LOG(LS_ERROR) << "Failed to connect camera video port to encoder input";
             return false;
@@ -343,8 +336,7 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
     return false;
 }
 
-bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int bitrate)
-{
+bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int bitrate) {
     MMAL_STATUS_T status = MMAL_SUCCESS;
 
     LOG(INFO) << "Start reinitialize the MMAL encode wrapper."
@@ -392,26 +384,22 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
     //
     // Reseting all component
     //
-    if ((status = reset_camera_component(&state_)) != MMAL_SUCCESS)
-    {
+    if ((status = reset_camera_component(&state_)) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create camera component";
         return false;
     }
-    else if ((status = raspipreview_create(&state_.preview_parameters)) != MMAL_SUCCESS)
-    {
+    else if ((status = raspipreview_create(&state_.preview_parameters)) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create preview component";
         destroy_camera_component(&state_);
         return false;
     }
-    else if ((status = reset_encoder_component(&state_)) != MMAL_SUCCESS)
-    {
+    else if ((status = reset_encoder_component(&state_)) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create encode component";
         raspipreview_destroy(&state_.preview_parameters);
         destroy_camera_component(&state_);
         return false;
     }
-    else
-    {
+    else {
         if (state_.verbose)
             LOG(INFO) << "Starting component connection stage";
 
@@ -442,8 +430,7 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
 
         // Now connect the camera to the encoder
         status = connect_ports(camera_video_port_, encoder_input_port_, &state_.encoder_connection);
-        if (status != MMAL_SUCCESS)
-        {
+        if (status != MMAL_SUCCESS) {
             state_.encoder_connection = nullptr;
             LOG(LS_ERROR) << "Failed to connect camera video port to encoder input";
             return false;
@@ -477,16 +464,14 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
 }
 
 
-void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
-{
+void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
     // static_cast<MMALEncoderWrapper *> (port->userdata)-> OnBufferCallback(port,buffer);
     //((MMALEncoderWrapper*)port->userdata)->OnBufferCallback(port,buffer);
     reinterpret_cast<MMALEncoderWrapper *> (port->userdata)-> OnBufferCallback(port,buffer);
 }
 
 
-bool MMALEncoderWrapper::UninitEncoder(void)
-{
+bool MMALEncoderWrapper::UninitEncoder(void) {
     CriticalSectionScoped cs(crit_sect_);
 
     LOG(INFO) << "unitialize the MMAL encode wrapper.";
@@ -518,8 +503,7 @@ bool MMALEncoderWrapper::UninitEncoder(void)
     return true;
 }
 
-void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
-{
+void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
     MMAL_BUFFER_HEADER_T *new_buffer = nullptr;
     static int64_t base_time =  -1;
     static int64_t last_second = -1;
@@ -563,13 +547,11 @@ void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_
 }
 
 
-bool MMALEncoderWrapper::StartCapture( void )
-{
+bool MMALEncoderWrapper::StartCapture( void ) {
     // Send all the buffers to the encoder output port
     int num = mmal_queue_length(state_.encoder_pool->queue);
 
-    for (int q=0; q<num; q++)
-    {
+    for (int q=0; q<num; q++) {
         MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state_.encoder_pool->queue);
 
         if (!buffer)
@@ -580,8 +562,7 @@ bool MMALEncoderWrapper::StartCapture( void )
     }
 
     if (mmal_port_parameter_set_boolean(camera_video_port_, MMAL_PARAMETER_CAPTURE, MMAL_TRUE)
-            != MMAL_SUCCESS)
-    {
+            != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Unable to set capture start";
         return false;
     }
@@ -591,11 +572,9 @@ bool MMALEncoderWrapper::StartCapture( void )
 }
 
 
-bool MMALEncoderWrapper::StopCapture( void )
-{
+bool MMALEncoderWrapper::StopCapture( void ) {
     if (mmal_port_parameter_set_boolean(camera_video_port_, MMAL_PARAMETER_CAPTURE, MMAL_FALSE)
-            != MMAL_SUCCESS)
-    {
+            != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Unable to unset capture start";
         return false;
     }
@@ -627,20 +606,17 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
 
         // LOG(INFO) << "MMAL frame encoding rate changed : "
         // 	<< state_.width << "x" << state_.height << "@" << framerate << ", " << bitrate << "kbps";
-        if( state_.bitrate != bitrate * 1000 )
-        {
+        if( state_.bitrate != bitrate * 1000 ) {
             MMAL_PARAMETER_UINT32_T param =
             {{ MMAL_PARAMETER_VIDEO_BIT_RATE, sizeof(param)}, (uint32_t)bitrate*1000};
             // {{ MMAL_PARAMETER_VIDEO_ENCODE_PEAK_RATE, sizeof(param)}, (uint32_t)bitrate*1000};
             status = mmal_port_parameter_set(encoder_output_port_, &param.hdr);
-            if (status != MMAL_SUCCESS)
-            {
+            if (status != MMAL_SUCCESS) {
                 LOG(LS_ERROR) << "Unable to set bitrate";
             }
         }
 
-        if( state_.framerate != framerate )
-        {   // frame rate
+        if( state_.framerate != framerate ) {   // frame rate
             LOG(INFO) << "MMAL frame encoding framerate changed : "  << framerate << " fps";
             MMAL_PARAMETER_FRAME_RATE_T param;
             param.hdr.id = MMAL_PARAMETER_FRAME_RATE;
@@ -650,8 +626,7 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
 
             // status = mmal_port_parameter_set(encoder_output_port_, &param.hdr);
             status = mmal_port_parameter_set(camera_video_port_, &param.hdr);
-            if (status != MMAL_SUCCESS)
-            {
+            if (status != MMAL_SUCCESS) {
                 LOG(LS_ERROR) << "Unable to set framerate";
             }
 
@@ -665,14 +640,12 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
 
 
 //
-bool MMALEncoderWrapper::ForceKeyFrame(void)
-{
+bool MMALEncoderWrapper::ForceKeyFrame(void) {
     CriticalSectionScoped cs(crit_sect_);
     LOG(INFO) << "MMAL force key frame encoding";
 
     if (mmal_port_parameter_set_boolean(encoder_output_port_,
-                                        MMAL_PARAMETER_VIDEO_REQUEST_I_FRAME, MMAL_TRUE) != MMAL_SUCCESS)
-    {
+                MMAL_PARAMETER_VIDEO_REQUEST_I_FRAME, MMAL_TRUE) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "failed to request KeyFrame";
         return false;
     }
