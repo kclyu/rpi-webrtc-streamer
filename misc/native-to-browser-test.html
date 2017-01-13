@@ -20,7 +20,7 @@ optional: [
 }
 var mediaConstraints = {'mandatory': {
 	'OfferToReceiveAudio': true,
-	'OfferToReceiveVideo': true }};
+	'OfferToReceiveVideo': true }}
 var remoteStream;
 
 RTCPeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
@@ -64,6 +64,7 @@ function onRemoteStreamAdded(event) {
 }
 
 function sld_success_cb() {
+	console.log("setLocalDescription success");
 }
 
 function sld_failure_cb() {
@@ -71,6 +72,7 @@ function sld_failure_cb() {
 }
 
 function aic_success_cb() {
+	console.log("addIceCandidate success");
 }
 
 function aic_failure_cb() {
@@ -264,7 +266,8 @@ function disconnect() {
 
 	if (myId != -1) {
 		request = new XMLHttpRequest();
-		request.open("GET", server + "/sign_out?peer_id=" + myId, false);
+		// request.open("GET", server + "/sign_out?peer_id=" + myId, false);
+		request.open("GET", server + "/sign_out?peer_id=" + myId, true);
 		request.send();
 		request = null;
 		myId = -1;
