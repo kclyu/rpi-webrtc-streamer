@@ -100,7 +100,6 @@ After compilation is finished without an error, go to the next step to compile r
  
 |Item|file|description|
 |----------------|-----------------|-----|
-|Builder Type|Makefile|cross_gn.mk for GN builder, cross_gyp.mk for GYP builder|
 |SYSROOT|cross_gn.mk|sysroot for raspberry pi |
 |WEBRTCROOT|cross_gn.mk|WebRTC root directory path|
 |WEBRTCOUTPUT|cross_gn.mk|WebRTC build output path|
@@ -112,8 +111,7 @@ After compilation is finished without an error, go to the next step to compile r
 cd ~/Workspace/
 git clone https://github.com/kclyu/rpi-webrtc-streamer.git
 cd rpi-webrtc-streamer/src
-sh ../../scripts/config_h264bitstream.sh 
-cd ..
+sh ../../scripts/config_h264bitstream.sh
 make
 ```
 

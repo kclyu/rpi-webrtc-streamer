@@ -122,7 +122,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     init_width = width_ = codec_settings->width;
     init_height = height_ = codec_settings->height;
     max_frame_rate_ = static_cast<float>(codec_settings->maxFramerate);
-    if( max_frame_rate_ > 30.0f ) max_frame_rate_ = 30.0f;
+    if( max_frame_rate_ > kMaxRaspiFPS ) max_frame_rate_ = kMaxRaspiFPS;
     mode_ = codec_settings->mode;
     frame_dropping_on_ = codec_settings->H264().frameDroppingOn;
     key_frame_interval_ = codec_settings->H264().keyFrameInterval;
@@ -335,11 +335,20 @@ bool RaspiEncoderImpl::DrainProcess()
         int64_t capture_ntp_time_ms;
         int64_t current_time = clock_->TimeInMilliseconds();
         capture_ntp_time_ms = current_time + delta_ntp_internal_ms_;
-
-        // Convert NTP time, in ms, to RTP timestamp.
         const int kMsToRtpTimestamp = 90;
+
+// #define __INTERNAL_TIMESTAMP__
+#ifdef __INTERNAL_TIMESTAMP__
+        // LOG(INFO) << "PTS: " << buf->pts << ", Current: " << clock_->TimeInMicroseconds();
+        // Convert NTP time, in ms, to RTP timestamp.
         encoded_image_._timeStamp = kMsToRtpTimestamp * 
             static_cast<uint32_t>(capture_ntp_time_ms);
+        encoded_image_.ntp_time_ms_ = capture_ntp_time_ms;
+        encoded_image_.capture_time_ms_ = current_time;
+#endif
+
+        encoded_image_._timeStamp = kMsToRtpTimestamp * 
+            static_cast<uint32_t>(capture_ntp_time_ms-base_internal_ms_);
         encoded_image_.ntp_time_ms_ = capture_ntp_time_ms;
         encoded_image_.capture_time_ms_ = current_time;
 
