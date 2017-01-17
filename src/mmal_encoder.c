@@ -130,9 +130,8 @@ void default_status(RASPIVID_STATE *state)
     state->framerate = VIDEO_FRAME_RATE_NUM;
     //state->intra_refresh_type = MMAL_VIDEO_INTRA_REFRESH_BOTH;		// cyclic intra rehash type
     state->intraperiod = VIDEO_FRAME_RATE_NUM * 3;	// every 3 second
-    state->intraperiod = 0;                 // disable intra
-    state->bInlineHeaders = MMAL_TRUE;			// enabling Inline Header
-    state->profile = MMAL_VIDEO_PROFILE_H264_BASELINE;
+    state->bInlineHeaders = MMAL_TRUE;	    // enabling Inline Header
+    state->profile = MMAL_VIDEO_PROFILE_H264_CONSTRAINED_BASELINE;  
     state->verbose = MMAL_TRUE;
 
 #define __RATECONTROL_DISABLE__

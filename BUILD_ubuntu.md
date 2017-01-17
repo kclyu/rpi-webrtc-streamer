@@ -17,7 +17,7 @@ Before going to next step,  verify that you can access the following command.
  - arm-linux-gnueabihf-ranlib
 
 #### Raspberry PI sysroot 
-Once the cross-compiler installation is complete, you must create a sysroot for the cross compile environment.  please refer to this [rpi_rootfs](https://github.com/kclyu/rpi_rootfs.git) repo.
+Once the cross-compiler installation is complete, you must create a sysroot for cross compile environment.  please refer to this [rpi_rootfs](https://github.com/kclyu/rpi_rootfs.git) repo.
 
 
 ## Notes before download source code
@@ -34,12 +34,14 @@ First, it seems better to describe the location of the directory that developer 
 #### Install Prerequisite Software tool
 To build the WebRTC native-code package, [Prerequisite Software tool](https://webrtc.org/native-code/development/prerequisite-sw/)  must be installed at first.
 
-#### WebRTC native code package branch notice 
-In fact, the WebRTC native code package adds code commit almost every day. Because the RWS repo can not be modified daily according to the WebRTC native code package, which is updated daily, this repo is modified to match the specific WebRTC native code branch.
+#### Notice about WebRTC native code package branch 
+In fact, the WebRTC native code package is committed almost daily. So, It is virtually impossible to keep the rws code up to date in WebRTC native code that is modified daily. This repo will be used to update the code on a branch-by-branch basis.
 
-The WebRTC branch for RWS compilation should use the branch version in the misc/WEBRTC_BRANCH.conf file.
+If you are using a master clone or any other branch of rws, be sure to check the WebRTC branch currently used by rws and use the corresponding WebRTC branch.
+Check the misc / WEBRTC_BRANCH.conf for the WebRTC branch used in rws and use the corresponding WebRTC branch.
 
-#### Download WebRTC native-code package 
+
+#### Download specific branch of WebRTC native-code package
 To download webrtc source code please use the following command: 
 
 ```
@@ -48,9 +50,11 @@ cd ~/Workspace/webrtc
 fetch --nohooks webrtc
 cd src
 gclient sync
-git checkout -b rel55 branch-heads/55
+git checkout -b rel56 branch-heads/56
 gclient sync
 ```
+**note:** the above command example use 'branch-heads/56' branch, replace the correct branch in 'misc/WEBRTC_BRANCH.conf'. 
+
 When the syncing is completed, in order to verify, re-enter the following command **gclient sync** . check the following message comes out. 
 
 ```

@@ -70,10 +70,16 @@ enum H264EncoderImplEvent {
 RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
     : mmal_encoder_(nullptr),
       encoded_image_callback_(nullptr),
+      framedrop_counter_(0),
+      max_frame_rate_(0.0f),
+      target_bps_(0),
+      max_bps_(0),
+      mode_(kRealtimeVideo),
+      key_frame_interval_(0),
+      packetization_mode_(H264PacketizationMode::SingleNalUnit),
+      max_payload_size_(0),
       has_reported_init_(false),
       has_reported_error_(false),
-      framedrop_counter_(0),
-      packetization_mode_(H264PacketizationMode::SingleNalUnit),
       clock_(Clock::GetRealTimeClock()),
       last_keyframe_request_(clock_->TimeInMilliseconds()),
       base_internal_ms_(clock_->TimeInMilliseconds()),
@@ -81,7 +87,6 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
                              clock_->TimeInMilliseconds()),
       last_dropconter_show_(clock_->TimeInMilliseconds()) {
     RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
-    // TODO(kclyu) packetization mode setting is required
     std::string packetization_mode_string;
     if (codec.GetParam(cricket::kH264FmtpPacketizationMode,
                 &packetization_mode_string) &&
@@ -95,7 +100,7 @@ RaspiEncoderImpl::~RaspiEncoderImpl() {
 }
 
 // TODO(kclyu) Because we are using dummyvideocapture, 
-// We cann not get the correct codec_settings from API 
+// We can not get the correct codec_settings from API 
 // Need to find any solution how to fix this issue.
 int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
                                      int32_t number_of_cores,
