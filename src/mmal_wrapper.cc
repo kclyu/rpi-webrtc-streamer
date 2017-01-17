@@ -142,8 +142,21 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
     // it should be same as FRAME_QUEUE_LENGTH except one queue in the encoder
     // there is something in the buffer
     if( buffer->length < FRAME_BUFFER_SIZE && buffer->length > 0 ) {
+
+        // there is no end of frame mark in this buffer, so keep it in the internal buffer
+        if( !(buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END) ||
+                (buffer->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG ) ) {
+            RTC_DCHECK(frame_buf_pos_ < size_);
+            mmal_buffer_header_mem_lock(buffer);
+            // save partial frame data to assemble frame at next time
+            memcpy( frame_buf_ + frame_buf_pos_,  buffer->data, buffer->length);
+            frame_buf_pos_ += buffer->length;
+            frame_segment_cnt_ ++;
+            mmal_buffer_header_mem_unlock(buffer);      
+            // RTC_DCHECK(frame_segment_cnt_ < 4);	// temp 2 --> 4
+        }
         // end of frame marked
-        if( buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END ) {
+        else if( buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END ) {
             if( (int)(frame_buf_pos_ + buffer->length) >= size_) {
                 LOG(INFO) << "frame_buf_pos : " << frame_buf_pos_
                           << ", buffer length: " << buffer->length;
@@ -154,7 +167,7 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
             MMAL_BUFFER_HEADER_T *frame = mmal_queue_get(pool_internal_->queue);
             if( frame ) { 	// frame buffer is available
                 mmal_buffer_header_mem_lock(buffer);
-                // copy the saved frame at first
+                // copy the previously saved frame at first
                 if( frame_buf_pos_  ) {
                     memcpy( frame->data, frame_buf_, frame_buf_pos_);
                 }
@@ -175,17 +188,8 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
             }
             else {
                 frame_drop_ ++;
+                LOG(INFO) << "MMAL Frame Dropped during ProcessBuffer : " << frame_drop_;
             }
-        }
-        // there is no end of frame mark in this buffer, so keep it in the internal buffer
-        else if( !(buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END) ) {
-            RTC_DCHECK(frame_buf_pos_ < size_);
-            mmal_buffer_header_mem_lock(buffer);
-            // save partial frame data to assemble frame at next time
-            memcpy( frame_buf_,  buffer->data, buffer->length);
-            frame_buf_pos_ += buffer->length;
-            frame_segment_cnt_ ++;
-            // RTC_DCHECK(frame_segment_cnt_ < 4);	// temp 2 --> 4
         }
 
         // frame count statistics

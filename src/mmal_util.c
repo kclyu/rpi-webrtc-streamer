@@ -222,5 +222,6 @@ void dump_mmal_buffer(int id, const MMAL_BUFFER_HEADER_T *buf )
                 id, strbuf, buf->flags,
                 (buf->flags&MMAL_BUFFER_HEADER_FLAG_FRAME_END)?"":"SEG",
                 buf->length, buf->offset );
+    fflush(stdout);
 }
 
