@@ -35,6 +35,7 @@
 
 #include "clientconstraints.h"
 
+#include "webrtc/api/test/fakeconstraints.h"
 #include "dummyvideocapturer.h"
 #include "raspi_encoder.h"
 #include "streamer.h"
@@ -105,8 +106,10 @@ bool Streamer::InitializePeerConnection() {
     ASSERT(peer_connection_factory_.get() == NULL);
     ASSERT(peer_connection_.get() == NULL);
 
+#ifdef _0
     rtc::ThreadManager::Instance()->WrapCurrentThread();
     webrtc::Trace::CreateTrace();
+
     rtc::Thread* worker_thread = new rtc::Thread();
     worker_thread->SetName("worker_thread", NULL);
     rtc::Thread* signaling_thread = new rtc::Thread();
@@ -116,10 +119,43 @@ bool Streamer::InitializePeerConnection() {
 
     cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
     encoder_factory = new webrtc::MMALVideoEncoderFactory;
+
     peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
                                     worker_thread, signaling_thread, NULL, 
                                     encoder_factory, NULL );
 
+    if (!peer_connection_factory_.get()) {
+        LOG(LS_ERROR) << __FUNCTION__ << "Failed to initialize PeerConnectionFactory";
+        DeletePeerConnection();
+        return false;
+    }
+#endif
+    rtc::ThreadManager::Instance()->WrapCurrentThread();
+    webrtc::Trace::CreateTrace();
+
+    std::unique_ptr<rtc::Thread> network_thread_ =
+        rtc::Thread::CreateWithSocketServer();
+    network_thread_->SetName("network_thread", nullptr);
+    RTC_CHECK(network_thread_->Start()) << "Failed to start thread";
+
+    std::unique_ptr<rtc::Thread> worker_thread_ = rtc::Thread::Create();
+    worker_thread_->SetName("worker_thread", nullptr);
+    RTC_CHECK(worker_thread_->Start()) << "Failed to start thread";
+
+    std::unique_ptr<rtc::Thread> signaling_thread_ = rtc::Thread::Create();
+    signaling_thread_->SetName("signaling_thread", nullptr);
+    RTC_CHECK(signaling_thread_->Start()) << "Failed to start thread";
+
+    cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
+    cricket::WebRtcVideoDecoderFactory* decoder_factory = nullptr;
+    rtc::NetworkMonitorFactory* network_monitor_factory = nullptr;
+
+    encoder_factory = new webrtc::MMALVideoEncoderFactory();
+
+    peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
+            network_thread_.get(), worker_thread_.get(), 
+            signaling_thread_.get(), nullptr, 
+            encoder_factory, nullptr );
     if (!peer_connection_factory_.get()) {
         LOG(LS_ERROR) << __FUNCTION__ << "Failed to initialize PeerConnectionFactory";
         DeletePeerConnection();
@@ -138,6 +174,7 @@ bool Streamer::CreatePeerConnection() {
     ASSERT(peer_connection_factory_.get() != NULL);
     ASSERT(peer_connection_.get() == NULL);
 
+#ifdef _0
     PeerConnectionInterface::RTCConfiguration rtcConfig;
     PeerConnectionInterface::IceServer server;
 
@@ -145,7 +182,7 @@ bool Streamer::CreatePeerConnection() {
     server.uri = GetPeerConnectionString();
     rtcConfig.servers.push_back(server);
 
-    // RTCConfiguration
+    RTCConfiguration
     rtcConfig.type =  PeerConnectionInterface::IceTransportsType::kAll;
     rtcConfig.bundle_policy =  PeerConnectionInterface::kBundlePolicyBalanced;
     rtcConfig.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
@@ -164,15 +201,36 @@ bool Streamer::CreatePeerConnection() {
         pcConstraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
                                   "false");
     }
-
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-                           rtcConfig, &pcConstraints, NULL, NULL, this);
-    return peer_connection_.get() != NULL;
+            rtcConfig, &pcConstraints, NULL, NULL, this);
+#endif
+
+    webrtc::PeerConnectionInterface::RTCConfiguration config;
+    webrtc::PeerConnectionInterface::IceServer server;
+    server.uri = GetPeerConnectionString();
+    config.servers.push_back(server);
+
+    webrtc::FakeConstraints constraints;
+    if (dtls_enable) {
+        constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                "true");
+    } else {
+        constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                "false");
+    }
+    peer_connection_ = peer_connection_factory_->CreatePeerConnection(
+            config, &constraints, NULL, NULL, this);
+
+    // RTC_CHECK(peer_connection_.get() == nullptr) << "PeerConnection creation failed.";
+    return peer_connection_.get() != nullptr;
 }
 
 void Streamer::DeletePeerConnection() {
     // Reset active stream session
     peer_connection_ = NULL;
+    worker_thread_.reset();
+    network_thread_.reset();
+    signaling_thread_.reset();
     active_streams_.clear();
     peer_connection_factory_ = NULL;
     peer_id_ = -1;
@@ -402,6 +460,7 @@ void Streamer::AddStreams() {
     if (active_streams_.find(kStreamLabel) != active_streams_.end())
         return;  // Already added.
 
+#ifdef _0
     webrtc::ClientConstraints audioConstraints;
     audioConstraints.SetMandatoryEchoCancellation(false);
     audioConstraints.SetMandatoryAudoGainControl(false);
@@ -411,6 +470,10 @@ void Streamer::AddStreams() {
     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         peer_connection_factory_->CreateAudioTrack(
             kAudioLabel, peer_connection_factory_->CreateAudioSource(&audioConstraints)));
+#endif
+    rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+        peer_connection_factory_->CreateAudioTrack(
+            kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
 
     webrtc::ClientConstraints videoConstraints;
     //videoConstraints.SetMandatoryMaxWidth(1280);

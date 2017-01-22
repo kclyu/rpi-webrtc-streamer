@@ -47,7 +47,8 @@ enum SdpNegotiationType {
 
 
 class Streamer
-    : public webrtc::PeerConnectionObserver, public webrtc::CreateSessionDescriptionObserver,
+    : public webrtc::PeerConnectionObserver, 
+      public webrtc::CreateSessionDescriptionObserver,
       public StreamerObserver
 {
 public:
@@ -101,9 +102,13 @@ protected:
     int peer_id_;
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
-    peer_connection_factory_;
-    std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface> >
-    active_streams_;
+        peer_connection_factory_;
+    std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
+        active_streams_;
+
+    std::unique_ptr<rtc::Thread> worker_thread_;
+    std::unique_ptr<rtc::Thread> network_thread_;
+    std::unique_ptr<rtc::Thread> signaling_thread_;
 
     bool dtls_enable_;
     SocketServerObserver* session_;

@@ -2,13 +2,13 @@
 # 
 #
 include ../misc/cross_gn.mk
-include ../misc/libwebsocket_cross.mk
+#include ../misc/libwebsocket_cross.mk
 
 #
 # h264bitstream & openssl library
 #
 H264BITSTREAM_LIB = ../lib/h264bitstream/.libs/libh264bitstream.a
-OPENSSL_LIB = -lssl -lcrypto
+#OPENSSL_LIB = -lssl -lcrypto
 CCFLAGS +=  -I../lib
 
 #
@@ -19,12 +19,16 @@ MMAL_CFLAGS+=-Wno-multichar -Wno-unused-but-set-variable -fPIC -O3 -DDEBUG -DEGL
 
 MMAL_INCLUDES+=-I$(PI_INCLUDE)/interface/vcos/pthreads -I$(PI_INCLUDE)/interface/vmcs_host/linux -I$(PI_INCLUDE)/interface/vmcs_host -I$(PI_INCLUDE)/interface/vmcs_host/khronos -I$(PI_INCLUDE)/interface/khronos/include -I$(PI_INCLUDE)/interface/vchiq_arm -I$(PI_INCLUDE) -I$(PI_INCLUDE)/interface/mmal 
 
-MMAL_LDFLAGS+=-L$(SYSROOT)/opt/vc/lib/ -lmmal_core -lmmal -lmmal_util -lvcos -lcontainers -lbcm_host -lmmal_vc_client -lmmal_components -lvchiq_arm -lvcsm -lvcfiled_check -lpthread -ldl -lrt -lm 
+MMAL_LDFLAGS+=-L$(SYSROOT)/opt/vc/lib/ -lmmal_core -lmmal -lmmal_util -lvcos -lcontainers -lbcm_host -lmmal_vc_client -lmmal_components -lvchiq_arm -lvcsm -lvcfiled_check 
+
+#
+#
+SYS_LIBS += -lpthread -ldl -lrt -lm 
 
 #
 # TARGET
 #
-TARGET = ../webrtc-streamer
+TARGET = webrtc-streamer
 
 #
 # source & object list definition
@@ -62,5 +66,6 @@ clean:
 	rm -f *.o $(TARGET)
 
 rcp: $(TARGET)
-	rsync -v -u -r --stats ../webrtc-streamer  pi@10.0.0.11:~/Workspace/client
+	rsync -v -u -r --stats webrtc-streamer  *.cc *.h pi@10.0.0.11:~/Workspace/client
+	#rcp  webrtc-streamer  pi@10.0.0.11:~/Workspace/client
 
