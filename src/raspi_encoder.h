@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
+#include "webrtc/base/messagequeue.h"
 
 #include "h264bitstream_parser.h"
 

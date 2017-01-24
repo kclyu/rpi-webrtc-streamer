@@ -1,20 +1,42 @@
 
 # Building RPi-WebRTC-Streamer in Ubuntu
 
+## Branch Notice
+Notice: The RWS master repo is compiled based on the master branch of the WebRTC native code package. However, since WebRTC native code is being modified almost every day, sometimes you may have problems compiling RWS because it may already have many fixes added to the WebRTC master you have downloaded.
+
 ## Cross Compile Environment Setup
 Cross compile is an essential task in order to compile WebRTC native-code package and RWS(Rpi WebRTC Streamer). In fact, we can not download the WebRTC native-code package with the Raspberry PI.
 
 #### Cross-compiler installation
-To make cross compile environment on Ubuntu Linux, Please refer to [Embedded Linux Wiki](http://elinux.org/Main_Page) ['Cross Compile from Linux'](http://elinux.org/Raspberry_Pi_Kernel_Compilation#2._Cross_compiling_from_Linux) section in 'Raspberry PI Kernel Compilation'. 
-Or, Simply follow the short guide might be found in [here](http://stackoverflow.com/questions/19162072/installing-raspberry-pi-cross-compiler/19269715#19269715)
+ [rpi_rootfs repo](https://github.com/kclyu/rpi_rootfs.git) have cross compiler for  raspberry pi, You don't need install cross compiler. After cloning rpi_rootfs in the appropriate directory, please link to /opt/rpi_rootfs and add /opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin in your PATH environment variable to use cross compiler.
 
-Before going to next step,  verify that you can access the following command.
- - arm-linux-gnueabihf-gcc, 
- - arm-linux-gnueabihf-g++
- - arm-linux-gnueabihf-ar
- - arm-linux-gnueabihf-ld
- - arm-linux-gnueabihf-as
- - arm-linux-gnueabihf-ranlib
+```
+cd ~/Workspace
+git clone https://github.com/kclyu/rpi_rootfs.git
+cd /opt
+sudo ln -sf ~/Workspace/rpi_rootfs
+```
+
+```
+$ /opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc -v
+Using built-in specs.
+COLLECT_GCC=/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc
+COLLECT_LTO_WRAPPER=/opt/rpi_rootfs/tools/arm-linux-gnueabihf/libexec/gcc/arm-linux-gnueabihf/4.9.4/lto-wrapper
+Target: arm-linux-gnueabihf
+Configured with: /home/kclyu/Workspace/cross/.build/src/gcc-linaro-4.9-2015.06/configure --build=x86_64-build_pc-linux-gnu --host=x86_64-build_pc-linux-gnu --target=arm-linux-gnueabihf --prefix=/opt/rpi_rootfs/tools/arm-linux-gnueabihf --with-sysroot=/opt/rpi_rootfs/tools/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot --enable-languages=c,c++ --with-arch=armv6 --with-tune=arm1176jz-s --with-fpu=vfp --with-float=hard --with-pkgversion='crosstool-NG crosstool-ng-1.22.0-248-gdf5a341 - Linaro GCC 2015.06' --with-bugurl=https://bugs.launchpad.net/gcc-linaro --disable-__cxa_atexit --disable-libmudflap --enable-libgomp --disable-libssp --enable-libquadmath --enable-libquadmath-support --disable-libsanitizer --with-gmp=/home/kclyu/Workspace/cross/.build/arm-linux-gnueabihf/buildtools --with-mpfr=/home/kclyu/Workspace/cross/.build/arm-linux-gnueabihf/buildtools --with-mpc=/home/kclyu/Workspace/cross/.build/arm-linux-gnueabihf/buildtools --with-isl=/home/kclyu/Workspace/cross/.build/arm-linux-gnueabihf/buildtools --with-cloog=/home/kclyu/Workspace/cross/.build/arm-linux-gnueabihf/buildtools --enable-lto --with-host-libstdcxx='-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm' --enable-threads=posix --disable-libstdcxx-pch --enable-linker-build-id --with-linker-hash-style=gnu --enable-plugin --enable-gold --disable-multilib --with-local-prefix=/opt/rpi_rootfs/tools/arm-linux-gnueabihf/arm-linux-gnueabihf/sysroot --enable-long-long --with-arch=armv6 --with-float=hard --with-fpu=vfp --enable-multiarch
+Thread model: posix
+gcc version 4.9.4 20150629 (prerelease) (crosstool-NG crosstool-ng-1.22.0-248-gdf5a341 - Linaro GCC 2015.06) 
+
+```
+Before going to next step, verify that you can access the following command.
+
+- arm-linux-gnueabihf-gcc,
+- arm-linux-gnueabihf-g++
+- arm-linux-gnueabihf-ar
+- arm-linux-gnueabihf-ld
+- arm-linux-gnueabihf-as
+- arm-linux-gnueabihf-ranlib
+
 
 #### Raspberry PI sysroot 
 Once the cross-compiler installation is complete, you must create a sysroot for cross compile environment.  please refer to this [rpi_rootfs](https://github.com/kclyu/rpi_rootfs.git) repo.
@@ -50,10 +72,8 @@ cd ~/Workspace/webrtc
 fetch --nohooks webrtc
 cd src
 gclient sync
-git checkout -b rel56 branch-heads/56
-gclient sync
 ```
-**note:** the above command example use 'branch-heads/56' branch, replace the correct branch in 'misc/WEBRTC_BRANCH.conf'. 
+**note:** the above command example use 'master' branch of WebRTC native code package.
 
 When the syncing is completed, in order to verify, re-enter the following command **gclient sync** . check the following message comes out. 
 

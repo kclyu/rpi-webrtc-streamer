@@ -28,7 +28,7 @@ SYS_LIBS += -lpthread -ldl -lrt -lm
 #
 # TARGET
 #
-TARGET = webrtc-streamer
+TARGET = ../webrtc-streamer
 
 #
 # source & object list definition
@@ -44,17 +44,16 @@ OBJECTS.CPP = $(SOURCES.CPP:.cpp=.o)
 OBJECTS.C = $(SOURCES.C:.c=.o)
 OBJECTS = $(OBJECTS.CC) $(OBJECTS.C) $(OBJECTS.CPP)
 
-
 all: $(TARGET)
 
 #
 # Makefile rules...
 #
 .c.o : $(OBJECTS.C) 
-	$(CC) -I. $(CFLAGS) $(MMAL_CFLAGS) $(MMAL_INCLUDES) -c $< -o $@
+	$(CC) -MMD -MF $@.d -I. $(CFLAGS) $(MMAL_CFLAGS) $(MMAL_INCLUDES) -c $< -o $@
 
 .cc.o : $(OBJECTS.CC) 
-	$(CXX) -I. $(CFLAGS) $(CCFLAGS) $(CCFLAGS_DEFS) $(INCLUDE_WEBRTC_LIB) $(MMAL_CFLAGS) $(MMAL_INCLUDES)  -c $< -o $@
+	$(CXX)  -MMD -MF $@.d -I. $(CFLAGS) $(CCFLAGS) $(CCFLAGS_DEFS) $(INCLUDE_WEBRTC_LIB) $(MMAL_CFLAGS) $(MMAL_INCLUDES)  -c $< -o $@
 
 .cpp.o : $(OBJECTS.CCP) 
 	$(CXX) -I. $(WSPP_CCFLAGS) $(WSPP_INCLUDE) -c $< -o $@
@@ -63,9 +62,8 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) -Wl,--end-group $(OPENSSL_LIB) $(SYS_LIBS) 
 
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o  *.o.d $(TARGET)
 
 rcp: $(TARGET)
-	rsync -v -u -r --stats webrtc-streamer  *.cc *.h pi@10.0.0.11:~/Workspace/client
-	#rcp  webrtc-streamer  pi@10.0.0.11:~/Workspace/client
+	rsync -v -u -r --stats $(TARGET) *.cc *.h pi@10.0.0.11:~/Workspace/client
 

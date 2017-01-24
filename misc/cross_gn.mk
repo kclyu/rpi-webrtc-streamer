@@ -1,11 +1,11 @@
 SYSROOT=/opt/rpi_rootfs
 SYSROOTFLAG=--sysroot=$(SYSROOT)
-ARMIFY=-mfpu=neon-vfpv4 -mfloat-abi=hard -funsafe-math-optimizations
-BACKTRACE=-funwind-tables -rdynamic
+#ARMIFY=-mfpu=neon-vfpv4 -mfloat-abi=hard -funsafe-math-optimizations
+#BACKTRACE=-funwind-tables -rdynamic
 
 
 CC=arm-linux-gnueabihf-gcc $(SYSROOTFLAG) $(BACKTRACE) $(ARMIFY)
-CXX=arm-linux-gnueabihf-g++ -fPIC $(SYSROOTFLAG) $(BACKGRACE) $(ARMIFY)
+CXX=arm-linux-gnueabihf-g++ $(SYSROOTFLAG) $(BACKGRACE) $(ARMIFY)
 AR=arm-linux-gnueabihf-ar
 LD=arm-linux-gnueabihf-ld
 AS=arm-linux-gnueabihf-as

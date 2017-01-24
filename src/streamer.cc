@@ -29,14 +29,13 @@
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/media/engine/webrtcvideocapturerfactory.h"
 #include "webrtc/modules/video_capture/video_capture_factory.h"
-#include "webrtc/media/base/fakevideocapturer.h"
 
 #include "webrtc/system_wrappers/include/trace.h"
 
 #include "clientconstraints.h"
 
 #include "webrtc/api/test/fakeconstraints.h"
-#include "dummyvideocapturer.h"
+#include "webrtc/media/base/fakevideocapturer.h"
 #include "raspi_encoder.h"
 #include "streamer.h"
 #include "streamer_observer.h"
@@ -106,50 +105,22 @@ bool Streamer::InitializePeerConnection() {
     ASSERT(peer_connection_factory_.get() == NULL);
     ASSERT(peer_connection_.get() == NULL);
 
-#ifdef _0
     rtc::ThreadManager::Instance()->WrapCurrentThread();
     webrtc::Trace::CreateTrace();
 
-    rtc::Thread* worker_thread = new rtc::Thread();
-    worker_thread->SetName("worker_thread", NULL);
-    rtc::Thread* signaling_thread = new rtc::Thread();
-    signaling_thread->SetName("signaling_thread", NULL);
-    RTC_CHECK(worker_thread->Start() && signaling_thread->Start())
-            << "Failed to start threads";
-
-    cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
-    encoder_factory = new webrtc::MMALVideoEncoderFactory;
-
-    peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
-                                    worker_thread, signaling_thread, NULL, 
-                                    encoder_factory, NULL );
-
-    if (!peer_connection_factory_.get()) {
-        LOG(LS_ERROR) << __FUNCTION__ << "Failed to initialize PeerConnectionFactory";
-        DeletePeerConnection();
-        return false;
-    }
-#endif
-    rtc::ThreadManager::Instance()->WrapCurrentThread();
-    webrtc::Trace::CreateTrace();
-
-    std::unique_ptr<rtc::Thread> network_thread_ =
-        rtc::Thread::CreateWithSocketServer();
+    network_thread_ = rtc::Thread::CreateWithSocketServer();
     network_thread_->SetName("network_thread", nullptr);
-    RTC_CHECK(network_thread_->Start()) << "Failed to start thread";
+    RTC_CHECK(network_thread_->Start()) << "Failed to start network thread";
 
-    std::unique_ptr<rtc::Thread> worker_thread_ = rtc::Thread::Create();
+    worker_thread_ = rtc::Thread::Create();
     worker_thread_->SetName("worker_thread", nullptr);
-    RTC_CHECK(worker_thread_->Start()) << "Failed to start thread";
+    RTC_CHECK(worker_thread_->Start()) << "Failed to start worker thread";
 
-    std::unique_ptr<rtc::Thread> signaling_thread_ = rtc::Thread::Create();
+    signaling_thread_ = rtc::Thread::Create();
     signaling_thread_->SetName("signaling_thread", nullptr);
-    RTC_CHECK(signaling_thread_->Start()) << "Failed to start thread";
+    RTC_CHECK(signaling_thread_->Start()) << "Failed to start signaling thread";
 
     cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
-    cricket::WebRtcVideoDecoderFactory* decoder_factory = nullptr;
-    rtc::NetworkMonitorFactory* network_monitor_factory = nullptr;
-
     encoder_factory = new webrtc::MMALVideoEncoderFactory();
 
     peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
@@ -174,37 +145,6 @@ bool Streamer::CreatePeerConnection() {
     ASSERT(peer_connection_factory_.get() != NULL);
     ASSERT(peer_connection_.get() == NULL);
 
-#ifdef _0
-    PeerConnectionInterface::RTCConfiguration rtcConfig;
-    PeerConnectionInterface::IceServer server;
-
-    // STUN server
-    server.uri = GetPeerConnectionString();
-    rtcConfig.servers.push_back(server);
-
-    RTCConfiguration
-    rtcConfig.type =  PeerConnectionInterface::IceTransportsType::kAll;
-    rtcConfig.bundle_policy =  PeerConnectionInterface::kBundlePolicyBalanced;
-    rtcConfig.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
-    rtcConfig.tcp_candidate_policy = PeerConnectionInterface::kTcpCandidatePolicyDisabled;
-    rtcConfig.continual_gathering_policy = PeerConnectionInterface::GATHER_ONCE;
-    rtcConfig.audio_jitter_buffer_max_packets = 50;
-    rtcConfig.audio_jitter_buffer_fast_accelerate = false;
-    rtcConfig.ice_connection_receiving_timeout = -1;
-    rtcConfig.ice_backup_candidate_pair_ping_interval = -1;
-
-    webrtc::ClientConstraints pcConstraints;
-    if (dtls_enable) {
-        pcConstraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                                  "true");
-    } else {
-        pcConstraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                                  "false");
-    }
-    peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-            rtcConfig, &pcConstraints, NULL, NULL, this);
-#endif
-
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     webrtc::PeerConnectionInterface::IceServer server;
     server.uri = GetPeerConnectionString();
@@ -228,9 +168,6 @@ bool Streamer::CreatePeerConnection() {
 void Streamer::DeletePeerConnection() {
     // Reset active stream session
     peer_connection_ = NULL;
-    worker_thread_.reset();
-    network_thread_.reset();
-    signaling_thread_.reset();
     active_streams_.clear();
     peer_connection_factory_ = NULL;
     peer_id_ = -1;
@@ -257,7 +194,6 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
     Json::StyledWriter writer;
     Json::Value jmessage;
 
-
     // Names used for a Android Direct IceCandidate JSON object.
     jmessage[kCandidateType] = kCandidateSdpName;
     jmessage[kCandidateSdpMidName] = candidate->sdp_mid();
@@ -277,6 +213,7 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
     RTC_CHECK(peer_id_ == -1);
     RTC_CHECK(peer_id != -1);
+    webrtc::Trace::CreateTrace();
     LOG(INFO) << __FUNCTION__ << "Peer " << peer_id  << ", " << name.c_str()
               << " connected, trying to initialize streamer instance";
 
@@ -401,31 +338,6 @@ void Streamer::OnMessageSent(int err) {
 
 cricket::VideoCapturer* Streamer::OpenVideoCaptureDevice() {
     webrtc::Trace::CreateTrace();
-#ifdef __0
-    FakeWebRtcDeviceInfo fake_device_info;
-    const std::string device_name("raspi_cam");
-    const std::string device_id("0");
-    fake_device_info.AddDevice( device_name, device_id);
-
-    {
-        int sizes = 8 ;
-        unsigned int size[][2] = { { 352, 288 }, { 640, 480 },
-            { 704, 576 }, { 800, 600 }, { 960, 720 },
-            { 1280, 720 }, { 1024, 768 }, { 1920, 1080 }
-        };
-
-        for ( int i = 0; i < sizes; i++ ) {
-            webrtc::VideoCaptureCapability cap;
-
-            cap.width = size[i][0];
-            cap.height = size[i][1];
-            cap.rawType = webrtc::RawVideoType::kVideoI420;
-            cap.expectedCaptureDelay = 120;
-            cap.maxFPS = 30;
-            fake_device_info.AddCapability( device_id, cap);
-        }
-    }
-#endif
 
     std::vector<std::string> device_names;
     {
@@ -460,7 +372,6 @@ void Streamer::AddStreams() {
     if (active_streams_.find(kStreamLabel) != active_streams_.end())
         return;  // Already added.
 
-#ifdef _0
     webrtc::ClientConstraints audioConstraints;
     audioConstraints.SetMandatoryEchoCancellation(false);
     audioConstraints.SetMandatoryAudoGainControl(false);
@@ -470,10 +381,6 @@ void Streamer::AddStreams() {
     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         peer_connection_factory_->CreateAudioTrack(
             kAudioLabel, peer_connection_factory_->CreateAudioSource(&audioConstraints)));
-#endif
-    rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-        peer_connection_factory_->CreateAudioTrack(
-            kAudioLabel, peer_connection_factory_->CreateAudioSource(NULL)));
 
     webrtc::ClientConstraints videoConstraints;
     //videoConstraints.SetMandatoryMaxWidth(1280);
@@ -485,24 +392,17 @@ void Streamer::AddStreams() {
     videoConstraints.SetMandatoryMaxFrameRate(30);
     videoConstraints.SetMandatoryMinFrameRate(15);
 
-#ifdef _0
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(
             kVideoLabel,
-            peer_connection_factory_->CreateVideoSource(OpenVideoCaptureDevice(),
-                    &videoConstraints)));
-#endif
-
-    rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-        peer_connection_factory_->CreateVideoTrack(
-            kVideoLabel,
-            peer_connection_factory_->CreateVideoSource(new cricket::DummyVideoCapturer(false),
+            peer_connection_factory_->CreateVideoSource(new cricket::FakeVideoCapturer(false),
                     &videoConstraints)));
 
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
 
     stream->AddTrack(audio_track);
+
     stream->AddTrack(video_track);
     if (!peer_connection_->AddStream(stream)) {
         LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
@@ -535,7 +435,6 @@ void Streamer::OnFailure(const std::string& error) {
 void Streamer::SendMessage(const std::string& json_object) {
     LOG(INFO) << "Sending Message to Peer: " << json_object.c_str();
     session_->SendMessageToPeer( peer_id_, json_object );
-    //
 }
 
 

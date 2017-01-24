@@ -234,7 +234,6 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-
 int32_t RaspiEncoderImpl::Encode(
     const VideoFrame& frame, const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
