@@ -26,7 +26,6 @@
 #include <memory>
 #include <string>
 #include "webrtc/base/arraysize.h"
-#include "webrtc/base/common.h"
 
 #include "streamer_defaults.h"
 

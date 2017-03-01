@@ -21,8 +21,8 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/base/common.h"
 #include "webrtc/base/json.h"
+#include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/media/engine/webrtcvideodecoderfactory.h"
@@ -62,7 +62,8 @@ const char kSessionDescriptionSdpName[] = "sdp";
 const bool dtls_enable = DTLS_ON;
 
 
-class DummySetSessionDescriptionObserver : public webrtc::SetSessionDescriptionObserver {
+class DummySetSessionDescriptionObserver 
+    : public webrtc::SetSessionDescriptionObserver {
 public:
     static DummySetSessionDescriptionObserver* Create() {
         return
@@ -82,14 +83,14 @@ protected:
 
 Streamer::Streamer(SocketServerObserver *session)
     : peer_id_(-1) {
-    ASSERT(session != nullptr);
+    RTC_DCHECK(session != nullptr);
     session_ = session;
     dtls_enable_ = GetDTLSEnableBool();
     session->RegisterObserver(this);
 }
 
 Streamer::~Streamer() {
-    ASSERT(peer_connection_.get() == NULL);
+    RTC_DCHECK(peer_connection_.get() == NULL);
 }
 
 bool Streamer::connection_active() const {
@@ -102,8 +103,8 @@ void Streamer::Close() {
 }
 
 bool Streamer::InitializePeerConnection() {
-    ASSERT(peer_connection_factory_.get() == NULL);
-    ASSERT(peer_connection_.get() == NULL);
+    RTC_DCHECK(peer_connection_factory_.get() == NULL);
+    RTC_DCHECK(peer_connection_.get() == NULL);
 
     rtc::ThreadManager::Instance()->WrapCurrentThread();
     webrtc::Trace::CreateTrace();
@@ -142,8 +143,8 @@ bool Streamer::InitializePeerConnection() {
 }
 
 bool Streamer::CreatePeerConnection() {
-    ASSERT(peer_connection_factory_.get() != NULL);
-    ASSERT(peer_connection_.get() == NULL);
+    RTC_DCHECK(peer_connection_factory_.get() != NULL);
+    RTC_DCHECK(peer_connection_.get() == NULL);
 
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     webrtc::PeerConnectionInterface::IceServer server;
@@ -211,8 +212,8 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 // StreamerObserver implementation.
 //
 void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
-    RTC_CHECK(peer_id_ == -1);
-    RTC_CHECK(peer_id != -1);
+    RTC_DCHECK(peer_id_ == -1);
+    RTC_DCHECK(peer_id != -1);
     webrtc::Trace::CreateTrace();
     LOG(INFO) << __FUNCTION__ << "Peer " << peer_id  << ", " << name.c_str()
               << " connected, trying to initialize streamer instance";
@@ -254,7 +255,7 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
             return;
         }
     } else if (peer_id != peer_id_) {
-        ASSERT(peer_id_ != -1);
+        RTC_DCHECK(peer_id_ != -1);
         LOG(WARNING) << "Received a message from unknown peer while already in a "
                      "conversation with a different peer.";
         return;
@@ -336,7 +337,7 @@ void Streamer::OnMessageSent(int err) {
     LOG(INFO) << __FUNCTION__ << "Message Sent result : " << err;
 }
 
-cricket::VideoCapturer* Streamer::OpenVideoCaptureDevice() {
+std::unique_ptr<cricket::VideoCapturer> Streamer::OpenVideoCaptureDevice() {
     webrtc::Trace::CreateTrace();
 
     std::vector<std::string> device_names;
@@ -358,7 +359,7 @@ cricket::VideoCapturer* Streamer::OpenVideoCaptureDevice() {
     }
 
     cricket::WebRtcVideoDeviceCapturerFactory factory;
-    cricket::VideoCapturer* capturer = nullptr;
+    std::unique_ptr<cricket::VideoCapturer> capturer;
     for (const auto& name : device_names) {
         capturer = factory.Create(cricket::Device(name, 0));
         if (capturer) {
