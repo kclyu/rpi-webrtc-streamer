@@ -8,7 +8,7 @@ export RANLIB=arm-linux-gnueabihf-ranlib
 
 ##
 ## Check whether rpi_rootfs repo exist
-if [ -e ${HOME}/Workspace/rpi_rootfs/PI.cmake ]
+if [ ! -e $HOME/Workspace/rpi_rootfs/PI.cmake ]
 then
 	echo "rpi_rootfs does not exists"
 	echo "You need to configure rpi_rootfs repo to build"
@@ -32,6 +32,7 @@ then
     if [ ! -f ../lib/libwebsockets/rpi_build/lib/libwebsockets.a ]
     then
 	    echo "start building libwebsockets library"
+        mkdir -p ../lib/libwebsockets/rpi_build
         cd ../lib/libwebsockets/rpi_build && cmake -DCMAKE_TOOLCHAIN_FILE=~/Workspace/rpi_rootfs/PI.cmake  -DCMAKE_BUILD_TYPE=Debug .. -DLWS_WITH_SHARED=OFF && make
     else
 	    echo "libwebsockets.a already exist"
