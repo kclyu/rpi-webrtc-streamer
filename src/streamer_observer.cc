@@ -76,6 +76,7 @@ bool StreamerBridge::SendMessageToPeer(const int peer_id, const std::string &mes
     RTC_DCHECK(streamer_callback_ != nullptr);
     RTC_DCHECK(active_socket_observer_ != nullptr);
     active_socket_observer_->SendMessageToPeer(peer_id, message);
+    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

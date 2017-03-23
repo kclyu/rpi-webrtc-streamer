@@ -16,24 +16,24 @@ then
     exit -1
 fi
 
-if [ -e ../misc/libwebsockets-master.zip ]
+if [ -e ../lib/libwebsockets-master.zip ]
 then
     # checking libwebsockets library directory  
     if [ ! -d ../lib/libwebsockets ]
     then
 	    echo "extracting libwebsocket library in lib"
         cd ../lib && unzip  ../misc/libwebsockets-master.zip && mv libwebsockets-master libwebsockets
-        mkdir -p libwebsockets/rpi_build
+        mkdir -p libwebsockets/arm_build
         # 
     fi
 
     pwd
     # checking libwebsockets library archive file
-    if [ ! -f ../lib/libwebsockets/rpi_build/lib/libwebsockets.a ]
+    if [ ! -f ../lib/libwebsockets/arm_build/lib/libwebsockets.a ]
     then
 	    echo "start building libwebsockets library"
-        mkdir -p ../lib/libwebsockets/rpi_build
-        cd ../lib/libwebsockets/rpi_build && cmake -DCMAKE_TOOLCHAIN_FILE=~/Workspace/rpi_rootfs/PI.cmake  -DCMAKE_BUILD_TYPE=Debug .. -DLWS_WITH_SHARED=OFF && make
+        mkdir -p ../lib/libwebsockets/arm_build
+        cd ../lib/libwebsockets/arm_build && cmake -DCMAKE_TOOLCHAIN_FILE=~/Workspace/rpi_rootfs/PI.cmake  -DCMAKE_BUILD_TYPE=Debug .. -DLWS_WITH_SHARED=OFF && make
     else
 	    echo "libwebsockets.a already exist"
     fi

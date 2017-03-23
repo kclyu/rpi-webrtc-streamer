@@ -15,13 +15,13 @@ then
 	echo "Please check https://github.com/kclyu/rpi_rootfs"
     exit -1
 fi
-if [ -e ../misc/h264bitstream-0.1.9.tar.gz ]
+if [ -e ../lib/h264bitstream-0.1.9.tar.gz ]
 then
     # checking h264bitstream library directory  
     if [ ! -d ../lib/h264bitstream ]
     then
 	    echo "extracting h264bitstream library in lib"
-        cd ../lib && tar xvzf ../misc/h264bitstream-0.1.9.tar.gz && mv h264bitstream-0.1.9 h264bitstream
+        cd ../lib && tar xvzf ../lib/h264bitstream-0.1.9.tar.gz && mv h264bitstream-0.1.9 h264bitstream
     fi
 
     # checking h264bitstream library archive file
@@ -33,6 +33,6 @@ then
 	    echo "h264bitstream.a already exist"
     fi
 else
-	echo "../misc/h264bitstream-0.1.9.tar.gz not found"
+	echo "../lib/h264bitstream-0.1.9.tar.gz not found"
 fi
 	

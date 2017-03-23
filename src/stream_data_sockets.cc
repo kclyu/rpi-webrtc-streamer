@@ -591,6 +591,7 @@ bool StreamConnection::HandleRequest( void ) {
         Send("200 OK", true, "text/plain", "", "");
         return true;
     }
+    return false;
 }
 
 void StreamConnection::OnEvent(int peer_id, bool target, QueuedResponse &resp) {

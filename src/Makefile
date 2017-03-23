@@ -1,31 +1,33 @@
 #
 # 
 #
-include ../misc/cross_gn.mk
-#include ../misc/libwebsocket_cross.mk
+include ../mk/cross_arm_build.mk
+include ../mk/cross_mmal.mk
+include ../mk/libwebsocket_arm_build.mk
+include ../mk/h264bitstream_arm_build.mk
 
-#
-# h264bitstream & openssl library
-#
-H264BITSTREAM_LIB = ../lib/h264bitstream/.libs/libh264bitstream.a
-#OPENSSL_LIB = -lssl -lcrypto
-CCFLAGS +=  -I../lib
 
-#
-# Variables for MMAL(raspivid) compilation
-#
-PI_INCLUDE=$(SYSROOT)/opt/vc/include
-MMAL_CFLAGS+=-Wno-multichar -Wno-unused-but-set-variable -fPIC -O3 -DDEBUG -DEGL_SERVER_DISPMANX -DHAVE_CMAKE_CONFIG -DHAVE_VMCS_CONFIG -DOMX_SKIP64BIT -DTV_SUPPORTED_MODE_NO_DEPRECATED -DUSE_VCHIQ_ARM -DVCHI_BULK_ALIGN=1 -DVCHI_BULK_GRANULARITY=1 -D_FILE_OFFSET_BITS=64 -D_HAVE_SBRK -D_LARGEFILE64_SOURCE -D_LARGEFILE_SOURCE -D_REENTRANT -D__VIDEOCORE4__ -D__WEBRTC_DEFAULT__
-
-MMAL_INCLUDES+=-I$(PI_INCLUDE)/interface/vcos/pthreads -I$(PI_INCLUDE)/interface/vmcs_host/linux -I$(PI_INCLUDE)/interface/vmcs_host -I$(PI_INCLUDE)/interface/vmcs_host/khronos -I$(PI_INCLUDE)/interface/khronos/include -I$(PI_INCLUDE)/interface/vchiq_arm -I$(PI_INCLUDE) -I$(PI_INCLUDE)/interface/mmal 
-
-MMAL_LDFLAGS+=-L$(SYSROOT)/opt/vc/lib/ -lmmal_core -lmmal -lmmal_util -lvcos -lcontainers -lbcm_host -lmmal_vc_client -lmmal_components -lvchiq_arm -lvcsm -lvcfiled_check 
 
 #
 #
-SYS_LIBS += -lpthread -ldl -lrt -lm 
-
 #
+CCFLAGS += $(LWS_C_FLAGS) $(WEBRTC_CCFLAGS) $(MMAL_CFLAGS)
+CFLAGS += -DINSTALL_DATADIR=\"/usr/local/rws\" $(WEBRTC_CFLAGS) $(MMAL_CFLAGS)
+INCLUDES += $(LWS_INCLUDES) $(WEBRTC_DEFINES) $(WEBRTC_FLAGS_INCLUDES) $(H264BITSTREAM_INCLUDES) \
+			$(MMAL_INCLUDES)
+BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS) $(H264_BITSTREAM_LIBS)
+SYSLIBS += $(LWS_SYS_LIBS) $(WEBRTC_SYSLIBS)
+LDFLAGS += $(WEBRTC_LDFLAGS) $(MMAL_LDFLAGS) 
+
+
+#$(info CFLAGS is "$(CFLAGS)")
+#$(info CCFLAGS is  "$(CCFLAGS)")
+#$(info INCLUDES is "$(INCLUDES)")
+#$(info SYSLIBS is "$(SYSLIBS)")
+#$(info LDFLAGS is "$(LDFLAGS)")
+#$(info BUILD_LIBS is "$(BUILD_LIBS)")
+
+
 # TARGET
 #
 TARGET = ../webrtc-streamer
@@ -50,16 +52,14 @@ all: $(TARGET)
 # Makefile rules...
 #
 .c.o : $(OBJECTS.C) 
-	$(CC) -MMD -MF $@.d -I. $(CFLAGS) $(MMAL_CFLAGS) $(MMAL_INCLUDES) -c $< -o $@
+	$(CC) -I. $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 .cc.o : $(OBJECTS.CC) 
-	$(CXX)  -MMD -MF $@.d -I. $(CFLAGS) $(CCFLAGS) $(CCFLAGS_DEFS) $(INCLUDE_WEBRTC_LIB) $(MMAL_CFLAGS) $(MMAL_INCLUDES)  -c $< -o $@
+	$(CXX)  -I. $(CFLAGS) $(CCFLAGS) $(INCLUDES)  -c $< -o $@
 
-.cpp.o : $(OBJECTS.CCP) 
-	$(CXX) -I. $(WSPP_CCFLAGS) $(WSPP_INCLUDE) -c $< -o $@
 
 $(TARGET): $(OBJECTS) 
-	$(CXX) $(LDFLAGS) -o $(TARGET) $(CFLAGS) $(CCFLAGS) -Wl,--start-group $(OBJECTS) $(INCLUDE_WEBRTC_LIB_LIST) $(MMAL_LDFLAGS) $(H264BITSTREAM_LIB) -Wl,--end-group $(OPENSSL_LIB) $(SYS_LIBS) 
+	$(CXX) $(LDFLAGS) -o $(TARGET) -Wl,--start-group $(OBJECTS) $(BUILD_LIBS) -Wl,--end-group $(SYSLIBS) 
 
 clean:
 	rm -f *.o  *.o.d $(TARGET)
