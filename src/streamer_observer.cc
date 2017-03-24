@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -48,30 +48,69 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// StreamerBridge
+// SocketServerHelper
 ////////////////////////////////////////////////////////////////////////////////
+SocketServerHelper::SocketServerHelper() : streamsession_active_(false) {
+    streamer_proxy_ = StreamerProxy::GetInstance();
+    streamsession_active_ = false;
+    RTC_CHECK(streamer_proxy_);
+}
 
-StreamerBridge* StreamerBridge::stream_bridge_ = nullptr;
-StreamerBridge *StreamerBridge::GetInstance() {
-    if(stream_bridge_ == nullptr) {
-        stream_bridge_ = new StreamerBridge();
-        stream_bridge_->active_peer_id_ = 0;
-        stream_bridge_->streamer_callback_ = nullptr;
-        stream_bridge_->active_socket_observer_  = nullptr;
-    }
-    return stream_bridge_;
+void SocketServerHelper::RegisterObserver(StreamerObserver* callback) {
+    LOG(INFO) << __FUNCTION__;
+}
+
+
+bool SocketServerHelper::ActivateStreamSession() {
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( streamer_proxy_ != nullptr );
+    RTC_DCHECK( streamsession_active_ != true );
+
+    if(streamer_proxy_->ObtainStreamer(this, peer_id_, peer_name_ )){
+        streamsession_active_ = true;
+        return true;
+    };
+    return false;
+}
+
+void SocketServerHelper::DeactivateStreamSession() {
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( streamer_proxy_ != nullptr );
+    RTC_DCHECK( streamsession_active_ );
+    streamsession_active_ = false;
+    streamer_proxy_->ReleaseStreamer(this, peer_id_);
+}
+
+bool SocketServerHelper::IsStreamSessionActive() {
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( streamer_proxy_ != nullptr );
+    return streamsession_active_ ;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// StreamerBridge Streamer Socket Server Observer bridging
+// StreamerProxy
+////////////////////////////////////////////////////////////////////////////////
+StreamerProxy* StreamerProxy::streamer_proxy_ = nullptr;
+StreamerProxy *StreamerProxy::GetInstance() {
+    if(streamer_proxy_ == nullptr) {
+        streamer_proxy_ = new StreamerProxy();
+        streamer_proxy_->active_peer_id_ = 0;
+        streamer_proxy_->streamer_callback_ = nullptr;
+        streamer_proxy_->active_socket_observer_  = nullptr;
+    }
+    return streamer_proxy_;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// StreamerProxy Streamer Socket Server Observer bridging
 ////////////////////////////////////////////////////////////////////////////////
 
-void StreamerBridge::RegisterObserver(StreamerObserver* callback) {
+void StreamerProxy::RegisterObserver(StreamerObserver* callback) {
     LOG(INFO) << __FUNCTION__;
     streamer_callback_ = callback;
 }
 
-bool StreamerBridge::SendMessageToPeer(const int peer_id, const std::string &message) {
+bool StreamerProxy::SendMessageToPeer(const int peer_id, const std::string &message) {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(streamer_callback_ != nullptr);
     RTC_DCHECK(active_socket_observer_ != nullptr);
@@ -80,10 +119,10 @@ bool StreamerBridge::SendMessageToPeer(const int peer_id, const std::string &mes
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// StreamerBridge Streamer Observer bridging
+// StreamerProxy Streamer Observer bridging
 ////////////////////////////////////////////////////////////////////////////////
 
-bool StreamerBridge::ObtainStreamer(SocketServerObserver *socket_server, 
+bool StreamerProxy::ObtainStreamer(SocketServerObserver *socket_server, 
         int peer_id, const std::string& name ) {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(streamer_callback_ != nullptr);
@@ -99,7 +138,7 @@ bool StreamerBridge::ObtainStreamer(SocketServerObserver *socket_server,
     }
 }
 
-void StreamerBridge::ReleaseStreamer(SocketServerObserver *socket_server, int peer_id ) {
+void StreamerProxy::ReleaseStreamer(SocketServerObserver *socket_server, int peer_id ) {
     LOG(INFO) << __FUNCTION__;
     if( active_socket_observer_ && active_socket_observer_ == socket_server) {
         active_socket_observer_ = nullptr;
@@ -108,14 +147,14 @@ void StreamerBridge::ReleaseStreamer(SocketServerObserver *socket_server, int pe
     }
 }
 
-void StreamerBridge::MessageFromPeer( int peer_id, const std::string& message ) {
+void StreamerProxy::MessageFromPeer( int peer_id, const std::string& message ) {
     LOG(INFO) << __FUNCTION__;
     if( active_socket_observer_ != nullptr ) {
         streamer_callback_->OnMessageFromPeer(peer_id, message );
     }
 }
 
-void StreamerBridge::MessageSent(int err) {
+void StreamerProxy::MessageSent(int err) {
     LOG(INFO) << __FUNCTION__;
 }
 

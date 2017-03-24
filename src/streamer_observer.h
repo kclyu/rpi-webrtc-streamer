@@ -42,39 +42,52 @@ protected:
 };
 
 struct SocketServerObserver {
-    virtual void RegisterObserver(StreamerObserver* callback) = 0;
     virtual bool SendMessageToPeer(const int peer_id, const std::string &message) = 0;
+    virtual void RegisterObserver(StreamerObserver* callback) = 0;
 protected:
     virtual ~SocketServerObserver() {}
 };
 
-//  TODO remove or merge StreamSession in stream_data_sockets
-//  TODO streamer using single threaded main event-loop, 
-//       and need to implement some criticlal section protection when multi threaded model 
-//       used in socket server 
-class StreamerBridge : public SocketServerObserver {
+struct StreamerProxy;      // forward declaration
+class SocketServerHelper : public SocketServerObserver {
 public:
-    static StreamerBridge* GetInstance();
+    SocketServerHelper();
+    void RegisterObserver(StreamerObserver* callback);
+protected:
+    virtual ~SocketServerHelper() {}
+    bool ActivateStreamSession();
+    void DeactivateStreamSession();
+    bool IsStreamSessionActive();
+
+private:
+    bool streamsession_active_;
+    StreamerObserver *streamer_callback_;
+    StreamerProxy *streamer_proxy_;
+    std::string peer_name_;
+    int peer_id_;
+};
+
+class StreamerProxy : public SocketServerObserver {
+public:
+    static StreamerProxy* GetInstance();
     bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id, const std::string& name ); 
     void ReleaseStreamer(SocketServerObserver *socket_server, int peer_id ); 
     void MessageFromPeer( int peer_id, const std::string& message );
     void MessageSent(int err);
-
     // SocketServerObserver
-    void RegisterObserver(StreamerObserver* callback);
-    bool SendMessageToPeer(int peer_id, const std::string &message);
+    bool SendMessageToPeer(int peer_id, const std::string &message) override;
+    void RegisterObserver(StreamerObserver* callback) override;
 
 private:
-    StreamerBridge() {}
-    StreamerBridge(const StreamerBridge &) {}
-    ~StreamerBridge() {}
+    StreamerProxy() {}
+    StreamerProxy(const StreamerProxy &) {}
+    ~StreamerProxy() {}
 
-    static StreamerBridge* stream_bridge_;
+    static StreamerProxy* streamer_proxy_;
     SocketServerObserver *active_socket_observer_;
     StreamerObserver *streamer_callback_;           // streamer callback 
     int active_peer_id_;
     std::string active_peer_name_;
 };
-
 
 #endif  // RPI_STREAMER_OBSERVER_
