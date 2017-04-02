@@ -12,7 +12,7 @@ include ../mk/h264bitstream_arm_build.mk
 #
 #
 CCFLAGS += $(LWS_C_FLAGS) $(WEBRTC_CCFLAGS) $(MMAL_CFLAGS)
-CFLAGS += -DINSTALL_DATADIR=\"/usr/local/rws\" $(WEBRTC_CFLAGS) $(MMAL_CFLAGS)
+CFLAGS += -DINSTALL_DIR=\"/usr/local/rws\" $(WEBRTC_CFLAGS) $(MMAL_CFLAGS)
 INCLUDES += $(LWS_INCLUDES) $(WEBRTC_DEFINES) $(WEBRTC_FLAGS_INCLUDES) $(H264BITSTREAM_INCLUDES) \
 			$(MMAL_INCLUDES)
 BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS) $(H264_BITSTREAM_LIBS)
@@ -35,10 +35,13 @@ TARGET = ../webrtc-streamer
 #
 # source & object list definition
 #
-#SOURCES.CC = main.cc
-#SOURCES.C = 
-SOURCES.CC = stream_data_sockets.cc stream_sockets.cc direct_socket.cc streamer_observer.cc streamer.cc streamer_defaults.cc main.cc raspi_encoder.cc mmal_wrapper.cc h264bitstream_parser.cc utils.cc
-SOURCES.C = mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c raspicamcontrol.c raspipreview.c 
+#SOURCES.CC = stream_data_sockets.cc stream_sockets.cc direct_socket.cc streamer_observer.cc streamer.cc streamer_defaults.cc main.cc raspi_encoder.cc mmal_wrapper.cc h264bitstream_parser.cc utils.cc
+#SOURCES.C = mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c raspicamcontrol.c raspipreview.c 
+SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_channel.cc app_client.cc \
+	streamer_observer.cc streamer.cc streamer_defaults.cc main.cc raspi_encoder.cc \
+	mmal_wrapper.cc h264bitstream_parser.cc utils.cc
+SOURCES.C = websocket_server_util.c mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c \
+	raspicamcontrol.c raspipreview.c 
 
 
 OBJECTS.CC = $(SOURCES.CC:.cc=.o) 
@@ -65,5 +68,9 @@ clean:
 	rm -f *.o  *.o.d $(TARGET)
 
 rcp: $(TARGET)
+	#rsync -v -u -r --stats $(TARGET) pi@10.0.0.11:~/Workspace/client
 	rsync -v -u -r --stats $(TARGET) *.cc *.h pi@10.0.0.11:~/Workspace/client
+
+html: 
+	rsync -v -u -r --stats ../web-root/native-peerconnection/* pi@10.0.0.11:~/Workspace/client/native-peerconnection
 

@@ -55,8 +55,10 @@ public:
     void RegisterObserver(StreamerObserver* callback);
 protected:
     virtual ~SocketServerHelper() {}
-    bool ActivateStreamSession();
+    bool ActivateStreamSession(const int peer_id, const std::string& peer_name);
     void DeactivateStreamSession();
+    void MessageFromPeer( const std::string& message );
+    int GetActivePeerId();
     bool IsStreamSessionActive();
 
 private:
@@ -75,7 +77,7 @@ public:
     void MessageFromPeer( int peer_id, const std::string& message );
     void MessageSent(int err);
     // SocketServerObserver
-    bool SendMessageToPeer(int peer_id, const std::string &message) override;
+    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
     void RegisterObserver(StreamerObserver* callback) override;
 
 private:

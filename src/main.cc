@@ -1,4 +1,5 @@
-/* *  Copyright (c) 2016, rpi-webrtc-streamer  Lyu,KeunChang
+/* 
+ * Copyright (c) 2017, rpi-webrtc-streamer  Lyu,KeunChang
  *
  * main.cc
  *
@@ -20,7 +21,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #include <iostream>
 #include <vector>
 
@@ -39,13 +39,14 @@
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 
+#include "websocket_server.h"
+#include "app_channel.h"
+
 #include "streamer_observer.h"
 #include "direct_socket.h"
-#include "stream_data_sockets.h"
 #include "streamer_defaults.h"
 #include "streamer_flagdefs.h"
 #include "streamer.h"
-
 
 // 
 //
@@ -56,11 +57,23 @@ public:
         : thread_(thread)  {}
     virtual ~StreamingSocketServer() {}
 
+    void set_websocket(LibWebSocketServer* websocket) { websocket_ = websocket; }
+
+    virtual bool Wait(int cms, bool process_io) {
+        int websocket_loop=true;
+
+        while (websocket_loop)
+            websocket_loop = websocket_->RunLoop(0);
+
+        return rtc::PhysicalSocketServer::Wait(0/*cms == -1 ? 1 : cms*/,
+                process_io);
+    }
+
 protected:
     std::unique_ptr<rtc::AsyncSocket> listener_;
     rtc::Thread* thread_;
+    LibWebSocketServer *websocket_;
 };
-
 
 
 int main(int argc, char** argv) {
@@ -88,20 +101,14 @@ int main(int argc, char** argv) {
 
     rtc::InitializeSSL();
 
-    // Linux PeerConnection Channel
-    // Must be constructed after we set the socketserver.
-    StreamSocketListen stream_listen;
+    AppChannel app_channel("etc/app_channel.conf");
+    app_channel.AppInitialize();
+    socket_server.set_websocket(&app_channel);
 
     rtc::scoped_refptr<Streamer> streamer(
-        new rtc::RefCountedObject<Streamer>(StreamerBridge::GetInstance()));
+        new rtc::RefCountedObject<Streamer>(StreamerProxy::GetInstance()));
 
-    if ( stream_listen.Listen(addr) == false) {
-        // Terminating clean-up
-        thread->set_socketserver(NULL);
-        rtc::CleanupSSL();
-        return 0;
-    }
-
+#ifdef __DIRECT_SOCKETS_
     if(FLAG_directtcp == true) {
         rtc::IPAddress ipaddr;
         rtc::NetworkManager::NetworkList networks;
@@ -128,6 +135,7 @@ int main(int argc, char** argv) {
             return 0;
         }
     }
+#endif
 
     // Running Loop
     thread->Run();

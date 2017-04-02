@@ -26,7 +26,6 @@
 #include "webrtc/base/stringencode.h"
 
 #include "streamer_observer.h"
-#include "stream_data_sockets.h"
 
 using rtc::ToString;
 using rtc::sprintfn;
@@ -39,16 +38,3 @@ std::string size_t2str(size_t i) {
     return ToString<size_t>(i);
 }
 
-const char *str_stream_connection_method(const long request_method) {
-    switch( request_method ) {
-    case METHOD_INVALID:
-        return "METHOD_INVALID";
-    case METHOD_GET:
-        return  "METHOD_GET";
-    case METHOD_POST:
-        return  "METHOD_POST";
-    case METHOD_OPTIONS:
-        return "METHOD_OPTIONS";
-    }
-    return "METHOD_UNKNOWN";
-}

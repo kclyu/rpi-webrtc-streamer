@@ -61,7 +61,8 @@ void SocketServerHelper::RegisterObserver(StreamerObserver* callback) {
 }
 
 
-bool SocketServerHelper::ActivateStreamSession() {
+bool SocketServerHelper::ActivateStreamSession(const int peer_id, 
+        const std::string& peer_name) {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK( streamer_proxy_ != nullptr );
     RTC_DCHECK( streamsession_active_ != true );
@@ -71,6 +72,25 @@ bool SocketServerHelper::ActivateStreamSession() {
         return true;
     };
     return false;
+}
+
+int SocketServerHelper::GetActivePeerId() {
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( streamer_proxy_ != nullptr );
+    if( streamsession_active_ )
+        return peer_id_;
+    else 
+        return 0;
+}
+
+void SocketServerHelper::MessageFromPeer(const std::string& message) {
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( streamer_proxy_ != nullptr );
+    if( streamsession_active_ ) {
+        streamer_proxy_->MessageFromPeer(peer_id_, message);
+        return;
+    };
+    LOG(LS_ERROR) << "Stream Session is not active, Failed to pass receive message :" << message;
 }
 
 void SocketServerHelper::DeactivateStreamSession() {

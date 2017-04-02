@@ -54,17 +54,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 DirectSocketServer::DirectSocketServer()
     : listener_(nullptr), direct_socket_(nullptr) {
+    SocketServerObserver();
     last_reject_time_ms_ = connection_reject_count_ = 0;
-    streamer_bridge_ = StreamerBridge::GetInstance();
-    streamsession_active_ = false;
-    RTC_CHECK(streamer_bridge_);
 }
 DirectSocketServer::~DirectSocketServer() {}
 
 bool DirectSocketServer::Listen(const rtc::SocketAddress& address) {
     LOG(INFO) << __FUNCTION__;
     rtc::Thread *thread = rtc::Thread::Current();
-    RTC_DCHECK(thread != NULL);
+    RTC_DCHECK(thread != nullptr);
     rtc::AsyncSocket* sock =
         thread->socketserver()->CreateAsyncSocket(address.family(), SOCK_STREAM);
     if (!sock) {
@@ -92,10 +90,10 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(streamer_bridge_ != nullptr );
     RTC_DCHECK(socket == listener_.get());
-    rtc::AsyncSocket* incoming = listener_->Accept(NULL);
+    rtc::AsyncSocket* incoming = listener_->Accept(nullptr);
     RTC_CHECK(incoming != nullptr );
 
-    if ( streamsession_active_ == false ) {
+    if ( IsStreamSessionActive() == false ) {
         // stream session is not active, it will start to new stream session
         connection_reject_count_ = 0;       // reinitialize the reject counter
 
@@ -120,11 +118,11 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
 
         // reset or re-calculate reject counter 
         if( rtc::TimeDiff( rtc::TimeMillis(),  last_reject_time_ms_ ) 
-                < FORCED_CONNECTION_ALLOWED_INTERVAL ) {
+                < FORCE_CONNECTION_DROP_VALID_DURATION ) {
             connection_reject_count_ += 1;
             last_reject_time_ms_  = rtc::TimeMillis();
             LOG(INFO) << "Forced Connection Counter: " << connection_reject_count_;
-            if ( connection_reject_count_ >  FORCED_CONNECTION_ALLOWED_COUNT  )
+            if ( connection_reject_count_ >  FORCE_CONNECTION_DROP_TRYCOUNT_THRESHOLD  )
                 LOG(INFO) << "Forced Connection close performed, " 
                     << " counter reached to threahold.";
                 // Release the current active stream session
@@ -149,10 +147,9 @@ void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
     DeactivateStreamSession();
 }
 
-
 void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
     LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK( socket != NULL );
+    RTC_DCHECK( socket != nullptr );
     RTC_DCHECK(streamer_bridge_ != nullptr );
 
     char buffer[4096]= {0x00};
@@ -174,26 +171,6 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
     }
 }
 
-bool DirectSocketServer::ActivateStreamSession() {
-    LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK( streamer_bridge_ != nullptr );
-    RTC_DCHECK( streamsession_active_ != true );
-
-    streamsession_active_ = true;
-    streamer_bridge_->ObtainStreamer(this, peer_id_, peer_name_ );
-
-    return true;
-};
-
-void DirectSocketServer::DeactivateStreamSession() {
-    LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK( streamer_bridge_ != nullptr );
-    RTC_DCHECK( streamsession_active_ );
-    streamsession_active_ = false;
-    streamer_bridge_->ReleaseStreamer(this, peer_id_);
-}
-
-
 bool DirectSocketServer::SendMessageToPeer(const int peer_id, 
         const std::string &message) {
     LOG(INFO) << __FUNCTION__;
@@ -208,8 +185,4 @@ bool DirectSocketServer::SendMessageToPeer(const int peer_id,
                 trimmed_message.length()) != SOCKET_ERROR);
 }
 
-//  
-void DirectSocketServer::RegisterObserver(StreamerObserver* callback) {
-    LOG(INFO) << __FUNCTION__;
-}
 

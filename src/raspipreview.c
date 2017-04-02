@@ -48,8 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "interface/mmal/util/mmal_default_components.h"
 #include "interface/mmal/util/mmal_connection.h"
 
-#include "RaspiPreview.h"
-#include "RaspiCLI.h"
+#include "raspipreview.h"
+#include "raspicli.h"
 
 #define CommandPreview        1
 #define CommandFullScreen     2

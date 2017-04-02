@@ -30,8 +30,6 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "clientconstraints.h"
 #include "streamer_observer.h"
-#include "stream_data_sockets.h"
-#include "direct_socket.h"
 
 
 namespace webrtc {

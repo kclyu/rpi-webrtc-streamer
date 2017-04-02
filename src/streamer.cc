@@ -37,9 +37,9 @@
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "raspi_encoder.h"
+
 #include "streamer.h"
 #include "streamer_observer.h"
-#include "stream_data_sockets.h"
 #include "streamer_defaults.h"
 
 
@@ -90,11 +90,11 @@ Streamer::Streamer(SocketServerObserver *session)
 }
 
 Streamer::~Streamer() {
-    RTC_DCHECK(peer_connection_.get() == NULL);
+    RTC_DCHECK(peer_connection_.get() == nullptr);
 }
 
 bool Streamer::connection_active() const {
-    return peer_connection_.get() != NULL;
+    return peer_connection_.get() != nullptr;
 }
 
 void Streamer::Close() {
@@ -103,8 +103,8 @@ void Streamer::Close() {
 }
 
 bool Streamer::InitializePeerConnection() {
-    RTC_DCHECK(peer_connection_factory_.get() == NULL);
-    RTC_DCHECK(peer_connection_.get() == NULL);
+    RTC_DCHECK(peer_connection_factory_.get() == nullptr);
+    RTC_DCHECK(peer_connection_.get() == nullptr);
 
     rtc::ThreadManager::Instance()->WrapCurrentThread();
     webrtc::Trace::CreateTrace();
@@ -139,12 +139,12 @@ bool Streamer::InitializePeerConnection() {
         DeletePeerConnection();
     }
     AddStreams();
-    return peer_connection_.get() != NULL;
+    return peer_connection_.get() != nullptr;
 }
 
 bool Streamer::CreatePeerConnection() {
-    RTC_DCHECK(peer_connection_factory_.get() != NULL);
-    RTC_DCHECK(peer_connection_.get() == NULL);
+    RTC_DCHECK(peer_connection_factory_.get() != nullptr);
+    RTC_DCHECK(peer_connection_.get() == nullptr);
 
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     webrtc::PeerConnectionInterface::IceServer server;
@@ -160,7 +160,7 @@ bool Streamer::CreatePeerConnection() {
                 "false");
     }
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-            config, &constraints, NULL, NULL, this);
+            config, &constraints, nullptr, nullptr, this);
 
     // RTC_CHECK(peer_connection_.get() == nullptr) << "PeerConnection creation failed.";
     return peer_connection_.get() != nullptr;
@@ -168,9 +168,9 @@ bool Streamer::CreatePeerConnection() {
 
 void Streamer::DeletePeerConnection() {
     // Reset active stream session
-    peer_connection_ = NULL;
+    peer_connection_ = nullptr;
     active_streams_.clear();
-    peer_connection_factory_ = NULL;
+    peer_connection_factory_ = nullptr;
     peer_id_ = -1;
 }
 
@@ -225,7 +225,7 @@ void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
 
     if (InitializePeerConnection()) {
         peer_id_ = peer_id;
-        peer_connection_->CreateOffer(this, NULL);
+        peer_connection_->CreateOffer(this, nullptr);
     } else {
         LOG(LS_ERROR) << "Failed to initialize PeerConnection";
     }
@@ -297,6 +297,8 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         webrtc::ClientConstraints sdpConstraints;
         sdpConstraints.SetMandatoryReceiveAudio(true);
         sdpConstraints.SetMandatoryReceiveVideo(false);
+        // TODO(kclyu) invalid sdp negotiation makes session_description 
+        // null, need to figure it out how to fix it.
         if (session_description->type() ==
                 webrtc::SessionDescriptionInterface::kOffer) {
             peer_connection_->CreateAnswer(this, &sdpConstraints);

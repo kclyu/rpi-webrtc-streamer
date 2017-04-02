@@ -24,9 +24,9 @@ extern "C" {
 #include "interface/mmal/util/mmal_default_components.h"
 #include "interface/mmal/util/mmal_connection.h"
 
-#include "RaspiCamControl.h"
-#include "RaspiPreview.h"
-#include "RaspiCLI.h"
+#include "raspicamcontrol.h"
+#include "raspipreview.h"
+#include "raspicli.h"
 
 #include <semaphore.h>
 

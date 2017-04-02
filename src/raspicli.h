@@ -1,7 +1,7 @@
 /*
  *  Lyu,KeunChang
  *
- * This is a stripped down version of the original RaspiCLI module from the
+ * This is a stripped down version of the original RaspiCamControl module from the
  * raspberry pi userland-master branch,
  * Original copyright info below
  */
