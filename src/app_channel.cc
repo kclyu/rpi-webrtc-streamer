@@ -191,28 +191,51 @@ void AppChannel::OnMessage(int sockid, const std::string& message) {
 
     Json::Reader json_reader;
     Json::Value json_value;
-    if (!json_reader.parse(message, json_value)) {
-        static const int max_chunked_frames=4;
+    std::string cmd;
+    bool parsing_successful;
 
-        json_value.clear();
+    // There is an issue where Chrome & Firefox WebSocket sends json messages 
+    // in multiple chunks, so this is the part to solve. 
+    // If JSON parsing fails, it will be kept in chunked_frrames up to 5 times and 
+    // try to parse the collected chunked_frames again until the next message succeeds.
+    if((parsing_successful = json_reader.parse(message, json_value)) == true){
+        std::string cmd;
+        rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
+    };
+
+    if ( parsing_successful && !cmd.empty() ) {
+        // parsing success and found the cmd keyword...
+        LOG(INFO) << "JSON Parsing Success: " << message;
+    }
+    else {
+        static const int max_chunked_frames=5;
+
+        // json_value.clear();
         chunked_frames_.append(message);
+        LOG(INFO) << "Chunked Frame (" << num_chunked_frames_ << "), Message : " 
+            << chunked_frames_;
         if (!json_reader.parse(chunked_frames_, json_value)) {
+            // parsing failed
             if( num_chunked_frames_++ > max_chunked_frames )  {
-                LOG(WARNING) << "Failed to parse json message:" << chunked_frames_;
+                LOG(INFO) << "Failed to parse, Dropping Chunked frames: " 
+                    << chunked_frames_;
                 num_chunked_frames_ = 0;
                 chunked_frames_.clear();
-                LOG(INFO) << "Failed to parse, Adding Chunked frames: " << chunked_frames_;
             }
             return;
         }
+
+        rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
+        if( cmd.empty() ) {
+            return;
+        }
+        // parsing success and cmd keyword found.
         LOG(INFO) << "Chunked frames successful: " << chunked_frames_;
         num_chunked_frames_ = 0;
         chunked_frames_.clear();
         // finally successful parsing
     }
 
-
-    std::string cmd;
     rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
     if( !cmd.empty() ) {    // found cmd id
         // command register 
