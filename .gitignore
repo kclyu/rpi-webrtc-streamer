@@ -33,3 +33,6 @@ h264_analyze
 lib/h264bitstream/
 lib/libwebsockets/
 
+# Configuration
+etc/app_channel.conf
+
