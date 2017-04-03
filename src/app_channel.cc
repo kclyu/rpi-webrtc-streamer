@@ -199,7 +199,6 @@ void AppChannel::OnMessage(int sockid, const std::string& message) {
     // If JSON parsing fails, it will be kept in chunked_frrames up to 5 times and 
     // try to parse the collected chunked_frames again until the next message succeeds.
     if((parsing_successful = json_reader.parse(message, json_value)) == true){
-        std::string cmd;
         rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
     };
 
@@ -208,7 +207,7 @@ void AppChannel::OnMessage(int sockid, const std::string& message) {
         LOG(INFO) << "JSON Parsing Success: " << message;
     }
     else {
-        static const int max_chunked_frames=5;
+        static const int kMaxChunkedFrames=5;
 
         // json_value.clear();
         chunked_frames_.append(message);
@@ -216,7 +215,7 @@ void AppChannel::OnMessage(int sockid, const std::string& message) {
             << chunked_frames_;
         if (!json_reader.parse(chunked_frames_, json_value)) {
             // parsing failed
-            if( num_chunked_frames_++ > max_chunked_frames )  {
+            if( num_chunked_frames_++ > kMaxChunkedFrames )  {
                 LOG(INFO) << "Failed to parse, Dropping Chunked frames: " 
                     << chunked_frames_;
                 num_chunked_frames_ = 0;
