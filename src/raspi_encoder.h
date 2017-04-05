@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
@@ -99,7 +99,7 @@ private:
 
     //
     // Encoded frame process thread
-    CriticalSectionWrapper* drainCritSect_;
+    rtc::CriticalSection* drainCritSect_;
     std::unique_ptr<rtc::PlatformThread> drainThread_;
     static bool DrainThread(void*);
     bool drainStarted_;

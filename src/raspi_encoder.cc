@@ -256,8 +256,7 @@ int32_t RaspiEncoderImpl::Encode(
         // Skip frame?
         if ((*frame_types)[0] == kEmptyFrame) {
             return WEBRTC_VIDEO_CODEC_OK;
-        }
-        // Force key frame?
+        } // Force key frame?
         force_key_frame = (*frame_types)[0] == kVideoFrameKey;
     }
 
@@ -282,15 +281,12 @@ bool RaspiEncoderImpl::DrainThread(void* obj)
 
 bool RaspiEncoderImpl::DrainProcess()
 {
-    // leave the CritSect untouched
-    // drainCritSect_->Enter();
-    // drainCritSect_->Leave();
     int32_t callback_status = 0;
     MMAL_BUFFER_HEADER_T *buf = nullptr;
 
     // frame queue is empty?
-    if( mmal_encoder_->Length() == 0 ) {
-        return true;
+    while( mmal_encoder_->Length() == 0 ) {
+        usleep(500);
     }
 
     buf = mmal_encoder_->DequeueFrame();

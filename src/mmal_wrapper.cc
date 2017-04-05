@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/base/criticalsection.h"
 
 #include "mmal_wrapper.h"
 
@@ -208,7 +208,6 @@ void FrameQueue::dumpFrameQueueInfo( void ) {
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 MMALEncoderWrapper::MMALEncoderWrapper()
-    : crit_sect_(CriticalSectionWrapper::CreateCriticalSection())
 {
 
     camera_preview_port_ 	= nullptr;
@@ -229,11 +228,7 @@ MMALEncoderWrapper::MMALEncoderWrapper()
     FrameQueue();
 }
 
-MMALEncoderWrapper::~MMALEncoderWrapper()
-{
-    if (crit_sect_) {
-        delete crit_sect_;
-    }
+MMALEncoderWrapper::~MMALEncoderWrapper() {
 }
 
 int MMALEncoderWrapper::getWidth( void )
@@ -253,7 +248,7 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
 
     LOG(INFO) << "Start initialize the MMAL encode wrapper."
               << width << "x" << height << "@" << framerate << ", " << bitrate << "kbps";
-    CriticalSectionScoped cs(crit_sect_);
+    rtc::CritScope cs(&crit_sect_);
 
     state_.width =  width;
     state_.height =  height;
@@ -344,7 +339,7 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
 
     LOG(INFO) << "Start reinitialize the MMAL encode wrapper."
               << width << "x" << height << "@" << framerate << ", " << bitrate << "kbps";
-    CriticalSectionScoped cs(crit_sect_);
+    rtc::CritScope cs(&crit_sect_);
 
     state_.width =  width;
     state_.height =  height;
@@ -468,14 +463,12 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
 
 
 void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
-    // static_cast<MMALEncoderWrapper *> (port->userdata)-> OnBufferCallback(port,buffer);
-    //((MMALEncoderWrapper*)port->userdata)->OnBufferCallback(port,buffer);
     reinterpret_cast<MMALEncoderWrapper *> (port->userdata)-> OnBufferCallback(port,buffer);
 }
 
 
 bool MMALEncoderWrapper::UninitEncoder(void) {
-    CriticalSectionScoped cs(crit_sect_);
+    rtc::CritScope cs(&crit_sect_);
 
     LOG(INFO) << "unitialize the MMAL encode wrapper.";
 
@@ -589,7 +582,7 @@ bool MMALEncoderWrapper::StopCapture( void ) {
 //
 bool MMALEncoderWrapper::SetFrame(int width, int height ) {
     if( state_.width != width || state_.height != height ) {
-        CriticalSectionScoped cs(crit_sect_);
+        rtc::CritScope cs(&crit_sect_);
 
         LOG(INFO) << "MMAL frame encoding parameters changed:  "
                   << width << "x" << height << "@" << state_.framerate << ", " << state_.bitrate << "kbps";
@@ -604,7 +597,7 @@ bool MMALEncoderWrapper::SetFrame(int width, int height ) {
 //
 bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
     if( state_.framerate != framerate || state_.bitrate != bitrate*1000 ) {
-        CriticalSectionScoped cs(crit_sect_);
+        rtc::CritScope cs(&crit_sect_);
         MMAL_STATUS_T status;
 
         // LOG(INFO) << "MMAL frame encoding rate changed : "
@@ -644,7 +637,7 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
 
 //
 bool MMALEncoderWrapper::ForceKeyFrame(void) {
-    CriticalSectionScoped cs(crit_sect_);
+    rtc::CritScope cs(&crit_sect_);
     LOG(INFO) << "MMAL force key frame encoding";
 
     if (mmal_port_parameter_set_boolean(encoder_output_port_,

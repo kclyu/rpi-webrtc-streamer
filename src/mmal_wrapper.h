@@ -30,7 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __MMAL_WRAPPER_H__
 #define __MMAL_WRAPPER_H__
 
-#include "webrtc/system_wrappers/include/critical_section_wrapper.h"
+#include "webrtc/base/criticalsection.h"
 #include "mmal_encoder.h"
 
 namespace webrtc {
@@ -41,7 +41,7 @@ namespace webrtc {
 
 class FrameQueue {
 private:
-    CriticalSectionWrapper* crit_sect_;
+    rtc::CriticalSection* crit_sect_;
 
     int num_, size_;
 
@@ -110,7 +110,7 @@ private:
     MMAL_PORT_T *encoder_output_port_;
     RASPIVID_STATE state_;
 
-    CriticalSectionWrapper* crit_sect_;
+    rtc::CriticalSection crit_sect_;
 };
 
 // singleton wrappper
