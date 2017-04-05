@@ -51,6 +51,9 @@ TBD
 TBD
 
 ## Version History
+* 2017/04/04 v0.60 : 
+     - signaling interface changed from long-poll to websocket (libwebsockets)
+     - RWS main port changed from 8888 to 8889 (because Android Direct socket need 8888 port)
  * 2017/01/10 v0.57 : 
      - adding initial android direct socket feature
      - fixing branch-heads/55

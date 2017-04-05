@@ -105,10 +105,11 @@ _WebRTC native-code package start to use only GN build, it does not use GYP buil
 ```
 cd ~/Workspace/webrtc/src
 mkdir arm_build
-cp ~/Workspace/rpi-webrtc-streamer/misc/webrtc_build_args.gn arm_build/args.gn
+cp ~/Workspace/rpi-webrtc-streamer/misc/webrtc_arm_build_args.gn arm_build/args.gn
 gn gen arm_build   
 ```
 - note:  You need to replace the whole absolute path in args.gn before doing 'gn gen arm_build'
+- note:  webrtc_build_args.gn was renamed to webrtc_arm_build_args.gn
 
 3. building WebRTC library
 
@@ -120,27 +121,36 @@ After compilation is finished without an error, go to the next step to compile r
 
 ## Building RWS(rpi-webrtc-streamer)
   
-*  Setup Makefile and cross_*.mk 
- 
-|Item|file|description|
-|----------------|-----------------|-----|
-|SYSROOT|cross_gn.mk|sysroot for raspberry pi |
-|WEBRTCROOT|cross_gn.mk|WebRTC root directory path|
-|WEBRTCOUTPUT|cross_gn.mk|WebRTC build output path|
-
-
    
-*  build rws
+1. build RWS
+
+RWS uses third party libraries. Before running make to build RWS, you must first create the libraries using config_h264bitstream.sh and config_libwebsockets.sh. For a real example, see the command example below.
  ```
 cd ~/Workspace/
 git clone https://github.com/kclyu/rpi-webrtc-streamer.git
 cd rpi-webrtc-streamer/src
-sh ../../scripts/config_h264bitstream.sh
+sh ../mk/config_h264bitstream.sh
+sh ../mk/config_libwebsockets.sh 
 make
 ```
 
+ - Setup Makefile and cross_arm_gn.mk 
+ 
+If you use the working directory mentioned above (i.e. ~/Workspace/webrtc and ~/Workspace/rpi_rootfs, ~/Workspace/rpi-webrtc-streamer), you don't need to modify the following variables. If you use a different directory path, you need to modify the following variables. 
+
+ 
+|Item|file|description|
+|----------------|-----------------|-----|
+|SYSROOT|cross_arm_gn.mk|sysroot for raspberry pi |
+|WEBRTCROOT|cross_arm_gn.mk|WebRTC root directory path|
+|WEBRTCOUTPUT|cross_arm_gn.mk|WebRTC build output path|
+
+
 ## Version History
- * 2017/01/10 v0.57 : 
+* 2017/04/04 v0.60 : 
+     - signaling interface changed from long-poll to websocket (libwebsockets)
+     - RWS main port changed from 8888 to 8889 (because Android Direct socket need 8888 port)
+* 2017/01/10 v0.57 : 
      - adding initial android direct socket feature
      - fixing branch-heads/55
      - removing unused GYP building scripts and files

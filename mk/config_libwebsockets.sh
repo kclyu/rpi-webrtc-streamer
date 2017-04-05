@@ -22,7 +22,7 @@ then
     if [ ! -d ../lib/libwebsockets ]
     then
 	    echo "extracting libwebsocket library in lib"
-        cd ../lib && unzip  ../misc/libwebsockets-master.zip && mv libwebsockets-master libwebsockets
+        cd ../lib && unzip  ../lib/libwebsockets-master.zip && mv libwebsockets-master libwebsockets
         mkdir -p libwebsockets/arm_build
         # 
     fi
