@@ -175,6 +175,9 @@ AppChannel::AppChannel(int port, const std::string& app_conf )
 
 void AppChannel::OnConnect(int sockid) {
     LOG(INFO) << "New WebSocket connnection id : " << sockid;
+    // reset the chunked_frames variables
+    chunked_frames_.clear();
+    num_chunked_frames_=0;
 }
 
 const char kJsonCmd[] = "cmd";
