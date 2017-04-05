@@ -40,10 +40,16 @@
 
 #include "streamer.h"
 #include "streamer_observer.h"
-#include "streamer_defaults.h"
+#include "streamer_config.h"
 
 
 using webrtc::PeerConnectionInterface;
+
+
+// Names used for SDP label
+const char kAudioLabel[] = "audio_label";
+const char kVideoLabel[] = "video_label";
+const char kStreamLabel[] = "stream_label";
 
 // Names used for a Android Direct IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "id";
@@ -60,7 +66,6 @@ const char kSessionDescriptionSdpName[] = "sdp";
 #define DTLS_OFF false
 
 const bool dtls_enable = DTLS_ON;
-
 
 class DummySetSessionDescriptionObserver 
     : public webrtc::SetSessionDescriptionObserver {
@@ -81,12 +86,12 @@ protected:
     ~DummySetSessionDescriptionObserver() {}
 };
 
-Streamer::Streamer(SocketServerObserver *session)
-    : peer_id_(-1) {
+Streamer::Streamer(SocketServerObserver *session, StreamerConfig *config)
+    : peer_id_(-1), dtls_enable_(true) {
     RTC_DCHECK(session != nullptr);
     session_ = session;
-    dtls_enable_ = GetDTLSEnableBool();
     session->RegisterObserver(this);
+    streamer_config_ = config;
 }
 
 Streamer::~Streamer() {
@@ -148,7 +153,7 @@ bool Streamer::CreatePeerConnection() {
 
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     webrtc::PeerConnectionInterface::IceServer server;
-    server.uri = GetPeerConnectionString();
+    streamer_config_->GetStunServer(server.uri);
     config.servers.push_back(server);
 
     webrtc::FakeConstraints constraints;
@@ -249,8 +254,8 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
 
         if (!InitializePeerConnection()) {
             LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
-            // Reset the active stream session
             // TODO
+            // Reset the active stream session
             // client_->SignOut();
             return;
         }

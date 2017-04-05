@@ -30,6 +30,7 @@
 #include "webrtc/api/peerconnectioninterface.h"
 #include "clientconstraints.h"
 #include "streamer_observer.h"
+#include "streamer_config.h"
 
 
 namespace webrtc {
@@ -50,7 +51,7 @@ class Streamer
       public StreamerObserver
 {
 public:
-    Streamer(SocketServerObserver *session );
+    Streamer(SocketServerObserver *session, StreamerConfig *config );
     void AddObserver(SocketServerObserver *session);
     bool connection_active() const;
     virtual void Close();
@@ -111,6 +112,7 @@ protected:
     bool dtls_enable_;
     SocketServerObserver* session_;
     SdpNegotiationType nego_type_;
+    StreamerConfig *streamer_config_;
 };
 
 

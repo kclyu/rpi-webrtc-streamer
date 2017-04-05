@@ -39,13 +39,14 @@
 
 #include "webrtc/p2p/base/basicpacketsocketfactory.h"
 
+#include "webrtc/base/flags.h"
+
 #include "websocket_server.h"
 #include "app_channel.h"
 
 #include "streamer_observer.h"
 #include "direct_socket.h"
-#include "streamer_defaults.h"
-#include "streamer_flagdefs.h"
+#include "streamer_config.h"
 #include "streamer.h"
 
 // 
@@ -60,11 +61,7 @@ public:
     void set_websocket(LibWebSocketServer* websocket) { websocket_ = websocket; }
 
     virtual bool Wait(int cms, bool process_io) {
-        int websocket_loop=true;
-
-        while (websocket_loop)
-            websocket_loop = websocket_->RunLoop(0);
-
+        websocket_->RunLoop(0); // Run Websocket loop once per call
         return rtc::PhysicalSocketServer::Wait(0/*cms == -1 ? 1 : cms*/,
                 process_io);
     }
@@ -75,25 +72,28 @@ protected:
     LibWebSocketServer *websocket_;
 };
 
+//
+//  flags definition for streamer
+// 
+DEFINE_bool(help, false, "Prints this message");
+DEFINE_string(conf, "etc/webrtc-streamer.conf",
+           "the main configuration file for webrtc-streamer.");
 
+
+//
+// Main
+//
 int main(int argc, char** argv) {
+    std::string app_channel_config;
+    int  websocket_port_num;
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
     if (FLAG_help) {
         rtc::FlagList::Print(NULL, false);
         return 0;
     }
 
-    // Abort if the user specifies a port that is outside the allowed
-    // range [1, 65535].
-    if ((FLAG_port < 1) || (FLAG_port > 65535)) {
-        // TODO(kclyu): remove printf
-        printf("Error: %i is not a valid port.\n", FLAG_port);
-        return -1;
-    }
-
     rtc::AutoThread auto_thread;
     rtc::Thread* thread = rtc::Thread::Current();
-    rtc::SocketAddress addr( FLAG_bind, FLAG_port );
     std::unique_ptr<DirectSocketServer> direct_socket_server;
 
     StreamingSocketServer socket_server(thread);
@@ -101,41 +101,45 @@ int main(int argc, char** argv) {
 
     rtc::InitializeSSL();
 
-    AppChannel app_channel("etc/app_channel.conf");
-    app_channel.AppInitialize();
-    socket_server.set_websocket(&app_channel);
+    // Load the streamer configuration from file
+    StreamerConfig streamer_config(FLAG_conf);
 
-    rtc::scoped_refptr<Streamer> streamer(
-        new rtc::RefCountedObject<Streamer>(StreamerProxy::GetInstance()));
+    // DirectSocket 
+    if(streamer_config.GetDirectSocketEnable() == true) {
+        int direct_socket_port_num;
 
-#ifdef __DIRECT_SOCKETS_
-    if(FLAG_directtcp == true) {
-        rtc::IPAddress ipaddr;
-        rtc::NetworkManager::NetworkList networks;
-        std::unique_ptr<rtc::BasicNetworkManager> network_manager(
-            new rtc::BasicNetworkManager());
-        network_manager->StartUpdating();
-        if( rtc::Thread::Current()->ProcessMessages(0) == false ) {
-            LOG(LS_ERROR) << "Failed to get response from network manager";
-            return 0;
+        if( !streamer_config.GetDirectSocketPort(direct_socket_port_num) ) {
+            LOG(LS_ERROR) << "Error in getting direct socket port number: " 
+                << direct_socket_port_num;
+            thread->set_socketserver(NULL);
+            rtc::CleanupSSL();
+            return -1;
         }
-        if( network_manager->GetDefaultLocalAddress(AF_INET, &ipaddr) == false )  {
-            LOG(LS_ERROR) << "Failed to get default local address";
-            return 0;
-        }
-        LOG(INFO) << "Using Local IP address : " << ipaddr;
-        rtc::SocketAddress addr( ipaddr.ToString(), FLAG_port );
+        LOG(INFO) << "Direct socket using port num: " << direct_socket_port_num;
+        rtc::SocketAddress addr( "0.0.0.0", direct_socket_port_num );
 
-        direct_socket_server.reset(new DirectSocketServer);
-
+        direct_socket_server.reset(new DirectSocketServer());
         if (direct_socket_server->Listen(addr) == false) {
             // Terminating clean-up
             thread->set_socketserver(NULL);
             rtc::CleanupSSL();
-            return 0;
+            return -1;
         }
     }
-#endif
+
+    // WebSocket
+    streamer_config.GetAppChannelConfig(app_channel_config);
+    streamer_config.GetWebSocketPort(websocket_port_num);
+    LOG(INFO) << "WebSocket Using Port : " << websocket_port_num 
+        << ", Configuration file : " << app_channel_config;
+    AppChannel app_channel(websocket_port_num, app_channel_config);
+    app_channel.AppInitialize();
+
+    socket_server.set_websocket(&app_channel);
+
+    rtc::scoped_refptr<Streamer> streamer(
+        new rtc::RefCountedObject<Streamer>(StreamerProxy::GetInstance(), 
+            &streamer_config));
 
     // Running Loop
     thread->Run();
@@ -143,7 +147,6 @@ int main(int argc, char** argv) {
     // Terminating clean-up
     thread->set_socketserver(NULL);
     rtc::CleanupSSL();
-
     return 0;
 }
 

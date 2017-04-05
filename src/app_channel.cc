@@ -81,7 +81,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////////////////
 // WebSocket Config
 const char kWebRoot[] = "web_root";
-const char kWebSocketPort[] = "websocket_port";
 const char kLibraryDebug[] = "libwebsocket_debug";
 const char kWsServer[] = "ws_server";
 const char kPostServer[] = "post_server";
@@ -169,9 +168,9 @@ const char kHomeTemplate[] = "__HOME__";
 // Application Channel
 //
 //////////////////////////////////////////////////////////////////////////////////////////
-AppChannel::AppChannel(const std::string& app_conf ) 
+AppChannel::AppChannel(int port, const std::string& app_conf ) 
     : LibWebSocketServer(),
-    app_conf_(app_conf), is_inited_(false),num_chunked_frames_(0)  {
+    port_num_(port), app_conf_(app_conf), is_inited_(false),num_chunked_frames_(0)  {
 }
 
 void AppChannel::OnConnect(int sockid) {
@@ -288,8 +287,7 @@ void AppChannel::OnDisconnect(int sockid) {
 void AppChannel::OnError(int sockid, const std::string& message) {
 }
 
-bool AppChannel::SendMessageToPeer(const int peer_id, 
-        const std::string &message) {
+bool AppChannel::SendMessageToPeer(const int peer_id, const std::string &message) {
     int websocket_id;
 
     LOG(INFO) << __FUNCTION__;
@@ -354,7 +352,6 @@ bool AppChannel::AppInitialize(){
 
 bool AppChannel::LoadConfig(){
     std::string string_value;
-    int         int_value;
     size_t      pos;
 
     home_path_ = getenv("HOME");
@@ -386,14 +383,6 @@ bool AppChannel::LoadConfig(){
             // change the debug print options
             LogLevel(LibWebSocketServer::DEBUG_LEVEL_ALL);
     }
-
-    // WebSocket Port number
-    if(options_->GetIntValue(kWebSocketPort, &int_value ) == false ) {
-        LOG(LS_ERROR) << "WebSocket Port Number(" << kWebSocketPort << ") not found.";
-        return false;
-    }
-    LOG(INFO) << "WebSocket Port : " << int_value ;
-    port_num_ = int_value;
 
     // WebSocket Server 
     if(options_->GetStringValue(kWsServer, &string_value ) == false ) {

@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "utils.h"
 
+#include "streamer_observer.h"
 #include "direct_socket.h"
 
 
@@ -54,7 +55,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 DirectSocketServer::DirectSocketServer()
     : listener_(nullptr), direct_socket_(nullptr) {
-    SocketServerObserver();
     last_reject_time_ms_ = connection_reject_count_ = 0;
 }
 DirectSocketServer::~DirectSocketServer() {}
@@ -88,7 +88,6 @@ void DirectSocketServer::StopListening(void) {
 
 void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
     LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(streamer_bridge_ != nullptr );
     RTC_DCHECK(socket == listener_.get());
     rtc::AsyncSocket* incoming = listener_->Accept(nullptr);
     RTC_CHECK(incoming != nullptr );
@@ -97,11 +96,12 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
         // stream session is not active, it will start to new stream session
         connection_reject_count_ = 0;       // reinitialize the reject counter
 
-        peer_id_ = DIRECTSOCKET_FAKE_PEERID;
-        peer_name_ = DIRECTSOCKET_FAKE_NAME_PREFIX + incoming->GetRemoteAddress().ToString();
-        LOG(INFO) << "New Session Name: " << peer_name_;
+        socket_peer_id_ = DIRECTSOCKET_FAKE_PEERID;
+        socket_peer_name_ = DIRECTSOCKET_FAKE_NAME_PREFIX + 
+            incoming->GetRemoteAddress().ToString();
+        LOG(INFO) << "New Session Name: " << socket_peer_name_;
 
-        if( ActivateStreamSession() == true) {
+        if( ActivateStreamSession(socket_peer_id_, socket_peer_name_) == true) {
             direct_socket_.reset(incoming);
             // Close event will be handled in DirectSocketServer
             incoming->SignalCloseEvent.connect(this, &DirectSocketServer::OnClose);
@@ -136,9 +136,13 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
 
 }
 
+//  
+void DirectSocketServer::RegisterObserver(StreamerObserver* callback) {
+    LOG(INFO) << __FUNCTION__;
+}
+
 void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
     LOG(INFO) << __FUNCTION__ << ", Error: " << err ;
-    RTC_DCHECK(streamer_bridge_ != nullptr );
 
     // Close the stream session
     socket->SignalCloseEvent.disconnect(this);
@@ -150,7 +154,6 @@ void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
 void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK( socket != nullptr );
-    RTC_DCHECK(streamer_bridge_ != nullptr );
 
     char buffer[4096]= {0x00};
     int	bytes = 0;
@@ -166,7 +169,7 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
     if ( index != std::string::npos ) {
         LOG(INFO) << "Message IN from client: \"" << buffered_read_ << "\""; 
         // '\n' delimiter found in read buffer
-        streamer_bridge_->MessageFromPeer(peer_id_, buffered_read_);
+        MessageFromPeer(buffered_read_);
         buffered_read_.clear();
     }
 }

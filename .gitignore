@@ -35,4 +35,5 @@ lib/libwebsockets/
 
 # Configuration
 etc/app_channel.conf
+etc/webrtc-streamer.conf
 

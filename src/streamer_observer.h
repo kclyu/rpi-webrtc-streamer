@@ -48,7 +48,7 @@ protected:
     virtual ~SocketServerObserver() {}
 };
 
-struct StreamerProxy;      // forward declaration
+class StreamerProxy;      // forward declaration
 class SocketServerHelper : public SocketServerObserver {
 public:
     SocketServerHelper();

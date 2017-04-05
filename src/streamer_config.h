@@ -27,66 +27,42 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory>
-#include <string>
-#include <list>
-#include <deque>
+#ifndef RPI_STREAMER_CONFIG_
+#define RPI_STREAMER_CONFIG_
 
-
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/base/json.h"
+#include "webrtc/base/checks.h"
 
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/optionsfile.h"
 #include "webrtc/base/pathutils.h"
 
-#include "websocket_server.h"
-#include "streamer_observer.h"
-#include "app_client.h"
 
-#ifndef APP_CHANNEL_H_
-#define APP_CHANNEL_H_
-
-class AppChannel : public LibWebSocketServer, public WebSocketHandler,
-    public HttpHandler, public SocketServerHelper {
+class StreamerConfig  {
 public:
-    explicit AppChannel(int port, const std::string& app_conf);
-    ~AppChannel();
+    explicit StreamerConfig(const std::string &config_file);
+    ~StreamerConfig();
 
-    bool AppInitialize();
-    // WebSocket Handler
-    void OnConnect(int sockid) override;
-    void OnMessage(int sockid, const std::string& message) override;
-    void OnDisconnect(int sockid) override;
-    void OnError(int sockid, const std::string& message) override;
+    // WebSocket Config
+    bool GetWebSocketEnable();
+    bool GetWebSocketPort(int& port);
 
-    // HttpHandler
-    bool DoGet(HttpRequest* req, HttpResponse* res) override;
-    bool DoPost(HttpRequest* req, HttpResponse* res) override;
+    // Direct Socket Config
+    bool GetDirectSocketEnable();
+    bool GetDirectSocketPort(int& port);
 
-    // StreamerObserver interface
-    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
-    void RegisterObserver(StreamerObserver* callback) override;
+    // WebRTC Config
+    bool GetDTLSEnable();
+    bool GetStunServer(std::string& server);
+    bool GetTurnServer(std::string& server);
+
+    // App Channel Config
+    bool GetAppChannelConfig(std::string &config_filename);
+
 private:
-    int port_num_;
-    bool LoadConfig();
-
-    std::unique_ptr<rtc::OptionsFile> options_;
-    std::string app_conf_;
-    std::string web_root_;
-    std::string ws_server_;
-    std::string post_server_;
-    std::string home_path_;
-    std::map <std::string,std::string> room_params_;
-    bool is_inited_;
-    AppClientInfo app_client_;
-
-    // WebSocket chunked frames 
-    std::string chunked_frames_;
-    int num_chunked_frames_;
+    bool config_loaded_;
+    rtc::OptionsFile config_;
 };
 
-#endif // APP_CHANNEL_H_
 
+
+#endif  // RPI_STREAMER_CONFIG_

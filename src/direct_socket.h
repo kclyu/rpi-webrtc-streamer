@@ -48,7 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DIRECTSOCKET_FAKE_PEERID            100
 #define DIRECTSOCKET_FAKE_NAME_PREFIX       "DS"
 
-class DirectSocketServer : public SocketServerObserver,  
+class DirectSocketServer : public SocketServerHelper,
     public sigslot::has_slots<> {
 public:
     DirectSocketServer();
@@ -58,6 +58,7 @@ public:
     void StopListening(void);
 
     bool SendMessageToPeer(const int peer_id, const std::string &message) override;
+    void RegisterObserver(StreamerObserver* callback) override;
 
 private:
     void OnAccept(rtc::AsyncSocket* socket);
@@ -65,15 +66,12 @@ private:
 
     void OnRead(rtc::AsyncSocket* socket);
 
-    bool ActivateStreamSession();
-    void DeactivateStreamSession();
-    bool ReceiveMessageFromPeer(const std::string &message);
-
-    StreamerObserver *streamer_callback_;
-    StreamerProxy *streamer_bridge_;
     std::unique_ptr<rtc::AsyncSocket> listener_;
     std::unique_ptr<rtc::AsyncSocket> direct_socket_;
 
+    // local id and name
+    int socket_peer_id_;
+    std::string socket_peer_name_;
     // read buffer from client
     std::string buffered_read_;
 
