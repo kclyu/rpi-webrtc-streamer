@@ -311,8 +311,7 @@ HttpHandler *LibWebSocketServer::GetHttpHandler(const std::string path) {
 void LibWebSocketServer::AddWebSocketHandler (const std::string path, 
             WebSocketHandlerType handler_type, WebSocketHandler *handler){
     for(std::list<WSInternalHandlerConfig>::iterator iter 
-            = wshandler_config_.begin(); 
-            iter != wshandler_config_.end(); iter++) {
+            = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->path_ == path ) {
             LOG(LS_ERROR) << "Do not allow same URI path in handler config";
             return;
@@ -323,8 +322,7 @@ void LibWebSocketServer::AddWebSocketHandler (const std::string path,
 
 WSInternalHandlerConfig *LibWebSocketServer::GetWebsocketHandler(const char *path) {
     for(std::list<WSInternalHandlerConfig>::iterator iter 
-            = wshandler_config_.begin(); 
-            iter != wshandler_config_.end(); iter++) {
+            = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->path_ == path ) {
             return &(*iter);
         }
@@ -333,8 +331,8 @@ WSInternalHandlerConfig *LibWebSocketServer::GetWebsocketHandler(const char *pat
 }
 
 bool LibWebSocketServer::IsValidWSPath(const char *path) {
-    for(std::list<WSInternalHandlerConfig>::iterator iter = wshandler_config_.begin(); 
-            iter != wshandler_config_.end(); iter++) {
+    for(std::list<WSInternalHandlerConfig>::iterator iter 
+            = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->path_ == path ) {
             LOG(INFO) << "Found handler URI in config : " << iter->path_;
             return true;
@@ -349,8 +347,8 @@ bool LibWebSocketServer::IsValidWSPath(const char *path) {
 //
 //////////////////////////////////////////////////////////////////////
 void LibWebSocketServer::SendMessage(int sockid, const std::string& message){
-    for(std::list<struct WSInternalHandlerConfig>::iterator iter = wshandler_config_.begin(); 
-            iter != wshandler_config_.end(); iter++) {
+    for(std::list<struct WSInternalHandlerConfig>::iterator iter 
+            = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->QueueMessage(sockid, message) == true ) {
             // book us a LWS_CALLBACK_HTTP_WRITEABLE callback
             lws_callback_on_writable_all_protocol(context_, 
@@ -361,27 +359,46 @@ void LibWebSocketServer::SendMessage(int sockid, const std::string& message){
     }
 }
 
+void LibWebSocketServer::Close(int sockid, int reason_code, 
+        const std::string& message){
+    for(std::list<struct WSInternalHandlerConfig>::iterator iter 
+            = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
+
+        iter->Close(sockid, reason_code, message);
+        return;
+    }
+}
+
 
 //////////////////////////////////////////////////////////////////////
 //
 // Websocket Internal Handler Config
 //
 //////////////////////////////////////////////////////////////////////
-void WSInternalHandlerConfig::OnConnect(const int sockid) {
+bool WSInternalHandlerConfig::CreateHandlerRuntime(const int sockid, struct lws *wsi) {
     if( handler_type_ ==  SINGLE_INSTANCE ) {
         if( handler_runtime_.size() != 0) {
+            return false;
+        }
+    }
+    handler_runtime_.push_back(WSInstanceContainer(sockid, wsi));
+    return true;
+}
+
+void WSInternalHandlerConfig::OnConnect(const int sockid) {
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+            iter != handler_runtime_.end(); iter++) {
+        if( iter->sockid_ == sockid ) {
+            handler_->OnConnect(sockid);
             return;
         }
     }
-    handler_runtime_.push_back(WSInstanceContainer(sockid));
-
-    // Call OnConnect handler in Config
-    handler_->OnConnect(sockid);
+    return;
 }
 
 void WSInternalHandlerConfig::OnDisconnect(const int sockid) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter 
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
 
         if( iter->sockid_ == sockid ) {
             // Call OnDisconnect handler in Config
@@ -392,14 +409,15 @@ void WSInternalHandlerConfig::OnDisconnect(const int sockid) {
     }
 }
 
-void WSInternalHandlerConfig::OnMessage(const int sockid, 
+bool WSInternalHandlerConfig::OnMessage(const int sockid, 
         const std::string& message) {
     for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
-            handler_->OnMessage(sockid, message);
+            return handler_->OnMessage(sockid, message);
         }
     }
+    return false;
 }
 
 void WSInternalHandlerConfig::OnError(const int sockid, 
@@ -447,6 +465,32 @@ bool WSInternalHandlerConfig::DequeueMessage(const int sockid,
             if( iter->pending_message_.size() == 0 ) return false;
             message =  iter->pending_message_.front();
             iter->pending_message_.pop_front();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool WSInternalHandlerConfig::Close(int sockid, int reason_code, 
+        const std::string& message){
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+            iter != handler_runtime_.end(); iter++) {
+        if( iter->sockid_ == sockid ) {
+            RTC_DCHECK( iter->wsi_ != nullptr );
+            lws_close_status reason_status;
+
+            if( reason_status  == 0 ) reason_status = LWS_CLOSE_STATUS_NORMAL;
+            else reason_status = (lws_close_status )reason_code;
+
+            // TODO(kclyu) Confirmation required. Currently, 
+            // lws_close_reason is considered to operate only 
+            // in the receive callback handler in libwebsockets.
+            lws_close_reason (iter->wsi_, reason_status, 
+                    (unsigned char *)message.c_str(), message.size());
+
+            //
+            iter->force_connection_drop_ = true;
+            iter->drop_message_ = message;
             return true;
         }
     }

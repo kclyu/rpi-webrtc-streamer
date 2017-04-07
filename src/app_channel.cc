@@ -188,7 +188,7 @@ const char kJsonRegisterClientId[] = "clientid";
 const char kJsonSendMsg[] = "msg";
 
 
-void AppChannel::OnMessage(int sockid, const std::string& message) {
+bool AppChannel::OnMessage(int sockid, const std::string& message) {
     LOG(INFO) << __FUNCTION__ << "(" << sockid << ")";
 
     Json::Reader json_reader;
@@ -223,12 +223,12 @@ void AppChannel::OnMessage(int sockid, const std::string& message) {
                 num_chunked_frames_ = 0;
                 chunked_frames_.clear();
             }
-            return;
+            return true;
         }
 
         rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
         if( cmd.empty() ) {
-            return;
+            return true;
         }
         // parsing success and cmd keyword found.
         LOG(INFO) << "Chunked frames successful: " << chunked_frames_;
@@ -245,23 +245,23 @@ void AppChannel::OnMessage(int sockid, const std::string& message) {
             if( !rtc::GetIntFromJsonObject(json_value, kJsonRegisterRoomId, &room_id) ||
                 !rtc::GetIntFromJsonObject(json_value, kJsonRegisterClientId, &client_id)) {
                 LOG(LS_ERROR) << "Not found clientid/roomid :" << message;
-                return;
+                return true;
             }
             LOG(INFO) << "Room ID: " << room_id << ", Client ID: " << client_id;
             if( app_client_.Connected( sockid, room_id, client_id ) == false ) {
                 LOG(LS_ERROR) << "Failed to set room_id/client_id :" << message;
-                return;
+                return false;
             };
 
             if ( IsStreamSessionActive() == false ) {
                 if( ActivateStreamSession(client_id,int2str(client_id))  == true ) {
                     LOG(INFO) << "New WebSocket Name: " << client_id;
                 };
-                return;
+                return true;
             }
             // TODO(kclyu) need to send response of room busy error message
-            LOG(INFO) << "WebSocket Already exist : " << GetActivePeerId();
-            return;
+            LOG(INFO) << "Streamer Session already Active. Try to drop connection: " << client_id;
+            return true;
         }
         // command send
         else if(cmd.compare(kJsonCmdSend)== 0) {
@@ -269,13 +269,14 @@ void AppChannel::OnMessage(int sockid, const std::string& message) {
             rtc::GetStringFromJsonObject(json_value, kJsonSendMsg, &msg);
             if( !msg.empty() ) {
                 MessageFromPeer(msg);
-                return;
+                return true;
             }
             LOG(LS_ERROR) << "Failed to pass received message :" << message;
         }
-        return;
+        return true;
     };
     LOG(LS_ERROR) << "Received unknown protocol message. " << message;
+    return true;
 }
 
 

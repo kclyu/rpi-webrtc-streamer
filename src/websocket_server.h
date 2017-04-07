@@ -64,10 +64,13 @@ struct per_session_data__libwebsockets {
 };
 
 struct WSInstanceContainer {
-    explicit WSInstanceContainer(const int sockid )
-        : sockid_(sockid){}
+    explicit WSInstanceContainer(const int sockid,struct lws* wsi )
+        : sockid_(sockid), wsi_(wsi), force_connection_drop_(false){}
     virtual ~WSInstanceContainer() {}
     int sockid_;
+    struct lws *wsi_;
+    bool force_connection_drop_;
+    std::string drop_message_;
     std::deque<std::string> pending_message_;
 };
 
@@ -83,14 +86,16 @@ struct WSInternalHandlerConfig : public WebSocketHandler {
     std::list<struct WSInstanceContainer> handler_runtime_;
 
     virtual void OnConnect(const int sockid);
+    virtual bool OnMessage(const int sockid, const std::string& message);
     virtual void OnDisconnect(const int sockid);
-    virtual void OnMessage(const int sockid, const std::string& message);
     virtual void OnError(const int sockid, const std::string& errmsg);
 
+    bool CreateHandlerRuntime(const int sockid, struct lws *wsi);
     bool QueueMessage(const int sockid, const std::string& message);
     bool DequeueMessage(const int sockid, std::string& message);
     size_t Size();
     bool HasPendingMessage(const int sockid);
+    bool Close(int sockid, int reason_code, const std::string& message);
 };
 
 class LibWebSocketServer: public WebSocketMessage {
@@ -130,6 +135,7 @@ public:
             WebSocketHandlerType instance_type, WebSocketHandler *handler);
 
     virtual void SendMessage(int sockid, const std::string& message);
+    virtual void Close(int sockid, int reason_code, const std::string& message);
 
 protected:
     bool IsValidWSPath(const char *path);

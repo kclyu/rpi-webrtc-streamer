@@ -452,6 +452,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             lwsl_info("%s: LWS_CALLBACK_ESTABLISHED\n", __FUNCTION__);
 
             WS_GET_WEBSOCKETHANDLER
+            handler->CreateHandlerRuntime(sockid, wsi);
             handler->OnConnect(sockid);
         }
         lws_callback_on_writable(wsi);
@@ -519,7 +520,10 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             WSInternalHandlerConfig *handler;
             WS_GET_WEBSOCKETHANDLER
 
-            handler->OnMessage(sockid,std::string((const char *)in));
+            if ( handler->OnMessage(sockid,std::string((const char *)in)) == false ){
+                lws_close_reason (wsi, LWS_CLOSE_STATUS_NORMAL, nullptr, 0);
+                return -1;
+            }
         }
         lws_callback_on_writable_all_protocol(lws_get_context(wsi),
                 lws_get_protocol(wsi));

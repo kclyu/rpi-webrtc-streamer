@@ -58,7 +58,7 @@ public:
     bool AppInitialize();
     // WebSocket Handler
     void OnConnect(int sockid) override;
-    void OnMessage(int sockid, const std::string& message) override;
+    bool OnMessage(int sockid, const std::string& message) override;
     void OnDisconnect(int sockid) override;
     void OnError(int sockid, const std::string& message) override;
 

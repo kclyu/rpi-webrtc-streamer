@@ -104,7 +104,7 @@ protected:
 
 struct WebSocketHandler {
     virtual void OnConnect(int sockid) = 0;
-    virtual void OnMessage(int sockid, const std::string& message) = 0;
+    virtual bool OnMessage(int sockid, const std::string& message) = 0;
     virtual void OnDisconnect(int sockid) = 0;
     virtual void OnError(int sockid, const std::string& message) = 0;
 protected:
@@ -113,6 +113,8 @@ protected:
 
 struct WebSocketMessage {
     virtual void SendMessage(int sockid, const std::string& message) = 0;
+    virtual void Close(int sockid, int reason_code, 
+            const std::string& message) = 0;
 protected:
     virtual ~WebSocketMessage() {}
 };
