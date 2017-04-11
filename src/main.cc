@@ -55,13 +55,14 @@ class StreamingSocketServer : public rtc::PhysicalSocketServer,
     public sigslot::has_slots<> {
 public:
     StreamingSocketServer(rtc::Thread* thread)
-        : thread_(thread)  {}
+        : thread_(thread), websocket_(nullptr)  {}
     virtual ~StreamingSocketServer() {}
 
     void set_websocket(LibWebSocketServer* websocket) { websocket_ = websocket; }
 
     virtual bool Wait(int cms, bool process_io) {
-        websocket_->RunLoop(0); // Run Websocket loop once per call
+        if( websocket_ )
+            websocket_->RunLoop(0); // Run Websocket loop once per call
         return rtc::PhysicalSocketServer::Wait(0/*cms == -1 ? 1 : cms*/,
                 process_io);
     }
@@ -95,6 +96,7 @@ int main(int argc, char** argv) {
     rtc::AutoThread auto_thread;
     rtc::Thread* thread = rtc::Thread::Current();
     std::unique_ptr<DirectSocketServer> direct_socket_server;
+    std::unique_ptr<AppChannel> app_channel;
 
     StreamingSocketServer socket_server(thread);
     thread->set_socketserver(&socket_server);
@@ -128,18 +130,20 @@ int main(int argc, char** argv) {
     }
 
     // WebSocket
-    streamer_config.GetAppChannelConfig(app_channel_config);
-    streamer_config.GetWebSocketPort(websocket_port_num);
-    LOG(INFO) << "WebSocket Using Port : " << websocket_port_num 
-        << ", Configuration file : " << app_channel_config;
-    AppChannel app_channel(websocket_port_num, app_channel_config);
-    app_channel.AppInitialize();
+    if( streamer_config.GetWebSocketEnable() == true ) {
+        streamer_config.GetAppChannelConfig(app_channel_config);
+        streamer_config.GetWebSocketPort(websocket_port_num);
+        LOG(INFO) << "WebSocket Using Port : " << websocket_port_num 
+            << ", Configuration file : " << app_channel_config;
+        app_channel.reset(new AppChannel(websocket_port_num, app_channel_config));
+        app_channel->AppInitialize();
 
-    socket_server.set_websocket(&app_channel);
+        socket_server.set_websocket(app_channel.get());
+    };
 
     rtc::scoped_refptr<Streamer> streamer(
         new rtc::RefCountedObject<Streamer>(StreamerProxy::GetInstance(), 
-            &streamer_config));
+        &streamer_config));
 
     // Running Loop
     thread->Run();

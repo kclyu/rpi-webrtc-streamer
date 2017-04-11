@@ -47,20 +47,13 @@ MMALEncoderWrapper* getMMALEncoderWrapper() {
 
 //
 //
-FrameQueue::FrameQueue() {
-    num_ = FRAME_QUEUE_LENGTH;
-    size_ = FRAME_BUFFER_SIZE;
+FrameQueue::FrameQueue() 
+    : num_(FRAME_QUEUE_LENGTH), size_(FRAME_BUFFER_SIZE),
+    encoded_frame_queue_(nullptr), pool_internal_(nullptr), 
+    keyframe_buf_(nullptr), frame_buf_(nullptr),
+    frame_buf_pos_(0), frame_segment_cnt_(0), inited_(false), frame_count_(0),
+    frame_drop_(0), frame_queue_drop_(0) {}
 
-    encoded_frame_queue_ 	= nullptr;
-    pool_internal_ 			= nullptr;
-    frame_buf_ 				= nullptr;
-    frame_buf_pos_ 			= 0;
-    frame_segment_cnt_ 		= 0;
-    inited_ 				= false;
-    frame_count_ 			= 0;
-    frame_drop_ 			= 0;
-    frame_queue_drop_ 		= 0;
-}
 
 FrameQueue::~FrameQueue() {
     mmal_queue_destroy(encoded_frame_queue_);

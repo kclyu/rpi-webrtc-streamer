@@ -3,7 +3,7 @@
  *
  * streamer.cc
  *
- * Modified version of webrtc/src/webrtc/examples/peer/client/peer_connection.cc in WebRTC source tree
+ * Modified version of webrtc/src/webrtc/examples/peer/client/conductor.cc in WebRTC source tree
  * The origianl copyright info below.
  */
 
@@ -390,21 +390,11 @@ void Streamer::AddStreams() {
         peer_connection_factory_->CreateAudioTrack(
             kAudioLabel, peer_connection_factory_->CreateAudioSource(&audioConstraints)));
 
-    webrtc::ClientConstraints videoConstraints;
-    //videoConstraints.SetMandatoryMaxWidth(1280);
-    //videoConstraints.SetMandatoryMaxHeight(1024);
-    videoConstraints.SetMandatoryMaxWidth(640);
-    videoConstraints.SetMandatoryMaxHeight(480);
-    videoConstraints.SetMandatoryMinWidth(320);
-    videoConstraints.SetMandatoryMinHeight(240);
-    videoConstraints.SetMandatoryMaxFrameRate(30);
-    videoConstraints.SetMandatoryMinFrameRate(15);
-
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(
             kVideoLabel,
             peer_connection_factory_->CreateVideoSource(new cricket::FakeVideoCapturer(false),
-                    &videoConstraints)));
+                    nullptr)));
 
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);

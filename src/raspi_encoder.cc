@@ -133,12 +133,14 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     key_frame_interval_ = codec_settings->H264().keyFrameInterval;
     max_payload_size_ = max_payload_size;
 
+
     // Codec_settings uses kbits/second; encoder uses bits/second.
     max_bps_ = codec_settings->maxBitrate ;             // kbps
     if (codec_settings->targetBitrate == 0)
         target_bps_ = codec_settings->startBitrate;     // kbps
     else
         target_bps_ = codec_settings->targetBitrate;    // kbps 
+
 
     // Get the instance of MMAL encoder wrapper
     if( (mmal_encoder_ = getMMALEncoderWrapper() ) == nullptr ) {
@@ -149,11 +151,11 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     }
 
     // Overriding initial resolution parameter from codec_settings;
-    // init_width = width_ = 1024;  // for testing
-    // init_height = height_ = 768;
-    init_width = width_ = 640;  
-    init_height = height_ = 480;
-    max_bps_ = 1700; // kbps
+    init_width = width_ = 1024;  // for testing
+    init_height = height_ = 768;
+    // init_width = width_ = 1280;  
+    // init_height = height_ = 1024;
+    max_bps_ = 3500; // kbps
     target_bps_ = 800; // kbps
     max_frame_rate_ = kMaxRaspiFPS;
 
@@ -416,7 +418,7 @@ void RaspiEncoderImpl::ReportError() {
 }
 
 int32_t RaspiEncoderImpl::SetChannelParameters( uint32_t packet_loss, int64_t rtt) {
-    // LOG(INFO) << "Packet Loss: " << packet_loss << " , RTT: " << rtt;
+    LOG(INFO) << "Packet Loss: " << packet_loss << " , RTT: " << rtt;
     return WEBRTC_VIDEO_CODEC_OK;
 }
 

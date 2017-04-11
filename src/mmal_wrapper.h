@@ -35,14 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace webrtc {
 
-#define FRAME_BUFFER_SIZE	65536
-#define FRAME_QUEUE_LENGTH 10
+#define FRAME_BUFFER_SIZE	65536*2
+#define FRAME_QUEUE_LENGTH 5
 
 
 class FrameQueue {
 private:
-    rtc::CriticalSection* crit_sect_;
-
     int num_, size_;
 
     MMAL_QUEUE_T *encoded_frame_queue_;

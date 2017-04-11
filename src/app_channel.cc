@@ -371,13 +371,13 @@ bool AppChannel::LoadConfig(){
         LOG(LS_ERROR) << "WebRoot Confg(" << kWebRoot << ") not found.";
         return false;
     }
-    LOG(INFO) << "WebRoot : " << string_value ;
     web_root_ = string_value;
     // replace __HOME__ to HOME environment value
     if( (pos = web_root_.find(kHomeTemplate, 0)) 
             != std::string::npos){
         web_root_.replace(pos,strlen(kHomeTemplate),home_path_);
     };
+    LOG(INFO) << "WebRoot : " << web_root_ ;
 
     // LibWebSocket debug log
     string_value.clear();
