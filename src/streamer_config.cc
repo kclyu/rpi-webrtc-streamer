@@ -83,6 +83,7 @@ bool StreamerConfig::GetWebSocketEnable() {
     if( config_.GetStringValue(kConfigWebSocketEnable, &websocket_enabled ) == true ) {
         return websocket_enabled.compare("true") == 0;
     }
+    // websocket will be enabled by default
     return true;
 }
 

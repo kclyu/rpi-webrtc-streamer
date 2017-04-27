@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/base/criticalsection.h"
+// #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "mmal_wrapper.h"
+#include "raspi_quality_config.h"
 
 namespace webrtc {
 
@@ -60,13 +61,7 @@ public:
     explicit RaspiEncoderImpl(const cricket::VideoCodec& codec);
     ~RaspiEncoderImpl() override;
 
-    // |max_payload_size| is ignored.
-    // The following members of |codec_settings| are used. The rest are ignored.
-    // - codecType (must be kVideoCodecH264)
-    // - targetBitrate
-    // - maxFramerate
-    // - width
-    // - height
+    // number_of_cores, max_payload_size will be ignored.
     int32_t InitEncode(const VideoCodec* codec_settings,
                        int32_t number_of_cores,
                        size_t max_payload_size) override;
@@ -92,15 +87,9 @@ public:
     int32_t SetPeriodicKeyFrames(bool enable) override;
 
 private:
-    const float kMaxRaspiFPS = 30.0f;
+    void ChangeResolution();
     bool IsInitialized() const;
 
-    MMALEncoderWrapper *mmal_encoder_;
-
-    //
-    // Encoded frame process thread
-    rtc::CriticalSection* drainCritSect_;
-    std::unique_ptr<rtc::PlatformThread> drainThread_;
     static bool DrainThread(void*);
     bool drainStarted_;
     bool DrainProcess();
@@ -109,34 +98,40 @@ private:
     void ReportInit();
     void ReportError();
 
+    MMALEncoderWrapper *mmal_encoder_;
+
+    bool has_reported_init_;
+    bool has_reported_error_;
+
+    //
+    // Encoded frame process thread
+    std::unique_ptr<rtc::PlatformThread> drainThread_;
+
     EncodedImageCallback* encoded_image_callback_;
     EncodedImage encoded_image_;
-    bool drop_next_frame_;
 
     // H264 bitstream parser, used to extract QP from encoded bitstreams.
     H264StreamParser h264_stream_parser_;
 
-    bool has_reported_init_;
-    bool has_reported_error_;
     Clock* const clock_;
     const int64_t delta_ntp_internal_ms_;
     int64_t base_internal_ms_;
     int64_t last_keyframe_request_;
+
+    bool drop_next_frame_;
     uint64_t framedrop_counter_;
     uint64_t last_dropconter_show_;
 
-    // Parameters that are used within this encoder.
-    int width_, height_;
-    float max_frame_rate_;
-    uint32_t target_bps_, max_bps_;
     VideoCodecMode mode_;
     size_t max_payload_size_;
+    int key_frame_interval_;
 
     // H.264 specifc parameters
     bool frame_dropping_on_;
-    int key_frame_interval_;
     H264PacketizationMode packetization_mode_;
 
+    // Quality Config
+    QualityConfig quality_config_;
 };
 
 

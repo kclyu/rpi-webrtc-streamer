@@ -33,9 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/logging.h"
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/task_queue.h"
 
 #include "mmal_wrapper.h"
-
 
 namespace webrtc {
 
@@ -45,8 +45,11 @@ MMALEncoderWrapper* getMMALEncoderWrapper() {
     return &encode_wrapper_;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////
+// 
+// Frame Queue
 //
-//
+////////////////////////////////////////////////////////////////////////////////////////
 FrameQueue::FrameQueue() 
     : num_(FRAME_QUEUE_LENGTH), size_(FRAME_BUFFER_SIZE),
     encoded_frame_queue_(nullptr), pool_internal_(nullptr), 
@@ -61,11 +64,11 @@ FrameQueue::~FrameQueue() {
     delete frame_buf_;
 }
 
-bool FrameQueue::Isinitialized( void ) {
+bool FrameQueue::Isinitialized() {
     return inited_;
 }
 
-bool FrameQueue::Init( void ) {
+bool FrameQueue::Init() {
     if( inited_ == true ) return true;
     if((pool_internal_ = mmal_pool_create( num_, size_ )) == NULL ) {
         LOG(LS_ERROR) << "FrameQueue internal pool creation failed";
@@ -84,7 +87,7 @@ bool FrameQueue::Init( void ) {
     return true;
 }
 
-void FrameQueue::Reset( void ) {
+void FrameQueue::Reset() {
     MMAL_BUFFER_HEADER_T *buf;
     int len = mmal_queue_length( encoded_frame_queue_);
 
@@ -100,11 +103,11 @@ void FrameQueue::Reset( void ) {
     RTC_DCHECK_EQ(mmal_queue_length(pool_internal_->queue), FRAME_QUEUE_LENGTH);
 }
 
-int FrameQueue::Length( void ) {
+int FrameQueue::Length() {
     return mmal_queue_length( encoded_frame_queue_);
 }
 
-MMAL_BUFFER_HEADER_T * FrameQueue::GetBufferFromPool( void ) {
+MMAL_BUFFER_HEADER_T * FrameQueue::GetBufferFromPool() {
     RTC_DCHECK(inited_);
 
     return mmal_queue_get( pool_internal_->queue);
@@ -120,7 +123,7 @@ void FrameQueue::QueueingFrame( MMAL_BUFFER_HEADER_T *buffer ) {
     mmal_queue_put( encoded_frame_queue_, buffer);
 }
 
-MMAL_BUFFER_HEADER_T *FrameQueue::DequeueFrame( void ) {
+MMAL_BUFFER_HEADER_T *FrameQueue::DequeueFrame() {
     RTC_DCHECK(inited_);
     return mmal_queue_get(encoded_frame_queue_);
 }
@@ -145,7 +148,6 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
             frame_buf_pos_ += buffer->length;
             frame_segment_cnt_ ++;
             mmal_buffer_header_mem_unlock(buffer);      
-            // RTC_DCHECK(frame_segment_cnt_ < 4);	// temp 2 --> 4
         }
         // end of frame marked
         else if( buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END ) {
@@ -189,26 +191,156 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
     }
 }
 
-void FrameQueue::dumpFrameQueueInfo( void ) {
+void FrameQueue::dumpFrameQueueInfo() {
     RTC_DCHECK(inited_);
     LOG(INFO) << "Queue length: " << mmal_queue_length(encoded_frame_queue_);
     LOG(INFO) << "Pool length: " << mmal_queue_length(pool_internal_->queue);
 }
 
-////////////////////////////////////////////////////////////////////////////////////////
-//
-//
-//
-////////////////////////////////////////////////////////////////////////////////////////
-MMALEncoderWrapper::MMALEncoderWrapper()
-{
 
-    camera_preview_port_ 	= nullptr;
-    camera_video_port_ 		= nullptr;
-    camera_still_port_		= nullptr;
-    preview_input_port_		= nullptr;
-    encoder_input_port_		= nullptr;
-    encoder_output_port_	= nullptr;
+////////////////////////////////////////////////////////////////////////////////////////
+// 
+// MMAL Encoder Delayed Reinit
+//
+////////////////////////////////////////////////////////////////////////////////////////
+static const int kDelayInitialDurationMs = 2000;
+static const int kDelayDurationMs = 1000;
+static const int kDelayTaskInterval = 100;
+// static const int kDelayTaskInterval = 1000;
+
+
+class EncoderDelayInit::DelayInitTask : public rtc::QueuedTask {
+public:
+    explicit DelayInitTask(EncoderDelayInit* encoder_delay_init_) 
+        : encoder_delay_init_(encoder_delay_init_) {
+        LOG(LS_INFO) << "Created EncoderDelayInit Task, Scheduling on queue...";
+        rtc::TaskQueue::Current()->PostDelayedTask(
+                std::unique_ptr<rtc::QueuedTask>(this), kDelayInitialDurationMs );
+    }
+    void Stop() {
+        // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+        LOG(LS_INFO) << "Stopping DelayInitTask task.";
+        stop_ = true;
+    }
+
+private:
+    bool Run() override {
+        // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+        if (stop_) 
+            return true;  // TaskQueue will free this task.
+
+        // LOG(INFO) << "EncoderDelayInit Status " << encoder_delay_init_->status_;
+        encoder_delay_init_->UpdateStatus();
+        rtc::TaskQueue::Current()->PostDelayedTask(
+                std::unique_ptr<rtc::QueuedTask>(this), kDelayTaskInterval);
+        return false;  // Retain the task in order to reuse it.
+    }
+
+    EncoderDelayInit* const encoder_delay_init_;
+    bool stop_ = false;
+    rtc::SequencedTaskChecker task_checker_;
+};
+
+
+EncoderDelayInit::EncoderDelayInit(MMALEncoderWrapper* mmal_encoder) 
+    : clock_(Clock::GetRealTimeClock()), 
+    last_init_timestamp_ms_(clock_->TimeInMilliseconds()),
+    status_(INIT_PASS),mmal_encoder_(mmal_encoder) {
+}
+
+EncoderDelayInit::~EncoderDelayInit() {
+    // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+    delayinit_task_->Stop();
+}
+
+bool EncoderDelayInit::InitEncoder(int width, int height, int framerate, int bitrate){
+    // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+
+    if( mmal_encoder_->IsInited()) {
+        LOG(LS_ERROR) << "MMAL Encoder already initialized.";
+        return true;
+    };
+
+    delayinit_task_ = new EncoderDelayInit::DelayInitTask(this);
+
+    // InitEncoder does not need to do any init delay 
+    LOG(INFO) << "EncoderDelay Status changed from INIT_PASS to WAITING";
+    last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
+    status_ = INIT_WAITING;
+    return mmal_encoder_->InitEncoder(width, height, framerate, bitrate );
+}
+
+bool EncoderDelayInit::ReinitEncoder(int width, int height, int framerate, int bitrate){
+    // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+
+    if( mmal_encoder_->IsInited() == false) {
+        LOG(LS_ERROR) << "MMAL Encoder does not initialized.";
+        return false;
+    };
+
+    if( status_ == INIT_PASS ) {
+        last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
+        status_ = INIT_WAITING;
+        LOG(INFO) << "EncoderDelay Status changed from INIT_PASS to WAITING";
+        if( mmal_encoder_->ReinitEncoder(width, height, framerate, bitrate ) == false){
+            LOG(LS_ERROR) << "Failed to reinitialize MMAL encoder";
+            return false;
+        };
+        // start capture in here
+        mmal_encoder_->StartCapture();
+        return true;
+    }
+    else if ( status_ == INIT_DELAY) {
+        mmal_encoder_->SetEncodingParams(width, height, framerate, bitrate );
+    }
+    else if( status_ == INIT_WAITING ) {
+        if( mmal_encoder_->SetEncodingParams(width, height, framerate, bitrate ) ) {
+            last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
+            status_ = INIT_DELAY;
+            LOG(INFO) << "EncoderDelay Status changed from WAITING to DELAY";
+        }
+    }
+
+    return true;
+}
+
+bool EncoderDelayInit::UpdateStatus(){
+    // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+    uint64_t timestamp_diff = clock_->TimeInMilliseconds() - last_init_timestamp_ms_;
+
+    if ( status_ == INIT_DELAY) {
+        if( timestamp_diff > kDelayInitialDurationMs ) {
+            status_ = INIT_WAITING;
+            LOG(INFO) << "EncoderDelay Status changed from DELAY to WAITING";
+            if( mmal_encoder_->ReinitEncoderInternal() == false ) {
+                LOG(LS_ERROR) << "Failed to reinitialize MMAL encoder";
+                return false;
+            }
+            // start capture in here
+            mmal_encoder_->StartCapture();
+        };
+    }
+    else if( status_ == INIT_WAITING ) {
+        if( timestamp_diff > kDelayInitialDurationMs ) {
+            LOG(INFO) << "EncoderDelay Status changed from WAIT to PASS";
+            status_ = INIT_PASS;
+        };
+    }
+
+    return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+// 
+// MMAL Encoder Wrapper 
+//
+////////////////////////////////////////////////////////////////////////////////////////
+
+MMALEncoderWrapper::MMALEncoderWrapper() 
+    : mmal_initialized_(false), camera_preview_port_(nullptr), 
+    camera_video_port_(nullptr), camera_still_port_(nullptr), 
+    preview_input_port_(nullptr), encoder_input_port_(nullptr), 
+    encoder_output_port_(nullptr), encoder_initdelay_(this) {
 
     bcm_host_init();
 
@@ -217,31 +349,35 @@ MMALEncoderWrapper::MMALEncoderWrapper()
 
     // reset encoder setting to default state
     default_status(&state_);
-
-    FrameQueue();
 }
 
 MMALEncoderWrapper::~MMALEncoderWrapper() {
+    LOG(INFO) << __FUNCTION__ << "*********** WARPPER DESTRUCTION *******";
 }
 
-int MMALEncoderWrapper::getWidth( void )
-{
+
+int MMALEncoderWrapper::GetWidth() {
     return state_.width;
 }
 
-int MMALEncoderWrapper::getHeight( void )
-{
+int MMALEncoderWrapper::GetHeight() {
     return state_.height;
 }
 
+bool MMALEncoderWrapper::IsInited() {
+    return mmal_initialized_;
+}
 
-bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int bitrate)
-{
+bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, 
+        int bitrate) {
     MMAL_STATUS_T status = MMAL_SUCCESS;
 
     LOG(INFO) << "Start initialize the MMAL encode wrapper."
-              << width << "x" << height << "@" << framerate << ", " << bitrate << "kbps";
+              << width << "x" << height << "@" << framerate << ", " 
+              << bitrate << "kbps";
+
     rtc::CritScope cs(&crit_sect_);
+    if( mmal_initialized_ == true ) return true;
 
     state_.width =  width;
     state_.height =  height;
@@ -252,7 +388,8 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
         LOG(LS_ERROR) << "Failed to create camera component";
         return false;
     }
-    else if ((status = raspipreview_create(&state_.preview_parameters)) != MMAL_SUCCESS) {
+    else if ((status = raspipreview_create(&state_.preview_parameters)) 
+            != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create preview component";
         destroy_camera_component(&state_);
         return false;
@@ -281,7 +418,8 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
             }
 
             // Connect camera to preview
-            status = connect_ports(camera_preview_port_, preview_input_port_, &state_.preview_connection);
+            status = connect_ports(camera_preview_port_, preview_input_port_, 
+                    &state_.preview_connection);
 
             if (status != MMAL_SUCCESS) {
                 state_.preview_connection = nullptr;
@@ -293,14 +431,16 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
             LOG(INFO) << "Connecting camera stills port to encoder input port";
 
         // Now connect the camera to the encoder
-        status = connect_ports(camera_video_port_, encoder_input_port_, &state_.encoder_connection);
+        status = connect_ports(camera_video_port_, encoder_input_port_, 
+                &state_.encoder_connection);
         if (status != MMAL_SUCCESS) {
             state_.encoder_connection = nullptr;
             LOG(LS_ERROR) << "Failed to connect camera video port to encoder input";
             return false;
         }
 
-        // Set up our userdata - this is passed though to the callback where we need the information.
+        // Set up our userdata - this is passed though to the callback 
+        // where we need the information.
         state_.callback_data.pstate = &state_;
         state_.callback_data.abort = 0;
 
@@ -318,8 +458,8 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
             return false;
         }
 
-        dump_all_mmal_component(&state_);
-
+        // dump_all_mmal_component(&state_);
+        mmal_initialized_ = true;
         return true;
     }
 
@@ -327,18 +467,31 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, int b
     return false;
 }
 
-bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int bitrate) {
+bool MMALEncoderWrapper::ReinitEncoderInternal() {
+    return ReinitEncoder(state_.width, state_.height, 
+            state_.framerate, state_.bitrate);
+}
+
+
+bool MMALEncoderWrapper::ReinitEncoder(int width, int height, 
+        int framerate, int bitrate ) {
     MMAL_STATUS_T status = MMAL_SUCCESS;
 
-    LOG(INFO) << "Start reinitialize the MMAL encode wrapper."
-              << width << "x" << height << "@" << framerate << ", " << bitrate << "kbps";
-    rtc::CritScope cs(&crit_sect_);
+    if( mmal_initialized_ == false ) {
+        LOG(LS_ERROR) 
+            << "Trying to Reinitialize MMAL commpoent, but not initialized before";
+        return false;
+    }
 
     state_.width =  width;
     state_.height =  height;
     state_.framerate =  framerate;
     state_.bitrate =  bitrate * 1000;
 
+    rtc::CritScope cs(&crit_sect_);
+
+    LOG(INFO) << "Start reinitialize the MMAL encode wrapper."
+              << width << "x" << height << "@" << framerate << ", " << bitrate << "kbps";
     //
     // disable all component
     //
@@ -348,8 +501,8 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
     }
 
     //
-    dump_component((char *)"camera: ", state_.camera_component );
-    dump_component((char *)"encoder: ", state_.encoder_component );
+    // dump_component((char *)"camera: ", state_.camera_component );
+    // dump_component((char *)"encoder: ", state_.encoder_component );
 
     // Disable all our ports that are not handled by connections
     check_disable_port(camera_still_port_);
@@ -408,7 +561,8 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
             }
 
             // Connect camera to preview
-            status = connect_ports(camera_preview_port_, preview_input_port_, &state_.preview_connection);
+            status = connect_ports(camera_preview_port_, preview_input_port_, 
+                    &state_.preview_connection);
 
             if (status != MMAL_SUCCESS) {
                 state_.preview_connection = nullptr;
@@ -420,14 +574,16 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
             LOG(INFO) << "Connecting camera stills port to encoder input port";
 
         // Now connect the camera to the encoder
-        status = connect_ports(camera_video_port_, encoder_input_port_, &state_.encoder_connection);
+        status = connect_ports(camera_video_port_, encoder_input_port_, 
+                &state_.encoder_connection);
         if (status != MMAL_SUCCESS) {
             state_.encoder_connection = nullptr;
             LOG(LS_ERROR) << "Failed to connect camera video port to encoder input";
             return false;
         }
 
-        // Set up our userdata - this is passed though to the callback where we need the information.
+        // Set up our userdata - this is passed though to the callback 
+        // where we need the information.
         state_.callback_data.pstate = &state_;
         state_.callback_data.abort = 0;
 
@@ -445,8 +601,7 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
             return false;
         }
 
-        dump_all_mmal_component(&state_);
-
+        // dump_all_mmal_component(&state_);
         return true;
     }
 
@@ -454,14 +609,16 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate, int
     return false;
 }
 
-
-void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
-    reinterpret_cast<MMALEncoderWrapper *> (port->userdata)-> OnBufferCallback(port,buffer);
+void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port, 
+        MMAL_BUFFER_HEADER_T *buffer) {
+    reinterpret_cast<MMALEncoderWrapper *>
+        (port->userdata)->OnBufferCallback(port,buffer);
 }
 
 
-bool MMALEncoderWrapper::UninitEncoder(void) {
+bool MMALEncoderWrapper::UninitEncoder() {
     rtc::CritScope cs(&crit_sect_);
+    if( mmal_initialized_ == false) return true;
 
     LOG(INFO) << "unitialize the MMAL encode wrapper.";
 
@@ -488,11 +645,12 @@ bool MMALEncoderWrapper::UninitEncoder(void) {
     destroy_encoder_component(&state_);
     raspipreview_destroy(&state_.preview_parameters);
     destroy_camera_component(&state_);
-
+    mmal_initialized_ = false;
     return true;
 }
 
-void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer) {
+void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port, 
+        MMAL_BUFFER_HEADER_T *buffer) {
     MMAL_BUFFER_HEADER_T *new_buffer = nullptr;
     static int64_t base_time =  -1;
     static int64_t last_second = -1;
@@ -536,7 +694,7 @@ void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_
 }
 
 
-bool MMALEncoderWrapper::StartCapture( void ) {
+bool MMALEncoderWrapper::StartCapture() {
     // Send all the buffers to the encoder output port
     int num = mmal_queue_length(state_.encoder_pool->queue);
 
@@ -544,14 +702,16 @@ bool MMALEncoderWrapper::StartCapture( void ) {
         MMAL_BUFFER_HEADER_T *buffer = mmal_queue_get(state_.encoder_pool->queue);
 
         if (!buffer)
-            LOG(LS_ERROR) << "Unable to get a required buffer " << q << " from pool queue";
+            LOG(LS_ERROR) << "Unable to get a required buffer " << q 
+                << " from pool queue";
 
         if (mmal_port_send_buffer(encoder_output_port_, buffer)!= MMAL_SUCCESS)
-            LOG(LS_ERROR) << "Unable to send a buffer to encoder output port (" << q << ").";
+            LOG(LS_ERROR) << "Unable to send a buffer to encoder output port (" << q 
+                << ").";
     }
 
-    if (mmal_port_parameter_set_boolean(camera_video_port_, MMAL_PARAMETER_CAPTURE, MMAL_TRUE)
-            != MMAL_SUCCESS) {
+    if (mmal_port_parameter_set_boolean(camera_video_port_, MMAL_PARAMETER_CAPTURE, 
+                MMAL_TRUE) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Unable to set capture start";
         return false;
     }
@@ -561,9 +721,9 @@ bool MMALEncoderWrapper::StartCapture( void ) {
 }
 
 
-bool MMALEncoderWrapper::StopCapture( void ) {
-    if (mmal_port_parameter_set_boolean(camera_video_port_, MMAL_PARAMETER_CAPTURE, MMAL_FALSE)
-            != MMAL_SUCCESS) {
+bool MMALEncoderWrapper::StopCapture() {
+    if (mmal_port_parameter_set_boolean(camera_video_port_, MMAL_PARAMETER_CAPTURE, 
+                MMAL_FALSE) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Unable to unset capture start";
         return false;
     }
@@ -573,19 +733,20 @@ bool MMALEncoderWrapper::StopCapture( void ) {
 
 
 //
-bool MMALEncoderWrapper::SetFrame(int width, int height ) {
-    if( state_.width != width || state_.height != height ) {
+bool MMALEncoderWrapper::SetEncodingParams(int width, int height, 
+        int framerate, int bitrate ) {
+    if( state_.width != width || state_.height != height 
+        || state_.framerate != framerate || state_.bitrate != bitrate ) {
         rtc::CritScope cs(&crit_sect_);
-
-        LOG(INFO) << "MMAL frame encoding parameters changed:  "
-                  << width << "x" << height << "@" << state_.framerate << ", " << state_.bitrate << "kbps";
 
         state_.width = width;
         state_.height = height;
+        state_.framerate = framerate;
+        state_.bitrate = bitrate;
+        return true;
     }
-    return true;
+    return false;
 }
-
 
 //
 bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
@@ -593,11 +754,11 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
         rtc::CritScope cs(&crit_sect_);
         MMAL_STATUS_T status;
 
-        // LOG(INFO) << "MMAL frame encoding rate changed : "
-        // 	<< state_.width << "x" << state_.height << "@" << framerate << ", " << bitrate << "kbps";
         if( state_.bitrate != bitrate * 1000 ) {
             MMAL_PARAMETER_UINT32_T param =
-            {{ MMAL_PARAMETER_VIDEO_BIT_RATE, sizeof(param)}, (uint32_t)bitrate*1000};
+            {{ MMAL_PARAMETER_VIDEO_BIT_RATE, sizeof(param)}, 
+                (uint32_t)bitrate*1000};
+
             // {{ MMAL_PARAMETER_VIDEO_ENCODE_PEAK_RATE, sizeof(param)}, (uint32_t)bitrate*1000};
             status = mmal_port_parameter_set(encoder_output_port_, &param.hdr);
             if (status != MMAL_SUCCESS) {
@@ -629,7 +790,7 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
 
 
 //
-bool MMALEncoderWrapper::ForceKeyFrame(void) {
+bool MMALEncoderWrapper::ForceKeyFrame() {
     rtc::CritScope cs(&crit_sect_);
     LOG(INFO) << "MMAL force key frame encoding";
 

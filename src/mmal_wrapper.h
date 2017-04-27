@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -30,7 +30,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __MMAL_WRAPPER_H__
 #define __MMAL_WRAPPER_H__
 
+#include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/base/criticalsection.h"
+#include "webrtc/base/sequenced_task_checker.h"
 #include "mmal_encoder.h"
 
 namespace webrtc {
@@ -39,6 +41,11 @@ namespace webrtc {
 #define FRAME_QUEUE_LENGTH 5
 
 
+////////////////////////////////////////////////////////////////////////////////////////
+// 
+// Frame Queue
+//
+////////////////////////////////////////////////////////////////////////////////////////
 class FrameQueue {
 private:
     int num_, size_;
@@ -58,48 +65,102 @@ private:
 public:
     FrameQueue();
     ~FrameQueue();
-    bool Init( void );
-    void Reset( void );
-    bool Isinitialized( void );
+    bool Init();
+    void Reset();
+    bool Isinitialized();
 
     // Queueuing and Assembling frame
     void ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer );
-    int Length( void );
+    int Length();
 
     // Buffer header handling
-    MMAL_BUFFER_HEADER_T * GetBufferFromPool( void );
+    MMAL_BUFFER_HEADER_T * GetBufferFromPool();
     void ReturnToPool( MMAL_BUFFER_HEADER_T *buffer );
     void QueueingFrame( MMAL_BUFFER_HEADER_T *buffer );
-    MMAL_BUFFER_HEADER_T *DequeueFrame( void );
-    void dumpFrameQueueInfo( void );
+    MMAL_BUFFER_HEADER_T *DequeueFrame();
+    void dumpFrameQueueInfo();
+};
+
+////////////////////////////////////////////////////////////////////////////////////////
+//
+// Encoder Init Delay
+//
+////////////////////////////////////////////////////////////////////////////////////////
+
+//
+// PASS  : Initial Status
+//      There will be no delay/waiting to do reinit
+//      condition: time difference should be over kDelayDurationBetweenReinitMs
+//
+// DELAY : making kDelayDurationBetweenReinitMs
+//       After kDelayDurationBetweenReinitMs, fire reinit by TaskQueue
+//      condition: time difference should be within kDelayDurationBetweenReinitMs
+//
+// WAITING: making kDelayDurationBetweenReinitMs
+//       After kDelayDurationBetweenReinitMs, status will be PASS
+//
+//
+class MMALEncoderWrapper;   // forward
+enum EncoderInitDelayStatus {
+    INIT_UNKNOWN = 0,       
+    INIT_PASS,       
+    INIT_DELAY, 
+    INIT_WAITING
+};
+
+struct EncoderDelayInit {
+    explicit EncoderDelayInit(MMALEncoderWrapper* mmal_encoder);
+    ~EncoderDelayInit();
+
+    bool InitEncoder(int width, int height, int framerate, int bitrate);
+    bool ReinitEncoder(int width, int height, int framerate, int bitrate);
+    bool UpdateStatus();
+
+private:
+    class DelayInitTask;
+    Clock* const clock_;
+    uint64_t last_init_timestamp_ms_ GUARDED_BY(&task_checker_);
+    EncoderInitDelayStatus status_ GUARDED_BY(&task_checker_); 
+    MMALEncoderWrapper* mmal_encoder_ GUARDED_BY(&task_checker_);
+
+    DelayInitTask* delayinit_task_ GUARDED_BY(&task_checker_);
+    rtc::SequencedTaskChecker task_checker_;
 };
 
 
+////////////////////////////////////////////////////////////////////////////////////////
+// 
+// MMAL Encoder Wrapper 
+//
+////////////////////////////////////////////////////////////////////////////////////////
 class MMALEncoderWrapper : public FrameQueue {
-
 public:
-
     MMALEncoderWrapper();
     ~MMALEncoderWrapper();
 
-    int getWidth(void);
-    int getHeight(void);
-    bool SetFrame(int width, int height);
+    int GetWidth();
+    int GetHeight();
+    bool SetEncodingParams(int width, int height,int framerate, int bitrate );
     bool SetRate(int framerate, int bitrate);
     bool InitEncoder(int width, int height, int framerate, int bitrate);
-    bool ReinitEncoder(int width, int height, int framerate, int bitrate);
-    bool UninitEncoder(void);
-    bool ForceKeyFrame(void);
-    bool IsKeyFrame(void);
-    bool StartCapture(void);
-    bool StopCapture(void);
+    bool ReinitEncoder(int width, int height, int framerate, int bitrate );
+    bool ReinitEncoderInternal();
+    bool UninitEncoder();
+    bool ForceKeyFrame();
+    bool IsKeyFrame();
+    bool StartCapture();
+    bool StopCapture();
+    bool IsInited();
 
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
     static void BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
 
+    EncoderDelayInit encoder_initdelay_;
 
 private:
+    bool mmal_initialized_;
+
     MMAL_PORT_T *camera_preview_port_;
     MMAL_PORT_T *camera_video_port_;
     MMAL_PORT_T *camera_still_port_;
@@ -109,10 +170,12 @@ private:
     RASPIVID_STATE state_;
 
     rtc::CriticalSection crit_sect_;
+    rtc::SequencedTaskChecker task_checker_;
+
 };
 
 // singleton wrappper
-MMALEncoderWrapper* getMMALEncoderWrapper(void);
+MMALEncoderWrapper* getMMALEncoderWrapper();
 
 }	// namespace webrtc
 

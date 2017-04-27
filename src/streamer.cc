@@ -34,6 +34,7 @@
 
 #include "clientconstraints.h"
 
+#include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/media/base/fakevideocapturer.h"
 #include "raspi_encoder.h"
@@ -144,7 +145,32 @@ bool Streamer::InitializePeerConnection() {
         DeletePeerConnection();
     }
     AddStreams();
+
     return peer_connection_.get() != nullptr;
+}
+
+void Streamer::UpdateMaxBitrate() {
+    RTC_DCHECK(peer_connection_ != nullptr );
+    auto senders = peer_connection_->GetSenders();
+    for (const auto& sender : senders) {
+        if( sender->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO &&
+            sender->id().compare(kVideoLabel) == 0) {
+            webrtc::RtpParameters parameters =  sender->GetParameters();
+            for (webrtc::RtpEncodingParameters& encoding : parameters.encodings) {
+                 if (encoding.max_bitrate_bps) {
+                     LOG(INFO) << "Previous Max Bitrate Bps setting already exists: " << *encoding.max_bitrate_bps;
+                     LOG(INFO) << "Do not modifying Max Bitrate Bps";
+                    return;
+                 }
+                 else {
+                    encoding.max_bitrate_bps = rtc::Optional<int>(3500000);
+                    LOG(INFO) << "Changing Max Bitrate Bps: " << *encoding.max_bitrate_bps;
+                    sender->SetParameters(parameters);
+                    return;
+                 }
+            };
+        };
+    };
 }
 
 bool Streamer::CreatePeerConnection() {
@@ -184,14 +210,14 @@ void Streamer::DeletePeerConnection() {
 //
 
 // Called when a remote stream is added
-void Streamer::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    LOG(INFO) << __FUNCTION__ << " " << stream->label();
-    LOG(LS_ERROR) << __FUNCTION__ << "Remote Stream added!" << stream->label();
+void Streamer::OnAddStream(
+        rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
+    LOG(INFO) << __FUNCTION__ << "Remote Stream added!" << stream->label();
 }
 
-void Streamer::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    LOG(INFO) << __FUNCTION__ << " " << stream->label();
-    LOG(LS_ERROR) << __FUNCTION__ << "Remote Stream removed!" << stream->label();
+void Streamer::OnRemoveStream(
+        rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
+    LOG(INFO) << __FUNCTION__ << "Remote Stream removed!" << stream->label();
 }
 
 void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
@@ -302,12 +328,17 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         webrtc::ClientConstraints sdpConstraints;
         sdpConstraints.SetMandatoryReceiveAudio(true);
         sdpConstraints.SetMandatoryReceiveVideo(false);
+
         // TODO(kclyu) invalid sdp negotiation makes session_description 
         // null, need to figure it out how to fix it.
         if (session_description->type() ==
                 webrtc::SessionDescriptionInterface::kOffer) {
             peer_connection_->CreateAnswer(this, &sdpConstraints);
         }
+
+        // Update the max bitrate at RTPSender during the sdp negotiation 
+        // does not have max bitrate
+        UpdateMaxBitrate();
         return;
     } else {
         std::string sdp_mid;
@@ -400,11 +431,11 @@ void Streamer::AddStreams() {
         peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
 
     stream->AddTrack(audio_track);
-
     stream->AddTrack(video_track);
     if (!peer_connection_->AddStream(stream)) {
         LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
     }
+
     typedef std::pair<std::string,
             rtc::scoped_refptr<webrtc::MediaStreamInterface> >
             MediaStreamPair;

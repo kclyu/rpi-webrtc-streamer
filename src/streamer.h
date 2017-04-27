@@ -94,9 +94,12 @@ protected:
     virtual void OnMessageFromPeer(int peer_id, const std::string& message) override;
     virtual void OnMessageSent(int err) override;
 
-protected:
+private:
     // Send a message to the remote peer.
     void SendMessage(const std::string& json_object);
+
+    // Change the max_bitrate in RtpSender
+    void UpdateMaxBitrate();
 
     int peer_id_;
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
