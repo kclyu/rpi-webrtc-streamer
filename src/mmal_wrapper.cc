@@ -206,8 +206,22 @@ void FrameQueue::dumpFrameQueueInfo() {
 static const int kDelayInitialDurationMs = 2000;
 static const int kDelayDurationMs = 1000;
 static const int kDelayTaskInterval = 100;
-// static const int kDelayTaskInterval = 1000;
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Delayed Resolution Changing in HW Encoder
+// 
+// In the case of MMAL HW Encoder, changing the resolution of the Encoder does 
+// not meas that simply change the setting of Encoder, 
+// but it renders the MMAL Comonent creation, destruction and making link together
+// so it gives a considerable delay and load.  
+//
+// The WebRTC native code performs BWE at the same time as InitEncode. 
+// When changing the HW encoder setting, the delay and load affect the initial 
+// bandwidth decision of BWE. Therefore, after 2 seconds after InitEncode, 
+// it is necessary to reset the resolution according to the BWE bitrate.
+//
+///////////////////////////////////////////////////////////////////////////////
 
 class EncoderDelayInit::DelayInitTask : public rtc::QueuedTask {
 public:

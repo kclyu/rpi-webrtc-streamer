@@ -148,6 +148,19 @@ bool QualityConfig::GetBestMatch(QualityConfig::Resolution& resolution) {
     return GetBestMatch(target_bitrate_, resolution);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// At present, it is based on the average value of Kush Gauge's 1 and 3 moving 
+// factors, but there is no evaluation as to whether it is appropriate. 
+// Simply find the nearest target_bitrate at the expected bitrate and change 
+// the resolution to the resolution you find.
+//
+// TODO: Evalution this method is appropriate
+// TODO: QP/LOSS/RTT 
+//       Currently, Google is working on a lot of BWE related work, 
+//       so it needs to be modified or implemented 
+//       according to the implementation status of Google.
+//
+////////////////////////////////////////////////////////////////////////////////
 bool QualityConfig::GetBestMatch(int target_bitrate, 
         QualityConfig::Resolution& resolution) {
     Resolution candidate;
@@ -159,7 +172,7 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
     for( std::list<ResolutionConfigEntry>::iterator iter = resolution_config_.begin(); 
             iter != resolution_config_.end(); iter++) {
         diff = abs(iter->average_bandwidth_ - target_bitrate );
-        if( last_diff > diff ) {    // TODO need optimization
+        if( last_diff > diff ) {    
             candidate.width_ = iter->width_;
             candidate.height_ = iter->height_;
             last_diff = diff;

@@ -288,9 +288,6 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
 
         if (!InitializePeerConnection()) {
             LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
-            // TODO
-            // Reset the active stream session
-            // client_->SignOut();
             return;
         }
     } else if (peer_id != peer_id_) {
@@ -344,8 +341,8 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
             peer_connection_->CreateAnswer(this, &sdpConstraints);
         }
 
-        // Update the max bitrate at RTPSender during the sdp negotiation 
-        // does not have max bitrate
+        // Update the max bitrate at RTPSender if there is not negotiation 
+        // of max bitrate in SDP.
         UpdateMaxBitrate();
         return;
     } else {

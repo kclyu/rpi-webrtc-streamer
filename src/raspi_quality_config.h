@@ -27,6 +27,8 @@ enum AdaptationReason {
     ADAPTAION_RTT,
 };
 
+// TODO: Need to implement the QP/loss/rtt based Quality Control logic.
+// Currently, Only BWE-based QoS functions are implemented.
 class QualityConfig {
 public:
     QualityConfig();

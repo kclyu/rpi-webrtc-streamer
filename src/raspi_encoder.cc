@@ -202,7 +202,15 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     QualityConfig::Resolution resolution;
     uint32_t framerate_updated_;
     
-#ifdef _0
+
+#ifdef __FIXED_FRAME_RATE__
+    // The framerate and bitrate quality control of BWE do not differ 
+    // from Branch to Branch but they are still being modified. 
+    // It seems that there is now a problem with the framerate 
+    // according to the BWE bitrate in the version Branch / 59.
+    // 
+    // Now it is fixed at 30 fps, but it needs to be modified 
+    // so that it is adaptive fps again according to Google implementation situation.
     if( framerate > 30 ) 
         framerate_updated_ = 30;
     else 
@@ -310,40 +318,6 @@ int32_t RaspiEncoderImpl::SetPeriodicKeyFrames(bool enable) {
 
 VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
   return VideoEncoder::ScalingSettings(true);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Delayed Resolution Changing in HW Encoder
-// 
-// In the case of MMAL HW Encoder, changing the resolution of the Encoder does 
-// not meas that simply change the setting of Encoder, 
-// but it renders the MMAL Comonent creation, destruction and making link together
-// so it gives a considerable delay and load.  
-//
-// The WebRTC native code performs BWE at the same time as InitEncode. 
-// When changing the HW encoder setting, the delay and load affect the initial 
-// bandwidth decision of BWE. Therefore, after 2 seconds after InitEncode, 
-// it is necessary to reset the resolution according to the BWE bitrate.
-//
-///////////////////////////////////////////////////////////////////////////////
-
-void RaspiEncoderImpl::ChangeResolution() {
-    QualityConfig::Resolution resolution;
-
-    if( quality_config_.GetBestMatch( resolution) ) {
-        LOG(INFO) << "Resolution Changing by Bitrate Changing "
-            << "To : "  << resolution.width_ << "x" << resolution.height_;
-
-        if(mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution.width_, 
-                    resolution.height_, 30, quality_config_.GetBitrate()) == false ) {
-            LOG(LS_ERROR) << "Failed to reinitialize MMAL encoder";
-            Release();
-            ReportError();
-        }
-        // start capture in here
-        mmal_encoder_->StartCapture();
-    };
 }
 
 
@@ -460,7 +434,6 @@ bool RaspiEncoderImpl::DrainProcess()
     // TODO: if encoded_size is zero, we need to reset encoder itself
     return true;
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////

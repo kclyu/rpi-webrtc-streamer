@@ -87,7 +87,6 @@ public:
     int32_t SetPeriodicKeyFrames(bool enable) override;
 
 private:
-    void ChangeResolution();
     bool IsInitialized() const;
 
     static bool DrainThread(void*);
