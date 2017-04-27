@@ -155,7 +155,6 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
     int diff = 0;
 
     target_bitrate_ = target_bitrate;
-    // if( current_time_ms_ - last_update_time_ms_ < 1000 ) return false;
 
     for( std::list<ResolutionConfigEntry>::iterator iter = resolution_config_.begin(); 
             iter != resolution_config_.end(); iter++) {

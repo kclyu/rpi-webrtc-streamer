@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // port number 8888 is fiexed for direct socket
 const uint16_t kDefaultWebSocketPort = 8889;
 const uint16_t kDefaultDirectSocketPort = 8888;
+const uint32_t kDefaultMaxBitrate = 3500000;
 const char kDefaultAppChannelConfig[] = "etc/app_channel.conf";
 
 const char kConfigWebSocketEnable[] = "websocket_enable";
@@ -54,6 +55,7 @@ const char kConfigDTLSEnable[] = "dtls_enable";
 const char kConfigAppChannelConfig[] = "app_channel_config";
 const char kConfigStunServer[] = "stun_server";
 const char kConfigTurnServer[] = "turn_server";
+const char kConfigMaxBitrate[] = "max_bitrate";
 
 
 // Default values
@@ -105,7 +107,8 @@ bool StreamerConfig::GetDirectSocketEnable() {
     std::string direct_socket_enabled;
     // direct_socket will not be enabled by default
     if( config_loaded_ == false )  return false;
-    if( config_.GetStringValue(kConfigDirectSocketEnable, &direct_socket_enabled ) == true ) {
+    if( config_.GetStringValue(kConfigDirectSocketEnable, 
+                &direct_socket_enabled ) == true ) {
         return direct_socket_enabled.compare("true") == 0;
     }
     return false;
@@ -116,9 +119,26 @@ bool StreamerConfig::GetDirectSocketPort(int& port) {
     if( config_loaded_ == false )  return false;
     if( config_.GetIntValue(kConfigDirectSocketPort, &port ) == true ) {
         if ((port < 1) || (port > 65535)) {
-            LOG(LS_ERROR) << "Error in port value," << port << " is not a valid port";
+            LOG(LS_ERROR) << "Error in port value," 
+                << port << " is not a valid port";
             LOG(LS_ERROR) << "Resetting to default value";
             port = kDefaultDirectSocketPort;
+            return true;
+        };
+        return true;
+    }
+    return false;
+}
+
+bool StreamerConfig::GetMaxBitrate(int& max_bitrate) {
+    if( config_loaded_ == false )  return false;
+    if( config_.GetIntValue(kConfigMaxBitrate, &max_bitrate ) == true ) {
+        if ((max_bitrate < 1) || (max_bitrate > 6500000)) {
+            LOG(LS_ERROR) << "Error in max bitrate value," 
+                << max_bitrate << " is not a valid max bitrate value";
+            LOG(LS_ERROR) << "Resetting to default value"
+                << kDefaultMaxBitrate;
+            max_bitrate = kDefaultMaxBitrate;
             return true;
         };
         return true;

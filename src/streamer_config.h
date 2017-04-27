@@ -58,6 +58,9 @@ public:
     // App Channel Config
     bool GetAppChannelConfig(std::string &config_filename);
 
+    // Max Bitrate
+    bool GetMaxBitrate(int& max_bitrate);
+
 private:
     bool config_loaded_;
     rtc::OptionsFile config_;

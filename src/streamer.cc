@@ -62,6 +62,9 @@ const char kCandidateType[] = "type";
 const char kSessionDescriptionTypeName[] = "type";
 const char kSessionDescriptionSdpName[] = "sdp";
 
+// Max Bitrate
+static const int kDefaultMaxBitrate = 3500000;
+
 // DTLS enable flags
 #define DTLS_ON  true
 #define DTLS_OFF false
@@ -150,6 +153,7 @@ bool Streamer::InitializePeerConnection() {
 }
 
 void Streamer::UpdateMaxBitrate() {
+    int     max_bitrate = 0;
     RTC_DCHECK(peer_connection_ != nullptr );
     auto senders = peer_connection_->GetSenders();
     for (const auto& sender : senders) {
@@ -158,15 +162,19 @@ void Streamer::UpdateMaxBitrate() {
             webrtc::RtpParameters parameters =  sender->GetParameters();
             for (webrtc::RtpEncodingParameters& encoding : parameters.encodings) {
                  if (encoding.max_bitrate_bps) {
-                     LOG(INFO) << "Previous Max Bitrate Bps setting already exists: " << *encoding.max_bitrate_bps;
+                     LOG(INFO) << "Previous Max Bitrate Bps setting already exists: " 
+                         << *encoding.max_bitrate_bps;
                      LOG(INFO) << "Do not modifying Max Bitrate Bps";
                     return;
                  }
                  else {
-                    encoding.max_bitrate_bps = rtc::Optional<int>(3500000);
-                    LOG(INFO) << "Changing Max Bitrate Bps: " << *encoding.max_bitrate_bps;
-                    sender->SetParameters(parameters);
-                    return;
+                     if( streamer_config_->GetMaxBitrate(max_bitrate) == true)
+                         encoding.max_bitrate_bps = rtc::Optional<int>(max_bitrate);
+                     else 
+                         encoding.max_bitrate_bps = rtc::Optional<int>(kDefaultMaxBitrate);
+                     LOG(INFO) << "Changing Max Bitrate Bps: " << *encoding.max_bitrate_bps;
+                     sender->SetParameters(parameters);
+                     return;
                  }
             };
         };
