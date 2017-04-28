@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -366,7 +366,7 @@ MMALEncoderWrapper::MMALEncoderWrapper()
 }
 
 MMALEncoderWrapper::~MMALEncoderWrapper() {
-    LOG(INFO) << __FUNCTION__ << "*********** WARPPER DESTRUCTION *******";
+    LOG(INFO) << __FUNCTION__;
 }
 
 

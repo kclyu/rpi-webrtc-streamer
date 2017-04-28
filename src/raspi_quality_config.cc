@@ -5,6 +5,7 @@
 #include "webrtc/base/logging.h"
 
 #include "raspi_quality_config.h"
+#include "default_config.h"
 
 
 static const int kLowH264QpThreshold = 24;
@@ -18,8 +19,6 @@ static const float kKushGaugeConstant = 0.07;
 static const int kMaxMontionFactor = 3;  
 static const int kMinMontionFactor = 1;   //  original value is 1 ~ 4
                                           // but quality config will use up to 3
-static bool resolution_4_3 = true;  // TODO
-
 
 static const int kMaxpFrameRate = 30; // using 30 as raspberry pi max FPS
 
@@ -38,7 +37,8 @@ QualityConfig::ResolutionConfigEntry::ResolutionConfigEntry (int width,
 QualityConfig::QualityConfig() 
     : target_framerate_(0), target_bitrate_(0),
     packet_loss_(3 * 30), rtt_(3 * 30), average_qp_(3 * 30) {
-    use_4_3_resolution_  =  resolution_4_3; // TODO need to config
+
+    use_4_3_resolution_  =  default_config::resolution_4_3_enable;
     if( use_4_3_resolution_ ) {
         // 4:3 resolution
         resolution_config_.push_back(ResolutionConfigEntry(320,240,20,30));
@@ -152,7 +152,7 @@ bool QualityConfig::GetBestMatch(QualityConfig::Resolution& resolution) {
 // At present, it is based on the average value of Kush Gauge's 1 and 3 moving 
 // factors, but there is no evaluation as to whether it is appropriate. 
 // Simply find the nearest target_bitrate at the expected bitrate and change 
-// the resolution to the resolution you find.
+// the resolution to the resolution.
 //
 // TODO: Evalution this method is appropriate
 // TODO: QP/LOSS/RTT 

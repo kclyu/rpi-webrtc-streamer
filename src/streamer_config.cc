@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/arraysize.h"
 
 #include "streamer_config.h"
+#include "default_config.h"
 
 
 // port number 8888 is fiexed for direct socket
@@ -77,6 +78,10 @@ StreamerConfig::StreamerConfig(const std::string &config_file)
         return;
     };
     config_loaded_ = true;
+
+    if( default_config::config_load(config_file) == false ) {
+        LOG(LS_WARNING) << "Failed to load config options:" << config_file;
+    }
 }
 
 
