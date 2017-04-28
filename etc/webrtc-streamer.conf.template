@@ -6,3 +6,5 @@ direct_socket_port=8888
 dtls_enable=true
 turn_server=
 stun_server=stun:stun.l.google.com:19302
+max_bitrate=3500000
+resolution_4_3_enable=true

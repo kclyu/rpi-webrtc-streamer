@@ -6,7 +6,6 @@
 #include <utility>
 
 #include "webrtc/common_types.h"
-#include "webrtc/video_encoder.h"
 #include "webrtc/base/optional.h"
 
 #include "webrtc/system_wrappers/include/clock.h"

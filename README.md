@@ -51,6 +51,11 @@ TBD
 TBD
 
 ## Version History
+* 2017/04/28 v0.62 : 
+     - Bandwith base Quality Control is added
+     - Video Resolution ratio 16: 9, 4: 3 config added
+        - 4:3:  320:240 ~ 1296:972
+        -16:9  384:216 ~ 1408:864 
 * 2017/04/04 v0.60 : 
      - signaling interface changed from long-poll to websocket (libwebsockets)
      - RWS main port changed from 8888 to 8889 (because Android Direct socket need 8888 port)
