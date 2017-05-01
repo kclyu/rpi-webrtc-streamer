@@ -13,7 +13,7 @@ window.onbeforeunload = doDisconnect;
 var messageCounter = 0;
 var peerConnection;    
 
-var localTestingUrl = "ws://10.0.0.11:8888/rws/ws";
+var localTestingUrl = "ws://10.0.0.11:8889/rws/ws";
 var pcConfig = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 var pcOptions = { optional: [ {DtlsSrtpKeyAgreement: true} ] };
 var mediaConstraints = {'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true }};
