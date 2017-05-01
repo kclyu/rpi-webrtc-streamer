@@ -212,8 +212,8 @@ static const int kDelayTaskInterval = 100;
 // Delayed Resolution Changing in HW Encoder
 // 
 // In the case of MMAL HW Encoder, changing the resolution of the Encoder does 
-// not meas that simply change the setting of Encoder, 
-// but it renders the MMAL Comonent creation, destruction and making link together
+// not means that simply change the setting of Encoder, 
+// but it renders the MMAL Comonent destruction, creation and making link together
 // so it gives a considerable delay and load.  
 //
 // The WebRTC native code performs BWE at the same time as InitEncode. 
@@ -223,59 +223,54 @@ static const int kDelayTaskInterval = 100;
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-class EncoderDelayInit::DelayInitTask : public rtc::QueuedTask {
+class EncoderDelayedInit::DelayInitTask : public rtc::QueuedTask {
 public:
-    explicit DelayInitTask(EncoderDelayInit* encoder_delay_init_) 
+    explicit DelayInitTask(EncoderDelayedInit* encoder_delay_init_) 
         : encoder_delay_init_(encoder_delay_init_) {
-        LOG(LS_INFO) << "Created EncoderDelayInit Task, Scheduling on queue...";
+        LOG(LS_INFO) << "Created EncoderDelayedInit Task, Scheduling on queue...";
         rtc::TaskQueue::Current()->PostDelayedTask(
                 std::unique_ptr<rtc::QueuedTask>(this), kDelayInitialDurationMs );
     }
     void Stop() {
-        // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
         LOG(LS_INFO) << "Stopping DelayInitTask task.";
         stop_ = true;
     }
 
 private:
     bool Run() override {
-        // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
         if (stop_) 
             return true;  // TaskQueue will free this task.
 
-        // LOG(INFO) << "EncoderDelayInit Status " << encoder_delay_init_->status_;
+        // LOG(INFO) << "EncoderDelayedInit Status " << encoder_delay_init_->status_;
         encoder_delay_init_->UpdateStatus();
         rtc::TaskQueue::Current()->PostDelayedTask(
                 std::unique_ptr<rtc::QueuedTask>(this), kDelayTaskInterval);
         return false;  // Retain the task in order to reuse it.
     }
 
-    EncoderDelayInit* const encoder_delay_init_;
+    EncoderDelayedInit* const encoder_delay_init_;
     bool stop_ = false;
-    rtc::SequencedTaskChecker task_checker_;
 };
 
 
-EncoderDelayInit::EncoderDelayInit(MMALEncoderWrapper* mmal_encoder) 
+EncoderDelayedInit::EncoderDelayedInit(MMALEncoderWrapper* mmal_encoder) 
     : clock_(Clock::GetRealTimeClock()), 
     last_init_timestamp_ms_(clock_->TimeInMilliseconds()),
     status_(INIT_PASS),mmal_encoder_(mmal_encoder) {
 }
 
-EncoderDelayInit::~EncoderDelayInit() {
-    // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+EncoderDelayedInit::~EncoderDelayedInit() {
     delayinit_task_->Stop();
 }
 
-bool EncoderDelayInit::InitEncoder(int width, int height, int framerate, int bitrate){
-    // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+bool EncoderDelayedInit::InitEncoder(int width, int height, int framerate, int bitrate){
 
     if( mmal_encoder_->IsInited()) {
         LOG(LS_ERROR) << "MMAL Encoder already initialized.";
         return true;
     };
 
-    delayinit_task_ = new EncoderDelayInit::DelayInitTask(this);
+    delayinit_task_ = new EncoderDelayedInit::DelayInitTask(this);
 
     // InitEncoder does not need to do any init delay 
     LOG(INFO) << "EncoderDelay Status changed from INIT_PASS to WAITING";
@@ -284,9 +279,7 @@ bool EncoderDelayInit::InitEncoder(int width, int height, int framerate, int bit
     return mmal_encoder_->InitEncoder(width, height, framerate, bitrate );
 }
 
-bool EncoderDelayInit::ReinitEncoder(int width, int height, int framerate, int bitrate){
-    // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-
+bool EncoderDelayedInit::ReinitEncoder(int width, int height, int framerate, int bitrate){
     if( mmal_encoder_->IsInited() == false) {
         LOG(LS_ERROR) << "MMAL Encoder does not initialized.";
         return false;
@@ -318,8 +311,7 @@ bool EncoderDelayInit::ReinitEncoder(int width, int height, int framerate, int b
     return true;
 }
 
-bool EncoderDelayInit::UpdateStatus(){
-    // RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+bool EncoderDelayedInit::UpdateStatus(){
     uint64_t timestamp_diff = clock_->TimeInMilliseconds() - last_init_timestamp_ms_;
 
     if ( status_ == INIT_DELAY) {

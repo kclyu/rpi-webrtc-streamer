@@ -40,7 +40,6 @@ namespace webrtc {
 #define FRAME_BUFFER_SIZE	65536*2
 #define FRAME_QUEUE_LENGTH 5
 
-
 ////////////////////////////////////////////////////////////////////////////////////////
 // 
 // Frame Queue
@@ -101,16 +100,16 @@ public:
 //
 //
 class MMALEncoderWrapper;   // forward
-enum EncoderInitDelayStatus {
+enum EncoderDelayedInitStatus {
     INIT_UNKNOWN = 0,       
     INIT_PASS,       
     INIT_DELAY, 
     INIT_WAITING
 };
 
-struct EncoderDelayInit {
-    explicit EncoderDelayInit(MMALEncoderWrapper* mmal_encoder);
-    ~EncoderDelayInit();
+struct EncoderDelayedInit {
+    explicit EncoderDelayedInit(MMALEncoderWrapper* mmal_encoder);
+    ~EncoderDelayedInit();
 
     bool InitEncoder(int width, int height, int framerate, int bitrate);
     bool ReinitEncoder(int width, int height, int framerate, int bitrate);
@@ -119,12 +118,11 @@ struct EncoderDelayInit {
 private:
     class DelayInitTask;
     Clock* const clock_;
-    uint64_t last_init_timestamp_ms_ GUARDED_BY(&task_checker_);
-    EncoderInitDelayStatus status_ GUARDED_BY(&task_checker_); 
-    MMALEncoderWrapper* mmal_encoder_ GUARDED_BY(&task_checker_);
+    uint64_t last_init_timestamp_ms_;
+    EncoderDelayedInitStatus status_;
+    MMALEncoderWrapper* mmal_encoder_;
 
-    DelayInitTask* delayinit_task_ GUARDED_BY(&task_checker_);
-    rtc::SequencedTaskChecker task_checker_;
+    DelayInitTask* delayinit_task_;
 };
 
 
@@ -156,7 +154,7 @@ public:
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
     static void BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
 
-    EncoderDelayInit encoder_initdelay_;
+    EncoderDelayedInit encoder_initdelay_;
 
 private:
     bool mmal_initialized_;
@@ -170,8 +168,6 @@ private:
     RASPIVID_STATE state_;
 
     rtc::CriticalSection crit_sect_;
-    rtc::SequencedTaskChecker task_checker_;
-
 };
 
 // singleton wrappper
