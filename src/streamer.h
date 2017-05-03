@@ -28,7 +28,6 @@
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "clientconstraints.h"
 #include "streamer_observer.h"
 #include "streamer_config.h"
 
@@ -117,7 +116,6 @@ private:
     SdpNegotiationType nego_type_;
     StreamerConfig *streamer_config_;
 };
-
 
 
 #endif  // RPI_STREAMER_H_

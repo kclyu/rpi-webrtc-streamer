@@ -34,7 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "webrtc/system_wrappers/include/clock.h"
-// #include "webrtc/base/criticalsection.h"
 #include "webrtc/base/platform_thread.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"

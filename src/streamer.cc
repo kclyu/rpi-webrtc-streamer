@@ -32,8 +32,6 @@
 
 #include "webrtc/system_wrappers/include/trace.h"
 
-#include "clientconstraints.h"
-
 #include "webrtc/api/rtpsenderinterface.h"
 #include "webrtc/api/test/fakeconstraints.h"
 #include "webrtc/media/base/fakevideocapturer.h"
@@ -330,15 +328,18 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         peer_connection_->SetRemoteDescription(
             DummySetSessionDescriptionObserver::Create(), session_description);
 
-        webrtc::ClientConstraints sdpConstraints;
+        /********
+        webrtc::MediaConstraintsInterface sdpConstraints;
         sdpConstraints.SetMandatoryReceiveAudio(true);
         sdpConstraints.SetMandatoryReceiveVideo(false);
+        *********/
 
         // TODO(kclyu) invalid sdp negotiation makes session_description 
         // null, need to figure it out how to fix it.
         if (session_description->type() ==
                 webrtc::SessionDescriptionInterface::kOffer) {
-            peer_connection_->CreateAnswer(this, &sdpConstraints);
+            // peer_connection_->CreateAnswer(this, &sdpConstraints);
+            peer_connection_->CreateAnswer(this, nullptr);
         }
 
         // Update the max bitrate at RTPSender if there is not negotiation 
@@ -416,15 +417,9 @@ void Streamer::AddStreams() {
     if (active_streams_.find(kStreamLabel) != active_streams_.end())
         return;  // Already added.
 
-    webrtc::ClientConstraints audioConstraints;
-    audioConstraints.SetMandatoryEchoCancellation(false);
-    audioConstraints.SetMandatoryAudoGainControl(false);
-    audioConstraints.SetMandatoryNoiseSuppression(false);
-    audioConstraints.SetMandatoryHighpassFilter(false);
-
     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         peer_connection_factory_->CreateAudioTrack(
-            kAudioLabel, peer_connection_factory_->CreateAudioSource(&audioConstraints)));
+            kAudioLabel, peer_connection_factory_->CreateAudioSource(nullptr)));
 
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(
