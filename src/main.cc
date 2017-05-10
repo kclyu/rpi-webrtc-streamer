@@ -37,7 +37,6 @@
 #include "webrtc/base/ifaddrs_converter.h"
 #endif  // defined(WEBRTC_POSIX)
 
-#include "webrtc/p2p/base/basicpacketsocketfactory.h"
 
 #include "webrtc/base/flags.h"
 
@@ -51,12 +50,16 @@
 
 // 
 //
-class StreamingSocketServer : public rtc::PhysicalSocketServer,
-    public sigslot::has_slots<> {
+class StreamingSocketServer : public rtc::PhysicalSocketServer {
 public:
-    StreamingSocketServer(rtc::Thread* thread)
-        : thread_(thread), websocket_(nullptr)  {}
+    explicit StreamingSocketServer()
+        : websocket_(nullptr)  {}
     virtual ~StreamingSocketServer() {}
+
+    // TODO: Quit feature implementation using message queue is required.
+    void SetMessageQueue(rtc::MessageQueue* queue) override {
+        message_queue_ = queue;
+    }
 
     void set_websocket(LibWebSocketServer* websocket) { websocket_ = websocket; }
 
@@ -68,8 +71,8 @@ public:
     }
 
 protected:
+    rtc::MessageQueue* message_queue_;
     std::unique_ptr<rtc::AsyncSocket> listener_;
-    rtc::Thread* thread_;
     LibWebSocketServer *websocket_;
 };
 
@@ -79,7 +82,6 @@ protected:
 DEFINE_bool(help, false, "Prints this message");
 DEFINE_string(conf, "etc/webrtc-streamer.conf",
            "the main configuration file for webrtc-streamer.");
-
 
 //
 // Main
@@ -93,13 +95,11 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    rtc::AutoThread auto_thread;
-    rtc::Thread* thread = rtc::Thread::Current();
     std::unique_ptr<DirectSocketServer> direct_socket_server;
     std::unique_ptr<AppChannel> app_channel;
 
-    StreamingSocketServer socket_server(thread);
-    thread->set_socketserver(&socket_server);
+    StreamingSocketServer socket_server;
+    rtc::AutoSocketServerThread thread(&socket_server);
 
     rtc::InitializeSSL();
 
@@ -113,7 +113,6 @@ int main(int argc, char** argv) {
         if( !streamer_config.GetDirectSocketPort(direct_socket_port_num) ) {
             LOG(LS_ERROR) << "Error in getting direct socket port number: " 
                 << direct_socket_port_num;
-            thread->set_socketserver(NULL);
             rtc::CleanupSSL();
             return -1;
         }
@@ -122,8 +121,6 @@ int main(int argc, char** argv) {
 
         direct_socket_server.reset(new DirectSocketServer());
         if (direct_socket_server->Listen(addr) == false) {
-            // Terminating clean-up
-            thread->set_socketserver(NULL);
             rtc::CleanupSSL();
             return -1;
         }
@@ -146,10 +143,8 @@ int main(int argc, char** argv) {
         &streamer_config));
 
     // Running Loop
-    thread->Run();
+    thread.Run();
 
-    // Terminating clean-up
-    thread->set_socketserver(NULL);
     rtc::CleanupSSL();
     return 0;
 }
