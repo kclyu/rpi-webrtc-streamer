@@ -52,7 +52,7 @@ static const int kMaxpFrameRate = 30; // using 30 as raspberry pi max FPS
 
 
 QualityConfig::ResolutionConfigEntry::ResolutionConfigEntry (int width, 
-        int height, int max_fps, int min_fps) 
+        int height, int min_fps, int max_fps) 
     : width_(width), height_(height), max_fps_(max_fps), min_fps_(min_fps) {
 
     max_bandwidth_  = static_cast<int>((width_ * height_ * max_fps * 
@@ -66,7 +66,10 @@ QualityConfig::QualityConfig()
     : target_framerate_(0), target_bitrate_(0),
     packet_loss_(3 * 30), rtt_(3 * 30), average_qp_(3 * 30) {
 
+    use_dynamic_resolution_  =  default_config::use_dynamic_video_resolution;
+    use_initial_resolution_  =  default_config::use_initial_video_resolution;
     use_4_3_resolution_  =  default_config::resolution_4_3_enable;
+    //  TODO Need to check these resolution have same FOV between resolutions
     if( use_4_3_resolution_ ) {
         // 4:3 resolution
         resolution_config_.push_back(ResolutionConfigEntry(320,240,20,30));
@@ -176,6 +179,21 @@ bool QualityConfig::GetBestMatch(QualityConfig::Resolution& resolution) {
     return GetBestMatch(target_bitrate_, resolution);
 }
 
+bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
+    Resolution candidate;
+    
+    // The initial resolution will be used 
+    // if the use default resolution flag is on.
+    if( use_initial_resolution_ == true) {
+        candidate.width_ = default_config::initial_video_resolution.width_;
+        candidate.height_ = default_config::initial_video_resolution.height_;
+        resolution = current_res_ = candidate;
+        return true;
+    }
+    
+    return GetBestMatch(target_bitrate_, resolution);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // At present, it is based on the average value of Kush Gauge's 1 and 3 moving 
 // factors, but there is no evaluation as to whether it is appropriate. 
@@ -186,7 +204,7 @@ bool QualityConfig::GetBestMatch(QualityConfig::Resolution& resolution) {
 // TODO: QP/LOSS/RTT 
 //       Currently, Google is working on a lot of BWE related work, 
 //       so it needs to be modified or implemented 
-//       according to the implementation status of Google.
+//       according to the implementation status of WebRTC Native Package.
 //
 ////////////////////////////////////////////////////////////////////////////////
 bool QualityConfig::GetBestMatch(int target_bitrate, 
@@ -196,6 +214,13 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
     int diff = 0;
 
     target_bitrate_ = target_bitrate;
+
+    if( use_dynamic_resolution_ == false ) {
+        // The encoder does not use the Bitrate Estimation delivered by BWE, 
+        // but keeps the initially generated resolution.
+        resolution = current_res_;
+        return false;   // Do not change resoltuion 
+    };
 
     for( std::list<ResolutionConfigEntry>::iterator iter = resolution_config_.begin(); 
             iter != resolution_config_.end(); iter++) {

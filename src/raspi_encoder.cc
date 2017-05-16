@@ -102,6 +102,8 @@ RaspiEncoderImpl::~RaspiEncoderImpl() {
 int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
                                      int32_t number_of_cores,
                                      size_t max_payload_size) {
+    int updated_framerate;
+
     ReportInit();
     if (!codec_settings ||
             codec_settings->codecType != kVideoCodecH264) {
@@ -117,14 +119,14 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
 
-    quality_config_.ReportFrameRate(
-            static_cast<int>(codec_settings->maxFramerate));
+    updated_framerate = static_cast<int>(codec_settings->maxFramerate);
+    if( updated_framerate > 30 ) updated_framerate = 30;
+    quality_config_.ReportFrameRate( updated_framerate);
 
     mode_ = codec_settings->mode;
     frame_dropping_on_ = codec_settings->H264().frameDroppingOn;
     key_frame_interval_ = codec_settings->H264().keyFrameInterval;
     max_payload_size_ = max_payload_size;
-
 
     // Codec_settings uses kbits/second; encoder uses bits/second.
     quality_config_.ReportMaxBitrate(codec_settings->maxBitrate);
@@ -141,9 +143,11 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 
+    // GetInitialBestMatch should be used only when initializing 
+    // the Encoder, and only when the use_default_resolution flag is on.
     QualityConfig::Resolution initial_res;
+    // quality_config_.GetInitialBestMatch( initial_res );
     quality_config_.GetBestMatch( initial_res );
-
 
     LOG(INFO) << "InitEncode request: " 
         << initial_res.width_ << " x " << initial_res.height_;
@@ -203,7 +207,8 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     uint32_t framerate_updated_;
     
 
-#ifdef __FIXED_FRAME_RATE__
+    // TODO (kclyu) :  __FIXED_FRAMERATE__  check at next branch
+    // 
     // The framerate and bitrate quality control of BWE do not differ 
     // from Branch to Branch but they are still being modified. 
     // It seems that there is now a problem with the framerate 
@@ -211,12 +216,14 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     // 
     // Now it is fixed at 30 fps, but it needs to be modified 
     // so that it is adaptive fps again according to Google implementation situation.
+#ifdef __FIXED_FRAMERATE__
     if( framerate > 30 ) 
         framerate_updated_ = 30;
     else 
         framerate_updated_ = framerate;
-#endif
+#else
     framerate_updated_ = 30;
+#endif  /*  __FIXED_FRAMERATE__ */
 
     if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -229,7 +236,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
 
         if(mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution.width_, 
                     resolution.height_, 30, quality_config_.GetBitrate()) == false ) {
-            LOG(LS_ERROR) << "Failed to MMAL encoder **********";
+            LOG(LS_ERROR) << "Failed to reinit MMAL encoder";
         }
     }
     else 

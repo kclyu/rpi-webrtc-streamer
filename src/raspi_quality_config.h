@@ -98,6 +98,7 @@ public:
 
     bool GetBestMatch(int target_bitrate, QualityConfig::Resolution& resolution);
     bool GetBestMatch(QualityConfig::Resolution& resolution);
+    bool GetInitialBestMatch(QualityConfig::Resolution& resolution);
 
 private:
     std::list<ResolutionConfigEntry> resolution_config_;
@@ -109,10 +110,12 @@ private:
     webrtc::MovingAverage average_qp_;
     Resolution current_res_;
     bool use_4_3_resolution_;
-
-    // 
-    bool adaptation_down_;
+    bool use_dynamic_resolution_;
+    bool use_initial_resolution_;
+    
+    // TODO 
     bool adaptation_up_;
+    bool adaptation_down_;
 };
 
 #endif  // RPI_QUALITY_CONFIG_

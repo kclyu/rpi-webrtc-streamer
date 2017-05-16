@@ -57,7 +57,7 @@ all: $(TARGET)
 # Makefile rules...
 #
 .c.o : $(OBJECTS.C) 
-	$(CC) -I. $(CFLAGS) $(INCLUDES) -c $< -o $@
+	$(CC) -I. $(CFLAGS) $(INCLUDES) -D__MMAL_ENCODER_DEBUG__ -c $< -o $@
 
 .cc.o : $(OBJECTS.CC) 
 	$(CXX)  -I. $(CFLAGS) $(CCFLAGS) $(INCLUDES)  -c $< -o $@
@@ -71,8 +71,5 @@ clean:
 
 rcp: $(TARGET)
 	#rsync -v -u -r --stats $(TARGET) pi@10.0.0.11:~/Workspace/client
-	rsync -v -u -r --stats $(TARGET) *.cc *.h pi@10.0.0.11:~/Workspace/client
-
-html: 
-	rsync -v -u -r --stats ../web-root/native-peerconnection/* pi@10.0.0.11:~/Workspace/client/native-peerconnection
+	rsync -v -u -r --stats $(TARGET) *.dwo *.cc *.h pi@10.0.0.11:~/Workspace/client
 

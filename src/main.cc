@@ -95,6 +95,9 @@ int main(int argc, char** argv) {
         return 0;
     }
 
+    // Load the streamer configuration from file
+    StreamerConfig streamer_config(FLAG_conf);
+
     std::unique_ptr<DirectSocketServer> direct_socket_server;
     std::unique_ptr<AppChannel> app_channel;
 
@@ -102,9 +105,6 @@ int main(int argc, char** argv) {
     rtc::AutoSocketServerThread thread(&socket_server);
 
     rtc::InitializeSSL();
-
-    // Load the streamer configuration from file
-    StreamerConfig streamer_config(FLAG_conf);
 
     // DirectSocket 
     if(streamer_config.GetDirectSocketEnable() == true) {

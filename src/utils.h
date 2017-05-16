@@ -21,7 +21,8 @@
 
 std::string int2str(int i);
 std::string size_t2str(size_t i);
-const char *str_stream_connection_method(const long request_method);
+bool string2int(const std::string &str,int *value );
+bool parse_resolution(const std::string resolution,int *width, int *height );
 
 #endif  // RPI_STREAMER_UTILS_H_
 

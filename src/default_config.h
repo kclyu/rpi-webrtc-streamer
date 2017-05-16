@@ -37,11 +37,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/pathutils.h"
 
 //
-// The config part for the part where global config is required.
+// The config part for global config is required.
 //
 namespace default_config {
+    struct ResolutionConfig {
+        explicit ResolutionConfig(int width, int height ) :
+            width_(width),height_(height) {};
+        virtual ~ResolutionConfig() {};
+        int width_;
+        int height_;
+    };
+
     extern bool resolution_4_3_enable;
     extern int quality_framerate;
+
+    extern struct ResolutionConfig initial_video_resolution;
+    extern int initial_video_framerate;
+    extern bool use_initial_video_resolution;
+    extern bool use_dynamic_video_resolution;
+    extern std::list <ResolutionConfig> resolution_list_4_3;
+    extern std::list <ResolutionConfig> resolution_list_16_9;
 
     bool config_load(const std::string config_filename);
 }   // default_config name_space

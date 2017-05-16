@@ -270,6 +270,7 @@ bool EncoderDelayedInit::InitEncoder(int width, int height, int framerate, int b
         return true;
     };
 
+    LOG(INFO) << "********** InitEncoder " << width << "x" << height << "@" << framerate << ", " << bitrate << " kbps";
     delayinit_task_ = new EncoderDelayedInit::DelayInitTask(this);
 
     // InitEncoder does not need to do any init delay 
@@ -284,6 +285,7 @@ bool EncoderDelayedInit::ReinitEncoder(int width, int height, int framerate, int
         LOG(LS_ERROR) << "MMAL Encoder does not initialized.";
         return false;
     };
+    LOG(INFO) << "********** ReinitEncoder " << width << "x" << height << "@" << framerate << ", " << bitrate << " kbps";
 
     if( status_ == INIT_PASS ) {
         last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
@@ -756,6 +758,7 @@ bool MMALEncoderWrapper::SetEncodingParams(int width, int height,
 
 //
 bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
+    if( mmal_initialized_ == false ) return true;
     if( state_.framerate != framerate || state_.bitrate != bitrate*1000 ) {
         rtc::CritScope cs(&crit_sect_);
         MMAL_STATUS_T status;
@@ -797,6 +800,7 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
 
 //
 bool MMALEncoderWrapper::ForceKeyFrame() {
+    if( mmal_initialized_ == false ) return true;
     rtc::CritScope cs(&crit_sect_);
     LOG(INFO) << "MMAL force key frame encoding";
 
