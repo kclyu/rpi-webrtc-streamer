@@ -5,28 +5,30 @@
 
 is_component_build=false
 #is_official_build=true
-#is_debug=false # Relese Version
+#is_debug=true
 
 host_toolchain="//build/toolchain/linux:arm"
-target_os="linux"
-target_cpu="arm"
-arm_float_abi="hard"
-arm_use_neon=true
-arm_tune="cortex-a7"
 is_clang=false
 use_sysroot=true
 target_sysroot="/opt/rpi_rootfs"
 system_libdir="/opt/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
 gold_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
 
+# target CPU optimization for PI2
+target_os="linux"
+target_cpu="arm"
+arm_arch="armv7-a"
+arm_fpu="neon"
+arm_float_abi="hard"
+arm_use_neon=true
+arm_tune="cortex-a7"
+
 # SSL related config
 #rtc_build_ssl=true   # disable rtc ssl package, and force to compile OpenSSL
-#rtc_ssl_root="/home/kclyu/Workspace/rpi_rootfs/usr/include/openssl"
-
-
+#rtc_ssl_root="/opt/rpi_rootfs/usr/include/openssl"
 
 #
-#
+# Setting for removing component for desktop related stuffs
 use_ozone=true
 is_desktop_linux=false
 
@@ -35,8 +37,6 @@ is_desktop_linux=false
 is_chrome_branded=true
 rtc_build_with_neon=true
 enable_nacl=false
-#enable_pdf=false
-#enable_webvr=false
 rtc_use_h264=true
 use_openh264=true
 rtc_initialize_ffmpeg=false
