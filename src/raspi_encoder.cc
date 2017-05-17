@@ -146,14 +146,14 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     // GetInitialBestMatch should be used only when initializing 
     // the Encoder, and only when the use_default_resolution flag is on.
     QualityConfig::Resolution initial_res;
-    // quality_config_.GetInitialBestMatch( initial_res );
-    quality_config_.GetBestMatch( initial_res );
+    quality_config_.GetInitialBestMatch( initial_res );
+    //quality_config_.GetBestMatch( initial_res );
 
     LOG(INFO) << "InitEncode request: " 
         << initial_res.width_ << " x " << initial_res.height_;
     if(mmal_encoder_->encoder_initdelay_.InitEncoder(initial_res.width_, 
-            initial_res.height_, quality_config_.GetFrameRate(), 
-            quality_config_.GetBitrate()) == false ) {
+            initial_res.height_, initial_res.framerate_,
+            initial_res.bitrate_) == false ) {
         Release();
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERROR;
@@ -235,7 +235,8 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
             << "To : "  << resolution.width_ << "x" << resolution.height_;
 
         if(mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution.width_, 
-                    resolution.height_, 30, quality_config_.GetBitrate()) == false ) {
+                    resolution.height_, framerate_updated_, 
+                    resolution.bitrate_) == false ) {
             LOG(LS_ERROR) << "Failed to reinit MMAL encoder";
         }
     }

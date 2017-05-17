@@ -48,7 +48,7 @@ static const int kMaxMontionFactor = 3;
 static const int kMinMontionFactor = 1;   //  original value is 1 ~ 4
                                           // but quality config will use up to 3
 
-static const int kMaxpFrameRate = 30; // using 30 as raspberry pi max FPS
+static const int kMaxFrameRate = 30; // using 30 as raspberry pi max FPS
 
 
 QualityConfig::ResolutionConfigEntry::ResolutionConfigEntry (int width, 
@@ -69,30 +69,25 @@ QualityConfig::QualityConfig()
     use_dynamic_resolution_  =  default_config::use_dynamic_video_resolution;
     use_initial_resolution_  =  default_config::use_initial_video_resolution;
     use_4_3_resolution_  =  default_config::resolution_4_3_enable;
+
     //  TODO Need to check these resolution have same FOV between resolutions
     if( use_4_3_resolution_ ) {
         // 4:3 resolution
-        resolution_config_.push_back(ResolutionConfigEntry(320,240,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(400,300,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(512,384,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(640,480,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1024,768,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1152,864,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1296,972,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1640,1232,20,30));
+        for(std::list<default_config::ResolutionConfig>::iterator iter = 
+                default_config::resolution_list_4_3.begin(); 
+                iter != default_config::resolution_list_4_3.end(); iter++) {
+            resolution_config_.push_back(
+                ResolutionConfigEntry(iter->width_,iter->height_,20,kMaxFrameRate));
+        }
     }
-    else {  
+    else {
         // 16:9 resolution
-        resolution_config_.push_back(ResolutionConfigEntry(384,216,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(512,288,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(640,360,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(768,432,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(896,504,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1024,576,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1152,648,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1280,720,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1408,864,20,30));
-        resolution_config_.push_back(ResolutionConfigEntry(1920,1080,20,30));
+        for(std::list<default_config::ResolutionConfig>::iterator iter = 
+                default_config::resolution_list_16_9.begin(); 
+            iter != default_config::resolution_list_16_9.end(); iter++) {
+            resolution_config_.push_back(
+                    ResolutionConfigEntry(iter->width_,iter->height_,20,kMaxFrameRate));
+        }
     }
 }
 
@@ -165,8 +160,8 @@ bool QualityConfig::IsAdaptationRequired() {
 }
 
 int QualityConfig::GetFrameRate(){
-    if( target_framerate_ > kMaxpFrameRate ) 
-        return kMaxpFrameRate;
+    if( target_framerate_ > kMaxFrameRate ) 
+        return kMaxFrameRate;
     else 
         return target_framerate_;
 }
@@ -187,6 +182,10 @@ bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
     if( use_initial_resolution_ == true) {
         candidate.width_ = default_config::initial_video_resolution.width_;
         candidate.height_ = default_config::initial_video_resolution.height_;
+        candidate.framerate_ = kMaxFrameRate;
+        candidate.bitrate_ = static_cast<int>(
+                (candidate.width_ * candidate.height_ * kMaxFrameRate * 
+                kKushGaugeConstant * kMaxMontionFactor )/1000);
         resolution = current_res_ = candidate;
         return true;
     }
@@ -200,7 +199,7 @@ bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
 // Simply find the nearest target_bitrate at the expected bitrate and change 
 // the resolution to the resolution.
 //
-// TODO: Evalution this method is appropriate
+// TODO: Evaluation of this method is appropriate
 // TODO: QP/LOSS/RTT 
 //       Currently, Google is working on a lot of BWE related work, 
 //       so it needs to be modified or implemented 
@@ -228,6 +227,8 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
         if( last_diff > diff ) {    
             candidate.width_ = iter->width_;
             candidate.height_ = iter->height_;
+            candidate.bitrate_ = target_bitrate_;
+            candidate.framerate_ = target_framerate_;
             last_diff = diff;
         }
         else {

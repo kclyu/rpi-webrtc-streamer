@@ -58,16 +58,19 @@ enum AdaptationReason {
 // Currently, Only BWE-based QoS functions are implemented.
 class QualityConfig {
 public:
-    QualityConfig();
+    explicit QualityConfig();
     ~QualityConfig();
 
     struct Resolution {
-        Resolution() : width_(0),height_(0), 
+        Resolution() : width_(0),height_(0), framerate_(0), bitrate_(0),
             adaptation_(NO_ADAPTATION), adaptation_reason_(ADAPTAION_NONE) {};
-        Resolution(int width, int height) : width_(width),height_(height), 
+        Resolution(int width, int height) : width_(width), height_(height), 
+            bitrate_(0),
             adaptation_(NO_ADAPTATION), adaptation_reason_(ADAPTAION_NONE) {};
         int width_;
         int height_;
+        int framerate_;
+        int bitrate_;
         Adaptation adaptation_;
         AdaptationReason adaptation_reason_;
     };

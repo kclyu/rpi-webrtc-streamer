@@ -270,7 +270,8 @@ bool EncoderDelayedInit::InitEncoder(int width, int height, int framerate, int b
         return true;
     };
 
-    LOG(INFO) << "********** InitEncoder " << width << "x" << height << "@" << framerate << ", " << bitrate << " kbps";
+    LOG(INFO) << "InitEncoder " << width << "x" << height 
+        << "@" << framerate << ", " << bitrate << " kbps";
     delayinit_task_ = new EncoderDelayedInit::DelayInitTask(this);
 
     // InitEncoder does not need to do any init delay 
@@ -285,7 +286,8 @@ bool EncoderDelayedInit::ReinitEncoder(int width, int height, int framerate, int
         LOG(LS_ERROR) << "MMAL Encoder does not initialized.";
         return false;
     };
-    LOG(INFO) << "********** ReinitEncoder " << width << "x" << height << "@" << framerate << ", " << bitrate << " kbps";
+    LOG(INFO) << "ReinitEncoder " << width << "x" << height 
+        << "@" << framerate << ", " << bitrate << " kbps";
 
     if( status_ == INIT_PASS ) {
         last_init_timestamp_ms_ = clock_->TimeInMilliseconds();

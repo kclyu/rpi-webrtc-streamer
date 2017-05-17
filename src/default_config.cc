@@ -83,6 +83,7 @@ bool parse_vidio_resolution(const std::string resolution_list,
     while( getline(ss, token, kConfigVideoResolutionDelimiter) ) {
         int width, height;
         if( parse_resolution(token, &width, &height ) == true )  {
+            count++;
             resolution.push_back(ResolutionConfig(width,height));
         }
         else {
@@ -170,10 +171,10 @@ bool config_load(const std::string config_filename) {
 
     // TODO(kclyu) This feature is not implemented.
     // loading flag for default video resolution 
-    std::string flag_use_default_video;
+    std::string flag_use_initial_resolution;
     if( config_.GetStringValue(kConfigVideoInitialResolution, 
-                &flag_use_default_video ) == true ) {
-        if( flag_use_default_video.compare("true") == 0 )  {
+                &flag_use_initial_resolution ) == true ) {
+        if( flag_use_initial_resolution.compare("true") == 0 )  {
 
             // loading default video resolution config
             std::string resolution_config;
@@ -201,20 +202,18 @@ bool config_load(const std::string config_filename) {
                 }
             }
             else {
-                LOG(LS_ERROR) << "Default Video Resolution config is not found.";
+                LOG(LS_ERROR) << "Initial Video Resolution config is not found.";
             } 
         }
-        else if( flag_use_default_video.compare("false") == 0 ) 
+        else if( flag_use_initial_resolution.compare("false") == 0 ) 
             use_initial_video_resolution = false;
         else {
-            LOG(LS_ERROR) << "Default Config \"" <<  kConfigVideoInitialResolution
-                << "\" value is not valid" << flag_use_default_video;
+            LOG(LS_ERROR) << "Initial Resolution \"" << kConfigVideoInitialResolution
+                << "\" value is not valid" << flag_use_initial_resolution;
             // default value for use_initial_video_resolution is false
             use_initial_video_resolution = false;
         }
     };
-#ifdef __USE_DEFAULT_INITIAL_RESOLUTION__
-#endif // __USE_DEFAULT_INITIAL_RESOLUTION__
 
     return true;
 }
