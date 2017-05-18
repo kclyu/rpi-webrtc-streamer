@@ -30,19 +30,21 @@ using rtc::ToString;
 using rtc::FromString;
 using rtc::sprintfn;
 
-std::string int2str(int i) {
+namespace utils {
+
+std::string IntToString(int i) {
     return ToString<int>(i);
 }
 
-std::string size_t2str(size_t i) {
+std::string Size_tToString(size_t i) {
     return ToString<size_t>(i);
 }
 
-bool string2int(const std::string &str,int *value ) {
+bool StringToInt(const std::string &str,int *value ) {
     return FromString<int>(str, value);
 }
 
-bool parse_resolution(const std::string resolution,int *width, int *height ) {
+bool ParseVideoResolution(const std::string resolution,int *width, int *height ) {
     const std::string delimiter="x";
     std::string token;
     size_t pos = 0;
@@ -51,7 +53,7 @@ bool parse_resolution(const std::string resolution,int *width, int *height ) {
     if((pos = resolution.find(delimiter)) != std::string::npos)  {
         token = resolution.substr(0, pos);
         // getting width value
-        if( string2int( token, &value ) == false ) {
+        if( StringToInt( token, &value ) == false ) {
             *width = *height = 0;
             return false;
         }
@@ -60,11 +62,30 @@ bool parse_resolution(const std::string resolution,int *width, int *height ) {
 
     // getting height value
     token = resolution.substr(pos+1, std::string::npos);
-    if( string2int( token, &value ) == false ) {
+    if( StringToInt( token, &value ) == false ) {
         *width = *height = 0;
         return false;
     }
     *height = value;
     return true;
 }
+
+rtc::LoggingSeverity String2LogSeverity(const std::string severity) {
+    if(severity.compare("VERBOSE") == 0 ) {
+        return rtc::LoggingSeverity::LS_VERBOSE;
+    }
+    else if(severity.compare("INFO") == 0 ) {
+        return rtc::LoggingSeverity::LS_INFO;
+    }
+    else if(severity.compare("WARNING") == 0 ) {
+        return rtc::LoggingSeverity::LS_WARNING;
+    }
+    else if(severity.compare("ERROR") == 0 ) {
+        return rtc::LoggingSeverity::LS_ERROR;
+    }
+    return rtc::LoggingSeverity::LS_NONE;
+}
+
+};
+
 

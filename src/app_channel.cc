@@ -254,7 +254,7 @@ bool AppChannel::OnMessage(int sockid, const std::string& message) {
             };
 
             if ( IsStreamSessionActive() == false ) {
-                if( ActivateStreamSession(client_id,int2str(client_id))  == true ) {
+                if( ActivateStreamSession(client_id,utils::IntToString(client_id))  == true ) {
                     LOG(INFO) << "New WebSocket Name: " << client_id;
                 };
                 return true;

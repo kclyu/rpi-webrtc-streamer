@@ -342,8 +342,8 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
             peer_connection_->CreateAnswer(this, nullptr);
         }
 
-        // Update the max bitrate at RTPSender if there is not negotiation 
-        // of max bitrate in SDP.
+        // Update the max bitrate on RTPSender if there is no SDP negotiation 
+        // of max bitrate between client.
         UpdateMaxBitrate();
         return;
     } else {

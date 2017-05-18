@@ -82,7 +82,7 @@ bool parse_vidio_resolution(const std::string resolution_list,
 
     while( getline(ss, token, kConfigVideoResolutionDelimiter) ) {
         int width, height;
-        if( parse_resolution(token, &width, &height ) == true )  {
+        if( utils::ParseVideoResolution(token, &width, &height ) == true )  {
             count++;
             resolution.push_back(ResolutionConfig(width,height));
         }
@@ -189,7 +189,7 @@ bool config_load(const std::string config_filename) {
                 // need video width and height config 
                 // to enable use_initial_video_resolution
                 int width, height;
-                if( parse_resolution( resolution_config, &width, &height ) == true ) {
+                if( utils::ParseVideoResolution( resolution_config, &width, &height ) == true ) {
                     if(validate_resolution(width, height) == true ) {
                         initial_video_resolution.width_ = width;
                         initial_video_resolution.height_ = height;

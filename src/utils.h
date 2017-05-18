@@ -19,10 +19,13 @@
 #define ARRAYSIZE(x) (sizeof(x) / sizeof(x[0]))
 #endif
 
-std::string int2str(int i);
-std::string size_t2str(size_t i);
-bool string2int(const std::string &str,int *value );
-bool parse_resolution(const std::string resolution,int *width, int *height );
+namespace utils {
+std::string IntToString(int i);
+std::string Size_tToString(size_t i);
+bool String2Int(const std::string &str,int *value );
+bool ParseVideoResolution(const std::string resolution,int *width, int *height );
+rtc::LoggingSeverity String2LogSeverity(const std::string severity);
+};
 
 #endif  // RPI_STREAMER_UTILS_H_
 

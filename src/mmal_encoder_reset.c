@@ -270,9 +270,6 @@ MMAL_STATUS_T reset_camera_component(RASPIVID_STATE *state)
 
     update_annotation_data(state);
 
-    if (state->verbose)
-        DLOG("Camera component done");
-
     return status;
 
 error:

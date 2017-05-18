@@ -50,7 +50,7 @@ void dump_handshake_info(struct lws *wsi) {
         lws_hdr_copy(wsi, buf, sizeof buf, n);
         buf[sizeof(buf) - 1] = '\0';
 
-        fprintf(stderr, "    %s(%d) = %s\n", (char *)c, n, buf);
+        lwsl_debug( "    %s(%d) = %s\n", (char *)c, n, buf);
         n++;
     } while (c);
 }

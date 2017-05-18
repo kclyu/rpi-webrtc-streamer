@@ -47,6 +47,7 @@
 #include "direct_socket.h"
 #include "streamer_config.h"
 #include "streamer.h"
+#include "utils.h"
 
 // 
 //
@@ -80,8 +81,11 @@ protected:
 //  flags definition for streamer
 // 
 DEFINE_bool(help, false, "Prints this message");
+DEFINE_bool(verbose, false, "Enable logging message on stderr");
 DEFINE_string(conf, "etc/webrtc-streamer.conf",
-           "the main configuration file for webrtc-streamer.");
+           "the main configuration file for webrtc-streamer");
+DEFINE_string(severity, "INFO",
+           "Setting logging message severity level(VERBOSE,INFO,WARNING,ERROR)");
 
 //
 // Main
@@ -90,9 +94,15 @@ int main(int argc, char** argv) {
     std::string app_channel_config;
     int  websocket_port_num;
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
-    if (FLAG_help) {
+
+    if( FLAG_help ) {
         rtc::FlagList::Print(NULL, false);
         return 0;
+    }
+
+    if( FLAG_debug )  {
+        rtc::LoggingSeverity severity = utils::String2LogSeverity(FLAG_severity);
+        rtc::LogMessage::LogToDebug(severity);
     }
 
     // Load the streamer configuration from file
