@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, rpi-webrtc-streamer  Lyu,KeunChang
+ *  Copyright (c) 2017, rpi-webrtc-streamer  Lyu,KeunChang
  *
  * utils.cc
  *
@@ -16,15 +16,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "utils.h"
-
 #include <stdio.h>
 #include <stdlib.h> 
+#include <memory>
+#include <string>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
+
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/stringencode.h"
+#include "webrtc/base/filerotatingstream.h"
+#include "webrtc/base/logsinks.h"
+
+#include "utils.h"
+
+#define  LOGGING_FILENAME       "rws_log"
+#define  MAX_LOG_FILE_SIZE      10*1024*1024    // 10M bytes;
+#define  MAX_LOG_FILE_NUM       10
 
 using rtc::ToString;
 using rtc::FromString;
@@ -85,6 +94,40 @@ rtc::LoggingSeverity String2LogSeverity(const std::string severity) {
     }
     return rtc::LoggingSeverity::LS_NONE;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+//
+// File Logger Class
+//
+//////////////////////////////////////////////////////////////////////////////////////////
+FileLogger::FileLogger (const std::string path,
+        const rtc::LoggingSeverity severity) :  
+    inited_(false), dir_path_(path), severity_(severity),
+    log_max_file_size_(MAX_LOG_FILE_SIZE) {
+}
+
+FileLogger::~FileLogger () {
+}
+
+bool FileLogger::Init() {
+    if( inited_ == true ) return true;  // no more initialization
+    logSink_.reset( new rtc::FileRotatingLogSink(dir_path_,
+                LOGGING_FILENAME, log_max_file_size_, MAX_LOG_FILE_NUM ));
+
+    if(!logSink_->Init()) {
+        LOG(LS_ERROR) << "Failed to open log files at path: " << dir_path_;
+        logSink_.reset();
+        return false;
+    }
+
+    rtc::LogMessage::LogThreads(true);
+    rtc::LogMessage::LogTimestamps(true);
+    rtc::LogMessage::AddLogToStream(logSink_.get(), severity_);
+    inited_ = true;
+    return true;
+}
+
 
 };
 

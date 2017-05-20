@@ -49,6 +49,7 @@
 #include "streamer.h"
 #include "utils.h"
 
+
 // 
 //
 class StreamingSocketServer : public rtc::PhysicalSocketServer {
@@ -84,8 +85,10 @@ DEFINE_bool(help, false, "Prints this message");
 DEFINE_bool(verbose, false, "Enable logging message on stderr");
 DEFINE_string(conf, "etc/webrtc-streamer.conf",
            "the main configuration file for webrtc-streamer");
-DEFINE_string(severity, "INFO",
-           "Setting logging message severity level(VERBOSE,INFO,WARNING,ERROR)");
+DEFINE_string(severity, "WARNING",
+           "logging message severity level(VERBOSE,INFO,WARNING,ERROR)");
+DEFINE_string(log, "log",
+           "directory for logging message");
 
 //
 // Main
@@ -100,9 +103,19 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    if( FLAG_debug )  {
-        rtc::LoggingSeverity severity = utils::String2LogSeverity(FLAG_severity);
+    rtc::LoggingSeverity severity = utils::String2LogSeverity(FLAG_severity);
+    utils::FileLogger file_logger(FLAG_log, severity);
+    if( FLAG_verbose )  {
+        // changing severity to INFO level
+        severity = utils::String2LogSeverity("INFO");
         rtc::LogMessage::LogToDebug(severity);
+    }
+    else {
+        // file logging will be enabled only when verbose flag is not enabled.
+        if( !file_logger.Init() ) {
+            LOG(LS_ERROR) << "Failed to init file message logger";
+            return -1;
+        }
     }
 
     // Load the streamer configuration from file

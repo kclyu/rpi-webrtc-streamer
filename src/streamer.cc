@@ -114,7 +114,6 @@ bool Streamer::InitializePeerConnection() {
     RTC_DCHECK(peer_connection_.get() == nullptr);
 
     rtc::ThreadManager::Instance()->WrapCurrentThread();
-    webrtc::Trace::CreateTrace();
 
     network_thread_ = rtc::Thread::CreateWithSocketServer();
     network_thread_->SetName("network_thread", nullptr);
@@ -251,7 +250,6 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
     RTC_DCHECK(peer_id_ == -1);
     RTC_DCHECK(peer_id != -1);
-    webrtc::Trace::CreateTrace();
     LOG(INFO) << __FUNCTION__ << "Peer " << peer_id  << ", " << name.c_str()
               << " connected, trying to initialize streamer instance";
 
@@ -382,7 +380,6 @@ void Streamer::OnMessageSent(int err) {
 }
 
 std::unique_ptr<cricket::VideoCapturer> Streamer::OpenVideoCaptureDevice() {
-    webrtc::Trace::CreateTrace();
 
     std::vector<std::string> device_names;
     {
