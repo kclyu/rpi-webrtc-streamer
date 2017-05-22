@@ -1,27 +1,31 @@
+/*
+Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
 
-/**
- * \file RaspiVid.c
- * Command line program to capture a camera video stream and encode it to file.
- * Also optionally display a preview/viewfinder of current camera input.
- *
- * \date 28th Feb 2013
- * \Author: James Hughes
- *
- * Description
- *
- * 3 components are created; camera, preview and video encoder.
- * Camera component has three ports, preview, video and stills.
- * This program connects preview and stills to the preview and video
- * encoder. Using mmal we don't need to worry about buffers between these
- * components, but we do need to handle buffers from the encoder, which
- * are simply written straight to the file in the requisite buffer callback.
- *
- * We use the RaspiCamControl code to handle the specific camera settings.
- * We use the RaspiPreview code to handle the (generic) preview window
- */
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
 
-// We use some GNU extensions (basename)
-#define _GNU_SOURCE
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+    * Neither the name of the copyright holder nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,8 +41,6 @@
 // static variable for holding camera settings
 static MMAL_PARAMETER_CAMERA_SETTINGS_T camera_settings;
 static uint16_t camera_setting_updated = 0;
-
-
 
 void mmal_encoder_copy_camera_settings( MMAL_PARAMETER_CAMERA_SETTINGS_T *settings )
 {
