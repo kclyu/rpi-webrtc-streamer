@@ -40,6 +40,7 @@
 #include "streamer.h"
 #include "streamer_observer.h"
 #include "streamer_config.h"
+#include "default_config.h"
 
 
 using webrtc::PeerConnectionInterface;
@@ -414,9 +415,25 @@ void Streamer::AddStreams() {
     if (active_streams_.find(kStreamLabel) != active_streams_.end())
         return;  // Already added.
 
+    cricket::AudioOptions options;
+    if( default_config::audio_processing_enable == true ) {
+        if( default_config::audio_echo_cancel == true ) 
+            options.echo_cancellation = rtc::Optional<bool>(true);
+        if( default_config::audio_gain_control == true ) 
+            options.auto_gain_control = rtc::Optional<bool>(true);
+        if( default_config::audio_highpass_filter == true ) 
+            options.highpass_filter = rtc::Optional<bool>(true);
+        if( default_config::audio_noise_suppression == true ) 
+            options.noise_suppression = rtc::Optional<bool>(true);
+    };
+    if( default_config::audio_level_control == true ) 
+            options.level_control = rtc::Optional<bool>(true);
+
+    LOG(INFO) << "Audio options: " << options.ToString();
+
     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         peer_connection_factory_->CreateAudioTrack(
-            kAudioLabel, peer_connection_factory_->CreateAudioSource(nullptr)));
+            kAudioLabel, peer_connection_factory_->CreateAudioSource(options)));
 
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(

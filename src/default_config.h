@@ -58,6 +58,15 @@ namespace default_config {
     extern std::list <ResolutionConfig> resolution_list_4_3;
     extern std::list <ResolutionConfig> resolution_list_16_9;
 
+    // this feature will require high CPU usage because all of audio enhancement 
+    // feature is S/W based
+    extern bool audio_processing_enable;
+    extern bool audio_echo_cancel;
+    extern bool audio_gain_control;
+    extern bool audio_highpass_filter;
+    extern bool audio_noise_suppression;
+    extern bool audio_level_control;
+
     bool config_load(const std::string config_filename);
 }   // default_config name_space
 

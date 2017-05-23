@@ -3,7 +3,8 @@
  *
  * stream.h
  *
- * Modified version of webrtc/src/webrtc/examples/peer/client/peer_connection.h in WebRTC source tree
+ * Modified version of webrtc/src/webrtc/examples/peer/client/peer_connection.h 
+ * in WebRTC source tree
  * The origianl copyright info below.
  */
 /*
@@ -35,13 +36,6 @@
 namespace webrtc {
 class VideoCaptureModule;
 }  // namespace webrtc
-
-
-enum SdpNegotiationType {
-    TYPE_INVALID = 0,
-    TYPE_ANDROID_DIRECT,
-    TYPE_LINUX,
-};
 
 
 class Streamer
@@ -113,7 +107,6 @@ private:
 
     bool dtls_enable_;
     SocketServerObserver* session_;
-    SdpNegotiationType nego_type_;
     StreamerConfig *streamer_config_;
 };
 

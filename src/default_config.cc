@@ -43,7 +43,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace default_config {
 
-// config key name 
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// config key name and default constants values
+//
+///////////////////////////////////////////////////////////////////////////////////////////
 const char kConfigResolution4_3[] = "use_4_3_video_resolution";
 const char kConfigVideoResolution[] = "initial_video_resolution";
 const char kConfigVideoFrameRate[] = "initial_video_framerate";
@@ -52,6 +56,15 @@ const char kConfigVideoDynamicResolution[] = "use_dynamic_video_resolution";
 
 const char kConfigVideoResolutionList43[] = "video_resolution_list_4_3";
 const char kConfigVideoResolutionList169[] = "video_resolution_list_16_9";
+
+
+const char kConfigAudioProcessing[] = "audio_processing_enable";
+const char kConfigAudioEchoCancel[] = "audio_echo_cancellation";
+const char kConfigAudioGainControl[] = "audio_gain_control";
+const char kConfigAudioHighPassFilter[] = "audio_high_passfilter";
+const char kConfigAudioNoiseSuppression[] = "audio_noise_suppression";
+const char kConfigAudioLevelControl[] = "audio_level_control_enable";
+
 const char kConfigVideoResolutionDelimiter=',';
 const int  kValueVideoFrameRate=30;
 
@@ -60,8 +73,20 @@ const char kDefaultVideoResolution43[] =
 const char kDefaultVideoResolution169[] = 
     "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080";
 
+#define CONFIG_LOAD_BOOL(key,value) \
+        { \
+            std::string flag_value; \
+            if( (config_.GetStringValue(key, &flag_value ) == true) &&  \
+                (flag_value.compare("true") == 0) )  { \
+                value = true; \
+            };\
+        };
 
-// config value
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// default config value
+//
+///////////////////////////////////////////////////////////////////////////////////////////
 bool resolution_4_3_enable = true;
 int quality_framerate = 30;
 
@@ -74,6 +99,24 @@ bool use_dynamic_video_resolution = true;
 std::list <ResolutionConfig> resolution_list_4_3;
 std::list <ResolutionConfig> resolution_list_16_9;
 
+// audio related config
+// this feature will require high CPU usage 
+bool audio_processing_enable = false;
+bool audio_echo_cancel = true;
+bool audio_gain_control = true;
+bool audio_highpass_filter = true;
+bool audio_noise_suppression = true;
+bool audio_level_control = true;
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// config loading and helper functions
+//
+///////////////////////////////////////////////////////////////////////////////////////////
+
+
+//
 bool parse_vidio_resolution(const std::string resolution_list, 
         std::list <ResolutionConfig> &resolution ) {
     std::stringstream ss(resolution_list);
@@ -169,7 +212,6 @@ bool config_load(const std::string config_filename) {
         parse_vidio_resolution( kDefaultVideoResolution169, resolution_list_16_9 );
     };
 
-    // TODO(kclyu) This feature is not implemented.
     // loading flag for default video resolution 
     std::string flag_use_initial_resolution;
     if( config_.GetStringValue(kConfigVideoInitialResolution, 
@@ -214,6 +256,24 @@ bool config_load(const std::string config_filename) {
             use_initial_video_resolution = false;
         }
     };
+
+    // loading flag for audio processing 
+    std::string flag_use_audio_processing;
+    if( ( config_.GetStringValue(kConfigAudioProcessing, 
+                &flag_use_audio_processing ) == true )  && 
+        (flag_use_audio_processing.compare("true") == 0 ) ) {
+
+        // audio processing is enabled
+        audio_processing_enable = true;
+
+        CONFIG_LOAD_BOOL(kConfigAudioEchoCancel,audio_echo_cancel);
+        CONFIG_LOAD_BOOL(kConfigAudioGainControl,audio_gain_control);
+        CONFIG_LOAD_BOOL(kConfigAudioHighPassFilter,audio_highpass_filter);
+        CONFIG_LOAD_BOOL(kConfigAudioNoiseSuppression,audio_noise_suppression);
+    };
+
+    // level control is not depend on the audio processing
+    CONFIG_LOAD_BOOL(kConfigAudioLevelControl,audio_level_control);
 
     return true;
 }
