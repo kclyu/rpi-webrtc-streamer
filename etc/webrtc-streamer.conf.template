@@ -3,7 +3,6 @@ websocket_port=8889
 app_channel_config=etc/app_channel.conf
 direct_socket_enable=false
 direct_socket_port=8888
-dtls_enable=true
 turn_server=
 stun_server=stun:stun.l.google.com:19302
 max_bitrate=3500000

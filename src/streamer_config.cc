@@ -52,7 +52,6 @@ const char kConfigWebSocketEnable[] = "websocket_enable";
 const char kConfigWebSocketPort[] = "websocket_port";
 const char kConfigDirectSocketEnable[] = "direct_socket_enable";
 const char kConfigDirectSocketPort[] = "direct_socket_port";
-const char kConfigDTLSEnable[] = "dtls_enable";
 const char kConfigAppChannelConfig[] = "app_channel_config";
 const char kConfigStunServer[] = "stun_server";
 const char kConfigTurnServer[] = "turn_server";
@@ -61,7 +60,7 @@ const char kConfigMaxBitrate[] = "max_bitrate";
 
 // Default values
 const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
-const bool kDefaultDTLSEnable = true;
+
 // Not used
 const char kTurnIceServer[] = "turn:turn.hostname:3478?transport=tcp";
 const char kTurnUsername[] = "username";
@@ -149,16 +148,6 @@ bool StreamerConfig::GetMaxBitrate(int& max_bitrate) {
         return true;
     }
     return false;
-}
-
-bool StreamerConfig::GetDTLSEnable() {
-    // DTLS will be enabled by default
-    if( config_loaded_ == false )  return true;
-    std::string dtls_enabled;
-    if( config_.GetStringValue(kConfigDTLSEnable, &dtls_enabled ) == true ) {
-        return dtls_enabled.compare("true") == 0;
-    }
-    return true;
 }
 
 

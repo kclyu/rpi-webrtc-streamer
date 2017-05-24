@@ -50,8 +50,6 @@ public:
     bool GetDirectSocketEnable();
     bool GetDirectSocketPort(int& port);
 
-    // WebRTC Config
-    bool GetDTLSEnable();
     bool GetStunServer(std::string& server);
     bool GetTurnServer(std::string& server);
 

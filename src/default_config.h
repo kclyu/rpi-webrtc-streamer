@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // The config part for global config is required.
 //
 namespace default_config {
+
     struct ResolutionConfig {
         explicit ResolutionConfig(int width, int height ) :
             width_(width),height_(height) {};

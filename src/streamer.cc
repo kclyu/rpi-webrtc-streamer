@@ -64,12 +64,6 @@ const char kSessionDescriptionSdpName[] = "sdp";
 // Max Bitrate
 static const int kDefaultMaxBitrate = 3500000;
 
-// DTLS enable flags
-#define DTLS_ON  true
-#define DTLS_OFF false
-
-const bool dtls_enable = DTLS_ON;
-
 class DummySetSessionDescriptionObserver 
     : public webrtc::SetSessionDescriptionObserver {
 public:
@@ -90,7 +84,7 @@ protected:
 };
 
 Streamer::Streamer(SocketServerObserver *session, StreamerConfig *config)
-    : peer_id_(-1), dtls_enable_(true) {
+    : peer_id_(-1) {
     RTC_DCHECK(session != nullptr);
     session_ = session;
     session->RegisterObserver(this);
@@ -188,18 +182,9 @@ bool Streamer::CreatePeerConnection() {
     streamer_config_->GetStunServer(server.uri);
     config.servers.push_back(server);
 
-    webrtc::FakeConstraints constraints;
-    if (dtls_enable) {
-        constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                "true");
-    } else {
-        constraints.AddOptional(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                "false");
-    }
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-            config, &constraints, nullptr, nullptr, this);
+            config, nullptr, nullptr, this);
 
-    // RTC_CHECK(peer_connection_.get() == nullptr) << "PeerConnection creation failed.";
     return peer_connection_.get() != nullptr;
 }
 
@@ -259,9 +244,15 @@ void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
         return;
     }
 
+    // Trying to receive audio, but not video for RWS.
+    // RWS does not supports video receving
+    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions offer_options;
+    offer_options.offer_to_receive_video = 0;
+    offer_options.offer_to_receive_audio = 1;
+
     if (InitializePeerConnection()) {
         peer_id_ = peer_id;
-        peer_connection_->CreateOffer(this, nullptr);
+        peer_connection_->CreateOffer(this, offer_options);
     } else {
         LOG(LS_ERROR) << "Failed to initialize PeerConnection";
     }
@@ -327,18 +318,17 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         peer_connection_->SetRemoteDescription(
             DummySetSessionDescriptionObserver::Create(), session_description);
 
-        /********
-        webrtc::MediaConstraintsInterface sdpConstraints;
-        sdpConstraints.SetMandatoryReceiveAudio(true);
-        sdpConstraints.SetMandatoryReceiveVideo(false);
-        *********/
+        // Trying to receive audio, but not video for RWS.
+        // RWS does not supports video receving
+        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions offer_options;
+        offer_options.offer_to_receive_video = 0;
+        offer_options.offer_to_receive_audio = 1;
 
         // TODO(kclyu) invalid sdp negotiation makes session_description 
         // null, need to figure it out how to fix it.
         if (session_description->type() ==
                 webrtc::SessionDescriptionInterface::kOffer) {
-            // peer_connection_->CreateAnswer(this, &sdpConstraints);
-            peer_connection_->CreateAnswer(this, nullptr);
+            peer_connection_->CreateAnswer(this, offer_options);
         }
 
         // Update the max bitrate on RTPSender if there is no SDP negotiation 

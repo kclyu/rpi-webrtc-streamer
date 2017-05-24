@@ -48,6 +48,7 @@ namespace default_config {
 // config key name and default constants values
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
+// video
 const char kConfigResolution4_3[] = "use_4_3_video_resolution";
 const char kConfigVideoResolution[] = "initial_video_resolution";
 const char kConfigVideoFrameRate[] = "initial_video_framerate";
@@ -57,7 +58,7 @@ const char kConfigVideoDynamicResolution[] = "use_dynamic_video_resolution";
 const char kConfigVideoResolutionList43[] = "video_resolution_list_4_3";
 const char kConfigVideoResolutionList169[] = "video_resolution_list_16_9";
 
-
+// audio
 const char kConfigAudioProcessing[] = "audio_processing_enable";
 const char kConfigAudioEchoCancel[] = "audio_echo_cancellation";
 const char kConfigAudioGainControl[] = "audio_gain_control";
@@ -76,10 +77,10 @@ const char kDefaultVideoResolution169[] =
 #define CONFIG_LOAD_BOOL(key,value) \
         { \
             std::string flag_value; \
-            if( (config_.GetStringValue(key, &flag_value ) == true) &&  \
-                (flag_value.compare("true") == 0) )  { \
-                value = true; \
-            };\
+            if( config_.GetStringValue(key, &flag_value ) == true){ \
+                if(flag_value.compare("true") == 0) value = true; \
+                else if (flag_value.compare("false") == 0) value = false; \
+            }; \
         };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -87,6 +88,7 @@ const char kDefaultVideoResolution169[] =
 // default config value
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
+// video
 bool resolution_4_3_enable = true;
 int quality_framerate = 30;
 

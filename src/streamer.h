@@ -105,7 +105,6 @@ private:
     std::unique_ptr<rtc::Thread> network_thread_;
     std::unique_ptr<rtc::Thread> signaling_thread_;
 
-    bool dtls_enable_;
     SocketServerObserver* session_;
     StreamerConfig *streamer_config_;
 };
