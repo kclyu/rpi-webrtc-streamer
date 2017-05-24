@@ -80,6 +80,22 @@ const char kDefaultVideoResolution169[] =
             if( config_.GetStringValue(key, &flag_value ) == true){ \
                 if(flag_value.compare("true") == 0) value = true; \
                 else if (flag_value.compare("false") == 0) value = false; \
+                else LOG(INFO) << "Default Config \"" <<  key \
+                        << "\" value is not valid" << flag_value; \
+            }; \
+        };
+
+#define CONFIG_LOAD_BOOL_WITH_DEFAULT(key,value,default_value) \
+        { \
+            std::string flag_value; \
+            if( config_.GetStringValue(key, &flag_value ) == true){ \
+                if(flag_value.compare("true") == 0) value = true; \
+                else if (flag_value.compare("false") == 0) value = false; \
+                else { \
+                    LOG(INFO) << "Default Config \"" <<  key \
+                        << "\" value is not valid" << flag_value; \
+                    value = default_value; \
+                };  \
             }; \
         };
 
@@ -169,13 +185,7 @@ bool config_load(const std::string config_filename) {
     };
 
     // loading 4:3 or 16:9 resolution config
-    std::string resolution_4_3;
-    if( config_.GetStringValue(kConfigResolution4_3, &resolution_4_3 ) == true ) {
-        if( resolution_4_3.compare("true") == 0 ) 
-            resolution_4_3_enable = true;
-        else 
-            resolution_4_3_enable = false;
-    };
+    CONFIG_LOAD_BOOL(kConfigResolution4_3,resolution_4_3_enable);
 
     // loading dynamic video resolution config
     //
@@ -186,20 +196,8 @@ bool config_load(const std::string config_filename) {
     // If it is disabled, it keeps the initial resolution set in InitEncoder. 
     // If you want to disable it, you must enable use_initial_video_resoltuion 
     // and set the desired resolution to initial_video_resolution.
-    std::string flag_dynamic_video;
-    if( config_.GetStringValue(kConfigVideoDynamicResolution, 
-                &flag_dynamic_video ) == true ) {
-        if( flag_dynamic_video.compare("true") == 0 ) 
-            use_dynamic_video_resolution = true;
-        else if( flag_dynamic_video.compare("false") == 0 ) 
-            use_dynamic_video_resolution = false;
-        else {
-            LOG(INFO) << "Default Config \"" <<  kConfigVideoDynamicResolution
-                << "\" value is not valid" << flag_dynamic_video;
-            // default value for use_dynamic_video_resolution is true
-            use_dynamic_video_resolution = true;
-        }
-    };
+    CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigVideoDynamicResolution,
+            use_dynamic_video_resolution,true);
 
     // loading default video resolution config
     std::string resolution_list;
