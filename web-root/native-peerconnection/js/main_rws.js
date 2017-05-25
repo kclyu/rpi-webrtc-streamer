@@ -19,6 +19,12 @@ var pcOptions = { optional: [ {DtlsSrtpKeyAgreement: true} ] };
 var mediaConstraints = {'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true }};
 var remoteStream;
 
+function isPrivateIP(ip) {
+    var parts = ip.split('.');
+    return parts[0] === '10' || 
+        (parts[0] === '172' && (parseInt(parts[1], 10) >= 16 && parseInt(parts[1], 10) <= 31)) || 
+        (parts[0] === '192' && parts[1] === '168');
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -262,43 +268,6 @@ function RemoveLineInRange(sdpLines, startLine, endLine, prefix, substr) {
 	return false;
 }
 
-// query getStats every second
-window.setInterval(function() {
-		if (!window.pc1) {
-		return;
-		}
-		window.pc1.getStats(null).then(function(res) {
-			Object.keys(res).forEach(function(key) {
-				var report = res[key];
-				var bytes;
-				var packets;
-				var now = report.timestamp;
-				if ((report.type === 'outboundrtp') ||
-					(report.type === 'outbound-rtp') ||
-					(report.type === 'ssrc' && report.bytesSent)) {
-				bytes = report.bytesSent;
-				packets = report.packetsSent;
-				if (lastResult && lastResult[report.id]) {
-				// calculate bitrate
-				var bitrate = 8 * (bytes - lastResult[report.id].bytesSent) /
-				(now - lastResult[report.id].timestamp);
-
-				// append to chart
-				bitrateSeries.addPoint(now, bitrate);
-				bitrateGraph.setDataSeries([bitrateSeries]);
-				bitrateGraph.updateEndDate();
-
-				// calculate number of packets and append to chart
-				packetSeries.addPoint(now, packets -
-						lastResult[report.id].packetsSent);
-				packetGraph.setDataSeries([packetSeries]);
-				packetGraph.updateEndDate();
-				}
-				}
-			});
-			lastResult = res;
-		});
-}, 1000);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -309,10 +278,13 @@ window.setInterval(function() {
 var websocket;
 function ConnectWebSocket() {
     var websocket_url;
-    if( location.hostname == "127.0.0.1" ) 
+    if( location.host == "127.0.0.1" ) 
         websocket_url = localTestingUrl;
+    else if( isPrivateIP( location.host ) )
+        websocket_url = "ws://" + location.host + "/rws/ws";
     else
-        websocket_url = "wss://" + location.hostname + "/rws/ws";
+        websocket_url = "wss://" + location.host + "/rws/ws";
+    trace("WebSocket URL : " + websocket_url);
     websocket = new WebSocket(websocket_url);
     websocket.onopen = function(event) { onOpen(event) };
     websocket.onclose = function(event) { onClose(event) };

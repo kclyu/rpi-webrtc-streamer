@@ -43,6 +43,12 @@ var lastPacketsReceived;
 var lastBytesReceived;
 var lastTimeStamp;
 
+function isPrivateIP(ip) {
+    var parts = ip.split('.');
+    return parts[0] === '10' || 
+        (parts[0] === '172' && (parseInt(parts[1], 10) >= 16 && parseInt(parts[1], 10) <= 31)) || 
+        (parts[0] === '192' && parts[1] === '168');
+}
 
 window.onbeforeunload = doDisconnect;
 
@@ -255,6 +261,8 @@ function ConnectWebSocket() {
     var websocket_url;
     if( location.hostname == "127.0.0.1" ) 
         websocket_url = localTestingUrl;
+    else if( isPrivateIP( location.host ) )
+        websocket_url = "ws://" + location.host + "/rws/ws";
     else
         websocket_url = "wss://" + location.hostname + "/rws/ws";
     websocket = new WebSocket(websocket_url);
