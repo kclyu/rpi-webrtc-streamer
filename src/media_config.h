@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // The config part for global config is required.
 //
-namespace default_config {
+namespace media_config {
 
     struct ResolutionConfig {
         explicit ResolutionConfig(int width, int height ) :
@@ -49,8 +49,8 @@ namespace default_config {
         int height_;
     };
 
+    extern int max_bitrate;
     extern bool resolution_4_3_enable;
-    extern int quality_framerate;
 
     extern struct ResolutionConfig initial_video_resolution;
     extern int initial_video_framerate;
@@ -69,7 +69,8 @@ namespace default_config {
     extern bool audio_level_control;
 
     bool config_load(const std::string config_filename);
-}   // default_config name_space
+
+}   // media config name_space
 
 
 

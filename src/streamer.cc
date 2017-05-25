@@ -40,7 +40,7 @@
 #include "streamer.h"
 #include "streamer_observer.h"
 #include "streamer_config.h"
-#include "default_config.h"
+#include "media_config.h"
 
 
 using webrtc::PeerConnectionInterface;
@@ -145,7 +145,6 @@ bool Streamer::InitializePeerConnection() {
 }
 
 void Streamer::UpdateMaxBitrate() {
-    int     max_bitrate = 0;
     RTC_DCHECK(peer_connection_ != nullptr );
     auto senders = peer_connection_->GetSenders();
     for (const auto& sender : senders) {
@@ -160,10 +159,8 @@ void Streamer::UpdateMaxBitrate() {
                     return;
                  }
                  else {
-                     if( streamer_config_->GetMaxBitrate(max_bitrate) == true)
-                         encoding.max_bitrate_bps = rtc::Optional<int>(max_bitrate);
-                     else 
-                         encoding.max_bitrate_bps = rtc::Optional<int>(kDefaultMaxBitrate);
+                     encoding.max_bitrate_bps 
+                         = rtc::Optional<int>(media_config::max_bitrate);
                      LOG(INFO) << "Changing Max Bitrate Bps: " << *encoding.max_bitrate_bps;
                      sender->SetParameters(parameters);
                      return;
@@ -406,17 +403,17 @@ void Streamer::AddStreams() {
         return;  // Already added.
 
     cricket::AudioOptions options;
-    if( default_config::audio_processing_enable == true ) {
-        if( default_config::audio_echo_cancel == true ) 
+    if( media_config::audio_processing_enable == true ) {
+        if( media_config::audio_echo_cancel == true ) 
             options.echo_cancellation = rtc::Optional<bool>(true);
-        if( default_config::audio_gain_control == true ) 
+        if( media_config::audio_gain_control == true ) 
             options.auto_gain_control = rtc::Optional<bool>(true);
-        if( default_config::audio_highpass_filter == true ) 
+        if( media_config::audio_highpass_filter == true ) 
             options.highpass_filter = rtc::Optional<bool>(true);
-        if( default_config::audio_noise_suppression == true ) 
+        if( media_config::audio_noise_suppression == true ) 
             options.noise_suppression = rtc::Optional<bool>(true);
     };
-    if( default_config::audio_level_control == true ) 
+    if( media_config::audio_level_control == true ) 
             options.level_control = rtc::Optional<bool>(true);
 
     LOG(INFO) << "Audio options: " << options.ToString();

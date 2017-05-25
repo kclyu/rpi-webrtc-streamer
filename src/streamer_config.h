@@ -54,10 +54,10 @@ public:
     bool GetTurnServer(std::string& server);
 
     // App Channel Config
-    bool GetAppChannelConfig(std::string &config_filename);
+    bool GetAppChannelConfig(std::string& conf);
 
-    // Max Bitrate
-    bool GetMaxBitrate(int& max_bitrate);
+    // Media Config
+    bool GetMediaConfig(std::string& conf);
 
 private:
     bool config_loaded_;

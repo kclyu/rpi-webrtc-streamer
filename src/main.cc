@@ -46,6 +46,7 @@
 #include "streamer_observer.h"
 #include "direct_socket.h"
 #include "streamer_config.h"
+#include "media_config.h"
 #include "streamer.h"
 #include "utils.h"
 
@@ -83,7 +84,7 @@ protected:
 // 
 DEFINE_bool(help, false, "Prints this message");
 DEFINE_bool(verbose, false, "Enable logging message on stderr");
-DEFINE_string(conf, "etc/webrtc-streamer.conf",
+DEFINE_string(conf, "etc/webrtc_streamer.conf",
            "the main configuration file for webrtc-streamer");
 DEFINE_string(severity, "WARNING",
            "logging message severity level(VERBOSE,INFO,WARNING,ERROR)");
@@ -95,6 +96,7 @@ DEFINE_string(log, "log",
 //
 int main(int argc, char** argv) {
     std::string app_channel_config;
+    std::string media_config;
     int  websocket_port_num;
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
 
@@ -111,7 +113,7 @@ int main(int argc, char** argv) {
         rtc::LogMessage::LogToDebug(severity);
     }
     else {
-        // file logging will be enabled only when verbose flag is not enabled.
+        // file logging will be enabled only when verbose flag is disabled.
         if( !file_logger.Init() ) {
             LOG(LS_ERROR) << "Failed to init file message logger";
             return -1;
@@ -120,6 +122,12 @@ int main(int argc, char** argv) {
 
     // Load the streamer configuration from file
     StreamerConfig streamer_config(FLAG_conf);
+    if( streamer_config.GetMediaConfig(media_config) == true ) {
+        if( media_config::config_load(media_config) == false ) {
+            LOG(LS_WARNING) << "Failed to load config options:" << media_config;
+        }
+        LOG(INFO) << "Using Media Config file: " << media_config;
+    };
 
     std::unique_ptr<DirectSocketServer> direct_socket_server;
     std::unique_ptr<AppChannel> app_channel;
@@ -139,7 +147,7 @@ int main(int argc, char** argv) {
             rtc::CleanupSSL();
             return -1;
         }
-        LOG(INFO) << "Direct socket using port num: " << direct_socket_port_num;
+        LOG(INFO) << "Direct socket port num: " << direct_socket_port_num;
         rtc::SocketAddress addr( "0.0.0.0", direct_socket_port_num );
 
         direct_socket_server.reset(new DirectSocketServer());
@@ -153,8 +161,8 @@ int main(int argc, char** argv) {
     if( streamer_config.GetWebSocketEnable() == true ) {
         streamer_config.GetAppChannelConfig(app_channel_config);
         streamer_config.GetWebSocketPort(websocket_port_num);
-        LOG(INFO) << "WebSocket Using Port : " << websocket_port_num 
-            << ", Configuration file : " << app_channel_config;
+        LOG(INFO) << "WebSocket port num : " << websocket_port_num 
+            << ", Using Config file: " << app_channel_config;
         app_channel.reset(new AppChannel(websocket_port_num, app_channel_config));
         app_channel->AppInitialize();
 

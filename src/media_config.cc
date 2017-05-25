@@ -38,17 +38,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/logging.h"
 #include "webrtc/base/arraysize.h"
 
-#include "default_config.h"
+#include "media_config.h"
 #include "utils.h"
 
-namespace default_config {
+namespace media_config {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
-// config key name and default constants values
+// config key name and media config constants values
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
 // video
+const char kConfigMaxBitrate[] = "max_bitrate";
 const char kConfigResolution4_3[] = "use_4_3_video_resolution";
 const char kConfigVideoResolution[] = "initial_video_resolution";
 const char kConfigVideoFrameRate[] = "initial_video_framerate";
@@ -67,7 +68,8 @@ const char kConfigAudioNoiseSuppression[] = "audio_noise_suppression";
 const char kConfigAudioLevelControl[] = "audio_level_control_enable";
 
 const char kConfigVideoResolutionDelimiter=',';
-const int  kValueVideoFrameRate=30;
+const int  kDefaultVideoMaxFrameRate=30;
+const int  kDefaultMaxBitrate = 3500000;
 
 const char kDefaultVideoResolution43[] =  
     "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232";
@@ -104,12 +106,14 @@ const char kDefaultVideoResolution169[] =
 // default config value
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
+//
+int max_bitrate = kDefaultMaxBitrate;
+
 // video
 bool resolution_4_3_enable = true;
-int quality_framerate = 30;
 
 struct ResolutionConfig initial_video_resolution(640,480);
-int default_video_framerate = kValueVideoFrameRate;
+int default_video_framerate = kDefaultVideoMaxFrameRate;
 
 bool use_initial_video_resolution = false;
 bool use_dynamic_video_resolution = true;
@@ -183,6 +187,17 @@ bool config_load(const std::string config_filename) {
     if( config_.Load() == false ) {
         return false;
     };
+
+    // loading maximum bitrate for video & audio
+    if( config_.GetIntValue(kConfigMaxBitrate, &max_bitrate ) == true ) {
+        if ((max_bitrate < 100) || (max_bitrate > 6500000)) {
+            LOG(LS_ERROR) << "Error in max bitrate value," 
+                << max_bitrate << " is not a valid max bitrate value";
+            LOG(LS_ERROR) << "Resetting to default value"
+                << kDefaultMaxBitrate;
+            max_bitrate = kDefaultMaxBitrate;
+        };
+    }
 
     // loading 4:3 or 16:9 resolution config
     CONFIG_LOAD_BOOL(kConfigResolution4_3,resolution_4_3_enable);
@@ -278,7 +293,7 @@ bool config_load(const std::string config_filename) {
     return true;
 }
 
-}   // default_config namespace
+}   // media_config namespace
 
 
 

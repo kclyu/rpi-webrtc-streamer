@@ -39,24 +39,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/arraysize.h"
 
 #include "streamer_config.h"
-#include "default_config.h"
-
 
 // port number 8888 is fiexed for direct socket
 const uint16_t kDefaultWebSocketPort = 8889;
 const uint16_t kDefaultDirectSocketPort = 8888;
-const uint32_t kDefaultMaxBitrate = 3500000;
 const char kDefaultAppChannelConfig[] = "etc/app_channel.conf";
+const char kDefaultMediaConfig[] = "etc/media_config.conf";
 
 const char kConfigWebSocketEnable[] = "websocket_enable";
 const char kConfigWebSocketPort[] = "websocket_port";
 const char kConfigDirectSocketEnable[] = "direct_socket_enable";
 const char kConfigDirectSocketPort[] = "direct_socket_port";
 const char kConfigAppChannelConfig[] = "app_channel_config";
+const char kConfigMediaConfig[] = "media_config";
 const char kConfigStunServer[] = "stun_server";
 const char kConfigTurnServer[] = "turn_server";
-const char kConfigMaxBitrate[] = "max_bitrate";
-
 
 // Default values
 const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
@@ -67,9 +64,10 @@ const char kTurnUsername[] = "username";
 const char kTurnPassword[] = "password";
 
 ////////////////////////////////////////////////////////////////////////////////
+//
 // StreamerConfig
+//
 ////////////////////////////////////////////////////////////////////////////////
-
 StreamerConfig::StreamerConfig(const std::string &config_file) 
     : config_loaded_(false), config_(config_file) {
     if( config_.Load() == false ) {
@@ -77,10 +75,6 @@ StreamerConfig::StreamerConfig(const std::string &config_file)
         return;
     };
     config_loaded_ = true;
-
-    if( default_config::config_load(config_file) == false ) {
-        LOG(LS_WARNING) << "Failed to load config options:" << config_file;
-    }
 }
 
 
@@ -134,23 +128,6 @@ bool StreamerConfig::GetDirectSocketPort(int& port) {
     return false;
 }
 
-bool StreamerConfig::GetMaxBitrate(int& max_bitrate) {
-    if( config_loaded_ == false )  return false;
-    if( config_.GetIntValue(kConfigMaxBitrate, &max_bitrate ) == true ) {
-        if ((max_bitrate < 1) || (max_bitrate > 6500000)) {
-            LOG(LS_ERROR) << "Error in max bitrate value," 
-                << max_bitrate << " is not a valid max bitrate value";
-            LOG(LS_ERROR) << "Resetting to default value"
-                << kDefaultMaxBitrate;
-            max_bitrate = kDefaultMaxBitrate;
-            return true;
-        };
-        return true;
-    }
-    return false;
-}
-
-
 bool StreamerConfig::GetStunServer(std::string& server) {
     // default stun server is kDefaultStunServer
     if( config_.GetStringValue(kConfigStunServer, &server ) == true ) {
@@ -168,7 +145,6 @@ bool StreamerConfig::GetTurnServer(std::string& server) {
     return false;
 }
 
-
 //
 bool StreamerConfig::GetAppChannelConfig(std::string& conf) {
     // default app channel config value is "etc/app_channel.conf"
@@ -176,6 +152,16 @@ bool StreamerConfig::GetAppChannelConfig(std::string& conf) {
         return true;
     }
     conf = kDefaultAppChannelConfig;
+    return false;
+}
+
+//
+bool StreamerConfig::GetMediaConfig(std::string& conf) {
+    // default media config value is "etc/media_config.conf"
+    if( config_.GetStringValue(kConfigMediaConfig, &conf ) == true ) {
+        return true;
+    }
+    conf = kDefaultMediaConfig;
     return false;
 }
 

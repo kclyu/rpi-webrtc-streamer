@@ -35,13 +35,11 @@ TARGET = ../webrtc-streamer
 #
 # source & object list definition
 #
-#SOURCES.CC = stream_data_sockets.cc stream_sockets.cc direct_socket.cc streamer_observer.cc streamer.cc streamer_defaults.cc main.cc raspi_encoder.cc mmal_wrapper.cc h264bitstream_parser.cc utils.cc
-#SOURCES.C = mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c raspicamcontrol.c raspipreview.c 
 SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_channel.cc \
 	app_client.cc direct_socket.cc streamer_observer.cc streamer.cc \
 	streamer_config.cc main.cc raspi_encoder.cc mmal_wrapper.cc \
 	h264bitstream_parser.cc utils.cc raspi_quality_config.cc \
-	default_config.cc 
+	media_config.cc 
 SOURCES.C = websocket_server_util.c mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c \
 	raspicamcontrol.c raspipreview.c 
 
