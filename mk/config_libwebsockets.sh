@@ -16,13 +16,13 @@ then
     exit -1
 fi
 
-if [ -e ../lib/libwebsockets-master.zip ]
+if [ -e ../lib/libwebsockets-2.2-stable.zip ]
 then
     # checking libwebsockets library directory  
     if [ ! -d ../lib/libwebsockets ]
     then
 	    echo "extracting libwebsocket library in lib"
-        cd ../lib && unzip  ../lib/libwebsockets-master.zip && mv libwebsockets-master libwebsockets
+        cd ../lib && unzip  ../lib/libwebsockets-2.2-stable.zip && mv libwebsockets-2.2-stable libwebsockets
         mkdir -p libwebsockets/arm_build
         # 
     fi
@@ -38,7 +38,7 @@ then
 	    echo "libwebsockets.a already exist"
     fi
 else
-	echo "../misc/libwebsocket-master.zip not found"
+	echo "../lib/libwebsocket-master.zip not found"
 fi
 exit 0
 	
