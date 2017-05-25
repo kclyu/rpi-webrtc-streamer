@@ -247,8 +247,8 @@ void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
     // Trying to receive audio, but not video for RWS.
     // RWS does not supports video receving
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions offer_options;
-    offer_options.offer_to_receive_video = 0;
-    offer_options.offer_to_receive_audio = 1;
+    offer_options.offer_to_receive_video = 0;   // do not receive video
+    offer_options.offer_to_receive_audio = 1;   // receive audio
 
     if (InitializePeerConnection()) {
         peer_id_ = peer_id;

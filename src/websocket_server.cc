@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "webrtc/base/network.h"
+#include "webrtc/base/pathutils.h"
 
 #include "websocket_server.h"
 #include "../lib/private-libwebsockets.h"
@@ -252,16 +253,18 @@ void LibWebSocketServer::AddFileMapping(const std::string path,
 
 bool LibWebSocketServer::GetFileMapping(const std::string path,
         std::string& file_mapping){
+
     // Check mapping list at first whether the request path is matching
     for(std::list<FileMapping>::iterator iter = file_mapping_.begin(); 
             iter != file_mapping_.end(); iter++) {
         if( iter->type_ == MAPPING_DIRECTORY ) {
             // compare only the uri_prefix_ size
-            if( iter->uri_prefix_.compare(0, iter->uri_prefix_.size(),path)
-                    == 0) {
+            if( iter->uri_prefix_.compare(0, 
+                        iter->uri_prefix_.size(),path) == 0) {
                 LOG(INFO) << "Found DIR type File Mapping URI in mapping : " << 
                     iter->uri_prefix_ << "(" << iter->uri_resource_path_  << ")";
-                file_mapping = iter->uri_resource_path_ + path;
+
+                file_mapping  = iter->uri_resource_path_ + path;
                 return true;
             }
         }
@@ -275,8 +278,14 @@ bool LibWebSocketServer::GetFileMapping(const std::string path,
         }
     }
 
-    // default mapping( resource path )
-    file_mapping = map_default_resource_ + path;
+    rtc::Pathname file_path;
+
+    // checking whether URI does have filename
+    file_path.SetPathname( map_default_resource_ + path);
+    if( file_path.filename().size() == 0 ) {
+        file_path.SetFilename("index.html");
+    }
+    file_mapping = file_path.pathname();
     return false;
 }
 

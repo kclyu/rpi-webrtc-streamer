@@ -71,5 +71,5 @@ clean:
 
 rcp: $(TARGET)
 	#rsync -v -u -r --stats $(TARGET) pi@10.0.0.11:~/Workspace/client
-	rsync -v -u -r --stats $(TARGET) *.dwo *.cc *.h pi@10.0.0.11:~/Workspace/client
+	rsync -v -u -r --stats $(TARGET) *.dwo *.cc *.h ../web-root pi@10.0.0.11:~/Workspace/client
 

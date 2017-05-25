@@ -57,8 +57,8 @@ static size_t LWS_PRE_SIZE = LWS_PRE;
     if( (handler = reinterpret_cast<LibWebSocketServer *> \
             (wsi->protocol->user)->GetWebsocketHandler(pss->uri_path)) \
             == nullptr ) {  \
-        lwsl_err("ERROR Callback Handler is not found in URI: %s\n",  \
-                pss->uri_path); \
+        LOG(LS_ERROR) << "Callback Handler is not found in URI: "  \
+            << pss->uri_path; \
         return 0;\
     }; 
 
@@ -198,7 +198,8 @@ static SendResult WriteHttpResponseBody(struct lws *wsi,
         write_buffer_size = lws_write(wsi, buffer + LWS_PRE_SIZE, buffer_size, 
                 LWS_WRITE_HTTP);
         if( write_buffer_size < 0 ) {
-            lwsl_err("write failed in the %s\n", __FUNCTION__ );
+            LOG(LS_ERROR) << "write failed in the " <<  __FUNCTION__ 
+                << ", Trying to drop onnection";
             /* write failed, close conn */
 		    return SendResult::ERROR_DROP_CONNECTION;
         }
@@ -246,8 +247,6 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
         {
             char buf[512];
             lws_get_peer_simple(wsi, buf, sizeof(buf));
-            lwsl_info("LibWebSocketServer: %s, HTTP connect from %s\n" ,
-                    (char *)in, buf);
 
             if( pss->user_data_initialized !=  USER_DATA_INITIALIZED_TRUE ) {
                 memset( user, 0x00, sizeof(per_session_data__libwebsockets));
@@ -287,7 +286,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             // at the LWS_CALLBACK_HTTP_BODY* callbacks
             if(lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI)) {
                 BuildHttpRequestFromWsi( wsi, pss->http_request );
-                lwsl_info("POST URI Token found\n");
+                LOG(LS_INFO) << "POST URI Token found";
                 return 0;
             }
 
@@ -320,13 +319,13 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                 int  header_size = 0, retvalue;
 
                 WS_SERVER_INSTANCE->GetFileMapping(pss->uri_path,mapping_path);
-                lwsl_debug("URI mapping %s\n", mapping_path.c_str());
+                LOG(INFO) << "File Request: " << pss->uri_path;
 
                 header_ptr = header_buffer;
                 /* refuse to serve files we don't understand */
                 mimetype = get_mimetype(mapping_path.c_str());
                 if (!mimetype) {
-                    lwsl_err("Unknown mimetype for %s\n", mapping_path.c_str());
+                    LOG(LS_ERROR) << "Unknown mimetype for " <<  mapping_path.c_str();
                     lws_return_http_status(wsi,
                             HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE, NULL);
                     return -1;
@@ -349,6 +348,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                         header_size);
                 if (retvalue < 0 || ((retvalue > 0) && 
                             lws_http_transaction_completed(wsi)))
+                    LOG(INFO) << "Fail to send: " << mapping_path.c_str();
                     return -1; /* error or can't reuse connection: close the socket */
             }
         }
@@ -367,7 +367,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                     return 0;
                 case ERROR_REUSE_CONNECTION:
                 case ERROR_DROP_CONNECTION:
-                    lwsl_err("Failed to send during WRITEABLE\n");
+                    LOG(LS_ERROR) << "Failed to send during WRITEABLE";
                     return -1;
             }
         }
@@ -380,7 +380,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
         {
             char buf[512];
             int  n;
-            lwsl_info("LibWebSocketServer: %s\n",(char *)in);
+            LOG(INFO) << "LibWebSocketServer: " << static_cast<char *>(in);
 
             //
             // Dumping basic request header and information
@@ -393,7 +393,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             }
 
             lws_get_peer_simple(wsi, buf, sizeof(buf));
-            lwsl_info("HTTP connect from %s\n", buf);
+            LOG(INFO) <<  "HTTP connect from " <<  buf;
 
             HttpHandler *handler  = WS_GET_HTTPHANDLER;
             if(handler != nullptr ){
@@ -449,7 +449,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 	case LWS_CALLBACK_ESTABLISHED:
         {
             WSInternalHandlerConfig *handler;
-            lwsl_info("%s: LWS_CALLBACK_ESTABLISHED\n", __FUNCTION__);
+            LOG(INFO) << "LWS_CALLBACK_ESTABLISHED";
 
             WS_GET_WEBSOCKETHANDLER
             handler->CreateHandlerRuntime(sockid, wsi);
@@ -461,7 +461,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 	case LWS_CALLBACK_CLOSED:
         {
             WSInternalHandlerConfig *handler;
-            lwsl_info("%s: LWS_CALLBACK_CLOSED\n", __FUNCTION__ );
+            LOG(INFO) << __FUNCTION__ << "LWS_CALLBACK_CLOSED";
 
             WS_GET_WEBSOCKETHANDLER
             handler->OnDisconnect(sockid);
@@ -499,11 +499,13 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                         pss->ring_buffer[pss->ring_buffer_index].payload +
                         LWS_PRE_SIZE, message_length, LWS_WRITE_TEXT);
                 if (num_sent < 0) {
-                    lwsl_err("ERROR %d writing to socket for sending meesage to peer\n", num_sent);
+                    LOG(LS_ERROR) << "ERROR " << num_sent 
+                        << " writing to socket for sending meesage to peer";
                     return -1;
                 }
                 if (num_sent < message_length)
-                    lwsl_err("ERROR socket partial write %d vs %d\n", num_sent, message_length);
+                    LOG(LS_ERROR) << "ERROR socket partial write " << num_sent 
+                        << " vs " <<  message_length;
 
                 // increse ring_buffer_index for next usage
 			    if (pss->ring_buffer_index == (MAX_RINGBUFFER_QUEUE - 1))
@@ -545,11 +547,10 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 
             // check whether requested uri is in the he handler config
             if( WS_SERVER_INSTANCE->IsValidWSPath(pss->uri_path) ) 
-		        lwsl_debug("URI Path exist %s\n", pss->uri_path);
+		        LOG(INFO) << "URI Path exist " <<  pss->uri_path;
             else {
-		        lwsl_err(
-                    "URI Path does not exist %s, droping this connection\n", 
-                   pss->uri_path);
+		        LOG(LS_ERROR) << "URI Path does not exist "
+                   << pss->uri_path << ", droping this connection\n", 
                 // reject the connection
 		        lws_rx_flow_control(wsi, 0);
                 return 1;
