@@ -60,7 +60,6 @@ DirectSocketServer::DirectSocketServer()
 DirectSocketServer::~DirectSocketServer() {}
 
 bool DirectSocketServer::Listen(const rtc::SocketAddress& address) {
-    LOG(INFO) << __FUNCTION__;
     rtc::Thread *thread = rtc::Thread::Current();
     RTC_DCHECK(thread != nullptr);
     rtc::AsyncSocket* sock =
