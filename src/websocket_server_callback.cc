@@ -236,7 +236,8 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
     // HTTP Callback Processing
     //
     case LWS_CALLBACK_CLOSED_HTTP:
-        if( pss != nullptr ) {
+        if( pss != nullptr && 
+                pss->user_data_initialized == USER_DATA_INITIALIZED_TRUE) {
             pss->user_data_initialized = USER_DATA_INITIALIZED_FALSE;
             delete pss->http_request;
             delete pss->http_response;
