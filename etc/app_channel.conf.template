@@ -1,11 +1,11 @@
-web_root=__HOME__/Workspace/dwebsocket/web-root
+web_root=__HOME__/Workspace/client/web-root
 websocket_port=8888
 libwebsocket_debug=false
 ws_server=wss://your.dns_hostname.here
 post_server=https://your.dns_hostname.here
 is_initiator=false
 room_link=__POST_SERVER__/r/__ROOM__
-wss_url=__WS_SERVER__/wss
+wss_url=__WS_SERVER__/rws/ws
 post_url=__POST_SERVER__
 room_id=__ROOM__
 client_id=__CLIENTID__

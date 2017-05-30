@@ -61,6 +61,7 @@ Please refer to the  [README_audio.md](https://github.com/kclyu/rpi-webrtc-strea
 |----------------|-----------------|--------------|
 |web_root|path|specify the internal HTTP server web root|
 |libwebsocket_debug|boolean|enable/disable libwebsockets debug message printing|
+|wss_url|string|setting for WebSocket URL (By default, wss_url is set to 'wss_url=__ WS_SERVER __/rws/ws'. The value of '/rws/ws' is used by default in html examples such as native-peerconnection. If you change /rws/ws, you also have to modify the contents of each html file and so on.)
 
 
 ## Running RWS in Standalone Configuration
