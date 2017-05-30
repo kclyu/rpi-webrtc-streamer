@@ -149,7 +149,7 @@ void LibWebSocketServer::LogLevel(DEBUG_LEVEL level,bool log_redirect){
         case DEBUG_LEVEL_EXT:
             debug_level |= LLL_EXT;
         case DEBUG_LEVEL_PARSER:
-            debug_level |= LLL_PARSER;
+            // debug_level |= LLL_PARSER;   // supress the parser debug log
         case DEBUG_LEVEL_DEBUG:
             debug_level |= LLL_DEBUG;
         case DEBUG_LEVEL_INFO:

@@ -33,7 +33,7 @@ then
     then
 	    echo "start building libwebsockets library"
         mkdir -p ../lib/libwebsockets/arm_build
-        cd ../lib/libwebsockets/arm_build && cmake -DCMAKE_TOOLCHAIN_FILE=~/Workspace/rpi_rootfs/PI.cmake  -DCMAKE_BUILD_TYPE=Debug -DLWS_WITH_SSL=OFF  .. -DLWS_WITH_SHARED=OFF && make
+        cd ../lib/libwebsockets/arm_build && cmake -DCMAKE_TOOLCHAIN_FILE=~/Workspace/rpi_rootfs/PI.cmake  -DCMAKE_BUILD_TYPE=Debug -DLWS_WITH_SSL=OFF  .. -DLWS_WITH_SHARED=OFF -DLWS_WITH_RANGES=OFF && make
     else
 	    echo "libwebsockets.a already exist"
     fi
