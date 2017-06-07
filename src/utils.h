@@ -15,6 +15,7 @@
 #include <assert.h>
 #include <string>
 
+#include "webrtc/base/fileutils.h"
 #include "webrtc/base/filerotatingstream.h"
 #include "webrtc/base/logsinks.h"
 
@@ -30,9 +31,12 @@ public:
     explicit FileLogger(const std::string path, 
             const rtc::LoggingSeverity severity);
     bool Init();
+    bool MoveLogFiletoNextShiftDir();
     ~FileLogger();
 
 private:
+    bool MoveLogFiles(const std::string prefix, 
+            const rtc::Pathname src, const rtc::Pathname dest);
     bool inited_;
     std::string dir_path_;
     rtc::LoggingSeverity severity_;

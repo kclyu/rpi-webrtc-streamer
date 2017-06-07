@@ -27,6 +27,7 @@
 #include "webrtc/base/stringutils.h"
 #include "webrtc/base/stringencode.h"
 #include "webrtc/base/filerotatingstream.h"
+#include "webrtc/base/pathutils.h"
 #include "webrtc/base/logsinks.h"
 
 #include "utils.h"
@@ -112,6 +113,12 @@ FileLogger::~FileLogger () {
 
 bool FileLogger::Init() {
     if( inited_ == true ) return true;  // no more initialization
+
+    if( MoveLogFiletoNextShiftDir() == false ) {
+        LOG(LS_ERROR) << "Failed to rotate log files at path: " << dir_path_;
+        return false;
+    };
+
     logSink_.reset( new rtc::FileRotatingLogSink(dir_path_,
                 LOGGING_FILENAME, log_max_file_size_, MAX_LOG_FILE_NUM ));
 
@@ -128,6 +135,83 @@ bool FileLogger::Init() {
     return true;
 }
 
+bool FileLogger::MoveLogFiles(const std::string prefix, 
+            const rtc::Pathname src, const rtc::Pathname dest) {
+    rtc::DirectoryIterator it;
+    rtc::Pathname src_file, dest_file;
+
+    // check src & dest path is directory
+    if( !rtc::Filesystem::IsFolder(dest)) {
+        if( rtc::Filesystem::CreateFolder( dest ) == false ) 
+            LOG(LS_ERROR) << "Failed to create dest directory: " 
+                << dest.pathname();
+    }
+    if( !rtc::Filesystem::IsFolder(src)) {
+        if( rtc::Filesystem::CreateFolder( src ) == false ) {
+            LOG(LS_ERROR) << "Failed to create src directory: " 
+                << src.pathname();
+            // source directory is just created, so nothing to move files
+            return true;
+        };
+    }
+
+    // iterate source directory 
+    if (!it.Iterate(src)) {
+        return false;
+    } 
+    do {
+        std::string filename = it.Name();
+        if( filename.compare(0, prefix.size(), prefix ) == 0 ) {
+            src_file.SetPathname(src.folder(), filename);
+            dest_file.SetPathname(dest.folder(), filename);
+            if( rtc::Filesystem::MoveFile(src_file, dest_file) == false ) 
+                LOG(LS_ERROR) << "Failed to move file : " 
+                    << src_file.pathname() << ", to: " 
+                    << dest_file.pathname();
+        };
+    } while ( it.Next() );
+
+    return true;
+}
+
+bool FileLogger::MoveLogFiletoNextShiftDir() {
+    char src_dir_postfix[16], dest_dir_postfix[16];
+    rtc::Pathname base_log_path;
+    rtc::Pathname src_log_dir, dest_log_dir;
+
+    base_log_path.SetFolder( dir_path_ );
+    // checking whether the base log directory is exist
+    if( rtc::Filesystem::IsFolder( base_log_path ) == false ) {
+        LOG(LS_ERROR) << "Log directory does not exist : " 
+                    << base_log_path.pathname() ;
+        return false;
+    };
+
+    // move log files to next shift directory
+    for(int index = 9; index > 0 ; index -- ) {
+        rtc::sprintfn(dest_dir_postfix,sizeof(dest_dir_postfix),"0%d", index );
+        rtc::sprintfn(src_dir_postfix,sizeof(src_dir_postfix),"0%d", index - 1);
+        dest_log_dir.SetFolder(base_log_path.pathname() + dest_dir_postfix );
+        src_log_dir.SetFolder(base_log_path.pathname() + src_dir_postfix );
+
+        // remove last rotate directory
+        if( index == 9 ) {
+            if( rtc::Filesystem::IsFolder(dest_log_dir) == true ) 
+                rtc::Filesystem::DeleteFolderContents(dest_log_dir);
+        };
+        if( MoveLogFiles(LOGGING_FILENAME, src_log_dir, dest_log_dir ) == false ){
+            return false;
+        }
+    };
+
+    // move log file to shit directory
+    src_log_dir.SetFolder(dir_path_);
+    dest_log_dir.SetFolder(dir_path_+"/00");
+    if( MoveLogFiles(LOGGING_FILENAME, src_log_dir, dest_log_dir ) == false ){
+        return false;
+    }
+    return true;
+}
 
 };
 
