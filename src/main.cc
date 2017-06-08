@@ -86,10 +86,10 @@ DEFINE_bool(help, false, "Prints this message");
 DEFINE_bool(verbose, false, "Enable logging message on stderr");
 DEFINE_string(conf, "etc/webrtc_streamer.conf",
            "the main configuration file for webrtc-streamer");
-DEFINE_string(severity, "WARNING",
+DEFINE_string(severity, "INFO",
            "logging message severity level(VERBOSE,INFO,WARNING,ERROR)");
-DEFINE_string(log, "log",
-           "directory for logging message");
+DEFINE_string(log, "log", "directory for logging message");
+DEFINE_bool(licenses, false, "print the LICENSE information");
 
 //
 // Main
@@ -97,6 +97,7 @@ DEFINE_string(log, "log",
 int main(int argc, char** argv) {
     std::string app_channel_config;
     std::string media_config;
+    std::string baselog_dir;
     int  websocket_port_num;
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
 
@@ -104,9 +105,33 @@ int main(int argc, char** argv) {
         rtc::FlagList::Print(NULL, false);
         return 0;
     }
+    
+    if( FLAG_licenses ) {
+        utils::printLicenseInfo();
+        return 0;
+    };
+
+    // Load the streamer configuration from file
+    StreamerConfig streamer_config(FLAG_conf);
+    if( streamer_config.LoadConfig() == false ) {
+        std::cerr  << "Failed to load config options:" 
+                << streamer_config.GetConfigFilename() << "\n";
+        return -1;
+    };
+
+    // Getting the log directory path 
+    // The priorities are as follows.
+    //      1. Use command line flag when path of command line flag exists
+    //      2. If not, use the INSTALL_DIR + log path
+    baselog_dir = FLAG_log;
+    if( streamer_config.GetLogPath(baselog_dir) == false ) {
+        std::cerr << "Failed to get log directory : " 
+            << baselog_dir << "\n";
+        return -1;
+    };
 
     rtc::LoggingSeverity severity = utils::String2LogSeverity(FLAG_severity);
-    utils::FileLogger file_logger(FLAG_log, severity);
+    utils::FileLogger file_logger(baselog_dir, severity);
     if( FLAG_verbose )  {
         // changing severity to INFO level
         severity = utils::String2LogSeverity("INFO");
@@ -115,13 +140,11 @@ int main(int argc, char** argv) {
     else {
         // file logging will be enabled only when verbose flag is disabled.
         if( !file_logger.Init() ) {
-            LOG(LS_ERROR) << "Failed to init file message logger";
+            std::cerr << "Failed to init file message logger\n" ;
             return -1;
         }
     }
 
-    // Load the streamer configuration from file
-    StreamerConfig streamer_config(FLAG_conf);
     if( streamer_config.GetMediaConfig(media_config) == true ) {
         if( media_config::config_load(media_config) == false ) {
             LOG(LS_WARNING) << "Failed to load config options:" << media_config;

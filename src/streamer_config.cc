@@ -32,17 +32,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <unistd.h>
 
+#include <iostream>
 #include <memory>
 #include <string>
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
 #include "webrtc/base/arraysize.h"
+#include "webrtc/base/fileutils.h"
 
 #include "streamer_config.h"
 
 // port number 8888 is fiexed for direct socket
 const uint16_t kDefaultWebSocketPort = 8889;
 const uint16_t kDefaultDirectSocketPort = 8888;
+const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
 const char kDefaultAppChannelConfig[] = "etc/app_channel.conf";
 const char kDefaultMediaConfig[] = "etc/media_config.conf";
 
@@ -69,18 +72,44 @@ const char kTurnPassword[] = "password";
 //
 ////////////////////////////////////////////////////////////////////////////////
 StreamerConfig::StreamerConfig(const std::string &config_file) 
-    : config_loaded_(false), config_(config_file) {
-    if( config_.Load() == false ) {
-        LOG(LS_WARNING) << "Failed to load config options:" << config_file;
-        return;
+    : config_loaded_(false), config_file_(config_file) {}
+
+
+bool StreamerConfig::LoadConfig()  {
+    rtc::Pathname path;
+    path.SetPathname( config_file_ );
+
+    // trying to check flag config_file is regular file
+    if( rtc::Filesystem::IsFile(path) == false)  {
+        // there is no config file in command line flag 
+        // so, trying to load config from installation directory config path
+        path.SetPathname( std::string(INSTALL_DIR) 
+                + "/"  + std::string(kDefaultStreamerConfig) );
+        if( rtc::Filesystem::IsFile(path) == false)  {
+            std::cerr << "Failed to find config options:" << path.pathname() << "\n";
+            return false;
+        };
     };
+
+    config_.reset(new rtc::OptionsFile(path.pathname()));
+    if( config_->Load() == false ) {
+        std::cerr  << "Failed to load config options:" << path.pathname() << "\n";
+        return false;
+    }
+
+    config_file_ = path.pathname();
+    config_dir_basename_ = path.parent_folder();
+    std::cout << "Using config file base path:" << 
+        ((config_dir_basename_.size() == 0)?" Directory":config_dir_basename_) << "\n";
     config_loaded_ = true;
+    return true;
 }
 
 
 bool StreamerConfig::GetWebSocketEnable() {
+    RTC_CHECK( config_loaded_ == true );
     std::string websocket_enabled;
-    if( config_.GetStringValue(kConfigWebSocketEnable, &websocket_enabled ) == true ) {
+    if( config_->GetStringValue(kConfigWebSocketEnable, &websocket_enabled ) == true ) {
         return websocket_enabled.compare("true") == 0;
     }
     // websocket will be enabled by default
@@ -88,7 +117,8 @@ bool StreamerConfig::GetWebSocketEnable() {
 }
 
 bool StreamerConfig::GetWebSocketPort(int& port) {
-    if( config_.GetIntValue(kConfigWebSocketPort, &port ) == true ) {
+    RTC_CHECK( config_loaded_ == true );
+    if( config_->GetIntValue(kConfigWebSocketPort, &port ) == true ) {
         if ((port < 1) || (port > 65535)) {
             LOG(LS_ERROR) << "Error in port value," << port << " is not a valid port";
             LOG(LS_ERROR) << "Resetting to default value";
@@ -102,10 +132,11 @@ bool StreamerConfig::GetWebSocketPort(int& port) {
 }
 
 bool StreamerConfig::GetDirectSocketEnable() {
+    RTC_CHECK( config_loaded_ == true );
     std::string direct_socket_enabled;
     // direct_socket will not be enabled by default
     if( config_loaded_ == false )  return false;
-    if( config_.GetStringValue(kConfigDirectSocketEnable, 
+    if( config_->GetStringValue(kConfigDirectSocketEnable, 
                 &direct_socket_enabled ) == true ) {
         return direct_socket_enabled.compare("true") == 0;
     }
@@ -113,9 +144,10 @@ bool StreamerConfig::GetDirectSocketEnable() {
 }
 
 bool StreamerConfig::GetDirectSocketPort(int& port) {
+    RTC_CHECK( config_loaded_ == true );
     // direct_socket will not be enabled by default
     if( config_loaded_ == false )  return false;
-    if( config_.GetIntValue(kConfigDirectSocketPort, &port ) == true ) {
+    if( config_->GetIntValue(kConfigDirectSocketPort, &port ) == true ) {
         if ((port < 1) || (port > 65535)) {
             LOG(LS_ERROR) << "Error in port value," 
                 << port << " is not a valid port";
@@ -129,8 +161,9 @@ bool StreamerConfig::GetDirectSocketPort(int& port) {
 }
 
 bool StreamerConfig::GetStunServer(std::string& server) {
+    RTC_CHECK( config_loaded_ == true );
     // default stun server is kDefaultStunServer
-    if( config_.GetStringValue(kConfigStunServer, &server ) == true ) {
+    if( config_->GetStringValue(kConfigStunServer, &server ) == true ) {
         return true;
     }
     server = kDefaultStunServer;
@@ -138,8 +171,9 @@ bool StreamerConfig::GetStunServer(std::string& server) {
 }
 
 bool StreamerConfig::GetTurnServer(std::string& server) {
+    RTC_CHECK( config_loaded_ == true );
     // there is no default value for turn server 
-    if( config_.GetStringValue(kConfigTurnServer, &server ) == true ) {
+    if( config_->GetStringValue(kConfigTurnServer, &server ) == true ) {
         return true;
     }
     return false;
@@ -147,22 +181,64 @@ bool StreamerConfig::GetTurnServer(std::string& server) {
 
 //
 bool StreamerConfig::GetAppChannelConfig(std::string& conf) {
+    RTC_CHECK( config_loaded_ == true );
     // default app channel config value is "etc/app_channel.conf"
-    if( config_.GetStringValue(kConfigAppChannelConfig, &conf ) == true ) {
+    if( config_->GetStringValue(kConfigAppChannelConfig, &conf ) == true ) {
+        conf = config_dir_basename_ + conf;
         return true;
     }
-    conf = kDefaultAppChannelConfig;
+    conf = config_dir_basename_ + kDefaultAppChannelConfig;
     return false;
 }
 
 //
 bool StreamerConfig::GetMediaConfig(std::string& conf) {
+    RTC_CHECK( config_loaded_ == true );
     // default media config value is "etc/media_config.conf"
-    if( config_.GetStringValue(kConfigMediaConfig, &conf ) == true ) {
+    if( config_->GetStringValue(kConfigMediaConfig, &conf ) == true ) {
+        conf = config_dir_basename_ + conf;
         return true;
     }
-    conf = kDefaultMediaConfig;
+    conf = config_dir_basename_ + kDefaultMediaConfig;
     return false;
+}
+
+// Just validate the log path, 
+// if the log path not found, it will return false
+bool StreamerConfig::GetLogPath(std::string& log_path) {
+    RTC_CHECK( config_loaded_ == true );
+    rtc::Pathname path;
+    path.SetPathname( log_path );
+
+    // trying to check log path is directory 
+    if( path.folder().size() == 0 &&  rtc::Filesystem::IsFolder(path) == true )  {
+        // log path is current working directory 
+        std::cerr << "Using message logging log directory in CWD\n";
+        std::cerr << "Using CWD log is for only development support feature"
+            << " do not use deployment/packaging environment\n";
+        return true;
+    }
+
+    // trying to check comamand flag log path is directory 
+    if( rtc::Filesystem::IsFolder(path) == true )  {
+        return true;
+    }
+
+    // checking INSTALL_DIR log path
+    path.SetPathname( std::string(INSTALL_DIR) + "/log" );
+    if( rtc::Filesystem::IsFolder(path) == false )  {
+        std::cerr << "Failed to find the log directory " 
+            << path.pathname() << "\n";
+        return false;
+    }
+
+    log_path = path.pathname();
+    return true;
+}
+
+const std::string StreamerConfig::GetConfigFilename() {
+    RTC_CHECK( config_loaded_ == true );
+    return config_file_;
 }
 
 

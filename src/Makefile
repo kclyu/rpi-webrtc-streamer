@@ -6,13 +6,14 @@ include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk
 include ../mk/h264bitstream_arm_build.mk
 
+RWS_INSTALL_DIR=\"/opt/rws\"
 
 
 #
 #
 #
-CCFLAGS += $(LWS_C_FLAGS) $(WEBRTC_CCFLAGS) $(MMAL_CFLAGS)
-CFLAGS += -DINSTALL_DIR=\"/usr/local/rws\" $(WEBRTC_CFLAGS) $(MMAL_CFLAGS)
+CCFLAGS += -DINSTALL_DIR=$(RWS_INSTALL_DIR) $(LWS_C_FLAGS) $(WEBRTC_CCFLAGS) $(MMAL_CFLAGS)
+CFLAGS += -DINSTALL_DIR=$(RWS_INSTALL_DIR) $(WEBRTC_CFLAGS) $(MMAL_CFLAGS)
 INCLUDES += $(LWS_INCLUDES) $(WEBRTC_DEFINES) $(WEBRTC_FLAGS_INCLUDES) $(H264BITSTREAM_INCLUDES) \
 			$(MMAL_INCLUDES)
 BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS) $(H264_BITSTREAM_LIBS)
@@ -68,6 +69,5 @@ clean:
 	rm -f *.o  *.o.d $(TARGET)
 
 rcp: $(TARGET)
-	#rsync -v -u -r --stats $(TARGET) pi@10.0.0.11:~/Workspace/client
-	rsync -v -u -r --stats $(TARGET) *.cc *.h ../web-root pi@10.0.0.11:~/Workspace/client
+	rsync -v -u -r --stats $(TARGET) *.cc *.h pi@10.0.0.11:~/Workspace/client
 

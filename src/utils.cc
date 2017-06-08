@@ -20,6 +20,7 @@
 #include <stdlib.h> 
 #include <memory>
 #include <string>
+#include <iostream>
 
 #include "webrtc/base/checks.h"
 #include "webrtc/base/logging.h"
@@ -41,6 +42,20 @@ using rtc::FromString;
 using rtc::sprintfn;
 
 namespace utils {
+
+void printLicenseInfo() {
+    char command_buffer[1024];
+    int ret;
+    sprintfn( command_buffer, sizeof(command_buffer), 
+        "find %s/LICENSE -type f -printf \"********************\\n\
+********************   %%f\\n********************\\n\\n\" \
+-exec cat {} \\; | pager",
+        INSTALL_DIR);
+    ret = system(command_buffer);
+    if( ret !=0 ) {
+        std::cout << "Failed to dispaly LICENSE Information file\n";
+    }
+}
 
 std::string IntToString(int i) {
     return ToString<int>(i);

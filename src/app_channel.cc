@@ -358,11 +358,13 @@ bool AppChannel::LoadConfig(){
     std::string string_value;
     size_t      pos;
 
-    home_path_ = getenv("HOME");
+    // TODO(kclyu): This is temporary fix before implement App Rool Channel
+    home_path_ = INSTALL_DIR;
     options_.reset(new rtc::OptionsFile(app_conf_));
 
     if( options_->Load() == false ) {
-        LOG(LS_ERROR) << "AppChannel initialization failed to load config options:" << app_conf_;
+        LOG(LS_ERROR) << "AppChannel initialization failed to load config options:" 
+            << app_conf_;
         return false;
     };
 
@@ -372,7 +374,7 @@ bool AppChannel::LoadConfig(){
         return false;
     }
     web_root_ = string_value;
-    // replace __HOME__ to HOME environment value
+    // replace __HOME__ to INSTALL_DIR value
     if( (pos = web_root_.find(kHomeTemplate, 0)) 
             != std::string::npos){
         web_root_.replace(pos,strlen(kHomeTemplate),home_path_);

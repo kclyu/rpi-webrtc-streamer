@@ -42,6 +42,10 @@ public:
     explicit StreamerConfig(const std::string &config_file);
     ~StreamerConfig();
 
+    // Load Config
+    bool LoadConfig();
+    const std::string GetConfigFilename();
+
     // WebSocket Config
     bool GetWebSocketEnable();
     bool GetWebSocketPort(int& port);
@@ -59,9 +63,14 @@ public:
     // Media Config
     bool GetMediaConfig(std::string& conf);
 
+    // Log Path
+    bool GetLogPath(std::string& log_dir);
+
 private:
     bool config_loaded_;
-    rtc::OptionsFile config_;
+    std::unique_ptr<rtc::OptionsFile> config_;
+    std::string config_file_;
+    std::string config_dir_basename_;
 };
 
 

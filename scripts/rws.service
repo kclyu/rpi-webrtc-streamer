@@ -1,0 +1,15 @@
+[Unit]
+Description=Rpi WebRTC Streamer
+After=syslog.target
+
+[Service]
+Type=simple
+PIDFile=/var/run/webrtc-streamer.pid
+ExecStart=/opt/rws/webrtc-streamer --log /opt/rws/log
+StandardOutput=journal
+StandardError=journal
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

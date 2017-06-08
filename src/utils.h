@@ -24,6 +24,7 @@
 #endif
 
 namespace utils {
+void printLicenseInfo();
 
 // save the logging messsage to file
 class FileLogger {
