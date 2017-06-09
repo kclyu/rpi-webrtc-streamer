@@ -272,6 +272,15 @@ bool config_load(const std::string config_filename) {
         }
     };
 
+    // validate the initial_video_resolution and dynamic_video_resolution
+    // one of setting should be enabled.
+    if( use_dynamic_video_resolution == false && 
+            use_initial_video_resolution == false ) {
+        LOG(LS_ERROR) << "Both of dynamic video resolution and initial resolution disabled";
+        LOG(LS_ERROR) << "Overriding configuration setting to initial video resolution to enable";
+        use_initial_video_resolution = true;
+    };
+ 
     // loading flag for audio processing 
     std::string flag_use_audio_processing;
     if( ( config_.GetStringValue(kConfigAudioProcessing, 
