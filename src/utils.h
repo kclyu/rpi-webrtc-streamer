@@ -25,6 +25,7 @@
 
 namespace utils {
 void PrintLicenseInfo();
+void PrintVersionInfo();
 
 // save the logging messsage to file
 class FileLogger {

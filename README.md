@@ -33,7 +33,7 @@ Firefox|Yes|Browser plugin|
 
 ## Hardware Requirement
 ### Raspberry PI 
-- Raspberry PI 2 (or Upper version)
+- Raspberry PI 2/3
 - Raspberry Zero W  (Currently under examination)
 ### Video Camera
 - RPI Camera board V1/V2
@@ -54,6 +54,9 @@ TBD
 TBD
 
 ## Version History
+* 2017/06/09 v0.65:
+	- Adding log file shifting between folders
+    - Prepare first deb package for systemd	
 * 2017/04/28 v0.62 : 
      - Bandwith base Quality Control is added
      - Video Resolution ratio 16: 9, 4: 3 config added

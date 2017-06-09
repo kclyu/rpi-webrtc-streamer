@@ -90,6 +90,7 @@ DEFINE_string(severity, "INFO",
            "logging message severity level(VERBOSE,INFO,WARNING,ERROR)");
 DEFINE_string(log, "log", "directory for logging message");
 DEFINE_bool(licenses, false, "print the LICENSE information");
+DEFINE_bool(version, false, "print the Version information");
 
 //
 // Main
@@ -108,6 +109,11 @@ int main(int argc, char** argv) {
     
     if( FLAG_licenses ) {
         utils::PrintLicenseInfo();
+        return 0;
+    };
+    
+    if( FLAG_version ) {
+        utils::PrintVersionInfo();
         return 0;
     };
 

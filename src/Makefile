@@ -7,6 +7,9 @@ include ../mk/libwebsocket_arm_build.mk
 include ../mk/h264bitstream_arm_build.mk
 
 RWS_INSTALL_DIR=\"/opt/rws\"
+RWS_VERSION=\"$(shell git describe --abbrev=8 --dirty --always --tags)\"
+WEBRTC_GIT=$(shell (cd $(WEBRTC_ROOT)/src/; git describe --abbrev=8 --dirty --always --tags))
+WEBRTC_NATIVE_PACKAGE=$(shell cat ../misc/WEBRTC_BRANCH.conf)
 
 
 #
@@ -20,6 +23,9 @@ BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS) $(H264_BITSTREAM_LIBS)
 SYSLIBS += $(LWS_SYS_LIBS) $(WEBRTC_SYSLIBS)
 LDFLAGS += $(WEBRTC_LDFLAGS) $(MMAL_LDFLAGS) 
 
+# Adding Version Inforation
+CCFLAGS += -D__RWS_VERSION__=$(RWS_VERSION) \
+		   -D__WEBRTC_VERSION__="\"$(WEBRTC_GIT),$(WEBRTC_NATIVE_PACKAGE)\""
 
 #$(info CFLAGS is "$(CFLAGS)")
 #$(info CCFLAGS is  "$(CCFLAGS)")

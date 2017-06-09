@@ -43,6 +43,11 @@ using rtc::sprintfn;
 
 namespace utils {
 
+void PrintVersionInfo() {
+    std::cout << "Rpi-WebRTC-Streamer version: " << __RWS_VERSION__ << "\n";
+    std::cout << "WebRTC Native Package version: " << __WEBRTC_VERSION__ << "\n";
+}
+
 void PrintLicenseInfo() {
     char command_buffer[1024];
     int ret;
