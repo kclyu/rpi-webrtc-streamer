@@ -83,7 +83,7 @@ protected:
 //  flags definition for streamer
 // 
 DEFINE_bool(help, false, "Prints this message");
-DEFINE_bool(verbose, false, "Enable logging message on stderr");
+DEFINE_bool(verbose, false, "Print logging message on stdout");
 DEFINE_string(conf, "etc/webrtc_streamer.conf",
            "the main configuration file for webrtc-streamer");
 DEFINE_string(severity, "INFO",
@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
     }
     
     if( FLAG_licenses ) {
-        utils::printLicenseInfo();
+        utils::PrintLicenseInfo();
         return 0;
     };
 
@@ -131,7 +131,8 @@ int main(int argc, char** argv) {
     };
 
     rtc::LoggingSeverity severity = utils::String2LogSeverity(FLAG_severity);
-    utils::FileLogger file_logger(baselog_dir, severity);
+    utils::FileLogger file_logger(baselog_dir, severity, 
+            streamer_config.GetDisableLogBuffering());
     if( FLAG_verbose )  {
         // changing severity to INFO level
         severity = utils::String2LogSeverity("INFO");

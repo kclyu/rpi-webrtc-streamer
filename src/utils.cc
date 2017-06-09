@@ -43,7 +43,7 @@ using rtc::sprintfn;
 
 namespace utils {
 
-void printLicenseInfo() {
+void PrintLicenseInfo() {
     char command_buffer[1024];
     int ret;
     sprintfn( command_buffer, sizeof(command_buffer), 
@@ -118,9 +118,9 @@ rtc::LoggingSeverity String2LogSeverity(const std::string severity) {
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 FileLogger::FileLogger (const std::string path,
-        const rtc::LoggingSeverity severity) :  
+        const rtc::LoggingSeverity severity, bool disable_buffering) :  
     inited_(false), dir_path_(path), severity_(severity),
-    log_max_file_size_(MAX_LOG_FILE_SIZE) {
+    log_max_file_size_(MAX_LOG_FILE_SIZE),disable_buffering_(disable_buffering) {
 }
 
 FileLogger::~FileLogger () {
@@ -129,7 +129,7 @@ FileLogger::~FileLogger () {
 bool FileLogger::Init() {
     if( inited_ == true ) return true;  // no more initialization
 
-    if( MoveLogFiletoNextShiftDir() == false ) {
+    if( MoveLogFiletoNextShiftFolder() == false ) {
         LOG(LS_ERROR) << "Failed to rotate log files at path: " << dir_path_;
         return false;
     };
@@ -143,6 +143,11 @@ bool FileLogger::Init() {
         return false;
     }
 
+    if( disable_buffering_ == true ) {
+        // disabling_buffering in FileLogger
+        logSink_->DisableBuffering();
+    };
+
     rtc::LogMessage::LogThreads(true);
     rtc::LogMessage::LogTimestamps(true);
     rtc::LogMessage::AddLogToStream(logSink_.get(), severity_);
@@ -150,8 +155,33 @@ bool FileLogger::Init() {
     return true;
 }
 
+bool FileLogger::DeleteFolderFiles(const rtc::Pathname &folder) {
+    rtc::DirectoryIterator it;
+    rtc::Pathname file;
+
+    // check src & dest path is directory
+    if( !rtc::Filesystem::IsFolder(folder)) {
+        // folder does not exist, MoveFolderFiles will create the required folder
+        return true;
+    }
+
+    // iterate source directory 
+    if (!it.Iterate(folder)) {
+        return false;
+    } 
+    do {
+        std::string filename = it.Name();
+        file.SetPathname(folder.folder(), filename);
+        rtc::Filesystem::DeleteFile(file);
+        // don't care return value
+    } while ( it.Next() );
+
+    return true;
+}
+
+
 bool FileLogger::MoveLogFiles(const std::string prefix, 
-            const rtc::Pathname src, const rtc::Pathname dest) {
+            const rtc::Pathname &src, const rtc::Pathname &dest) {
     rtc::DirectoryIterator it;
     rtc::Pathname src_file, dest_file;
 
@@ -189,7 +219,7 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
     return true;
 }
 
-bool FileLogger::MoveLogFiletoNextShiftDir() {
+bool FileLogger::MoveLogFiletoNextShiftFolder() {
     char src_dir_postfix[16], dest_dir_postfix[16];
     rtc::Pathname base_log_path;
     rtc::Pathname src_log_dir, dest_log_dir;
@@ -212,7 +242,7 @@ bool FileLogger::MoveLogFiletoNextShiftDir() {
         // remove last rotate directory
         if( index == 9 ) {
             if( rtc::Filesystem::IsFolder(dest_log_dir) == true ) 
-                rtc::Filesystem::DeleteFolderContents(dest_log_dir);
+                DeleteFolderFiles(dest_log_dir);
         };
         if( MoveLogFiles(LOGGING_FILENAME, src_log_dir, dest_log_dir ) == false ){
             return false;

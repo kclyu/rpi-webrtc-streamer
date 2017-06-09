@@ -24,25 +24,27 @@
 #endif
 
 namespace utils {
-void printLicenseInfo();
+void PrintLicenseInfo();
 
 // save the logging messsage to file
 class FileLogger {
 public:
     explicit FileLogger(const std::string path, 
-            const rtc::LoggingSeverity severity);
+            const rtc::LoggingSeverity severity, bool disable_buffering);
     bool Init();
-    bool MoveLogFiletoNextShiftDir();
     ~FileLogger();
 
 private:
+    bool DeleteFolderFiles(const rtc::Pathname &folder);
+    bool MoveLogFiletoNextShiftFolder();
     bool MoveLogFiles(const std::string prefix, 
-            const rtc::Pathname src, const rtc::Pathname dest);
+            const rtc::Pathname &src, const rtc::Pathname &dest);
     bool inited_;
     std::string dir_path_;
     rtc::LoggingSeverity severity_;
     size_t log_max_file_size_;
     std::unique_ptr<rtc::FileRotatingLogSink> logSink_;
+    bool disable_buffering_;
 };
 
 // utility functions

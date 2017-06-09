@@ -57,6 +57,7 @@ const char kConfigAppChannelConfig[] = "app_channel_config";
 const char kConfigMediaConfig[] = "media_config";
 const char kConfigStunServer[] = "stun_server";
 const char kConfigTurnServer[] = "turn_server";
+const char kConfigDisableLogBuffering[] = "disable_log_buffering";
 
 // Default values
 const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
@@ -100,11 +101,21 @@ bool StreamerConfig::LoadConfig()  {
     config_file_ = path.pathname();
     config_dir_basename_ = path.parent_folder();
     std::cout << "Using config file base path:" << 
-        ((config_dir_basename_.size() == 0)?" Directory":config_dir_basename_) << "\n";
+        ((config_dir_basename_.size() == 0)?"CWD":config_dir_basename_) << "\n";
     config_loaded_ = true;
     return true;
 }
 
+
+bool StreamerConfig::GetDisableLogBuffering() {
+    RTC_CHECK( config_loaded_ == true );
+    std::string disable_log_buffering;
+    if( config_->GetStringValue(kConfigDisableLogBuffering, &disable_log_buffering ) == true ) {
+        return disable_log_buffering.compare("true") == 0;
+    }
+    // default value for disable log buffering is true
+    return true;
+}
 
 bool StreamerConfig::GetWebSocketEnable() {
     RTC_CHECK( config_loaded_ == true );
@@ -204,7 +215,7 @@ bool StreamerConfig::GetMediaConfig(std::string& conf) {
 }
 
 // Just validate the log path, 
-// if the log path not found, it will return false
+// if the log path does not found, it will return false
 bool StreamerConfig::GetLogPath(std::string& log_path) {
     RTC_CHECK( config_loaded_ == true );
     rtc::Pathname path;

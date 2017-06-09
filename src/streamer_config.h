@@ -46,6 +46,10 @@ public:
     bool LoadConfig();
     const std::string GetConfigFilename();
 
+
+    // Disable Log buffering
+    bool GetDisableLogBuffering();
+
     // WebSocket Config
     bool GetWebSocketEnable();
     bool GetWebSocketPort(int& port);
