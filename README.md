@@ -15,21 +15,17 @@ with encoding parameter changing in H.264 stream and passing video frame through
 ### Rpi-WebRTC-Streamer 
 
 
-
 ####  Demo Video
-Demo Video
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=I1E8MrA5lhw" target="_blank"><img src="http://img.youtube.com/vi/I1E8MrA5lhw/0.jpg" 
 alt="" width="560" height="315" border="10" /></a>
 
 ###  WebRTC H.264 Codec supported browsers
 
-
 Browser|Supported|H.264 Codec Status|
 ----------------|---------------|-----------|
 Chrome |Yes|[Software encoder/decoder](https://www.chromestatus.com/feature/6417796455989248)|
 Firefox|Yes|Browser plugin|
-*it can be checked via the [browser webrtc supporting score](http://iswebrtcreadyyet.com/)*
 
 ## Hardware Requirement
 ### Raspberry PI 
@@ -42,6 +38,11 @@ Please refer to the  [README_audio.md](https://github.com/kclyu/rpi-webrtc-strea
 
 ## Running RWS on Raspberry PI
 Please refer to [README_rws_setup.md document](../master/README_rws_setup.md).
+
+## Download Deb package for Testing
+To download RWS deb package, please refer to the following URL. RWS is currently in development and testing, so please use it with consideration.
+
+Please refer to [Rpi-Webrtc-Streamer-deb Repo](https://github.com/kclyu/rpi-webrtc-streamer-deb).
 
 ## Cross Compile on Ubuntu Linux
 
