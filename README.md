@@ -30,9 +30,14 @@ Firefox|Yes|Browser plugin|
 ## Hardware Requirement
 ### Raspberry PI 
 - Raspberry PI 2/3
-- Raspberry Zero W  (Currently under examination)
+
 ### Video Camera
 - RPI Camera board V1/V2
+### Not Supported Hardware
+*It is currently compiled for armv7, so it will not work on armv6 CPU type hardware*
+- Raspberry Pi 1
+- Raspberry Pi Zero/Zero W
+
 ### Audio hardware
 Please refer to the  [README_audio.md](https://github.com/kclyu/rpi-webrtc-streamer/blob/master/README_audio.md)
 
