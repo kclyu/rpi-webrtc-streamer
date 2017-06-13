@@ -1,0 +1,57 @@
+# Build arguments go here. Examples:
+#   is_component_build = true
+#   is_debug = false
+# See "gn args <out_dir> --list" for available build arguments.
+
+is_component_build=false
+is_official_build=true
+#is_debug=true # enable debug
+
+host_toolchain="//build/toolchain/linux:arm"
+is_clang=false
+use_sysroot=true
+target_sysroot="/opt/rpi_rootfs"
+system_libdir="/opt/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
+gold_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
+
+# taget CPU optimization for PI ZeroW
+target_os="linux"
+target_cpu="arm"
+arm_version=6
+arm_arch="armv6"
+arm_float_abi="hard"
+arm_use_neon=false
+arm_use_thumb=false
+arm_fpu="vfp"
+arm_optionally_use_neon=false
+
+rtc_use_openmax_dl=false
+rtc_build_with_neon=false
+rtc_build_openmax_dl=false
+rtc_build_with_neon=false
+
+# SSL related config
+#rtc_build_ssl=true   # disable rtc ssl package, and force to compile OpenSSL
+#rtc_ssl_root="/opt/rpi_rootfs/usr/include/openssl"
+
+#
+#
+use_ozone=true
+is_desktop_linux=false
+
+#
+#
+is_chrome_branded=true
+enable_nacl=false
+#enable_pdf=false
+#enable_webvr=false
+rtc_use_h264=false
+#use_openh264=false
+rtc_initialize_ffmpeg=false
+#ffmpeg_branding="Chromium"
+#is_component_ffmpeg=true
+rtc_include_tests=false
+rtc_include_pulse_audio=false
+rtc_enable_protobuf=false
+treat_warnings_as_errors=false
+
