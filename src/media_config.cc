@@ -48,6 +48,10 @@ namespace media_config {
 // config key name and media config constants values
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// Config Key
+////////////////////////////////////////////////////////////////////////////////
 // video
 const char kConfigMaxBitrate[] = "max_bitrate";
 const char kConfigResolution4_3[] = "use_4_3_video_resolution";
@@ -59,6 +63,10 @@ const char kConfigVideoDynamicResolution[] = "use_dynamic_video_resolution";
 const char kConfigVideoResolutionList43[] = "video_resolution_list_4_3";
 const char kConfigVideoResolutionList169[] = "video_resolution_list_16_9";
 
+const char kConfigVideoRotation[] = "video_rotation";
+const char kConfigVideoVFlip[] = "video_vflip";
+const char kConfigVideoHFlip[] = "video_hflip";
+
 // audio
 const char kConfigAudioProcessing[] = "audio_processing_enable";
 const char kConfigAudioEchoCancel[] = "audio_echo_cancellation";
@@ -68,8 +76,17 @@ const char kConfigAudioNoiseSuppression[] = "audio_noise_suppression";
 const char kConfigAudioLevelControl[] = "audio_level_control_enable";
 
 const char kConfigVideoResolutionDelimiter=',';
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Default Values
+////////////////////////////////////////////////////////////////////////////////
 const int  kDefaultVideoMaxFrameRate=30;
 const int  kDefaultMaxBitrate = 3500000;
+const int  kDefaultVideoRotation = 0;
+const bool  kDefaultVideoVFlip = false;
+const bool  kDefaultVideoHFlip = false;
+
 
 const char kDefaultVideoResolution43[] =  
     "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232";
@@ -101,16 +118,24 @@ const char kDefaultVideoResolution169[] =
             }; \
         };
 
+#define CONFIG_LOAD_INT_WITH_DEFAULT(key,value,validate_function,default_value) \
+        { \
+            if( config_.GetIntValue(key, &value ) == true){ \
+                validate_function(value, default_value); \
+            } \
+            else value = default_value; \
+        };
+
 ///////////////////////////////////////////////////////////////////////////////////////////
-//
-// default config value
-//
+// Config Value
 ///////////////////////////////////////////////////////////////////////////////////////////
-//
-int max_bitrate = kDefaultMaxBitrate;
 
 // video
+int max_bitrate = kDefaultMaxBitrate;
 bool resolution_4_3_enable = true;
+int video_rotation = 0;
+int video_vflip = 0;
+int video_hflip = 0;
 
 struct ResolutionConfig initial_video_resolution(640,480);
 int default_video_framerate = kDefaultVideoMaxFrameRate;
@@ -136,7 +161,27 @@ bool audio_level_control = true;
 // config loading and helper functions
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
+void validate__video_rotation(int &video_rotation, int default_value ) {
+    if( !((video_rotation == 0) || (video_rotation == 90) ||
+                (video_rotation == 180) || (video_rotation == 270)) ) {
+        LOG(LS_ERROR) << "Error in video roration value: " 
+            << video_rotation << " is not a valid video rotation value";
+        LOG(LS_ERROR) << "Resetting to default value : "
+            << default_value;
+        video_rotation = default_value;
+    }
+}
 
+void validate__video_maxbitrate(int &video_maxbitrate, int default_value ) {
+    // 17000000 values from RaspiVid.c bitrate for 1080p
+    if ((video_maxbitrate < 200) || (video_maxbitrate > 17000000)) {
+        LOG(LS_ERROR) << "Error in video max bitrate value: " 
+            << video_rotation << " is not a valid video max bitrate value";
+        LOG(LS_ERROR) << "Resetting to default value : "
+            << default_value;
+        video_maxbitrate = default_value;
+    }
+}
 
 //
 bool parse_vidio_resolution(const std::string resolution_list, 
@@ -180,7 +225,11 @@ bool validate_resolution(int width, int height) {
     return false;
 }
 
-// 
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// mainx config loading function
+//
+///////////////////////////////////////////////////////////////////////////////////////////
 bool config_load(const std::string config_filename) {
     rtc::OptionsFile config_(config_filename);
 
@@ -188,19 +237,23 @@ bool config_load(const std::string config_filename) {
         return false;
     };
 
-    // loading maximum bitrate for video & audio
-    if( config_.GetIntValue(kConfigMaxBitrate, &max_bitrate ) == true ) {
-        if ((max_bitrate < 100) || (max_bitrate > 6500000)) {
-            LOG(LS_ERROR) << "Error in max bitrate value," 
-                << max_bitrate << " is not a valid max bitrate value";
-            LOG(LS_ERROR) << "Resetting to default value"
-                << kDefaultMaxBitrate;
-            max_bitrate = kDefaultMaxBitrate;
-        };
-    }
+    // loading max_bitrate
+    CONFIG_LOAD_INT_WITH_DEFAULT(kConfigMaxBitrate, max_bitrate,  
+            validate__video_maxbitrate, kDefaultMaxBitrate );
+
+    // loading video rotation config
+    CONFIG_LOAD_INT_WITH_DEFAULT(kConfigVideoRotation, video_rotation,  
+            validate__video_rotation, kDefaultVideoRotation );
+
+    // loading vflip & hflip
+    CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigVideoVFlip,
+            video_vflip,false);
+    CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigVideoHFlip,
+            video_hflip,false);
 
     // loading 4:3 or 16:9 resolution config
-    CONFIG_LOAD_BOOL(kConfigResolution4_3,resolution_4_3_enable);
+    CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigResolution4_3,
+            resolution_4_3_enable,true);
 
     // loading dynamic video resolution config
     //

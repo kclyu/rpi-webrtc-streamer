@@ -68,6 +68,10 @@ namespace media_config {
     extern bool audio_noise_suppression;
     extern bool audio_level_control;
 
+    extern int video_rotation;
+    extern int video_hflip;
+    extern int video_vflip;
+
     bool config_load(const std::string config_filename);
 
 }   // media config name_space

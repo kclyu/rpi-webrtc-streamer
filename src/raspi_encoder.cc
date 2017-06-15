@@ -46,6 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/platform_thread.h"
 
 #include "raspi_encoder.h"
+#include "media_config.h"
 
 
 namespace webrtc {
@@ -142,6 +143,10 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         Release();
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
+
+    // Setting Video Rotation and Flip setting
+    mmal_encoder_->SetVideoRotation(media_config::video_rotation);
+    mmal_encoder_->SetVideoFlip(media_config::video_vflip, media_config::video_hflip);
 
     // GetInitialBestMatch should be used only when initializing 
     // the Encoder, and only when the use_default_resolution flag is on.

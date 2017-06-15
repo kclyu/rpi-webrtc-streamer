@@ -347,10 +347,9 @@ bool EncoderDelayedInit::UpdateStatus(){
 ////////////////////////////////////////////////////////////////////////////////////////
 
 MMALEncoderWrapper::MMALEncoderWrapper() 
-    : mmal_initialized_(false), camera_preview_port_(nullptr), 
-    camera_video_port_(nullptr), camera_still_port_(nullptr), 
-    preview_input_port_(nullptr), encoder_input_port_(nullptr), 
-    encoder_output_port_(nullptr), encoder_initdelay_(this) {
+    : encoder_initdelay_(this), mmal_initialized_(false), camera_preview_port_(nullptr), 
+    camera_video_port_(nullptr), camera_still_port_(nullptr), preview_input_port_(nullptr), 
+    encoder_input_port_(nullptr), encoder_output_port_(nullptr) {
 
     bcm_host_init();
 
@@ -378,6 +377,17 @@ bool MMALEncoderWrapper::IsInited() {
     return mmal_initialized_;
 }
 
+
+void MMALEncoderWrapper::SetVideoRotation(int rotation) {
+    state_.camera_parameters.rotation = rotation;
+}
+
+void MMALEncoderWrapper::SetVideoFlip(bool vflip, bool hflip) {
+    state_.camera_parameters.vflip = (vflip?1:0);
+    state_.camera_parameters.hflip = (hflip?1:0);
+}
+
+
 bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, 
         int bitrate) {
     MMAL_STATUS_T status = MMAL_SUCCESS;
@@ -396,19 +406,16 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
 
     if ((status = create_camera_component(&state_)) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create camera component";
-        return false;
     }
     else if ((status = raspipreview_create(&state_.preview_parameters)) 
             != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create preview component";
         destroy_camera_component(&state_);
-        return false;
     }
     else if ((status = create_encoder_component(&state_)) != MMAL_SUCCESS) {
         LOG(LS_ERROR) << "Failed to create encode component";
         raspipreview_destroy(&state_.preview_parameters);
         destroy_camera_component(&state_);
-        return false;
     }
     else {
         if (state_.verbose)
@@ -472,8 +479,10 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
         mmal_initialized_ = true;
         return true;
     }
-
-    LOG(LS_ERROR) << "Not Reached";
+ 
+    // Something failed, so need to check Camera Config 
+    // and log the problem of camera config 
+    CheckCameraConfig();
     return false;
 }
 
@@ -812,6 +821,36 @@ bool MMALEncoderWrapper::ForceKeyFrame() {
         return false;
     }
     return true;
+}
+
+
+// bollowed from raspicamcontrol_check_configuration in raspicomcontrol.c
+// for camera config error message logging 
+//
+// This function should be called when InitEncoder had failed 
+void MMALEncoderWrapper::CheckCameraConfig() {
+    int min_gpu_mem = 128;      // minimum memory is 128M
+    int gpu_mem = raspicamcontrol_get_mem_gpu();
+    int supported = 0, detected = 0;
+    raspicamcontrol_get_camera(&supported, &detected);
+    if(!supported) {
+        LOG(LS_ERROR) << "Camera is not enabled in this build. "
+            << "Try running \"sudo raspi-config\" and ensure "
+            << "that \"camera\" has been enabled";
+    }
+    else if (gpu_mem < min_gpu_mem) {
+        LOG(LS_ERROR) << "Only " 
+            << gpu_mem << "M of gpu_mem is configured. Try running "
+            << "\"sudo raspi-config\" and ensure that \"memory_split\" has a value of "
+            << min_gpu_mem <<  " or greater";
+    }
+    else if (!detected) {
+        LOG(LS_ERROR) << "Camera is not detected. Please check carefully "
+            << "the camera module is installed correctly";
+    }
+    else {
+        LOG(LS_ERROR)<< "Failed to run camera app. Please check for firmware updates";
+    }
 }
 
 }	// webrtc namespace

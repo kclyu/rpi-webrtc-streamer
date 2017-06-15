@@ -44,8 +44,10 @@ using rtc::sprintfn;
 namespace utils {
 
 void PrintVersionInfo() {
-    std::cout << "Rpi-WebRTC-Streamer version: " << __RWS_VERSION__ << "\n";
-    std::cout << "WebRTC Native Package version: " << __WEBRTC_VERSION__ << "\n";
+    std::cout << "RWS " << __RWS_VERSION__ << "\n";
+    std::cout << "RWS (rpi-webrtc-streamer) is a WebRTC H.264 streamer designed to run"
+            << "on Raspberry PI \nand Raspberry PI camera board hardware." << "\n";
+    std::cout << "(Using WebRTC native package: " << __WEBRTC_VERSION__ << ")\n";
 }
 
 void PrintLicenseInfo() {

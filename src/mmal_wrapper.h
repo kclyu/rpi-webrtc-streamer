@@ -149,6 +149,8 @@ public:
     bool StartCapture();
     bool StopCapture();
     bool IsInited();
+    void SetVideoRotation(int rotation);
+    void SetVideoFlip(bool vflip, bool hflip);
 
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
@@ -157,6 +159,7 @@ public:
     EncoderDelayedInit encoder_initdelay_;
 
 private:
+    void CheckCameraConfig();
     bool mmal_initialized_;
 
     MMAL_PORT_T *camera_preview_port_;

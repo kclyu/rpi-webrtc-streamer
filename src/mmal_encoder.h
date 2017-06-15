@@ -150,9 +150,6 @@ struct RASPIVID_STATE_S
     int settings;                        /// Request settings from the camera
     int sensor_mode;			            /// Sensor mode. 0=auto. Check docs/forum for modes selected by other values.
     int intra_refresh_type;              /// What intra refresh type to use. -1 to not set.
-    int frame;
-    int64_t starttime;
-    int64_t lasttime;
 };
 
 

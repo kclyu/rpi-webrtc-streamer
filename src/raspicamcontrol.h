@@ -168,6 +168,8 @@ typedef struct
 
 
 void raspicamcontrol_check_configuration(int min_gpu_mem);
+int raspicamcontrol_get_mem_gpu(void);          
+void raspicamcontrol_get_camera(int *supported, int *detected);
 
 int raspicamcontrol_parse_cmdline(RASPICAM_CAMERA_PARAMETERS *params, const char *arg1, const char *arg2);
 void raspicamcontrol_display_help();
@@ -219,6 +221,8 @@ MMAL_PARAM_EXPOSUREMODE_T raspicamcontrol_get_exposure_mode(MMAL_COMPONENT_T *ca
 MMAL_PARAM_AWBMODE_T raspicamcontrol_get_awb_mode(MMAL_COMPONENT_T *camera);
 MMAL_PARAM_IMAGEFX_T raspicamcontrol_get_imageFX(MMAL_COMPONENT_T *camera);
 MMAL_PARAM_COLOURFX_T raspicamcontrol_get_colourFX(MMAL_COMPONENT_T *camera);
+
+
 
 
 #endif /* RASPICAMCONTROL_H_ */

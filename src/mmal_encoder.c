@@ -176,7 +176,6 @@ void default_status(RASPIVID_STATE *state)
     state->cameraNum = 0;
     state->sensor_mode = 0;
 
-    state->frame = 0;
 
     // Setup preview window defaults
     raspipreview_set_defaults(&state->preview_parameters);
