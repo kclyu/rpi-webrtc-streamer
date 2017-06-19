@@ -47,19 +47,19 @@ using webrtc::PeerConnectionInterface;
 
 
 // Names used for SDP label
-const char kAudioLabel[] = "audio_label";
-const char kVideoLabel[] = "video_label";
-const char kStreamLabel[] = "stream_label";
+static const char kAudioLabel[] = "audio_label";
+static const char kVideoLabel[] = "video_label";
+static const char kStreamLabel[] = "stream_label";
 
 // Names used for a Android Direct IceCandidate JSON object.
-const char kCandidateSdpMidName[] = "id";
-const char kCandidateSdpMlineIndexName[] = "label";
-const char kCandidateSdpName[] = "candidate";
-const char kCandidateType[] = "type";
+static const char kCandidateSdpMidName[] = "id";
+static const char kCandidateSdpMlineIndexName[] = "label";
+static const char kCandidateSdpName[] = "candidate";
+static const char kCandidateType[] = "type";
 
 // Names used for a SessionDescription JSON object.
-const char kSessionDescriptionTypeName[] = "type";
-const char kSessionDescriptionSdpName[] = "sdp";
+static const char kSessionDescriptionTypeName[] = "type";
+static const char kSessionDescriptionSdpName[] = "sdp";
 
 // Max Bitrate
 static const int kDefaultMaxBitrate = 3500000;
@@ -175,9 +175,16 @@ bool Streamer::CreatePeerConnection() {
     RTC_DCHECK(peer_connection_.get() == nullptr);
 
     webrtc::PeerConnectionInterface::RTCConfiguration config;
-    webrtc::PeerConnectionInterface::IceServer server;
-    streamer_config_->GetStunServer(server.uri);
-    config.servers.push_back(server);
+    webrtc::PeerConnectionInterface::IceServer stun_server;
+    webrtc::PeerConnectionInterface::IceServer turn_server;
+
+    if(streamer_config_->GetStunServer(stun_server) == true ) {
+        config.servers.push_back(stun_server);
+    }
+
+    if(streamer_config_->GetTurnServer(turn_server) == true ) {
+        config.servers.push_back(turn_server);
+    }
 
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(
             config, nullptr, nullptr, this);

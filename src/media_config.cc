@@ -53,44 +53,43 @@ namespace media_config {
 // Config Key
 ////////////////////////////////////////////////////////////////////////////////
 // video
-const char kConfigMaxBitrate[] = "max_bitrate";
-const char kConfigResolution4_3[] = "use_4_3_video_resolution";
-const char kConfigVideoResolution[] = "initial_video_resolution";
-const char kConfigVideoFrameRate[] = "initial_video_framerate";
-const char kConfigVideoInitialResolution[] = "use_initial_video_resolution";
-const char kConfigVideoDynamicResolution[] = "use_dynamic_video_resolution";
+static const char kConfigMaxBitrate[] = "max_bitrate";
+static const char kConfigResolution4_3[] = "use_4_3_video_resolution";
+static const char kConfigVideoResolution[] = "initial_video_resolution";
+static const char kConfigVideoFrameRate[] = "initial_video_framerate";
+static const char kConfigVideoInitialResolution[] = "use_initial_video_resolution";
+static const char kConfigVideoDynamicResolution[] = "use_dynamic_video_resolution";
 
-const char kConfigVideoResolutionList43[] = "video_resolution_list_4_3";
-const char kConfigVideoResolutionList169[] = "video_resolution_list_16_9";
+static const char kConfigVideoResolutionList43[] = "video_resolution_list_4_3";
+static const char kConfigVideoResolutionList169[] = "video_resolution_list_16_9";
 
-const char kConfigVideoRotation[] = "video_rotation";
-const char kConfigVideoVFlip[] = "video_vflip";
-const char kConfigVideoHFlip[] = "video_hflip";
+static const char kConfigVideoRotation[] = "video_rotation";
+static const char kConfigVideoVFlip[] = "video_vflip";
+static const char kConfigVideoHFlip[] = "video_hflip";
 
 // audio
-const char kConfigAudioProcessing[] = "audio_processing_enable";
-const char kConfigAudioEchoCancel[] = "audio_echo_cancellation";
-const char kConfigAudioGainControl[] = "audio_gain_control";
-const char kConfigAudioHighPassFilter[] = "audio_high_passfilter";
-const char kConfigAudioNoiseSuppression[] = "audio_noise_suppression";
-const char kConfigAudioLevelControl[] = "audio_level_control_enable";
+static const char kConfigAudioProcessing[] = "audio_processing_enable";
+static const char kConfigAudioEchoCancel[] = "audio_echo_cancellation";
+static const char kConfigAudioGainControl[] = "audio_gain_control";
+static const char kConfigAudioHighPassFilter[] = "audio_high_passfilter";
+static const char kConfigAudioNoiseSuppression[] = "audio_noise_suppression";
+static const char kConfigAudioLevelControl[] = "audio_level_control_enable";
 
-const char kConfigVideoResolutionDelimiter=',';
+static const char kConfigVideoResolutionDelimiter=',';
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default Values
 ////////////////////////////////////////////////////////////////////////////////
-const int  kDefaultVideoMaxFrameRate=30;
-const int  kDefaultMaxBitrate = 3500000;
-const int  kDefaultVideoRotation = 0;
-const bool  kDefaultVideoVFlip = false;
-const bool  kDefaultVideoHFlip = false;
+static const int  kDefaultVideoMaxFrameRate=30;
+static const int  kDefaultMaxBitrate = 3500000;
+static const int  kDefaultVideoRotation = 0;
+static const bool  kDefaultVideoVFlip = false;
+static const bool  kDefaultVideoHFlip = false;
 
-
-const char kDefaultVideoResolution43[] =  
+static const char kDefaultVideoResolution43[] =  
     "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232";
-const char kDefaultVideoResolution169[] = 
+static const char kDefaultVideoResolution169[] = 
     "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080";
 
 #define CONFIG_LOAD_BOOL(key,value) \
@@ -134,8 +133,8 @@ const char kDefaultVideoResolution169[] =
 int max_bitrate = kDefaultMaxBitrate;
 bool resolution_4_3_enable = true;
 int video_rotation = 0;
-int video_vflip = 0;
-int video_hflip = 0;
+bool video_vflip = false;
+bool video_hflip = false;
 
 struct ResolutionConfig initial_video_resolution(640,480);
 int default_video_framerate = kDefaultVideoMaxFrameRate;
@@ -265,7 +264,7 @@ bool config_load(const std::string config_filename) {
     // If you want to disable it, you must enable use_initial_video_resoltuion 
     // and set the desired resolution to initial_video_resolution.
     CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigVideoDynamicResolution,
-            use_dynamic_video_resolution,true);
+            use_dynamic_video_resolution, true);
 
     // loading default video resolution config
     std::string resolution_list;

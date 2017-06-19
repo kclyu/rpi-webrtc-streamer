@@ -40,32 +40,44 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 
+
 #include "streamer_config.h"
 
-// port number 8888 is fiexed for direct socket
-const uint16_t kDefaultWebSocketPort = 8889;
-const uint16_t kDefaultDirectSocketPort = 8888;
-const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
-const char kDefaultAppChannelConfig[] = "etc/app_channel.conf";
-const char kDefaultMediaConfig[] = "etc/media_config.conf";
+////////////////////////////////////////////////////////////////////////////////
+// Default Values
+////////////////////////////////////////////////////////////////////////////////
+static const uint16_t kDefaultWebSocketPort = 8889;
+        // port number 8888 is fiexed for direct socket
+static const uint16_t kDefaultDirectSocketPort = 8888; 
+static const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
+static const char kDefaultAppChannelConfig[] = "etc/app_channel.conf";
+static const char kDefaultMediaConfig[] = "etc/media_config.conf";
 
-const char kConfigWebSocketEnable[] = "websocket_enable";
-const char kConfigWebSocketPort[] = "websocket_port";
-const char kConfigDirectSocketEnable[] = "direct_socket_enable";
-const char kConfigDirectSocketPort[] = "direct_socket_port";
-const char kConfigAppChannelConfig[] = "app_channel_config";
-const char kConfigMediaConfig[] = "media_config";
-const char kConfigStunServer[] = "stun_server";
-const char kConfigTurnServer[] = "turn_server";
-const char kConfigDisableLogBuffering[] = "disable_log_buffering";
+// Stun
+static const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
 
-// Default values
-const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
+////////////////////////////////////////////////////////////////////////////////
+// Config Key
+////////////////////////////////////////////////////////////////////////////////
+static const char kConfigWebSocketEnable[] = "websocket_enable";
+static const char kConfigWebSocketPort[] = "websocket_port";
+static const char kConfigDirectSocketEnable[] = "direct_socket_enable";
+static const char kConfigDirectSocketPort[] = "direct_socket_port";
+static const char kConfigAppChannelConfig[] = "app_channel_config";
+static const char kConfigMediaConfig[] = "media_config";
+static const char kConfigDisableLogBuffering[] = "disable_log_buffering";
 
-// Not used
-const char kTurnIceServer[] = "turn:turn.hostname:3478?transport=tcp";
-const char kTurnUsername[] = "username";
-const char kTurnPassword[] = "password";
+// STUN and TURN config
+static const char kConfigStunServer[] = "stun_server";
+
+static const char kConfigTurnServer[] = "turn_server";
+static const char kConfigTurnUsername[] = "turn_username";
+static const char kConfigTurnCredential[] = "turn_credential";
+
+static const char kServerListDelimiter=',';
+static const char kStunPrefix[] = "stun:";
+static const char kTurnPrefix[] = "turn:";
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -171,23 +183,71 @@ bool StreamerConfig::GetDirectSocketPort(int& port) {
     return false;
 }
 
-bool StreamerConfig::GetStunServer(std::string& server) {
+bool StreamerConfig::GetStunServer(webrtc::PeerConnectionInterface::IceServer &server){
     RTC_CHECK( config_loaded_ == true );
-    // default stun server is kDefaultStunServer
-    if( config_->GetStringValue(kConfigStunServer, &server ) == true ) {
+    std::string server_list;
+    std::string username, credential;
+
+    if( config_->GetStringValue(kConfigStunServer, &server_list ) == false ) {
+        // server list does not in the config file
+        // default stun server is kDefaultStunServer
+        server.urls.push_back( kDefaultStunServer );
         return true;
     }
-    server = kDefaultStunServer;
-    return true;
+
+    std::stringstream ss(server_list);
+    std::string token;
+    int count=0;
+
+    while( getline(ss, token, kServerListDelimiter) ) {
+        // only compare "stun:" prefix
+        if( token.compare(0, 5 /* kStunPrefix len */, kStunPrefix) == 0 )  {
+            count++;
+            server.urls.push_back(token);
+        }
+        else {
+            LOG(LS_ERROR) << "Ignored stun server url : " << token;
+        }
+    }
+
+    return (count?true:false);
 }
 
-bool StreamerConfig::GetTurnServer(std::string& server) {
+
+bool StreamerConfig::GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server){
     RTC_CHECK( config_loaded_ == true );
-    // there is no default value for turn server 
-    if( config_->GetStringValue(kConfigTurnServer, &server ) == true ) {
-        return true;
+    std::string server_list;
+    std::string username, credential;
+
+    if( config_->GetStringValue(kConfigTurnServer, &server_list ) == false ) {
+        // there is no default turn server 
+        return false;
     }
-    return false;
+
+    if( config_->GetStringValue(kConfigTurnUsername, &username ) == true ) {
+        server.username = username;
+        if( config_->GetStringValue(kConfigTurnCredential, &credential ) == true ) {
+            server.password = credential;
+        };
+    };
+
+    std::stringstream ss(server_list);
+    std::string token;
+    int count=0;
+
+    while( getline(ss, token, kServerListDelimiter) ) {
+        // only compare "turn:" prefix
+        if( token.compare(0, 5 /* kTurnPrefix len*/, kTurnPrefix) == 0 )  {
+            count++;
+            server.urls.push_back(token);
+            LOG(LS_ERROR) << "Adding Turn server url : " << token;
+        }
+        else {
+            LOG(LS_ERROR) << "Ignored Turn server url : " << token;
+        }
+    }
+
+    return (count?true:false);
 }
 
 //

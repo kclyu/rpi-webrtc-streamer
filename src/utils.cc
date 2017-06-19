@@ -39,6 +39,7 @@ using rtc::sprintfn;
 
 namespace utils {
 
+// Print verion information for command line option
 void PrintVersionInfo() {
     std::cout << "RWS " << __RWS_VERSION__ << std::endl;
     std::cout << "RWS (rpi-webrtc-streamer) is a WebRTC H.264 streamer designed "
@@ -48,6 +49,7 @@ void PrintVersionInfo() {
         "(Using WebRTC native package: " << __WEBRTC_VERSION__ << ")" << std::endl;
 }
 
+// Print licenses information for command line option
 void PrintLicenseInfo() {
     char command_buffer[1024];
     int ret;

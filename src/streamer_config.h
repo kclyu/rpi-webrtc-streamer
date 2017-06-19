@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/optionsfile.h"
 #include "webrtc/base/pathutils.h"
 
+#include "webrtc/api/peerconnectioninterface.h"
 
 class StreamerConfig  {
 public:
@@ -58,8 +59,8 @@ public:
     bool GetDirectSocketEnable();
     bool GetDirectSocketPort(int& port);
 
-    bool GetStunServer(std::string& server);
-    bool GetTurnServer(std::string& server);
+    bool GetStunServer(webrtc::PeerConnectionInterface::IceServer &server);
+    bool GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server);
 
     // App Channel Config
     bool GetAppChannelConfig(std::string& conf);

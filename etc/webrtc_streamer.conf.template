@@ -5,5 +5,4 @@ media_config=etc/media_config.conf
 direct_socket_enable=true
 direct_socket_port=8888
 disable_log_buffering=true
-turn_server=
 stun_server=stun:stun.l.google.com:19302

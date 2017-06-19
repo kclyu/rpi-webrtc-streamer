@@ -49,6 +49,7 @@
 #include "media_config.h"
 #include "streamer.h"
 #include "utils.h"
+#include "file_logger.h"
 
 
 // 
