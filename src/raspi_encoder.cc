@@ -77,8 +77,6 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
                              clock_->TimeInMilliseconds()),
       base_internal_ms_(clock_->TimeInMilliseconds()),
       last_keyframe_request_(clock_->TimeInMilliseconds()),
-      drop_next_frame_(false), framedrop_counter_(0),
-      last_dropconter_show_(clock_->TimeInMilliseconds()),
 
       mode_(kRealtimeVideo), max_payload_size_(0), key_frame_interval_(0),
       packetization_mode_(H264PacketizationMode::SingleNalUnit),
@@ -86,8 +84,7 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
     RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
     std::string packetization_mode_string;
     if (codec.GetParam(cricket::kH264FmtpPacketizationMode,
-                &packetization_mode_string) &&
-            packetization_mode_string == "1") {
+            &packetization_mode_string) && packetization_mode_string == "1") {
         packetization_mode_ = H264PacketizationMode::NonInterleaved;
     }
 }
@@ -121,9 +118,11 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     quality_config_.ReportFrameRate( updated_framerate);
 
     mode_ = codec_settings->mode;
-    frame_dropping_on_ = codec_settings->H264().frameDroppingOn;
     key_frame_interval_ = codec_settings->H264().keyFrameInterval;
     max_payload_size_ = max_payload_size;
+
+    // frame dropping is not used...
+    frame_dropping_on_ = codec_settings->H264().frameDroppingOn;
 
     // Codec_settings uses kbits/second; encoder uses bits/second.
     quality_config_.ReportMaxBitrate(codec_settings->maxBitrate);
@@ -175,7 +174,6 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
 
     return WEBRTC_VIDEO_CODEC_OK;
 }
-
 
 int32_t RaspiEncoderImpl::Release() {
     LOG(INFO) << "RaspiEncoder Release request: ";
@@ -380,24 +378,6 @@ bool RaspiEncoderImpl::DrainProcess()
             return true;
         };
 
-
-        if ( frame_dropping_on_ && drop_next_frame_ ) {
-            const uint64_t kDropCounterShow = 3000;
-
-            // keep Key or config frame from dropping 
-            if( !(buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME ||
-                    buf->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG) )  {
-                framedrop_counter_++;
-                if( clock_->TimeInMilliseconds() - 
-                        last_dropconter_show_ > kDropCounterShow ) {
-                    LOG(INFO) <<  "Frame dropped: " << framedrop_counter_;
-                }
-                drop_next_frame_ = false;   // reset frame drop flag
-                if( buf ) mmal_encoder_->ReturnToPool(buf);
-                return true;
-            }
-        }
-
         encoded_image_._length = buf->length;
         encoded_image_._buffer = buf->data;
         encoded_image_._size = buf->alloc_size;
@@ -440,21 +420,13 @@ bool RaspiEncoderImpl::DrainProcess()
         codec_specific.codecSpecific.H264.packetization_mode = packetization_mode_;
         codec_specific.codecSpecific.generic.simulcast_idx = 0;
 
-        // if( initial_delay_ > 1 )  {
         // Deliver encoded image.
         EncodedImageCallback::Result result =
             encoded_image_callback_->OnEncodedImage(encoded_image_, 
                     &codec_specific, &frag_header);
-
-        if( result.drop_next_frame == true ) {
-            // Frame dropping should be used only for i420 image dropping. 
-            // H.264 frame dropping cause serious video damage and problem.
-            // drop_next_frame_ = true;
-        }
-        else if ( result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED){
+        if ( result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED){
             LOG(LS_ERROR) << "Error in passng EncodedImage";
         }
-        //}
     }
 
     if( buf ) mmal_encoder_->ReturnToPool(buf);

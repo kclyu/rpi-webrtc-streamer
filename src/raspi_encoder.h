@@ -121,11 +121,6 @@ private:
     int64_t base_internal_ms_;
     int64_t last_keyframe_request_;
 
-
-    bool drop_next_frame_;
-    uint64_t framedrop_counter_;
-    uint64_t last_dropconter_show_;
-
     VideoCodecMode mode_;
     size_t max_payload_size_;
     int key_frame_interval_;
