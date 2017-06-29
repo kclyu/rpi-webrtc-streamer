@@ -70,23 +70,19 @@ enum H264EncoderImplEvent {
 //
 ///////////////////////////////////////////////////////////////////////////////
 RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
-    :  mmal_encoder_(nullptr),
-      has_reported_init_(false),
-      has_reported_error_(false),
-      encoded_image_callback_(nullptr),
+    :  start_encoding_(false), mmal_encoder_(nullptr), has_reported_init_(false),
+      has_reported_error_(false), encoded_image_callback_(nullptr),
       clock_(Clock::GetRealTimeClock()),
       delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
                              clock_->TimeInMilliseconds()),
       base_internal_ms_(clock_->TimeInMilliseconds()),
       last_keyframe_request_(clock_->TimeInMilliseconds()),
-      drop_next_frame_(false),
-      framedrop_counter_(0),
+      drop_next_frame_(false), framedrop_counter_(0),
       last_dropconter_show_(clock_->TimeInMilliseconds()),
 
-      mode_(kRealtimeVideo),
-      max_payload_size_(0),
-      key_frame_interval_(0),
-      packetization_mode_(H264PacketizationMode::SingleNalUnit) {
+      mode_(kRealtimeVideo), max_payload_size_(0), key_frame_interval_(0),
+      packetization_mode_(H264PacketizationMode::SingleNalUnit),
+      initial_delay_(0) {
     RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
     std::string packetization_mode_string;
     if (codec.GetParam(cricket::kH264FmtpPacketizationMode,
@@ -210,7 +206,6 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
         const BitrateAllocation& bitrate_allocation, uint32_t framerate) {
     QualityConfig::Resolution resolution;
     uint32_t framerate_updated_;
-    
 
     // TODO (kclyu) :  __FIXED_FRAMERATE__  check at next branch
     // 
@@ -266,6 +261,9 @@ int32_t RaspiEncoderImpl::Encode(
         ReportError();
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
+
+    // When enabled, the drain process transfers the encoded frame to the native stack.
+    if( start_encoding_  == false ) start_encoding_ = true;
 
     bool force_key_frame = false;
     if (frame_types != nullptr) {
@@ -349,7 +347,8 @@ bool RaspiEncoderImpl::DrainProcess()
     int32_t callback_status = 0;
     MMAL_BUFFER_HEADER_T *buf = nullptr;
 
-    // frame queue is empty?
+    // If there is no frame yet, wait for the specified time. 
+    // If you return right here, it actually becomes busy waiting up to this point.
     while( mmal_encoder_->Length() == 0 ) {
         usleep(500);
     }
@@ -360,6 +359,13 @@ bool RaspiEncoderImpl::DrainProcess()
         uint32_t fragment_index;
         std::vector<NalUnit> nal_unit_list;
         int qp;
+
+        // If the native stack is not yet ready to receive an encoded frame, 
+        // it will not pass the frame.
+        if( start_encoding_ == false ) {
+            if( buf ) mmal_encoder_->ReturnToPool(buf);
+            return true;
+        }
 
         // Split encoded image up into fragments. This also updates |encoded_image_|.
         RTPFragmentationHeader frag_header;
@@ -373,6 +379,7 @@ bool RaspiEncoderImpl::DrainProcess()
             if( buf ) mmal_encoder_->ReturnToPool(buf);
             return true;
         };
+
 
         if ( frame_dropping_on_ && drop_next_frame_ ) {
             const uint64_t kDropCounterShow = 3000;
@@ -395,6 +402,7 @@ bool RaspiEncoderImpl::DrainProcess()
         encoded_image_._buffer = buf->data;
         encoded_image_._size = buf->alloc_size;
         encoded_image_._completeFrame = true;
+        encoded_image_.timing_.is_timing_frame = false;
         encoded_image_._encodedWidth = mmal_encoder_->GetWidth();
         encoded_image_._encodedHeight = mmal_encoder_->GetHeight();
 
@@ -411,6 +419,7 @@ bool RaspiEncoderImpl::DrainProcess()
         encoded_image_._frameType =
             (buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
             ? kVideoFrameKey: kVideoFrameDelta;
+        if( encoded_image_._frameType  == kVideoFrameKey ) initial_delay_ ++;
 
 
         // Each NAL unit is a fragment starting with the four-byte 
@@ -429,16 +438,23 @@ bool RaspiEncoderImpl::DrainProcess()
 
         codec_specific.codecType = kVideoCodecH264;
         codec_specific.codecSpecific.H264.packetization_mode = packetization_mode_;
+        codec_specific.codecSpecific.generic.simulcast_idx = 0;
 
+        // if( initial_delay_ > 1 )  {
         // Deliver encoded image.
         EncodedImageCallback::Result result =
             encoded_image_callback_->OnEncodedImage(encoded_image_, 
                     &codec_specific, &frag_header);
+
         if( result.drop_next_frame == true ) {
             // Frame dropping should be used only for i420 image dropping. 
             // H.264 frame dropping cause serious video damage and problem.
             // drop_next_frame_ = true;
         }
+        else if ( result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED){
+            LOG(LS_ERROR) << "Error in passng EncodedImage";
+        }
+        //}
     }
 
     if( buf ) mmal_encoder_->ReturnToPool(buf);

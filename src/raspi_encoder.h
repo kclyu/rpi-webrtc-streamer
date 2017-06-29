@@ -96,6 +96,11 @@ private:
     void ReportInit();
     void ReportError();
 
+    // Change the value to enable when the Encode function is called. 
+    // Only when this flag is true will actually pass the Encoded Frame 
+    // to the native stack.
+    bool start_encoding_;
+
     MMALEncoderWrapper *mmal_encoder_;
 
     bool has_reported_init_;
@@ -116,6 +121,7 @@ private:
     int64_t base_internal_ms_;
     int64_t last_keyframe_request_;
 
+
     bool drop_next_frame_;
     uint64_t framedrop_counter_;
     uint64_t last_dropconter_show_;
@@ -130,6 +136,7 @@ private:
 
     // Quality Config
     QualityConfig quality_config_;
+    int initial_delay_;
 };
 
 
