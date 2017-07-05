@@ -1,0 +1,256 @@
+diff --git a/webrtc/examples/androidapp/src/org/appspot/apprtc/CallActivity.java b/webrtc/examples/androidapp/src/org/appspot/apprtc/CallActivity.java
+index de9ecd0..6c9f7ce 100644
+--- a/webrtc/examples/androidapp/src/org/appspot/apprtc/CallActivity.java
++++ b/webrtc/examples/androidapp/src/org/appspot/apprtc/CallActivity.java
+@@ -59,6 +59,29 @@ import org.webrtc.VideoCapturer;
+ import org.webrtc.VideoFileRenderer;
+ import org.webrtc.VideoRenderer;
+ 
++// kclyu
++import java.net.HttpURLConnection;
++import java.net.URL;
++import java.security.KeyManagementException;
++import java.security.KeyStore;
++import java.security.KeyStoreException;
++import java.security.NoSuchAlgorithmException;
++import java.security.SecureRandom;
++import java.security.UnrecoverableKeyException;
++import java.security.cert.Certificate;
++import java.security.cert.CertificateException;
++import java.security.cert.CertificateFactory;
++import java.security.cert.X509Certificate;
++
++import javax.net.ssl.HttpsURLConnection;
++import javax.net.ssl.KeyManager;
++import javax.net.ssl.KeyManagerFactory;
++import javax.net.ssl.SSLContext;
++import javax.net.ssl.SSLSocketFactory;
++import javax.net.ssl.TrustManager;
++import javax.net.ssl.TrustManagerFactory;
++import org.appspot.apprtc.util.KeyChainManager;
++
+ /**
+  * Activity for peer connection call setup, call waiting
+  * and call view.
+@@ -190,6 +213,21 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
+   private HudFragment hudFragment;
+   private CpuMonitor cpuMonitor;
+ 
++
++
++	
++    // kclyu
++	private SSLSocketFactory getCustomSSLSocketFactory() throws KeyStoreException, KeyManagementException, NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException{
++		KeyManager[] keyManagers = null;
++		TrustManager[] trustManagers = null;
++
++		keyManagers = new KeyManager[] {new KeyChainManager(this)};
++		
++		final SSLContext sslCtx = SSLContext.getInstance("TLS");
++		sslCtx.init(keyManagers, trustManagers, new SecureRandom());
++		return sslCtx.getSocketFactory();
++    }
++
+   @Override
+   public void onCreate(Bundle savedInstanceState) {
+     super.onCreate(savedInstanceState);
+@@ -272,6 +310,13 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
+       }
+     }
+ 
++    try {
++      HttpsURLConnection.setDefaultSSLSocketFactory(getCustomSSLSocketFactory());
++    }
++    catch (Exception e){
++      e.printStackTrace();
++    }
++
+     Uri roomUri = intent.getData();
+     if (roomUri == null) {
+       logAndToast(getString(R.string.missing_url));
+diff --git a/webrtc/examples/androidapp/src/org/appspot/apprtc/util/KeyChainManager.java b/webrtc/examples/androidapp/src/org/appspot/apprtc/util/KeyChainManager.java
+new file mode 100644
+index 0000000..65d0774
+--- /dev/null
++++ b/webrtc/examples/androidapp/src/org/appspot/apprtc/util/KeyChainManager.java
+@@ -0,0 +1,180 @@
++package org.appspot.apprtc.util;
++
++import java.net.Socket;
++import java.security.Principal;
++import java.security.PrivateKey;
++import java.security.cert.X509Certificate;
++
++import javax.net.ssl.X509ExtendedKeyManager;
++
++import android.app.Activity;
++import android.content.SharedPreferences;
++import android.preference.PreferenceManager;
++import android.security.KeyChain;
++import android.security.KeyChainAliasCallback;
++import android.security.KeyChainException;
++import android.util.Log;
++
++
++import static android.preference.PreferenceManager.getDefaultSharedPreferences;
++
++/**
++ * KeyChainManager
++ *
++ * Using DefaultAlias case
++ * 		DefaultAlias exists and Clinet Certs in DefaultAlias is valid
++ * Creating new DefaultAlias case
++ * 		If DefaultAlias is present but invalid
++ * 		If DefaultAlias does not exist
++ */
++public class KeyChainManager extends X509ExtendedKeyManager {
++	private static final String TAG = "KeyChainMgr";
++	private static final String DEFAULTALIAS = "DEFAULTALIAS";
++	private Activity activity;
++	private final Object aliasLock = new Object();
++	private String alias = null;
++	private SharedPreferences prefs;
++
++	public KeyChainManager(Activity activity){
++		Log.d(TAG, "Creating KeyChainManager");
++
++		this.activity = activity;
++		prefs = getDefaultSharedPreferences(activity);
++	}
++
++	@Override public String chooseClientAlias(String[] keyTypes,
++			Principal[] issuers,
++			Socket socket) {
++
++		if ( !validateDefaultAlias() ){
++			KeyChain.choosePrivateKeyAlias(activity, new AliasResponse(),keyTypes,
++					issuers, socket.getInetAddress().getHostName(), socket.getPort(),
++					"Client Certificate");
++			String a = null;
++			synchronized (aliasLock) {
++				while (alias == null) {
++					try {
++						aliasLock.wait();
++					} catch (InterruptedException ignored) {
++					}
++				}
++				a = alias;
++				Log.d(TAG, "Finished Key Alias :" + alias);
++			}
++
++			saveDefaultAlias(a);
++		}
++		else {
++			Log.d(TAG, "Preference Manager have Key Alias");
++		}
++		
++		return readDefaultAlias();
++	}
++
++	@Override public String chooseServerAlias(String keyType,
++			Principal[] issuers,
++			Socket socket) {
++		Log.d(TAG, "Unused chooseServerAlias :" + keyType);
++
++		// not a client SSLSocket callback
++		throw new UnsupportedOperationException();
++	}
++	@Override public X509Certificate[] getCertificateChain(String alias) {
++		Log.d(TAG, "Trying to get CertificateChain :" + alias);
++		try {
++			X509Certificate[] certificateChain = KeyChain.getCertificateChain(activity, alias);
++			Log.d(TAG, "Success to get CertificateChain :" + alias);
++			Log.d(TAG, "certificate String :" + certificateChain.toString());
++			return certificateChain;
++		} catch (InterruptedException e) {
++			Log.d(TAG, "Interrupted Exception :" + e.toString());
++			Thread.currentThread().interrupt();
++			return null;
++		} catch (KeyChainException e) {
++			Log.d(TAG, "Runtime Exception :" + e.toString());
++			throw new RuntimeException(e);
++		} catch (Exception e) {
++			Log.d(TAG, "Runtime getCertificateChain Exception :" + e.toString());
++			throw new RuntimeException(e);
++		}
++	}
++
++	@Override public String[] getClientAliases(String keyType, Principal[] issuers) {
++		// not a client SSLSocket callback
++		Log.d(TAG, "Trying to getClientAliases :" + keyType);
++		throw new UnsupportedOperationException();
++	}
++
++	@Override public String[] getServerAliases(String keyType, Principal[] issuers) {
++		// not a client SSLSocket callback
++		Log.d(TAG, "Trying to getServerAliases :" + keyType);
++		throw new UnsupportedOperationException();
++	}
++
++	@Override public PrivateKey getPrivateKey(String alias) {
++		Log.d(TAG, "Trying to getPrivateKey :" + alias);
++		try {
++			PrivateKey privateKey = KeyChain.getPrivateKey(activity, alias);
++			return privateKey;
++		} catch (InterruptedException e) {
++			Thread.currentThread().interrupt();
++			return null;
++		} catch (KeyChainException e) {
++			throw new RuntimeException(e);
++		} catch (Exception e) {
++			Log.d(TAG, "Runtime getPrivateKey Exception :" + e.toString());
++			throw new RuntimeException(e);
++		}
++	}
++
++	private void saveDefaultAlias(String defaultalias) {
++		prefs.edit().putString(DEFAULTALIAS, defaultalias).commit();
++	}
++
++	private String readDefaultAlias() {
++		return prefs.getString(DEFAULTALIAS, "").toString();
++	}
++
++	private boolean validateDefaultAlias() {
++		if (prefs.getString(DEFAULTALIAS, "").equals("")){
++			// DefaultAlias is not setted previously.
++			Log.d(TAG, "DefaultAlias is empty");
++			return false;
++		}
++		else {
++			String defaultAliase = readDefaultAlias();
++			Log.d(TAG, "Trying to use DefaultAlias :" + defaultAliase);
++			try {
++				PrivateKey privateKey = KeyChain.getPrivateKey(activity, defaultAliase);
++				// DefaultAlias key is available;
++				return true;
++			} catch (InterruptedException e) {
++				Thread.currentThread().interrupt();
++				// Interrupted.
++				return false;
++			} catch (KeyChainException e) {
++				// DefaultAlias key is not available, so reset DefaultAliase
++				saveDefaultAlias("");
++				return false;
++			} catch (Exception e) {
++				// DefaultAlias key is not available, so reset DefaultAliase
++				saveDefaultAlias("");
++				return false;
++			}
++		}
++	}
++
++	private class AliasResponse implements KeyChainAliasCallback {
++		@Override public void alias(String alias) {
++			if (alias == null) {
++				return;
++			}
++			synchronized (aliasLock) {
++				KeyChainManager.this.alias = alias;
++				aliasLock.notifyAll();
++			}
++		}
++	}
++}
++
++
