@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "utils.h"
 
 static size_t LWS_PRE_SIZE = LWS_PRE;
+#define LIBWEBSOCKET_BUFFER_SIZE 4096
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -385,16 +386,17 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
         }
 		break;
 	case LWS_CALLBACK_HTTP_BODY:
+        char internal_buffer[LIBWEBSOCKET_BUFFER_SIZE];
+        memcpy(internal_buffer,in, len );
+        internal_buffer[len] = 0x00;
         // append data on HttpRequest
-        pss->http_request->AddData((char *)in);
+        pss->http_request->AddData(internal_buffer);
         LOG(LS_INFO) << "POST URI Adding Data";
 		break;
 	case LWS_CALLBACK_HTTP_BODY_COMPLETION:
         {
             char buf[512];
             int  n;
-            LOG(INFO) << "LibWebSocketServer: " << static_cast<char *>(in);
-
             //
             // Dumping basic request header and information
             dump_handshake_info(wsi);
