@@ -44,7 +44,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace webrtc {
 
 //
-//
 H264StreamParser::H264StreamParser() {
     parser_internal_ = nullptr;
     inited_ = false;
@@ -53,7 +52,7 @@ H264StreamParser::H264StreamParser() {
 }
 
 H264StreamParser::~H264StreamParser() {
-    h264_free(parser_internal_);
+    if(parser_internal_) h264_free(parser_internal_);
 }
 
 void H264StreamParser::Verbose(bool flag ) {

@@ -43,49 +43,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/pathutils.h"
 
 #include "websocket_server.h"
-#include "streamer_observer.h"
 #include "app_client.h"
+#include "app_ws_client.h"
+#include "streamer_config.h"
 
 #ifndef APP_CHANNEL_H_
 #define APP_CHANNEL_H_
 
-class AppChannel : public LibWebSocketServer, public WebSocketHandler,
-    public HttpHandler, public SocketServerHelper {
+class AppChannel : public LibWebSocketServer {
 public:
-    explicit AppChannel(int port, const std::string& app_conf);
+    explicit AppChannel();
     ~AppChannel();
+    bool AppInitialize(StreamerConfig& config);
 
-    bool AppInitialize();
-    // WebSocket Handler
-    void OnConnect(int sockid) override;
-    bool OnMessage(int sockid, const std::string& message) override;
-    void OnDisconnect(int sockid) override;
-    void OnError(int sockid, const std::string& message) override;
-
-    // HttpHandler
-    bool DoGet(HttpRequest* req, HttpResponse* res) override;
-    bool DoPost(HttpRequest* req, HttpResponse* res) override;
-
-    // StreamerObserver interface
-    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
-    void RegisterObserver(StreamerObserver* callback) override;
 private:
-    int port_num_;
-    bool LoadConfig();
-
-    std::unique_ptr<rtc::OptionsFile> options_;
-    std::string app_conf_;
-    std::string web_root_;
-    std::string ws_server_;
-    std::string post_server_;
-    std::string home_path_;
-    std::map <std::string,std::string> room_params_;
     bool is_inited_;
-    AppClientInfo app_client_;
-
-    // WebSocket chunked frames 
-    std::string chunked_frames_;
-    int num_chunked_frames_;
+    AppWsClient ws_client_;
+    AppClient app_client_;
 };
 
 #endif // APP_CHANNEL_H_

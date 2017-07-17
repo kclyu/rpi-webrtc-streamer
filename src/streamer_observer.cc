@@ -56,18 +56,30 @@ SocketServerHelper::SocketServerHelper() : streamsession_active_(false) {
     RTC_CHECK(streamer_proxy_);
 }
 
-void SocketServerHelper::RegisterObserver(StreamerObserver* callback) {
-    LOG(INFO) << __FUNCTION__;
-}
-
-
 bool SocketServerHelper::ActivateStreamSession(const int peer_id, 
         const std::string& peer_name) {
     LOG(INFO) << __FUNCTION__;
     RTC_DCHECK( streamer_proxy_ != nullptr );
     RTC_DCHECK( streamsession_active_ != true );
 
+    peer_id_ = peer_id;
+    peer_name_ = peer_name_;
     if(streamer_proxy_->ObtainStreamer(this, peer_id_, peer_name_ )){
+        streamsession_active_ = true;
+        return true;
+    };
+    return false;
+}
+
+bool SocketServerHelper::ActivateStreamSession(const int peer_id, 
+        const std::string& peer_name, const std::string& message) {
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK( streamer_proxy_ != nullptr );
+    RTC_DCHECK( streamsession_active_ != true );
+
+    peer_id_ = peer_id;
+    peer_name_ = peer_name_;
+    if(streamer_proxy_->ObtainStreamer(this, peer_id_, peer_name_, message )){
         streamsession_active_ = true;
         return true;
     };
@@ -154,6 +166,22 @@ bool StreamerProxy::ObtainStreamer(SocketServerObserver *socket_server,
         active_peer_id_ = peer_id;
         active_socket_observer_ = socket_server;
         streamer_callback_->OnPeerConnected(peer_id, name );
+        return true;
+    }
+}
+
+bool StreamerProxy::ObtainStreamer(SocketServerObserver *socket_server, 
+        int peer_id, const std::string& name, const std::string &message ) {
+    LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK(streamer_callback_ != nullptr);
+    if( active_socket_observer_ != nullptr ) {
+        LOG(INFO) << "Streamer already occupied by another socket server";
+        return false;
+    }
+    else {
+        active_peer_id_ = peer_id;
+        active_socket_observer_ = socket_server;
+        streamer_callback_->OnMessageFromPeer(peer_id, message );
         return true;
     }
 }

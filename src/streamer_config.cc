@@ -40,7 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/base/arraysize.h"
 #include "webrtc/base/fileutils.h"
 
-
 #include "streamer_config.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -50,11 +49,14 @@ static const uint16_t kDefaultWebSocketPort = 8889;
         // port number 8888 is fiexed for direct socket
 static const uint16_t kDefaultDirectSocketPort = 8888; 
 static const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
-static const char kDefaultAppChannelConfig[] = "etc/app_channel.conf";
 static const char kDefaultMediaConfig[] = "etc/media_config.conf";
+
+static const char kDefaultWebRoot[] = INSTALL_DIR "/web-root";
+static const char kDefaultRoomId[] = "123456789";
 
 // Stun
 static const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
+static const char kDefaultRWS_WS_URL[] = "/rws/ws";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Config Key
@@ -63,9 +65,12 @@ static const char kConfigWebSocketEnable[] = "websocket_enable";
 static const char kConfigWebSocketPort[] = "websocket_port";
 static const char kConfigDirectSocketEnable[] = "direct_socket_enable";
 static const char kConfigDirectSocketPort[] = "direct_socket_port";
-static const char kConfigAppChannelConfig[] = "app_channel_config";
 static const char kConfigMediaConfig[] = "media_config";
 static const char kConfigDisableLogBuffering[] = "disable_log_buffering";
+static const char kConfigRWS_WS_URL[] = "rws_ws_url";
+static const char kConfigAdditionalWSRule[] = "additional_ws_rule";
+static const char kConfigRoomIdEnable[] = "room_id_enable";
+static const char kConfigRoomId[] = "room_id";
 
 // STUN and TURN config
 static const char kConfigStunServer[] = "stun_server";
@@ -78,6 +83,57 @@ static const char kServerListDelimiter=',';
 static const char kStunPrefix[] = "stun:";
 static const char kTurnPrefix[] = "turn:";
 
+// WebSocket Config
+static const char kConfigWebRoot[] = "web_root";
+static const char kConfigLibraryDebug[] = "libwebsocket_debug";
+
+#define CONFIG_RETURN_BOOL_WITH_DEFAULT(key,default_value) \
+        { \
+            std::string flag_value; \
+            if( config_->GetStringValue(key, &flag_value ) == true){ \
+                if(flag_value.compare("true") == 0) return true; \
+                else if (flag_value.compare("false") == 0) return false; \
+                else { \
+                    LOG(INFO) << "Default Config \"" <<  key \
+                        << "\" value is not valid" << flag_value; \
+                    return default_value; \
+                };  \
+            }; \
+            return default_value; \
+        };
+
+#define CONFIG_RETURN_INT_WITH_DEFAULT(key,value,validate_function,default_value) \
+        { \
+            if( config_->GetIntValue(key, &value ) == true){ \
+                return validate_function(value, default_value); \
+            } \
+            value = default_value; \
+            return false; \
+        };
+
+#define CONFIG_RETURN_STR_WITH_DEFAULT(key,value, default_value) \
+        { \
+            if( config_->GetStringValue(key, &value ) == true){ \
+                return true; \
+            }; \
+            value = default_value; \
+            return false; \
+        };
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// config helper function
+//
+///////////////////////////////////////////////////////////////////////////////////////////
+static bool validate__portnumber(int &port_number, int default_value ) {
+    if ((port_number < 1) || (port_number > 65535)) {
+            LOG(LS_ERROR) << "Error in port value," << port_number << " is not a valid port";
+            LOG(LS_ERROR) << "Resetting to default value";
+            port_number = default_value;
+            return false;
+    }
+    return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -99,92 +155,98 @@ bool StreamerConfig::LoadConfig()  {
         path.SetPathname( std::string(INSTALL_DIR) 
                 + "/"  + std::string(kDefaultStreamerConfig) );
         if( rtc::Filesystem::IsFile(path) == false)  {
-            std::cerr << "Failed to find config options:" << path.pathname() << "\n";
+            std::cerr << "Failed to find config options:" << path.pathname() << std::endl;
             return false;
         };
     };
 
     config_.reset(new rtc::OptionsFile(path.pathname()));
     if( config_->Load() == false ) {
-        std::cerr  << "Failed to load config options:" << path.pathname() << "\n";
+        std::cerr  << "Failed to load config options:" << path.pathname() << std::endl;
         return false;
     }
 
     config_file_ = path.pathname();
     config_dir_basename_ = path.parent_folder();
     std::cout << "Using config file base path:" << 
-        ((config_dir_basename_.size() == 0)?"CWD":config_dir_basename_) << "\n";
+        ((config_dir_basename_.size() == 0)?"CWD":config_dir_basename_) << std::endl;
     config_loaded_ = true;
     return true;
 }
 
 
+// DisableLogBuffering
 bool StreamerConfig::GetDisableLogBuffering() {
-    RTC_CHECK( config_loaded_ == true );
-    std::string disable_log_buffering;
-    if( config_->GetStringValue(kConfigDisableLogBuffering, &disable_log_buffering ) == true ) {
-        return disable_log_buffering.compare("true") == 0;
-    }
-    // default value for disable log buffering is true
-    return true;
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigDisableLogBuffering, true );
 }
 
+// WebSocketEnable
 bool StreamerConfig::GetWebSocketEnable() {
-    RTC_CHECK( config_loaded_ == true );
-    std::string websocket_enabled;
-    if( config_->GetStringValue(kConfigWebSocketEnable, &websocket_enabled ) == true ) {
-        return websocket_enabled.compare("true") == 0;
-    }
-    // websocket will be enabled by default
-    return true;
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigWebSocketEnable, true );
 }
 
+// WebSocketPort
 bool StreamerConfig::GetWebSocketPort(int& port) {
-    RTC_CHECK( config_loaded_ == true );
-    if( config_->GetIntValue(kConfigWebSocketPort, &port ) == true ) {
-        if ((port < 1) || (port > 65535)) {
-            LOG(LS_ERROR) << "Error in port value," << port << " is not a valid port";
-            LOG(LS_ERROR) << "Resetting to default value";
-            port = kDefaultWebSocketPort;
-        }
-        return true;
-    }
-    // websocket will be enabled by default
-    port = kDefaultWebSocketPort;
-    return true;
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_INT_WITH_DEFAULT(kConfigWebSocketPort, port, 
+            validate__portnumber,  kDefaultWebSocketPort);
 }
 
+// LibwebsocketDebugEnable
+bool StreamerConfig::GetLibwebsocketDebugEnable() {
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigLibraryDebug, false );
+}
+
+// WebRootPath
+bool StreamerConfig::GetWebRootPath(std::string& path) {
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_STR_WITH_DEFAULT(kConfigWebRoot, path, kDefaultWebRoot );
+}
+
+// RWS WS URL
+bool StreamerConfig::GetRwsWsURL(std::string& ws_url) {
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_STR_WITH_DEFAULT(kConfigRWS_WS_URL, ws_url, 
+            kDefaultRWS_WS_URL );
+}
+
+// AdditionalWSRule
+bool StreamerConfig::GetAdditionalWSRule(std::string& rule) {
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_STR_WITH_DEFAULT(kConfigAdditionalWSRule, rule, "" );
+}
+
+// DirectSocketEnable
 bool StreamerConfig::GetDirectSocketEnable() {
-    RTC_CHECK( config_loaded_ == true );
-    std::string direct_socket_enabled;
-    // direct_socket will not be enabled by default
-    if( config_loaded_ == false )  return false;
-    if( config_->GetStringValue(kConfigDirectSocketEnable, 
-                &direct_socket_enabled ) == true ) {
-        return direct_socket_enabled.compare("true") == 0;
-    }
-    return false;
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigDirectSocketEnable, false );
 }
 
+// DirectSocketPort
 bool StreamerConfig::GetDirectSocketPort(int& port) {
-    RTC_CHECK( config_loaded_ == true );
-    // direct_socket will not be enabled by default
-    if( config_loaded_ == false )  return false;
-    if( config_->GetIntValue(kConfigDirectSocketPort, &port ) == true ) {
-        if ((port < 1) || (port > 65535)) {
-            LOG(LS_ERROR) << "Error in port value," 
-                << port << " is not a valid port";
-            LOG(LS_ERROR) << "Resetting to default value";
-            port = kDefaultDirectSocketPort;
-            return true;
-        };
-        return true;
-    }
-    return false;
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_INT_WITH_DEFAULT(kConfigDirectSocketPort, port, 
+            validate__portnumber,  kDefaultDirectSocketPort);
 }
 
+// RoomIdEnable
+bool StreamerConfig::GetRoomIdEnable() {
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigRoomIdEnable, false );
+}
+
+// RoomId
+bool StreamerConfig::GetRoomId(std::string& room_id) {
+    RTC_DCHECK( config_loaded_ == true );
+    CONFIG_RETURN_STR_WITH_DEFAULT(kConfigRoomId, room_id, kDefaultRoomId);
+}
+
+// StunServer
 bool StreamerConfig::GetStunServer(webrtc::PeerConnectionInterface::IceServer &server){
-    RTC_CHECK( config_loaded_ == true );
+    RTC_DCHECK( config_loaded_ == true );
     std::string server_list;
     std::string username, credential;
 
@@ -214,8 +276,9 @@ bool StreamerConfig::GetStunServer(webrtc::PeerConnectionInterface::IceServer &s
 }
 
 
+// TurnServer
 bool StreamerConfig::GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server){
-    RTC_CHECK( config_loaded_ == true );
+    RTC_DCHECK( config_loaded_ == true );
     std::string server_list;
     std::string username, credential;
 
@@ -250,21 +313,8 @@ bool StreamerConfig::GetTurnServer(webrtc::PeerConnectionInterface::IceServer &s
     return (count?true:false);
 }
 
-//
-bool StreamerConfig::GetAppChannelConfig(std::string& conf) {
-    RTC_CHECK( config_loaded_ == true );
-    // default app channel config value is "etc/app_channel.conf"
-    if( config_->GetStringValue(kConfigAppChannelConfig, &conf ) == true ) {
-        conf = config_dir_basename_ + conf;
-        return true;
-    }
-    conf = config_dir_basename_ + kDefaultAppChannelConfig;
-    return false;
-}
-
-//
 bool StreamerConfig::GetMediaConfig(std::string& conf) {
-    RTC_CHECK( config_loaded_ == true );
+    RTC_DCHECK( config_loaded_ == true );
     // default media config value is "etc/media_config.conf"
     if( config_->GetStringValue(kConfigMediaConfig, &conf ) == true ) {
         conf = config_dir_basename_ + conf;
@@ -277,7 +327,7 @@ bool StreamerConfig::GetMediaConfig(std::string& conf) {
 // Just validate the log path, 
 // if the log path does not found, it will return false
 bool StreamerConfig::GetLogPath(std::string& log_path) {
-    RTC_CHECK( config_loaded_ == true );
+    RTC_DCHECK( config_loaded_ == true );
     rtc::Pathname path;
     path.SetPathname( log_path );
 
@@ -308,7 +358,7 @@ bool StreamerConfig::GetLogPath(std::string& log_path) {
 }
 
 const std::string StreamerConfig::GetConfigFilename() {
-    RTC_CHECK( config_loaded_ == true );
+    RTC_DCHECK( config_loaded_ == true );
     return config_file_;
 }
 

@@ -27,70 +27,51 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RPI_STREAMER_CONFIG_
-#define RPI_STREAMER_CONFIG_
+#include <memory>
+#include <string>
+#include <list>
 
 #include "webrtc/base/checks.h"
+#include "webrtc/base/helpers.h"
+#include "webrtc/system_wrappers/include/clock.h"
 
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/optionsfile.h"
-#include "webrtc/base/pathutils.h"
+#ifndef APP_CLINETINFO_H_
+#define APP_CLINETINFO_H_
 
-#include "webrtc/api/peerconnectioninterface.h"
 
-class StreamerConfig  {
+// AppClient does not have room concept and only one clinet connection..  
+// so room_id and client_id will be held within AppClientInfo
+class AppClientInfo {
+    enum ClientState {
+        CLIENT_UNKNOWN = 0,
+        CLIENT_DISCONNECTED,
+        CLIENT_CONNECT_WAIT,
+        CLIENT_CONNECTED,
+        CLIENT_DISCONNECT_WAIT
+    };
+
 public:
-    explicit StreamerConfig(const std::string &config_file);
-    ~StreamerConfig();
+    explicit AppClientInfo ();
+    ~AppClientInfo(){};
 
-    // Load Config
-    bool LoadConfig();
-    const std::string GetConfigFilename();
-
-
-    // Disable Log buffering
-    bool GetDisableLogBuffering();
-
-    // LibWebsocket Libbrary debug 
-    bool GetLibwebsocketDebugEnable();
-
-    // HTTP web-root path
-    bool GetWebRootPath(std::string& path);
-
-    // RWS WebSocket URL
-    bool GetRwsWsURL(std::string& path);
-
-    // Additional WS Rule
-    bool GetAdditionalWSRule(std::string& rule);
-
-    // WebSocket Config
-    bool GetWebSocketEnable();
-    bool GetWebSocketPort(int& port);
-
-    // RoomId Config
-    bool GetRoomIdEnable();
-    bool GetRoomId(std::string& room_id);
-
-    // Direct Socket Config
-    bool GetDirectSocketEnable();
-    bool GetDirectSocketPort(int& port);
-
-    bool GetStunServer(webrtc::PeerConnectionInterface::IceServer &server);
-    bool GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server);
-
-    // Media Config
-    bool GetMediaConfig(std::string& conf);
-
-    // Log Path
-    bool GetLogPath(std::string& log_dir);
+    bool ConnectWait(int room_id, int& client_id);
+    bool Connected(int websocket_id, int room_id, int client_id);
+    bool DisconnectWait(int room_id, int client_id);
+    bool DisconnectWait(int websocket_id );
+    bool GetWebsocketId(int room_id, int& client_id);
+    bool IsConnected(int room_id, int client_id);
+    bool IsConnected(int websocket_id );
+    void Reset();
 
 private:
-    bool config_loaded_;
-    std::unique_ptr<rtc::OptionsFile> config_;
-    std::string config_file_;
-    std::string config_dir_basename_;
+    webrtc::Clock* const clock_;
+    uint64_t last_wait_timestamp_;
+    // Status transition
+    ClientState state_;
+    int client_id_;
+    int room_id_;
+    int websocket_id_;
 };
 
+#endif // APP_CLINETINFO_H_
 
-
-#endif  // RPI_STREAMER_CONFIG_

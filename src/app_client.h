@@ -30,44 +30,80 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <string>
 #include <list>
+#include <deque>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/helpers.h"
+
+#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/mediaconstraintsinterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/base/json.h"
+
+#include "websocket_server.h"
+#include "streamer_observer.h"
+#include "app_clientinfo.h"
 
 #ifndef APP_CLIENT_H_
 #define APP_CLIENT_H_
 
+#define URL_RWS_WS_PREFIX   "/rws/"
+#define URL_RWS_WS_POSTFIX  "/app_client"
+#define URL_APP_WS          "/rws/app_client"
+#define URL_JOIN_CMD        "/join"
+#define URL_MESSAGE_CMD     "/message"
+#define URL_LEAVE_CMD       "/leave"
+#define URL_TURN_SERVER       "/turn_server"
 
-enum ClientStatus {
-    CLIENT_UNKNOWN = 0,
-    CLIENT_NOTCONNECTED,
-    CLIENT_CONNECTED,
-    CLIENT_CLOSING,
-    CLIENT_ERROR
-};
-
-// AppClient does not have room concept and only one clinet connection..  
-// so room_id and client_id will be held within ClientInfo
-class AppClientInfo {
+class AppClient : public WebSocketHandler, public HttpHandler, 
+    public SocketServerHelper {
 public:
-    explicit AppClientInfo ();
-    ~AppClientInfo(){};
+    explicit AppClient();
+    ~AppClient();
 
-    ClientStatus Status(int client_id);
-    bool GetWebSocketId(int client_id,int &websocket_id);
-    // Status transition
-    bool Connected (int room_id);
-    bool Connected(int room_id, int client_id);
-    bool Connected(int websocket_id, int room_id, int client_id);
-    bool Closing (int client_id);
-    bool Closed(int client_id);
-    void Reset();
-    // Status transition
+    enum State{
+        SUCCESS = 0,
+        ERROR,
+        FULL, 
+        UNKNOWN_ROOM, 
+        UNKNOWN_CLIENT, 
+        DUPLICATE_CLIENT, 
+        INVALID_REQUEST
+    };
+
+    struct Result {
+        State state_;
+        Json::Value json_params;
+    };
+
+    void SetRoomId(std::string& room_id );
+    void SetAdditionalWSRule(std::string& rule );
+    std::string GetWebSocketURL();
+
+    // register WebSocket Server for SendMessage
+    void RegisterWebSocketMessage(WebSocketMessage *server_instance);
+
+    // WebSocket Handler
+    void OnConnect(int sockid) override;
+    bool OnMessage(int sockid, const std::string& message) override;
+    void OnDisconnect(int sockid) override;
+    void OnError(int sockid, const std::string& message) override;
+
+    // HttpHandler
+    bool DoGet(HttpRequest* req, HttpResponse* res) override;
+    bool DoPost(HttpRequest* req, HttpResponse* res) override;
+
+    // StreamerObserver interface
+    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
 private:
-    ClientStatus status_;
-    int client_id_;
-    int room_id_;
-    int websocket_id_;
+    bool JoinRestCall(HttpRequest* req, HttpResponse* res, Result &result);
+    bool MessageRestCall(HttpRequest* req, HttpResponse* res, Result &result);
+    bool LeaveRestCall(HttpRequest* req, HttpResponse* res, Result &result);
+
+    WebSocketMessage  *websocket_message_;
+    AppClientInfo app_client_;
+    bool use_room_id_;
+    std::string room_id_;
+    std::string websocket_url_;
+    std::string additional_ws_rule_;
 };
 
 #endif // APP_CLIENT_H_

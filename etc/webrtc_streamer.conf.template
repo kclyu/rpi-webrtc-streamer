@@ -1,8 +1,10 @@
 websocket_enable=true
 websocket_port=8889
-app_channel_config=etc/app_channel.conf
 media_config=etc/media_config.conf
 direct_socket_enable=true
 direct_socket_port=8888
 disable_log_buffering=true
 stun_server=stun:stun.l.google.com:19302
+web_root=/opt/rws/web-root
+libwebsocket_debug=false
+rws_ws_url=/rws/ws

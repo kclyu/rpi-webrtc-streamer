@@ -27,70 +27,53 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RPI_STREAMER_CONFIG_
-#define RPI_STREAMER_CONFIG_
+#include <memory>
+#include <string>
+#include <list>
+#include <deque>
 
-#include "webrtc/base/checks.h"
+
+#include "webrtc/api/mediastreaminterface.h"
+#include "webrtc/api/mediaconstraintsinterface.h"
+#include "webrtc/api/peerconnectioninterface.h"
+#include "webrtc/base/json.h"
 
 #include "webrtc/base/fileutils.h"
 #include "webrtc/base/optionsfile.h"
 #include "webrtc/base/pathutils.h"
 
-#include "webrtc/api/peerconnectioninterface.h"
+#include "websocket_server.h"
+#include "streamer_observer.h"
+#include "app_clientinfo.h"
 
-class StreamerConfig  {
+#ifndef APP_WS_CLIENT_H_
+#define APP_WS_CLIENT_H_
+
+class AppWsClient : public WebSocketHandler, public SocketServerHelper {
 public:
-    explicit StreamerConfig(const std::string &config_file);
-    ~StreamerConfig();
+    explicit AppWsClient();
+    ~AppWsClient();
 
-    // Load Config
-    bool LoadConfig();
-    const std::string GetConfigFilename();
+    // register WebSocket Server for SendMessage
+    void RegisterWebSocketMessage(WebSocketMessage *server_instance);
 
+    // WebSocket Handler
+    void OnConnect(int sockid) override;
+    bool OnMessage(int sockid, const std::string& message) override;
+    void OnDisconnect(int sockid) override;
+    void OnError(int sockid, const std::string& message) override;
 
-    // Disable Log buffering
-    bool GetDisableLogBuffering();
-
-    // LibWebsocket Libbrary debug 
-    bool GetLibwebsocketDebugEnable();
-
-    // HTTP web-root path
-    bool GetWebRootPath(std::string& path);
-
-    // RWS WebSocket URL
-    bool GetRwsWsURL(std::string& path);
-
-    // Additional WS Rule
-    bool GetAdditionalWSRule(std::string& rule);
-
-    // WebSocket Config
-    bool GetWebSocketEnable();
-    bool GetWebSocketPort(int& port);
-
-    // RoomId Config
-    bool GetRoomIdEnable();
-    bool GetRoomId(std::string& room_id);
-
-    // Direct Socket Config
-    bool GetDirectSocketEnable();
-    bool GetDirectSocketPort(int& port);
-
-    bool GetStunServer(webrtc::PeerConnectionInterface::IceServer &server);
-    bool GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server);
-
-    // Media Config
-    bool GetMediaConfig(std::string& conf);
-
-    // Log Path
-    bool GetLogPath(std::string& log_dir);
-
+    // StreamerObserver interface
+    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
 private:
-    bool config_loaded_;
-    std::unique_ptr<rtc::OptionsFile> config_;
-    std::string config_file_;
-    std::string config_dir_basename_;
+    std::string ws_url_;
+    AppClientInfo app_client_;
+    WebSocketMessage  *websocket_message_;
+
+    // WebSocket chunked frames 
+    std::string chunked_frames_;
+    int num_chunked_frames_;
 };
 
+#endif // APP_WS_CLIENT_H_
 
-
-#endif  // RPI_STREAMER_CONFIG_

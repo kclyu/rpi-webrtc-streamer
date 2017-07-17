@@ -52,11 +52,14 @@ class StreamerProxy;      // forward declaration
 class SocketServerHelper : public SocketServerObserver {
 public:
     SocketServerHelper();
-    void RegisterObserver(StreamerObserver* callback);
+    void RegisterObserver(StreamerObserver* callback) {};
 protected:
     virtual ~SocketServerHelper() {}
+    // Offer will be generated at server side.
     bool ActivateStreamSession(const int peer_id, const std::string& peer_name);
-    void DeactivateStreamSession();
+    // the messsage is offer message from client
+    bool ActivateStreamSession(const int peer_id, const std::string& peer_name,
+            const std::string& message); void DeactivateStreamSession();
     void MessageFromPeer( const std::string& message );
     int GetActivePeerId();
     bool IsStreamSessionActive();
@@ -72,7 +75,10 @@ private:
 class StreamerProxy : public SocketServerObserver {
 public:
     static StreamerProxy* GetInstance();
-    bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id, const std::string& name ); 
+    bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id, 
+            const std::string& name ); 
+    bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id, 
+            const std::string& name, const std::string& message ); 
     void ReleaseStreamer(SocketServerObserver *socket_server, int peer_id ); 
     void MessageFromPeer( int peer_id, const std::string& message );
     void MessageSent(int err);

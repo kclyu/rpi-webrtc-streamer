@@ -40,11 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "websocket_server.h"
 #include "../lib/private-libwebsockets.h"
 
-/* http server gets files from this path */
-#define LOCAL_RESOURCE_PATH INSTALL_DIR
-char *resource_path = LOCAL_RESOURCE_PATH;
-char crl_path[1024] = "";
-
 //////////////////////////////////////////////////////////////////////
 //
 // LibWebSocket struct for initialization
@@ -149,7 +144,7 @@ void LibWebSocketServer::LogLevel(DEBUG_LEVEL level,bool log_redirect){
         case DEBUG_LEVEL_EXT:
             debug_level |= LLL_EXT;
         case DEBUG_LEVEL_PARSER:
-            // debug_level |= LLL_PARSER;   // supress the parser debug log
+             // debug_level |= LLL_PARSER;   // supress the parser debug log
         case DEBUG_LEVEL_DEBUG:
             debug_level |= LLL_DEBUG;
         case DEBUG_LEVEL_INFO:
@@ -305,11 +300,13 @@ void LibWebSocketServer::AddHttpHandler(const std::string path,
 }
 
 HttpHandler *LibWebSocketServer::GetHttpHandler(const std::string path) {
-    std::map<std::string,HttpHandler *>::iterator iter 
-            = httphandler_config_.find(path);
-    if( iter == httphandler_config_.end() )
-        return nullptr;
-    return iter->second;
+    for(std::map<std::string,HttpHandler *>::iterator iter 
+            = httphandler_config_.begin();
+            iter != httphandler_config_.end(); iter++) {
+        if( path.compare(0, iter->first.size(), iter->first) == 0)
+            return iter->second;
+    }
+    return nullptr;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -577,6 +574,8 @@ void HttpRequest::AddData(const std::string data ) {
 
 void HttpRequest::Print() {
     LOG(INFO) << "Request Type : " << GetRequestTypeString(type_);
+    LOG(INFO) << "Request Content-Length : " << content_length_;
+    LOG(INFO) << "Request Server: " << server_;
     LOG(INFO) << "Request Headers(" << header_.size() << "):";
     for(auto t: header_) {
         LOG(INFO) << " " << t.first << ":" 

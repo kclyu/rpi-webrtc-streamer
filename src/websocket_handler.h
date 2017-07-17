@@ -69,6 +69,10 @@ struct FileMapping {
 };
 
 struct HttpRequest {
+    HttpRequest() : content_length_(-1) {};
+    std::string url_;           // URL 
+    int content_length_;
+    std::string server_;          // Server name 
     HttpRequestType type_;      // request type, GET,POST
     std::string data_;          // request data only available on POST
     std::map<int,std::string> header_;

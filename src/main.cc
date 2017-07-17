@@ -65,7 +65,7 @@ public:
         message_queue_ = queue;
     }
 
-    void set_websocket(LibWebSocketServer* websocket) { websocket_ = websocket; }
+    void set_websocket_server(LibWebSocketServer* websocket) { websocket_ = websocket; }
 
     virtual bool Wait(int cms, bool process_io) {
         if( websocket_ )
@@ -97,10 +97,8 @@ DEFINE_bool(version, false, "print the Version information");
 // Main
 //
 int main(int argc, char** argv) {
-    std::string app_channel_config;
     std::string media_config;
     std::string baselog_dir;
-    int  websocket_port_num;
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
 
     if( FLAG_help ) {
@@ -190,14 +188,10 @@ int main(int argc, char** argv) {
 
     // WebSocket
     if( streamer_config.GetWebSocketEnable() == true ) {
-        streamer_config.GetAppChannelConfig(app_channel_config);
-        streamer_config.GetWebSocketPort(websocket_port_num);
-        LOG(INFO) << "WebSocket port num : " << websocket_port_num 
-            << ", Using Config file: " << app_channel_config;
-        app_channel.reset(new AppChannel(websocket_port_num, app_channel_config));
-        app_channel->AppInitialize();
+        app_channel.reset(new AppChannel());
+        app_channel->AppInitialize(streamer_config);
 
-        socket_server.set_websocket(app_channel.get());
+        socket_server.set_websocket_server(app_channel.get());
     };
 
     rtc::scoped_refptr<Streamer> streamer(

@@ -44,18 +44,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define  MAX_RINGBUFFER_QUEUE 4
 #define  MAX_SENDBUFFER_SIZE  4096
 
-#define WEBSOCKET_SERVER_NAME "Rpi-WebRTC-Streamer 0.57(libwebsocket)"
+// __RWS_VERSION__ defined in Makefile
+#define WEBSOCKET_SERVER_NAME __RWS_VERSION__
 
 struct message_buf {
-	void *payload;
+	char *payload;
 	size_t len;
 };
 
-#define USER_DATA_INITIALIZED_TRUE   1
-#define USER_DATA_INITIALIZED_FALSE  0
+#define USERDATA_INITED         1  
+#define USERDATA_UNINITED       0 
 
+
+// UserData Struct per session
 struct per_session_data__libwebsockets {
-	unsigned int user_data_initialized:1;
+	int userdata_inited;
     char uri_path[MAX_URI_PATH];
 	int ring_buffer_index;
     struct message_buf ring_buffer[MAX_RINGBUFFER_QUEUE];

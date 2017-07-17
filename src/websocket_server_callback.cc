@@ -32,28 +32,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "websocket_server.h"
 #include "../lib/private-libwebsockets.h"
-
-
-#if defined(LWS_OPENSSL_SUPPORT) && defined(LWS_HAVE_SSL_CTX_set1_param)
-/* location of the certificate revocation list */
-extern char crl_path[1024];
-#endif
-
+#include "utils.h"
 
 static size_t LWS_PRE_SIZE = LWS_PRE;
 
 //////////////////////////////////////////////////////////////////////
 //
-// Macros which is used in this callback processing 
+// Macros used in this callback processing 
 //
 //////////////////////////////////////////////////////////////////////
-#define WS_SERVER_INSTANCE \
+#define INTERNAL__GET_WSSINSTANCE  \
     reinterpret_cast<LibWebSocketServer *>(wsi->protocol->user)
 
-#define WS_GET_HTTPHANDLER  reinterpret_cast<LibWebSocketServer *> \
+#define INTERNAL__GET_HTTPHANDLER  reinterpret_cast<LibWebSocketServer *> \
         (wsi->protocol->user)->GetHttpHandler(pss->uri_path)
 
-#define WS_GET_WEBSOCKETHANDLER \
+#define INTERNAL__GET_WEBSOCKETHANDLER \
     if( (handler = reinterpret_cast<LibWebSocketServer *> \
             (wsi->protocol->user)->GetWebsocketHandler(pss->uri_path)) \
             == nullptr ) {  \
@@ -65,16 +59,17 @@ static size_t LWS_PRE_SIZE = LWS_PRE;
 
 //////////////////////////////////////////////////////////////////////
 //
-// Ancillary functions for build HttpRequest Type
+// Helper functions for build HttpRequest Type
 //
 //////////////////////////////////////////////////////////////////////
-static void BuildHttpRequestFromWsi(struct lws *wsi, 
+static void BuildHttpRequestFromWsi(struct lws *wsi, char *url_path,
         HttpRequest* http_request) {
     RTC_DCHECK(http_request != nullptr );
     unsigned int n = 0, len;
     char buf[512];
     const unsigned char *c;
 
+    http_request->url_ = url_path;
     // Adding headers
     do {
         c = lws_token_to_string((lws_token_indexes)n);
@@ -93,7 +88,18 @@ static void BuildHttpRequestFromWsi(struct lws *wsi,
         buf[sizeof(buf) - 1] = '\0';
         
         if ( n ==  WSI_TOKEN_HTTP_URI_ARGS ) 
-            http_request->AddArgs(buf);     // add argument parameter
+            // add argument parameter
+            http_request->AddArgs(buf);     
+        else if ( n ==  WSI_TOKEN_HTTP_CONTENT_LENGTH ) {
+            // Getting contents length
+            int int_value;
+            if( utils::StringToInt( buf, &int_value ) )
+                http_request->content_length_ = int_value;
+        }
+        else if ( n ==  WSI_TOKEN_HOST ) {
+            // Getting server name
+            http_request->server_ = buf;
+        }
         else 
             http_request->AddHeader( n, buf );  
         n++;
@@ -237,8 +243,8 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
     //
     case LWS_CALLBACK_CLOSED_HTTP:
         if( pss != nullptr && 
-                pss->user_data_initialized == USER_DATA_INITIALIZED_TRUE) {
-            pss->user_data_initialized = USER_DATA_INITIALIZED_FALSE;
+                pss->userdata_inited == USERDATA_INITED) {
+            pss->userdata_inited = USERDATA_UNINITED;
             delete pss->http_request;
             delete pss->http_response;
         };
@@ -249,9 +255,10 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             char buf[512];
             lws_get_peer_simple(wsi, buf, sizeof(buf));
 
-            if( pss->user_data_initialized !=  USER_DATA_INITIALIZED_TRUE ) {
+            if( pss->userdata_inited !=  USERDATA_INITED ) {
+                // clear whole user data area
                 memset( user, 0x00, sizeof(per_session_data__libwebsockets));
-                pss->user_data_initialized = USER_DATA_INITIALIZED_TRUE;
+                pss->userdata_inited = USERDATA_INITED;
             }
 
             //  allocate new HttpRequest and HttpResponse
@@ -283,18 +290,22 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             // keep the uri_path data in the pss
             strcpy(pss->uri_path, buf);
 
-            // Found the POST Request, let it continue and accept data 
-            // at the LWS_CALLBACK_HTTP_BODY* callbacks
-            if(lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI)) {
-                BuildHttpRequestFromWsi( wsi, pss->http_request );
-                LOG(LS_INFO) << "POST URI Token found";
-                return 0;
-            }
-
-            HttpHandler *handler  = WS_GET_HTTPHANDLER;
+            LOG(LS_INFO) << "Internal Http Handler for URI: " 
+                    << pss->uri_path;
+            HttpHandler *handler  = INTERNAL__GET_HTTPHANDLER;
             if(handler != nullptr ){
-                BuildHttpRequestFromWsi( wsi, pss->http_request );
-                handler->DoGet(pss->http_request, pss->http_response);
+                BuildHttpRequestFromWsi( wsi, pss->uri_path, pss->http_request );
+                if(lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI)) {
+                    // Post Request type
+                    if( pss->http_request->content_length_ > 0 ) 
+                        // neeed to read POST DATA
+                        return 0;
+                    // Get processng
+                    handler->DoPost(pss->http_request, pss->http_response);
+                }
+                else 
+                    // Get processng
+                    handler->DoGet(pss->http_request, pss->http_response);
 
                 switch(WriteHttpResponseHeader( wsi, pss->http_response )) {
                     case SendResult::SUCCESS:
@@ -319,7 +330,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                 unsigned char *header_ptr;
                 int  header_size = 0, retvalue;
 
-                WS_SERVER_INSTANCE->GetFileMapping(pss->uri_path,mapping_path);
+                INTERNAL__GET_WSSINSTANCE ->GetFileMapping(pss->uri_path,mapping_path);
                 LOG(INFO) << "File Request: " << pss->uri_path;
 
                 header_ptr = header_buffer;
@@ -376,6 +387,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 	case LWS_CALLBACK_HTTP_BODY:
         // append data on HttpRequest
         pss->http_request->AddData((char *)in);
+        LOG(LS_INFO) << "POST URI Adding Data";
 		break;
 	case LWS_CALLBACK_HTTP_BODY_COMPLETION:
         {
@@ -396,12 +408,14 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             lws_get_peer_simple(wsi, buf, sizeof(buf));
             LOG(INFO) <<  "HTTP connect from " <<  buf;
 
-            HttpHandler *handler  = WS_GET_HTTPHANDLER;
+            HttpHandler *handler  = INTERNAL__GET_HTTPHANDLER;
             if(handler != nullptr ){
                 handler->DoPost(pss->http_request, pss->http_response);
 
                 switch(WriteHttpResponseHeader( wsi, pss->http_response )) {
                     case SendResult::SUCCESS:
+                        // Sent HttpResponse header successfully
+                        pss->http_response->SetHeaderSent();
                         // book us a LWS_CALLBACK_HTTP_WRITEABLE callback
                         lws_callback_on_writable(wsi);
                         return 0;
@@ -452,7 +466,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             WSInternalHandlerConfig *handler;
             LOG(INFO) << "LWS_CALLBACK_ESTABLISHED";
 
-            WS_GET_WEBSOCKETHANDLER
+            INTERNAL__GET_WEBSOCKETHANDLER 
             handler->CreateHandlerRuntime(sockid, wsi);
             handler->OnConnect(sockid);
         }
@@ -464,7 +478,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             WSInternalHandlerConfig *handler;
             LOG(INFO) << __FUNCTION__ << "LWS_CALLBACK_CLOSED";
 
-            WS_GET_WEBSOCKETHANDLER
+            INTERNAL__GET_WEBSOCKETHANDLER
             handler->OnDisconnect(sockid);
 
             for(int index = 0; index < MAX_RINGBUFFER_QUEUE; index++)
@@ -479,7 +493,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             std::string message_to_peer;
             int     num_sent,message_length;
             
-            WS_GET_WEBSOCKETHANDLER
+            INTERNAL__GET_WEBSOCKETHANDLER
 
             if( handler->DequeueMessage(sockid, message_to_peer) ) {
                 // reset ringbuffer slot used previously
@@ -490,11 +504,12 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 
                 message_length =  message_to_peer.length();
                 pss->ring_buffer[pss->ring_buffer_index].payload = 
-                    malloc(LWS_PRE_SIZE + message_length);
+                    (char *)malloc(LWS_PRE_SIZE + message_length);
                 pss->ring_buffer[pss->ring_buffer_index].len = 
                     message_length;
-                memcpy( (char *)(pss->ring_buffer[pss->ring_buffer_index].payload + 
-                            LWS_PRE_SIZE), message_to_peer.c_str(), message_length );
+                memcpy( pss->ring_buffer[pss->ring_buffer_index].payload + 
+                        LWS_PRE_SIZE, 
+                        message_to_peer.c_str(), message_length );
 
                 num_sent = lws_write(wsi, (unsigned char *)
                         pss->ring_buffer[pss->ring_buffer_index].payload +
@@ -521,7 +536,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 	case LWS_CALLBACK_RECEIVE:
         {
             WSInternalHandlerConfig *handler;
-            WS_GET_WEBSOCKETHANDLER
+            INTERNAL__GET_WEBSOCKETHANDLER
 
             if ( handler->OnMessage(sockid,std::string((const char *)in)) == false ){
                 lws_close_reason (wsi, LWS_CLOSE_STATUS_NORMAL, nullptr, 0);
@@ -547,7 +562,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             lws_hdr_copy(wsi, pss->uri_path, sizeof(pss->uri_path), WSI_TOKEN_GET_URI);
 
             // check whether requested uri is in the he handler config
-            if( WS_SERVER_INSTANCE->IsValidWSPath(pss->uri_path) ) 
+            if( INTERNAL__GET_WSSINSTANCE ->IsValidWSPath(pss->uri_path) ) 
 		        LOG(INFO) << "URI Path exist " <<  pss->uri_path;
             else {
 		        LOG(LS_ERROR) << "URI Path does not exist "
