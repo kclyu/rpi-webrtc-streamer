@@ -62,6 +62,31 @@ def Parse_Defines(contents):
 
 
 """
+Fiter 'ccflags' from ccflags in ninja build
+"""
+def Fiter_CCflags(ccflags_lists):
+    """
+    """
+    filtered_ccflags_lists =  []
+    """
+    base filtering and rule matching patterns
+    """
+    include_system_str = "-isystem"
+
+    for index,inc in enumerate(ccflags_lists):
+        # print("Index : %d, Include: %s" % (index, inc ))
+        ### replacing rules
+        if inc.find(include_system_str) != -1:
+            isystem_dir = inc[len("-isystem"):]   
+            gen_relpath = "".join(os.path.relpath(webrtc_build_path+'/'+isystem_dir))
+            filtered_ccflags_lists.append("-isystem" + gen_relpath)
+            continue
+        ### ending rule
+        filtered_ccflags_lists.append(inc)
+
+    return filtered_ccflags_lists
+
+"""
 Parse 'ccflags' from ninja build file and print 
 """
 def Parse_CCflags(contents):
@@ -76,6 +101,8 @@ def Parse_CCflags(contents):
     splited = filter(lambda a: a != '', splited)
     splited.pop(0)   # remove define word
     splited.pop(0)   # remove = character
+    # running include fillter 
+    splited = Fiter_CCflags(splited)
     print('%s' % " ".join(str(x) for x in splited))
 
 
@@ -145,7 +172,7 @@ Parse 'include_dirs' from ninja build file and print
 """
 def Parse_Includes(contents):
     regex = re.compile(r'\binclude_dirs\b\s*=.*\n', re.M)
-    sp = re.compile(r'[\s$]')
+    sp = re.compile(r'[\s\$]')
     
     matched_ = regex.search(contents)
     if matched_ == None:
@@ -165,7 +192,7 @@ Parse 'libs' from ninja build file and print
 def Parse_Libs(contents):
     # build peerconnection_client: link $
     regex = re.compile(r'build ./peerconnection_client: link .*\n', re.M)
-    sp = re.compile(r'[\s+$]')
+    sp = re.compile(r'[\s\$]')
     libs = re.compile(r'.\.[ao]$')
 
     matched_ = regex.search(contents)
