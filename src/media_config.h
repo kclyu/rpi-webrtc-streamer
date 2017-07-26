@@ -30,11 +30,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef DEFAULT_CONFIG_
 #define DEFAULT_CONFIG_
 
-#include "webrtc/base/checks.h"
+#include "webrtc/rtc_base/checks.h"
 
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/optionsfile.h"
-#include "webrtc/base/pathutils.h"
+#include "webrtc/rtc_base/fileutils.h"
+#include "webrtc/rtc_base/optionsfile.h"
+#include "webrtc/rtc_base/pathutils.h"
 
 //
 // The config part for global config is required.

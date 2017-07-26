@@ -4,7 +4,7 @@
 # See "gn args <out_dir> --list" for available build arguments.
 
 is_component_build=false
-#is_official_build=true
+is_official_build=true
 #is_debug=true
 
 host_toolchain="//build/toolchain/linux:arm"
@@ -33,7 +33,9 @@ use_ozone=true
 is_desktop_linux=false
 
 #
-#
+# Uncomment this when you want to use internal libcxx of 
+# WebRTC native package (default is true)
+#use_custom_libcxx=false    
 is_chrome_branded=true
 rtc_build_with_neon=true
 enable_nacl=false

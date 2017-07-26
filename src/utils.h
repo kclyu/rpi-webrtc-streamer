@@ -15,9 +15,9 @@
 #include <assert.h>
 #include <string>
 
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/filerotatingstream.h"
-#include "webrtc/base/logsinks.h"
+#include "webrtc/rtc_base/fileutils.h"
+#include "webrtc/rtc_base/filerotatingstream.h"
+#include "webrtc/rtc_base/logsinks.h"
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(x) (sizeof(x) / sizeof(x[0]))

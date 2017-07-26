@@ -22,14 +22,14 @@
 #include <string>
 #include <iostream>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
 
-#include "webrtc/base/stringutils.h"
-#include "webrtc/base/stringencode.h"
-#include "webrtc/base/filerotatingstream.h"
-#include "webrtc/base/pathutils.h"
-#include "webrtc/base/logsinks.h"
+#include "webrtc/rtc_base/stringutils.h"
+#include "webrtc/rtc_base/stringencode.h"
+#include "webrtc/rtc_base/filerotatingstream.h"
+#include "webrtc/rtc_base/pathutils.h"
+#include "webrtc/rtc_base/logsinks.h"
 
 #include "utils.h"
 

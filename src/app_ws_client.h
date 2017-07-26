@@ -36,11 +36,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/api/mediastreaminterface.h"
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/base/json.h"
+#include "webrtc/rtc_base/json.h"
 
-#include "webrtc/base/fileutils.h"
-#include "webrtc/base/optionsfile.h"
-#include "webrtc/base/pathutils.h"
+#include "webrtc/rtc_base/fileutils.h"
+#include "webrtc/rtc_base/optionsfile.h"
+#include "webrtc/rtc_base/pathutils.h"
 
 #include "websocket_server.h"
 #include "streamer_observer.h"

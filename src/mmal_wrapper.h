@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __MMAL_WRAPPER_H__
 
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/base/criticalsection.h"
-#include "webrtc/base/sequenced_task_checker.h"
+#include "webrtc/rtc_base/criticalsection.h"
+#include "webrtc/rtc_base/sequenced_task_checker.h"
 #include "mmal_encoder.h"
 
 namespace webrtc {

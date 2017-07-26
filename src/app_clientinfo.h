@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <list>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/helpers.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/helpers.h"
 #include "webrtc/system_wrappers/include/clock.h"
 
 #ifndef APP_CLINETINFO_H_

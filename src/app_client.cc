@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <vector>
 
-#include "webrtc/base/stringencode.h"
+#include "webrtc/rtc_base/stringencode.h"
 #include "websocket_server.h"
 #include "app_client.h"
 #include "utils.h"

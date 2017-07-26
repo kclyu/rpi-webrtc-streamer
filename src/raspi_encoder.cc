@@ -31,9 +31,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <string>
 
-#include "webrtc/base/checks.h"
-#include "webrtc/base/logging.h"
-#include "webrtc/base/thread.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#include "webrtc/rtc_base/thread.h"
 #include "webrtc/common_video/libyuv/include/webrtc_libyuv.h"
 #include "webrtc/media/base/mediaconstants.h"
 #include "webrtc/system_wrappers/include/metrics.h"
@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/common_video/h264/h264_common.h"
 #include "webrtc/common_video/h264/profile_level_id.h"
 
-#include "webrtc/base/platform_thread.h"
+#include "webrtc/rtc_base/platform_thread.h"
 
 #include "raspi_encoder.h"
 #include "media_config.h"

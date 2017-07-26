@@ -24,21 +24,21 @@
 #include <iostream>
 #include <vector>
 
-#include "webrtc/base/network.h"
-#include "webrtc/base/nethelpers.h"
-#include "webrtc/base/networkmonitor.h"
-#include "webrtc/base/physicalsocketserver.h"
-#include "webrtc/base/signalthread.h"
-#include "webrtc/base/sigslot.h"
-#include "webrtc/base/ssladapter.h"
+#include "webrtc/rtc_base/network.h"
+#include "webrtc/rtc_base/nethelpers.h"
+#include "webrtc/rtc_base/networkmonitor.h"
+#include "webrtc/rtc_base/physicalsocketserver.h"
+#include "webrtc/rtc_base/signalthread.h"
+#include "webrtc/rtc_base/sigslot.h"
+#include "webrtc/rtc_base/ssladapter.h"
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>
 #include <net/if.h>
-#include "webrtc/base/ifaddrs_converter.h"
+#include "webrtc/rtc_base/ifaddrs_converter.h"
 #endif  // defined(WEBRTC_POSIX)
 
 
-#include "webrtc/base/flags.h"
+#include "webrtc/rtc_base/flags.h"
 
 #include "websocket_server.h"
 #include "app_channel.h"

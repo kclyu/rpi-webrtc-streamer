@@ -34,8 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <vector>
 
-#include "webrtc/base/network.h"
-#include "webrtc/base/pathutils.h"
+#include "webrtc/rtc_base/network.h"
+#include "webrtc/rtc_base/pathutils.h"
 
 #include "websocket_server.h"
 #include "../lib/private-libwebsockets.h"

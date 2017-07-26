@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 
 #include "webrtc/common_types.h"
-#include "webrtc/base/optional.h"
+#include "webrtc/rtc_base/optional.h"
 
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/modules/video_coding/utility/moving_average.h"

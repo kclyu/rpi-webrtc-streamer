@@ -34,10 +34,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/base/platform_thread.h"
+#include "webrtc/rtc_base/platform_thread.h"
 #include "webrtc/modules/video_coding/include/video_codec_interface.h"
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/base/messagequeue.h"
+#include "webrtc/rtc_base/messagequeue.h"
 
 #include "h264bitstream_parser.h"
 
