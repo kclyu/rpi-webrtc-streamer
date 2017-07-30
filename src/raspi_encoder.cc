@@ -342,7 +342,6 @@ bool RaspiEncoderImpl::DrainThread(void* obj)
 
 bool RaspiEncoderImpl::DrainProcess()
 {
-    int32_t callback_status = 0;
     MMAL_BUFFER_HEADER_T *buf = nullptr;
 
     // If there is no frame yet, wait for the specified time. 
@@ -355,11 +354,9 @@ bool RaspiEncoderImpl::DrainProcess()
     if (encoded_image_callback_ && buf && buf->length > 0 ) {
         CodecSpecificInfo codec_specific;
         uint32_t fragment_index;
-        std::vector<NalUnit> nal_unit_list;
-        int qp;
+        // int qp;
 
-        // If the native stack is not yet ready to receive an encoded frame, 
-        // it will not pass the frame.
+        // If the native stack is not ready to receive encoded frame, frame will be dropped.
         if( start_encoding_ == false ) {
             if( buf ) mmal_encoder_->ReturnToPool(buf);
             return true;
@@ -369,9 +366,18 @@ bool RaspiEncoderImpl::DrainProcess()
         RTPFragmentationHeader frag_header;
         memset( &frag_header, 0x00, sizeof(frag_header));
 
-        h264_stream_parser_.ParseBitstream(buf->data, buf->length, &nal_unit_list);
+        // Parsing h264 frame
+        // h264_bitstream_parser_.ParseBitstream(buf->data, buf->length);
+        // RWS do not use QP based quality scale of WebRTC native package
+        // if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
+        //    encoded_image_.qp_ = qp;
+        // };
 
-        if ( nal_unit_list.size() == 0 ) {
+        // Search the NAL unit in the stream
+        const std::vector<webrtc::H264::NaluIndex> nalu_indexes=
+            webrtc::H264::FindNaluIndices(buf->data, buf->length);
+
+        if ( nalu_indexes.empty() ) {
             // could not find the nal unit in the buffer, so do nothing.
             LOG(INFO) <<  "NAL unit length is zero!!!" ;
             if( buf ) mmal_encoder_->ReturnToPool(buf);
@@ -407,13 +413,18 @@ bool RaspiEncoderImpl::DrainProcess()
         // encoded_image->_buffer which is filled by MMAL encoder.
         // Fragmentize will count the nal start code in the encoded_image and
         // will mark the the frag_header for fragmentation.
-        frag_header.VerifyAndAllocateFragmentationHeader(nal_unit_list.size());
+        frag_header.VerifyAndAllocateFragmentationHeader(nalu_indexes.size());
 
         fragment_index = 0;
-        for( std::vector<NalUnit>::const_iterator it =  nal_unit_list.begin();
-                it != nal_unit_list.end(); it++, fragment_index++ ) {
-            frag_header.fragmentationOffset[fragment_index] = it->offset_;
-            frag_header.fragmentationLength[fragment_index] = it->length_;
+        for( std::vector<webrtc::H264::NaluIndex>::const_iterator it 
+                =  nalu_indexes.begin();
+                it != nalu_indexes.end(); it++, fragment_index++ ) {
+            frag_header.fragmentationOffset[fragment_index] 
+                = nalu_indexes[fragment_index].payload_start_offset;
+            frag_header.fragmentationLength[fragment_index] 
+                = nalu_indexes[fragment_index].payload_size;
+            frag_header.fragmentationPlType[fragment_index] = 0;
+            frag_header.fragmentationTimeDiff[fragment_index] = 0;
         }
 
         codec_specific.codecType = kVideoCodecH264;

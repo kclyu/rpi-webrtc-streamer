@@ -4,7 +4,6 @@
 include ../mk/cross_arm_build.mk
 include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk
-include ../mk/h264bitstream_arm_build.mk
 
 RWS_INSTALL_DIR=\"/opt/rws\"
 RWS_VERSION=\"$(shell git describe --abbrev=8 --dirty --always --tags)\"
@@ -44,9 +43,9 @@ TARGET = ../webrtc-streamer
 #
 SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc \
 	app_channel.cc  direct_socket.cc streamer_observer.cc streamer.cc \
-	streamer_config.cc main.cc raspi_encoder.cc mmal_wrapper.cc \
-	h264bitstream_parser.cc utils.cc raspi_quality_config.cc file_logger.cc \
-	media_config.cc  app_ws_client.cc app_client.cc
+	streamer_config.cc main.cc raspi_encoder.cc mmal_wrapper.cc utils.cc \
+	raspi_quality_config.cc file_logger.cc  media_config.cc  app_ws_client.cc app_client.cc
+
 SOURCES.C = websocket_server_util.c mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c \
 	raspicamcontrol.c raspipreview.c 
 

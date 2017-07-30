@@ -39,9 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/media/engine/webrtcvideoencoderfactory.h"
 #include "webrtc/rtc_base/messagequeue.h"
 
-#include "h264bitstream_parser.h"
-
-
 #include "mmal_wrapper.h"
 #include "raspi_quality_config.h"
 
@@ -114,7 +111,7 @@ private:
     EncodedImage encoded_image_;
 
     // H264 bitstream parser, used to extract QP from encoded bitstreams.
-    H264StreamParser h264_stream_parser_;
+    // webrtc::H264BitstreamParser h264_bitstream_parser_;
 
     Clock* const clock_;
     const int64_t delta_ntp_internal_ms_;
