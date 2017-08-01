@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/system_wrappers/include/clock.h"
 #include "webrtc/rtc_base/criticalsection.h"
 #include "webrtc/rtc_base/sequenced_task_checker.h"
+#include "webrtc/rtc_base/event.h"
 #include "mmal_encoder.h"
 
 namespace webrtc {
@@ -45,7 +46,8 @@ namespace webrtc {
 // Frame Queue
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-class FrameQueue {
+
+class FrameQueue : public rtc::Event {
 private:
     int num_, size_;
 
@@ -60,6 +62,8 @@ private:
     uint32_t	frame_count_;
     uint32_t	frame_drop_;
     uint32_t	frame_queue_drop_;
+
+    static int  kEventWaitPeriod;    // minimal wait period between frame
 
 public:
     FrameQueue();

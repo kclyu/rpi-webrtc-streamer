@@ -344,12 +344,6 @@ bool RaspiEncoderImpl::DrainProcess()
 {
     MMAL_BUFFER_HEADER_T *buf = nullptr;
 
-    // If there is no frame yet, wait for the specified time. 
-    // If you return right here, it actually becomes busy waiting up to this point.
-    while( mmal_encoder_->Length() == 0 ) {
-        usleep(500);
-    }
-
     buf = mmal_encoder_->DequeueFrame();
     if (encoded_image_callback_ && buf && buf->length > 0 ) {
         CodecSpecificInfo codec_specific;
@@ -367,8 +361,9 @@ bool RaspiEncoderImpl::DrainProcess()
         memset( &frag_header, 0x00, sizeof(frag_header));
 
         // Parsing h264 frame
-        // h264_bitstream_parser_.ParseBitstream(buf->data, buf->length);
         // RWS do not use QP based quality scale of WebRTC native package
+        //
+        // h264_bitstream_parser_.ParseBitstream(buf->data, buf->length);
         // if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
         //    encoded_image_.qp_ = qp;
         // };
@@ -441,8 +436,6 @@ bool RaspiEncoderImpl::DrainProcess()
     }
 
     if( buf ) mmal_encoder_->ReturnToPool(buf);
-    if( mmal_encoder_->Length() == 0 ) usleep(1000);
-
     // TODO: if encoded_size is zero, we need to reset encoder itself
     return true;
 }

@@ -50,8 +50,10 @@ MMALEncoderWrapper* getMMALEncoderWrapper() {
 // Frame Queue
 //
 ////////////////////////////////////////////////////////////////////////////////////////
+int  FrameQueue::kEventWaitPeriod = 3;    // minimal wait period between frame
+
 FrameQueue::FrameQueue() 
-    : num_(FRAME_QUEUE_LENGTH), size_(FRAME_BUFFER_SIZE),
+    : Event(false,false), num_(FRAME_QUEUE_LENGTH), size_(FRAME_BUFFER_SIZE),
     encoded_frame_queue_(nullptr), pool_internal_(nullptr), 
     keyframe_buf_(nullptr), frame_buf_(nullptr),
     frame_buf_pos_(0), frame_segment_cnt_(0), inited_(false), frame_count_(0),
@@ -125,6 +127,7 @@ void FrameQueue::QueueingFrame( MMAL_BUFFER_HEADER_T *buffer ) {
 
 MMAL_BUFFER_HEADER_T *FrameQueue::DequeueFrame() {
     RTC_DCHECK(inited_);
+    Wait(kEventWaitPeriod);    // Waiting for Event or Timeout
     return mmal_queue_get(encoded_frame_queue_);
 }
 
@@ -179,6 +182,7 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
                 frame_segment_cnt_  = frame_buf_pos_ = 0;
                 // one frame done
                 mmal_queue_put( encoded_frame_queue_, frame);
+                Set();  // Wakeup DrainThread within Wait
             }
             else {
                 frame_drop_ ++;
