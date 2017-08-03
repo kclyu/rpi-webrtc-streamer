@@ -8,4 +8,5 @@ target_cpu = "arm"
 rtc_include_tests=false
 enable_nocompile_tests=true
 libyuv_include_tests=false
+enable_iterator_debugging=false
 

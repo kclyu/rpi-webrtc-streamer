@@ -6,6 +6,7 @@
 is_component_build=false
 is_official_build=true
 #is_debug=true # enable debug
+enable_iterator_debugging=false
 
 host_toolchain="//build/toolchain/linux:arm"
 is_clang=false
