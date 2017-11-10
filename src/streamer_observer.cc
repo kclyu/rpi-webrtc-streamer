@@ -45,6 +45,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "utils.h"
 
 #include "streamer_observer.h"
+#include "raspi_motion.h"
+#include "config_motion.h"
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -129,6 +131,10 @@ StreamerProxy *StreamerProxy::GetInstance() {
         streamer_proxy_->active_peer_id_ = 0;
         streamer_proxy_->streamer_callback_ = nullptr;
         streamer_proxy_->active_socket_observer_  = nullptr;
+        if(config_motion::motion_detection_enable == true) {
+            streamer_proxy_->raspi_motion_.reset(new RaspiMotion());
+            streamer_proxy_->raspi_motion_->StartCapture();
+        }
     }
     return streamer_proxy_;
 }
@@ -163,6 +169,12 @@ bool StreamerProxy::ObtainStreamer(SocketServerObserver *socket_server,
         return false;
     }
     else {
+        if(config_motion::motion_detection_enable == true) {
+            if( streamer_proxy_->raspi_motion_ && 
+                streamer_proxy_->raspi_motion_->IsActive() ) {
+                streamer_proxy_->raspi_motion_->StopCapture();
+            }
+        }
         active_peer_id_ = peer_id;
         active_socket_observer_ = socket_server;
         streamer_callback_->OnPeerConnected(peer_id, name );
@@ -179,6 +191,12 @@ bool StreamerProxy::ObtainStreamer(SocketServerObserver *socket_server,
         return false;
     }
     else {
+        if(config_motion::motion_detection_enable == true) {
+            if( streamer_proxy_->raspi_motion_ && 
+                streamer_proxy_->raspi_motion_->IsActive() ) {
+                streamer_proxy_->raspi_motion_->StopCapture();
+            }
+        }
         active_peer_id_ = peer_id;
         active_socket_observer_ = socket_server;
         streamer_callback_->OnMessageFromPeer(peer_id, message );
@@ -192,6 +210,14 @@ void StreamerProxy::ReleaseStreamer(SocketServerObserver *socket_server, int pee
         active_socket_observer_ = nullptr;
         active_peer_id_ = 0;
         streamer_callback_->OnPeerDisconnected(peer_id);
+
+        if(config_motion::motion_detection_enable == true) {
+            if( streamer_proxy_->raspi_motion_ && 
+                streamer_proxy_->raspi_motion_->IsActive() == false ) {
+                streamer_proxy_->raspi_motion_.reset(new RaspiMotion());
+                streamer_proxy_->raspi_motion_->StartCapture();
+            }
+        }
     }
 }
 

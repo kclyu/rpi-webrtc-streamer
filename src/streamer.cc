@@ -39,8 +39,8 @@
 
 #include "streamer.h"
 #include "streamer_observer.h"
-#include "streamer_config.h"
-#include "media_config.h"
+#include "config_streamer.h"
+#include "config_media.h"
 
 
 using webrtc::PeerConnectionInterface;
@@ -160,7 +160,7 @@ void Streamer::UpdateMaxBitrate() {
                  }
                  else {
                      encoding.max_bitrate_bps 
-                         = rtc::Optional<int>(media_config::max_bitrate);
+                         = rtc::Optional<int>(config_media::max_bitrate);
                      LOG(INFO) << "Changing Max Bitrate Bps: " << *encoding.max_bitrate_bps;
                      sender->SetParameters(parameters);
                      return;
@@ -410,17 +410,17 @@ void Streamer::AddStreams() {
         return;  // Already added.
 
     cricket::AudioOptions options;
-    if( media_config::audio_processing_enable == true ) {
-        if( media_config::audio_echo_cancel == true ) 
+    if( config_media::audio_processing_enable == true ) {
+        if( config_media::audio_echo_cancel == true ) 
             options.echo_cancellation = rtc::Optional<bool>(true);
-        if( media_config::audio_gain_control == true ) 
+        if( config_media::audio_gain_control == true ) 
             options.auto_gain_control = rtc::Optional<bool>(true);
-        if( media_config::audio_highpass_filter == true ) 
+        if( config_media::audio_highpass_filter == true ) 
             options.highpass_filter = rtc::Optional<bool>(true);
-        if( media_config::audio_noise_suppression == true ) 
+        if( config_media::audio_noise_suppression == true ) 
             options.noise_suppression = rtc::Optional<bool>(true);
     };
-    if( media_config::audio_level_control == true ) 
+    if( config_media::audio_level_control == true ) 
             options.level_control = rtc::Optional<bool>(true);
 
     LOG(INFO) << "Audio options: " << options.ToString();

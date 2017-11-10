@@ -27,40 +27,30 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory>
+#include <limits>
 #include <string>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <stdio.h>
+
+#ifdef __STANDALONE__
+#include <type_traits>
+#include <glog/logging.h>
+#define RTC_DCHECK CHECK
+#else
+#include "webrtc/common_types.h"
+#include "webrtc/rtc_base/checks.h"
+#include "webrtc/rtc_base/logging.h"
+#endif
+
 #include <list>
-#include <deque>
+#include <vector>
 
+#include "raspi_motionblobid.h"
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/json.h"
-
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/pathutils.h"
-
-#include "websocket_server.h"
-#include "app_client.h"
-#include "app_ws_client.h"
-#include "config_streamer.h"
-
-#ifndef APP_CHANNEL_H_
-#define APP_CHANNEL_H_
-
-class AppChannel : public LibWebSocketServer {
-public:
-    explicit AppChannel();
-    ~AppChannel();
-    bool AppInitialize(StreamerConfig& config);
-
-private:
-    bool is_inited_;
-    AppWsClient ws_client_;
-    AppClient app_client_;
-};
-
-#endif // APP_CHANNEL_H_
+static const uint16_t BLOB_ID_NOT_USED = 0;  // not used for blob id
+static const uint16_t BLOB_ID_CRUMBS = 1;  // used for bread crumbs
+static const uint16_t BLOB_ID_MIN = 2;
+static const uint16_t BLOB_ID_MAX = std::numeric_limits<uint16_t>::max();
 

@@ -15,8 +15,6 @@
 
 #include "mmal_encoder.h"
 
-static const int MAX_BITRATE = 25000000; // 25Mbits/s
-
 
 /**
  * Reset the camera component, set up its ports
@@ -42,7 +40,7 @@ MMAL_STATUS_T reset_camera_component(RASPIVID_STATE *state)
         camera = state->camera_component;
     }
 
-#ifdef __NOT_REQURED__
+#ifdef __NOT_REQUIRED_IN_RESET__
     status = raspicamcontrol_set_stereo_mode(camera->output[0], &state->camera_parameters.stereo_mode);
     status += raspicamcontrol_set_stereo_mode(camera->output[1], &state->camera_parameters.stereo_mode);
     status += raspicamcontrol_set_stereo_mode(camera->output[2], &state->camera_parameters.stereo_mode);
@@ -79,12 +77,12 @@ MMAL_STATUS_T reset_camera_component(RASPIVID_STATE *state)
         goto error;
     }
 
-#endif	/* NOT_REQUIRED */
+#endif	/* __NOT_REQUIRED_IN_RESET__ */
     preview_port = camera->output[MMAL_CAMERA_PREVIEW_PORT];
     video_port = camera->output[MMAL_CAMERA_VIDEO_PORT];
     still_port = camera->output[MMAL_CAMERA_CAPTURE_PORT];
 
-#ifdef __NOT_REQURED__
+#ifdef __NOT_REQUIRED_IN_RESET__
     if (state->settings)
     {
         MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T change_event_request =
@@ -98,7 +96,7 @@ MMAL_STATUS_T reset_camera_component(RASPIVID_STATE *state)
             vcos_log_error("No camera settings events");
         }
     }
-#endif	/* NOT_REQUIRED */
+#endif	/* __NOT_REQUIRED_IN_RESET__ */
 
     //
     mmal_encoder_set_camera_settings(camera);
@@ -291,9 +289,11 @@ error:
 MMAL_STATUS_T reset_encoder_component(RASPIVID_STATE *state)
 {
     MMAL_COMPONENT_T *encoder = 0;
-    MMAL_PORT_T *encoder_input = NULL, *encoder_output = NULL;
     MMAL_STATUS_T status;
+#ifdef __NOT_REQUIRED_IN_RESET__
+    MMAL_PORT_T *encoder_input = NULL, *encoder_output = NULL;
     MMAL_POOL_T *pool;
+#endif	/* __NOT_REQUIRED_IN_RESET__ */
 
 
     // Get the encoder component
@@ -305,7 +305,7 @@ MMAL_STATUS_T reset_encoder_component(RASPIVID_STATE *state)
         encoder = state->encoder_component;
     }
 
-#ifdef __NOT_REQURED__
+#ifdef __NOT_REQUIRED_IN_RESET__
     if (!encoder->input_num || !encoder->output_num)
     {
         status = MMAL_ENOSYS;
@@ -474,7 +474,7 @@ MMAL_STATUS_T reset_encoder_component(RASPIVID_STATE *state)
             goto error;
         }
     }
-#endif	/* NOT_REQUIRED */
+#endif	/* __NOT_REQUIRED_IN_RESET__ */
 
     //  Enable component
     status = mmal_component_enable(encoder);
@@ -485,7 +485,7 @@ MMAL_STATUS_T reset_encoder_component(RASPIVID_STATE *state)
         goto error;
     }
 
-#ifdef __NOT_REQURED__
+#ifdef __NOT_REQUIRED_IN_RESET__
     /* Create pool of buffer headers for the output port to consume */
     pool = mmal_port_pool_create(encoder_output, encoder_output->buffer_num, encoder_output->buffer_size);
 
@@ -496,7 +496,7 @@ MMAL_STATUS_T reset_encoder_component(RASPIVID_STATE *state)
 
     state->encoder_pool = pool;
     state->encoder_component = encoder;
-#endif	/* NOT_REQUIRED */
+#endif	/* __NOT_REQUIRED_IN_RESET__ */
 
     return status;
 

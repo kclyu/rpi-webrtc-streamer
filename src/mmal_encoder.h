@@ -89,6 +89,8 @@ typedef struct RASPIVID_STATE_S RASPIVID_STATE;
 /// Video render needs at least 2 buffers.
 #define VIDEO_OUTPUT_BUFFERS_NUM 3
 
+#define VIDEO_INTRAFRAME_PERIOD 3       /// 3 seconds
+
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Structre from RaspiVid.c to share with warpper class
@@ -119,14 +121,14 @@ struct RASPIVID_STATE_S
     MMAL_FOURCC_T encoding;             /// Requested codec video encoding (MJPEG or H264)
     int bitrate;                        /// Requested bitrate
     int framerate;                      /// Requested frame rate (fps)
-    int intraperiod;                    /// Intra-refresh period (key frame rate)
+    int intraPeriod;             /// Intra-refresh period (key frame rate)
     int quantisationParameter;          /// Quantisation parameter - quality. Set bitrate 0 and set this for variable bitrate
     int quantisationInitialParameter;   // Initial quantization parameter
     int quantisationMaxParameter;       /// Maximum quantization parameter
     int quantisationMinParameter;       /// Minimum quantization parameter
     // this is
     int videoRateControl;				/// Video Rate Control
-    int bInlineHeaders;                  /// Insert inline headers to stream (SPS, PPS)
+    int bInlineHeaders;                 /// Insert inline headers to stream (SPS, PPS)
     int verbose;                        /// !0 if want detailed run information
     int immutableInput;                 /// Flag to specify whether encoder works in place or creates a new buffer. Result is preview can display either
     /// the camera output or the encoder output (with compression artifacts)
@@ -140,16 +142,17 @@ struct RASPIVID_STATE_S
     MMAL_CONNECTION_T *preview_connection; /// Pointer to the connection from camera to preview
     MMAL_CONNECTION_T *encoder_connection; /// Pointer to the connection from camera to encoder
 
-    MMAL_POOL_T *encoder_pool; /// Pointer to the pool of buffers used by encoder output port
+    MMAL_POOL_T *encoder_pool;          /// Pointer to the pool of buffers used by encoder output port
 
     PORT_USERDATA callback_data;        /// Used to move data to the encoder callback
 
     int bCapturing;                     /// State of capture/pause
+    int bInlineMotionVector;            /// Encoder outputs inline Motion Vectors
 
-    int cameraNum;                       /// Camera number
-    int settings;                        /// Request settings from the camera
-    int sensor_mode;			            /// Sensor mode. 0=auto. Check docs/forum for modes selected by other values.
-    int intra_refresh_type;              /// What intra refresh type to use. -1 to not set.
+    int cameraNum;                      /// Camera number
+    int settings;                       /// Request settings from the camera
+    int sensor_mode;			        /// Sensor mode. 0=auto. Check docs/forum for modes selected by other values.
+    int intra_refresh_type;             /// What intra refresh type to use. -1 to not set.
 };
 
 

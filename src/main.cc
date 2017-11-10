@@ -45,9 +45,11 @@
 
 #include "streamer_observer.h"
 #include "direct_socket.h"
-#include "streamer_config.h"
-#include "media_config.h"
+#include "config_streamer.h"
+#include "config_media.h"
+#include "config_motion.h"
 #include "streamer.h"
+#include "raspi_motion.h"
 #include "utils.h"
 #include "file_logger.h"
 
@@ -93,11 +95,12 @@ DEFINE_string(log, "log", "directory for logging message");
 DEFINE_bool(licenses, false, "print the LICENSE information");
 DEFINE_bool(version, false, "print the Version information");
 
+
 //
 // Main
 //
 int main(int argc, char** argv) {
-    std::string media_config;
+    std::string config_filename;
     std::string baselog_dir;
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
 
@@ -151,13 +154,21 @@ int main(int argc, char** argv) {
         }
     }
 
-    if( streamer_config.GetMediaConfig(media_config) == true ) {
-        if( media_config::config_load(media_config) == false ) {
-            LOG(LS_WARNING) << "Failed to load config options:" << media_config;
+    if( streamer_config.GetMediaConfig(config_filename) == true ) {
+        if( config_media::config_load(config_filename) == false ) {
+            LOG(LS_WARNING) << "Failed to load media option config file:" 
+                << config_filename;
         }
-        LOG(INFO) << "Using Media Config file: " << media_config;
+        LOG(INFO) << "Using Media Config file: " << config_filename;
     };
-
+    if( streamer_config.GetMotionConfig(config_filename) == true ) {
+        if( config_motion::config_load(config_filename) == false ) {
+            LOG(LS_WARNING) << "Failed to load motion option config file:" 
+                << config_filename;
+        }
+        LOG(INFO) << "Using Motion Config file: " << config_filename;
+    };
+    
     std::unique_ptr<DirectSocketServer> direct_socket_server;
     std::unique_ptr<AppChannel> app_channel;
 

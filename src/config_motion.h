@@ -27,40 +27,42 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory>
-#include <string>
-#include <list>
-#include <deque>
+#ifndef CONFIG_MOTION_H_
+#define CONFIG_MOTION_H_
+
+#include "webrtc/rtc_base/checks.h"
 
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/json.h"
+//
+// The config part for global config is required.
+//
+namespace config_motion {
+    extern bool motion_detection_enable;
+    extern int motion_width;
+    extern int motion_height;
+    extern int motion_fps;
+    extern int motion_bitrate;
+    extern int motion_clear_percent;
+    extern int motion_clear_wait_period;
 
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/pathutils.h"
+    extern std::string motion_directory;
+    extern std::string motion_file_prefix;
 
-#include "websocket_server.h"
-#include "app_client.h"
-#include "app_ws_client.h"
-#include "config_streamer.h"
+    extern int motion_file_size_limit; // K bytes
+    extern bool motion_save_imv_file;
 
-#ifndef APP_CHANNEL_H_
-#define APP_CHANNEL_H_
+    extern bool motion_enable_annotate_text;
+    extern std::string motion_annotate_text;
+    extern int motion_annotate_text_size;
 
-class AppChannel : public LibWebSocketServer {
-public:
-    explicit AppChannel();
-    ~AppChannel();
-    bool AppInitialize(StreamerConfig& config);
+    extern float blob_cancel_threshold;
+    extern int blob_tracking_threshold;
 
-private:
-    bool is_inited_;
-    AppWsClient ws_client_;
-    AppClient app_client_;
-};
+    extern int motion_file_total_size_limit; // Mbytes
 
-#endif // APP_CHANNEL_H_
+    bool config_load(const std::string config_filename);
 
+}   // media config name_space
+
+
+#endif  // CONFIG_MOTION_H_

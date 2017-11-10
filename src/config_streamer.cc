@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/rtc_base/arraysize.h"
 #include "webrtc/rtc_base/fileutils.h"
 
-#include "streamer_config.h"
+#include "config_streamer.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default Values
@@ -50,6 +50,7 @@ static const uint16_t kDefaultWebSocketPort = 8889;
 static const uint16_t kDefaultDirectSocketPort = 8888; 
 static const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
 static const char kDefaultMediaConfig[] = "etc/media_config.conf";
+static const char kDefaultMotionConfig[] = "etc/motion_config.conf";
 
 static const char kDefaultWebRoot[] = INSTALL_DIR "/web-root";
 static const char kDefaultRoomId[] = "123456789";
@@ -66,6 +67,7 @@ static const char kConfigWebSocketPort[] = "websocket_port";
 static const char kConfigDirectSocketEnable[] = "direct_socket_enable";
 static const char kConfigDirectSocketPort[] = "direct_socket_port";
 static const char kConfigMediaConfig[] = "media_config";
+static const char kConfigMotionConfig[] = "motion_config";
 static const char kConfigDisableLogBuffering[] = "disable_log_buffering";
 static const char kConfigRWS_WS_URL[] = "rws_ws_url";
 static const char kConfigAdditionalWSRule[] = "additional_ws_rule";
@@ -317,6 +319,17 @@ bool StreamerConfig::GetMediaConfig(std::string& conf) {
     RTC_DCHECK( config_loaded_ == true );
     // default media config value is "etc/media_config.conf"
     if( config_->GetStringValue(kConfigMediaConfig, &conf ) == true ) {
+        conf = config_dir_basename_ + conf;
+        return true;
+    }
+    conf = config_dir_basename_ + kDefaultMediaConfig;
+    return false;
+}
+
+bool StreamerConfig::GetMotionConfig(std::string& conf) {
+    RTC_DCHECK( config_loaded_ == true );
+    // default media config value is "etc/motion_config.conf"
+    if( config_->GetStringValue(kConfigMotionConfig, &conf ) == true ) {
         conf = config_dir_basename_ + conf;
         return true;
     }

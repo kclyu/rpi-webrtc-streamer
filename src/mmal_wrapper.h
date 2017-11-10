@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace webrtc {
 
+
 #define FRAME_BUFFER_SIZE	65536*2
 #define FRAME_QUEUE_LENGTH 5
 
@@ -48,7 +49,32 @@ namespace webrtc {
 ////////////////////////////////////////////////////////////////////////////////////////
 
 class FrameQueue : public rtc::Event {
+public:
+    FrameQueue();
+    ~FrameQueue();
+    bool Init();
+    void Reset();
+    bool Isinitialized();
+
+    int Length();
+
+    // Obtain a frame from the encoded frame queue.
+    // If there is no frame in FrameQueue, it will be blocked for a certain period and 
+    // return nullptr when timeout is reached. 
+    // If there is a frame, it returns the corresponding frame.
+    MMAL_BUFFER_HEADER_T *GetEncodedFrame();
+
+    // It returns the used Encoded Frame to the frame pool of QueueFrame.
+    void ReleaseFrame( MMAL_BUFFER_HEADER_T *buffer );
+
+protected:
+    // Make the frame uploaded from MMAL into one H.264 frame, 
+    // and buffering it in the encoded frame of FrameQueue.
+    void HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer );
+    
 private:
+    static int  kEventWaitPeriod;    // minimal wait period between frame
+
     int num_, size_;
 
     MMAL_QUEUE_T *encoded_frame_queue_;
@@ -62,26 +88,6 @@ private:
     uint32_t	frame_count_;
     uint32_t	frame_drop_;
     uint32_t	frame_queue_drop_;
-
-    static int  kEventWaitPeriod;    // minimal wait period between frame
-
-public:
-    FrameQueue();
-    ~FrameQueue();
-    bool Init();
-    void Reset();
-    bool Isinitialized();
-
-    // Queueuing and Assembling frame
-    void ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer );
-    int Length();
-
-    // Buffer header handling
-    MMAL_BUFFER_HEADER_T * GetBufferFromPool();
-    void ReturnToPool( MMAL_BUFFER_HEADER_T *buffer );
-    void QueueingFrame( MMAL_BUFFER_HEADER_T *buffer );
-    MMAL_BUFFER_HEADER_T *DequeueFrame();
-    void dumpFrameQueueInfo();
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -140,21 +146,40 @@ public:
     MMALEncoderWrapper();
     ~MMALEncoderWrapper();
 
+    bool IsInited();
+
     int GetWidth();
     int GetHeight();
-    bool SetEncodingParams(int width, int height,int framerate, int bitrate );
-    bool SetRate(int framerate, int bitrate);
+
     bool InitEncoder(int width, int height, int framerate, int bitrate);
-    bool ReinitEncoder(int width, int height, int framerate, int bitrate );
-    bool ReinitEncoderInternal();
     bool UninitEncoder();
-    bool ForceKeyFrame();
-    bool IsKeyFrame();
+    
+    // It is used when reinitialization is required after InitEncoder. 
+    // and used when changing the resolution.
+    // TODO: merge the ReinitEncoder to SetParam and Reinit Internal
+    bool ReinitEncoder(int width, int height, int framerate, int bitrate );
+
+    // Used in EncoderDelayInit. Init parameters should be initialized first 
+    // and then Init must be done, so the two functions are separated.
+    bool SetEncodingParams(int width, int height,int framerate, int bitrate );
+    bool ReinitEncoderInternal();
+
     bool StartCapture();
     bool StopCapture();
-    bool IsInited();
+    
+    bool SetRate(int framerate, int bitrate);
+
+    // When there is a KeyFrame request, it requests the MMAL to generate a key frame. 
+    // MMAL generates a key frame, and then operates as it is currently set.
+    bool SetForceNextKeyFrame();
+
+    void SetIntraPeriod(int frame_period);
+    void SetInlineMotionVectors(bool motion_enable);
     void SetVideoRotation(int rotation);
     void SetVideoFlip(bool vflip, bool hflip);
+    void SetVideoAnnotate(bool annotate_enable);
+    void SetVideoAnnotateUserText(const std::string user_text);
+    void SetVideoAnnotateTextSize(const int text_size);
 
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);

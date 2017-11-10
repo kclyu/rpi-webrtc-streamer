@@ -38,14 +38,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/rtc_base/logging.h"
 #include "webrtc/rtc_base/arraysize.h"
 
-#include "media_config.h"
+#include "config_defines.h"
+#include "config_media.h"
 #include "utils.h"
 
-namespace media_config {
+namespace config_media {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
-// config key name and media config constants values
+// media config key name and constants values
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -91,39 +92,6 @@ static const char kDefaultVideoResolution43[] =
     "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232";
 static const char kDefaultVideoResolution169[] = 
     "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080";
-
-#define CONFIG_LOAD_BOOL(key,value) \
-        { \
-            std::string flag_value; \
-            if( config_.GetStringValue(key, &flag_value ) == true){ \
-                if(flag_value.compare("true") == 0) value = true; \
-                else if (flag_value.compare("false") == 0) value = false; \
-                else LOG(INFO) << "Default Config \"" <<  key \
-                        << "\" value is not valid" << flag_value; \
-            }; \
-        };
-
-#define CONFIG_LOAD_BOOL_WITH_DEFAULT(key,value,default_value) \
-        { \
-            std::string flag_value; \
-            if( config_.GetStringValue(key, &flag_value ) == true){ \
-                if(flag_value.compare("true") == 0) value = true; \
-                else if (flag_value.compare("false") == 0) value = false; \
-                else { \
-                    LOG(INFO) << "Default Config \"" <<  key \
-                        << "\" value is not valid" << flag_value; \
-                    value = default_value; \
-                };  \
-            }; \
-        };
-
-#define CONFIG_LOAD_INT_WITH_DEFAULT(key,value,validate_function,default_value) \
-        { \
-            if( config_.GetIntValue(key, &value ) == true){ \
-                validate_function(value, default_value); \
-            } \
-            else value = default_value; \
-        };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Config Value
@@ -237,21 +205,21 @@ bool config_load(const std::string config_filename) {
     };
 
     // loading max_bitrate
-    CONFIG_LOAD_INT_WITH_DEFAULT(kConfigMaxBitrate, max_bitrate,  
+    CONFIG_LOAD_INT_WITH_DEFAULT(MaxBitrate, max_bitrate,  
             validate__video_maxbitrate, kDefaultMaxBitrate );
 
     // loading video rotation config
-    CONFIG_LOAD_INT_WITH_DEFAULT(kConfigVideoRotation, video_rotation,  
+    CONFIG_LOAD_INT_WITH_DEFAULT(VideoRotation, video_rotation,  
             validate__video_rotation, kDefaultVideoRotation );
 
     // loading vflip & hflip
-    CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigVideoVFlip,
+    CONFIG_LOAD_BOOL_WITH_DEFAULT(VideoVFlip,
             video_vflip,false);
-    CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigVideoHFlip,
+    CONFIG_LOAD_BOOL_WITH_DEFAULT(VideoHFlip,
             video_hflip,false);
 
     // loading 4:3 or 16:9 resolution config
-    CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigResolution4_3,
+    CONFIG_LOAD_BOOL_WITH_DEFAULT(Resolution4_3,
             resolution_4_3_enable,true);
 
     // loading dynamic video resolution config
@@ -263,7 +231,7 @@ bool config_load(const std::string config_filename) {
     // If it is disabled, it keeps the initial resolution set in InitEncoder. 
     // If you want to disable it, you must enable use_initial_video_resoltuion 
     // and set the desired resolution to initial_video_resolution.
-    CONFIG_LOAD_BOOL_WITH_DEFAULT(kConfigVideoDynamicResolution,
+    CONFIG_LOAD_BOOL_WITH_DEFAULT(VideoDynamicResolution,
             use_dynamic_video_resolution, true);
 
     // loading default video resolution config
@@ -342,19 +310,19 @@ bool config_load(const std::string config_filename) {
         // audio processing is enabled
         audio_processing_enable = true;
 
-        CONFIG_LOAD_BOOL(kConfigAudioEchoCancel,audio_echo_cancel);
-        CONFIG_LOAD_BOOL(kConfigAudioGainControl,audio_gain_control);
-        CONFIG_LOAD_BOOL(kConfigAudioHighPassFilter,audio_highpass_filter);
-        CONFIG_LOAD_BOOL(kConfigAudioNoiseSuppression,audio_noise_suppression);
+        CONFIG_LOAD_BOOL(AudioEchoCancel,audio_echo_cancel);
+        CONFIG_LOAD_BOOL(AudioGainControl,audio_gain_control);
+        CONFIG_LOAD_BOOL(AudioHighPassFilter,audio_highpass_filter);
+        CONFIG_LOAD_BOOL(AudioNoiseSuppression,audio_noise_suppression);
     };
 
     // level control is not depend on the audio processing
-    CONFIG_LOAD_BOOL(kConfigAudioLevelControl,audio_level_control);
+    CONFIG_LOAD_BOOL(AudioLevelControl,audio_level_control);
 
     return true;
 }
 
-}   // media_config namespace
+}   // config_media namespace
 
 
 

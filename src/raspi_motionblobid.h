@@ -27,40 +27,37 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef RASPI_MOTIONBLOBID_H_
+#define RASPI_MOTIONBLOBID_H_
+
 #include <memory>
-#include <string>
 #include <list>
-#include <deque>
 
-
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/json.h"
-
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/pathutils.h"
-
-#include "websocket_server.h"
-#include "app_client.h"
-#include "app_ws_client.h"
-#include "config_streamer.h"
-
-#ifndef APP_CHANNEL_H_
-#define APP_CHANNEL_H_
-
-class AppChannel : public LibWebSocketServer {
-public:
-    explicit AppChannel();
-    ~AppChannel();
-    bool AppInitialize(StreamerConfig& config);
-
-private:
-    bool is_inited_;
-    AppWsClient ws_client_;
-    AppClient app_client_;
+struct MotionBlob {
+    enum MotionBlobStatus {
+        UNUSED = 0,
+        COLLECTING,
+        ACTIVE,
+    };
+    MotionBlob() 
+        : status_(UNUSED), size_(0), sx_(0), sy_(0), overlap_size_(0), update_counter_(0) {};
+    MotionBlobStatus status_;
+    int     size_;
+    int     overlap_size_;
+    int     update_counter_;
+    uint8_t sx_, sy_;
 };
 
-#endif // APP_CHANNEL_H_
+class MotionBlobId {
+public:
+    explicit MotionBlobId();
+    ~RaspiMotionBlobId();
+
+private:
+    bool CreateBlobId(uint16_t *blob_id);
+    void FreeBlobId(uint16_t blob_id);
+    MotionBlob* GetMotionBlob(uint16_t blob_id);
+};
+
+#endif  // RASPI_MOTIONBLOBID_H_
 

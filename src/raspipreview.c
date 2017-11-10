@@ -196,7 +196,9 @@ void raspipreview_destroy(RASPIPREVIEW_PARAMETERS *state)
  */
 void raspipreview_set_defaults(RASPIPREVIEW_PARAMETERS *state)
 {
-    state->wantPreview = 1;
+    // Disable the Preview in default
+    // state->wantPreview = 1;
+    state->wantPreview = 0;
     state->wantFullScreenPreview = 1;
     state->opacity = 255;
     state->previewWindow.x = 0;

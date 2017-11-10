@@ -112,70 +112,43 @@ static int intra_refresh_map_size = sizeof(intra_refresh_map) / sizeof(intra_ref
  */
 void default_status(RASPIVID_STATE *state)
 {
-    if (!state)
-    {
+    if (!state) {
         vcos_assert(0);
         return;
     }
 
     // Default everything to zero
     memset(state, 0, sizeof(RASPIVID_STATE));
-
-#ifdef __WEBRTC_DEFAULT__
-    state->width = RASPI_CAM_FIXED_WIDTH;	// default width for FOV
-    state->height = RASPI_CAM_FIXED_HEIGHT;	// default width for FOV
+    state->width = 1920;       // Default to 1080p
+    state->height = 1080;
     state->encoding = MMAL_ENCODING_H264;
+    state->framerate = VIDEO_FRAME_RATE_NUM;
+
     // state->bitrate = 17000000; 			// This is a decent default bitrate for 1080p
     state->bitrate = 0; 			// For variable bitrate setttings
-    state->framerate = VIDEO_FRAME_RATE_NUM;
     state->intra_refresh_type = MMAL_VIDEO_INTRA_REFRESH_BOTH;		// cyclic intra rehash type
-    state->intraperiod = VIDEO_FRAME_RATE_NUM * 3;	// every 3 second
+                                            // every 3 second
+    state->intraPeriod = VIDEO_FRAME_RATE_NUM * VIDEO_INTRAFRAME_PERIOD;	
     state->bInlineHeaders = MMAL_TRUE;	    // enabling Inline Header
-    state->profile = MMAL_VIDEO_PROFILE_H264_CONSTRAINED_BASELINE;  
-    // state->profile = MMAL_VIDEO_PROFILE_H264_MAIN;  
+    state->profile = MMAL_VIDEO_PROFILE_H264_MAIN;  // TESTING
+    // state->profile = MMAL_VIDEO_PROFILE_H264_CONSTRAINED_BASELINE;  
     state->verbose = MMAL_TRUE;
 
-#define __RATECONTROL_DISABLE__
-
-#ifdef __RATECONTROL_DISABLE__
     state->videoRateControl = MMAL_FALSE;
     state->quantisationParameter = MMAL_TRUE;
     state->quantisationInitialParameter = 26;   // Initial quantization parameter
-    state->quantisationMaxParameter	= 35;       /// Maximum quantization parameter
-    state->quantisationMinParameter  = 24;       /// Minimum quantization parameter
-#else
-    state->videoRateControl = MMAL_TRUE;
-    state->quantisationParameter = MMAL_FALSE;   // disable quatization, Not working
-    state->quantisationInitialParameter = 26;   // Initial quantization parameter
-    state->quantisationMaxParameter	= 35;       /// Maximum quantization parameter
-    state->quantisationMinParameter  = 22;       /// Minimum quantization parameter
-#endif // __RATECONTROL_DISABLE__
+    state->quantisationMaxParameter	= 35;       // Maximum quantization parameter
+    state->quantisationMinParameter  = 24;      // Minimum quantization parameter
 
     // state->settings = MMAL_TRUE;				// camera setting
     state->settings = MMAL_FALSE;
 
-#else	/* RaspiVid defaults */
-    state->width = 1920;       // Default to 1080p
-    state->height = 1080;
-    state->encoding = MMAL_ENCODING_H264;
-    state->bitrate = 17000000; // This is a decent default bitrate for 1080p
-    state->framerate = VIDEO_FRAME_RATE_NUM;
-    state->intraperiod = -1;    // Not set
-    state->intra_refresh_type = -1;
-    state->bInlineHeaders = 0;
-    state->quantisationParameter = MMAL_FALSE;
-    state->profile = MMAL_VIDEO_PROFILE_H264_HIGH;
-    state->verbose = MMAL_TRUE;
-    state->videoRateControl = 0;
-    state->settings = 0;
-#endif
-
     state->immutableInput = 1;
     state->bCapturing = 0;
+    state->bInlineMotionVector = 0;  // Inline Motion Vectors parameters
 
     state->cameraNum = 0;
     state->sensor_mode = 0;
-
 
     // Setup preview window defaults
     raspipreview_set_defaults(&state->preview_parameters);
@@ -183,7 +156,6 @@ void default_status(RASPIVID_STATE *state)
     // Set up the camera_parameters to default
     raspicamcontrol_set_defaults(&state->camera_parameters);
 }
-
 
 /**
  * Dump image state parameters to stderr.
@@ -205,7 +177,7 @@ void dump_status(RASPIVID_STATE *state)
                 state->quantisationParameter, state->bInlineHeaders ? "Yes" : "No");
     DLOG_FORMAT("H264 Intra refresh type %s, period %d",
                 raspicli_unmap_xref(state->intra_refresh_type, intra_refresh_map, intra_refresh_map_size),
-                state->intraperiod);
+                state->intraPeriod);
 
     raspipreview_dump_parameters(&state->preview_parameters);
     raspicamcontrol_dump_parameters(&state->camera_parameters);
@@ -272,7 +244,7 @@ void update_annotation_data(RASPIVID_STATE *state)
         asprintf(&text,  "%dk,%df,%s,%d,%s",
                  state->bitrate / 1000,  state->framerate,
                  refresh ? refresh : "(none)",
-                 state->intraperiod,
+                 state->intraPeriod,
                  raspicli_unmap_xref(state->profile, profile_map, profile_map_size));
 
         raspicamcontrol_set_annotate(state->camera_component, 
@@ -358,7 +330,8 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state) {
 
     if (state->settings) {
         MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T change_event_request =
-        {   {MMAL_PARAMETER_CHANGE_EVENT_REQUEST, sizeof(MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T)},
+        {   {MMAL_PARAMETER_CHANGE_EVENT_REQUEST, 
+                sizeof(MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T)},
             MMAL_PARAMETER_CAMERA_SETTINGS, 1
         };
 
@@ -410,15 +383,15 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state) {
 
     if(state->camera_parameters.shutter_speed > 6000000)
     {
-        MMAL_PARAMETER_FPS_RANGE_T fps_range = {{MMAL_PARAMETER_FPS_RANGE, sizeof(fps_range)},
-            { 50, 1000 }, {166, 1000}
+        MMAL_PARAMETER_FPS_RANGE_T fps_range = {
+            {MMAL_PARAMETER_FPS_RANGE, sizeof(fps_range)}, { 50, 1000 }, {166, 1000}
         };
         mmal_port_parameter_set(preview_port, &fps_range.hdr);
     }
     else if(state->camera_parameters.shutter_speed > 1000000)
     {
-        MMAL_PARAMETER_FPS_RANGE_T fps_range = {{MMAL_PARAMETER_FPS_RANGE, sizeof(fps_range)},
-            { 166, 1000 }, {999, 1000}
+        MMAL_PARAMETER_FPS_RANGE_T fps_range = {
+            {MMAL_PARAMETER_FPS_RANGE, sizeof(fps_range)}, { 166, 1000 }, {999, 1000}
         };
         mmal_port_parameter_set(preview_port, &fps_range.hdr);
     }
@@ -674,13 +647,14 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
     }
 
     if (state->encoding == MMAL_ENCODING_H264 &&
-            state->intraperiod != -1)
+            state->intraPeriod != -1)
     {
-        MMAL_PARAMETER_UINT32_T param = {{ MMAL_PARAMETER_INTRAPERIOD, sizeof(param)}, state->intraperiod};
+        MMAL_PARAMETER_UINT32_T param 
+            = {{ MMAL_PARAMETER_INTRAPERIOD, sizeof(param)}, state->intraPeriod};
         status = mmal_port_parameter_set(encoder_output, &param.hdr);
         if (status != MMAL_SUCCESS)
         {
-            vcos_log_error("Unable to set intraperiod");
+            vcos_log_error("Unable to set intraPeriod");
             goto error;
         }
     }
@@ -745,6 +719,15 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
     if (mmal_port_parameter_set_boolean(encoder_output,
         MMAL_PARAMETER_VIDEO_ENCODE_INLINE_HEADER, state->bInlineHeaders) != MMAL_SUCCESS) {
         vcos_log_error("failed to set INLINE HEADER FLAG parameters");
+        // Continue rather than abort..
+    }
+
+    //set INLINE VECTORS flag to request motion vector estimates
+    if (state->encoding == MMAL_ENCODING_H264 && 
+            mmal_port_parameter_set_boolean(encoder_output, 
+                MMAL_PARAMETER_VIDEO_ENCODE_INLINE_VECTORS, state->bInlineMotionVector) 
+            != MMAL_SUCCESS) {
+        vcos_log_error("failed to set INLINE VECTORS parameters");
         // Continue rather than abort..
     }
 

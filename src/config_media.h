@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RPI_STREAMER_CONFIG_
-#define RPI_STREAMER_CONFIG_
+#ifndef CONFIG_MEDIA_H_
+#define CONFIG_MEDIA_H_
 
 #include "webrtc/rtc_base/checks.h"
 
@@ -36,61 +36,46 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/rtc_base/optionsfile.h"
 #include "webrtc/rtc_base/pathutils.h"
 
-#include "webrtc/api/peerconnectioninterface.h"
+//
+// The config part for global media config is required.
+//
+namespace config_media {
 
-class StreamerConfig  {
-public:
-    explicit StreamerConfig(const std::string &config_file);
-    ~StreamerConfig();
+    struct ResolutionConfig {
+        explicit ResolutionConfig(int width, int height ) :
+            width_(width),height_(height) {};
+        virtual ~ResolutionConfig() {};
+        int width_;
+        int height_;
+    };
 
-    // Load Config
-    bool LoadConfig();
-    const std::string GetConfigFilename();
+    extern int max_bitrate;
+    extern bool resolution_4_3_enable;
 
+    extern struct ResolutionConfig initial_video_resolution;
+    extern int initial_video_framerate;
+    extern bool use_initial_video_resolution;
+    extern bool use_dynamic_video_resolution;
+    extern std::list <ResolutionConfig> resolution_list_4_3;
+    extern std::list <ResolutionConfig> resolution_list_16_9;
 
-    // Disable Log buffering
-    bool GetDisableLogBuffering();
+    // this feature will require high CPU usage because all of audio enhancement 
+    // feature is S/W based
+    extern bool audio_processing_enable;
+    extern bool audio_echo_cancel;
+    extern bool audio_gain_control;
+    extern bool audio_highpass_filter;
+    extern bool audio_noise_suppression;
+    extern bool audio_level_control;
 
-    // LibWebsocket Libbrary debug 
-    bool GetLibwebsocketDebugEnable();
+    extern int video_rotation;
+    extern bool video_hflip;
+    extern bool video_vflip;
 
-    // HTTP web-root path
-    bool GetWebRootPath(std::string& path);
+    bool config_load(const std::string config_filename);
 
-    // RWS WebSocket URL
-    bool GetRwsWsURL(std::string& path);
-
-    // Additional WS Rule
-    bool GetAdditionalWSRule(std::string& rule);
-
-    // WebSocket Config
-    bool GetWebSocketEnable();
-    bool GetWebSocketPort(int& port);
-
-    // RoomId Config
-    bool GetRoomIdEnable();
-    bool GetRoomId(std::string& room_id);
-
-    // Direct Socket Config
-    bool GetDirectSocketEnable();
-    bool GetDirectSocketPort(int& port);
-
-    bool GetStunServer(webrtc::PeerConnectionInterface::IceServer &server);
-    bool GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server);
-
-    // Media Config
-    bool GetMediaConfig(std::string& conf);
-
-    // Log Path
-    bool GetLogPath(std::string& log_dir);
-
-private:
-    bool config_loaded_;
-    std::unique_ptr<rtc::OptionsFile> config_;
-    std::string config_file_;
-    std::string config_dir_basename_;
-};
+}   // media config name_space
 
 
 
-#endif  // RPI_STREAMER_CONFIG_
+#endif  // CONFIG_MEDIA_H_

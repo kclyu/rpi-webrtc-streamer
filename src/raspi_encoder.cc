@@ -46,12 +46,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "webrtc/rtc_base/platform_thread.h"
 
 #include "raspi_encoder.h"
-#include "media_config.h"
+#include "config_media.h"
 
 
 namespace webrtc {
-
-static const int  kInitialResolutionUpdateDelay = 2000; // 2 seconds delay
 
 namespace {
 
@@ -140,8 +138,10 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     }
 
     // Setting Video Rotation and Flip setting
-    mmal_encoder_->SetVideoRotation(media_config::video_rotation);
-    mmal_encoder_->SetVideoFlip(media_config::video_vflip, media_config::video_hflip);
+    mmal_encoder_->SetVideoRotation(config_media::video_rotation);
+    mmal_encoder_->SetVideoFlip(config_media::video_vflip, config_media::video_hflip);
+    // Do not use Text Annotataion in RTC video stream
+    mmal_encoder_->SetVideoAnnotate(false);
 
     // GetInitialBestMatch should be used only when initializing 
     // the Encoder, and only when the use_default_resolution flag is on.
@@ -180,13 +180,11 @@ int32_t RaspiEncoderImpl::Release() {
 
     if (drainThread_) {
         drainStarted_ = false;
-        // Make sure the drain thread stop using the critsect.
         drainThread_->Stop();
         drainThread_.reset();
     }
 
     if (mmal_encoder_) {
-        // unInitializeMMAL return value does have no meaning
         mmal_encoder_->StopCapture();
         mmal_encoder_->UninitEncoder();
         mmal_encoder_ = nullptr;
@@ -280,7 +278,7 @@ int32_t RaspiEncoderImpl::Encode(
         // (If every frame is a key frame we get lag/delays.)
         if( clock_->TimeInMilliseconds() - last_keyframe_request_ 
                 > kKeyFrameAllowedInterval ){
-            mmal_encoder_->ForceKeyFrame();
+            mmal_encoder_->SetForceNextKeyFrame();
             last_keyframe_request_ = clock_->TimeInMilliseconds();
         }
     }
@@ -335,24 +333,33 @@ VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
 // Raspi Encoder MMAL frame drain processing
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool RaspiEncoderImpl::DrainThread(void* obj)
-{
+bool RaspiEncoderImpl::DrainThread(void* obj) {
     return static_cast<RaspiEncoderImpl *> (obj)->DrainProcess();
 }
 
-bool RaspiEncoderImpl::DrainProcess()
-{
+bool RaspiEncoderImpl::DrainProcess() {
     MMAL_BUFFER_HEADER_T *buf = nullptr;
 
-    buf = mmal_encoder_->DequeueFrame();
-    if (encoded_image_callback_ && buf && buf->length > 0 ) {
+    //  The GetEncodedFrame function will wait in block state 
+    //  until there is a new buf or timeout.
+    buf = mmal_encoder_->GetEncodedFrame();
+
+    // encoded_image_callback must be registered before pass 
+    // the frame to WebRTC native stack. 
+    // If it is timout, buf will have null. 
+    // In addition, only the normal frame is transmitted to the WebRTC native stack, 
+    // and the Motion Vector(CODECSIDEINFO) is not transmitted.
+    //
+    // TODO: if encoded_size is zero, we need to reset encoder itself
+    if (encoded_image_callback_ && buf && buf->length > 0 && 
+            !( buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) ) {
         CodecSpecificInfo codec_specific;
         uint32_t fragment_index;
         // int qp;
 
         // If the native stack is not ready to receive encoded frame, frame will be dropped.
         if( start_encoding_ == false ) {
-            if( buf ) mmal_encoder_->ReturnToPool(buf);
+            if( buf ) mmal_encoder_->ReleaseFrame(buf);
             return true;
         }
 
@@ -361,7 +368,7 @@ bool RaspiEncoderImpl::DrainProcess()
         memset( &frag_header, 0x00, sizeof(frag_header));
 
         // Parsing h264 frame
-        // RWS do not use QP based quality scale of WebRTC native package
+        // currently, RWS do not use QP based quality scale of WebRTC native package
         //
         // h264_bitstream_parser_.ParseBitstream(buf->data, buf->length);
         // if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
@@ -375,7 +382,7 @@ bool RaspiEncoderImpl::DrainProcess()
         if ( nalu_indexes.empty() ) {
             // could not find the nal unit in the buffer, so do nothing.
             LOG(INFO) <<  "NAL unit length is zero!!!" ;
-            if( buf ) mmal_encoder_->ReturnToPool(buf);
+            if( buf ) mmal_encoder_->ReleaseFrame(buf);
             return true;
         };
 
@@ -435,8 +442,7 @@ bool RaspiEncoderImpl::DrainProcess()
         }
     }
 
-    if( buf ) mmal_encoder_->ReturnToPool(buf);
-    // TODO: if encoded_size is zero, we need to reset encoder itself
+    if( buf ) mmal_encoder_->ReleaseFrame(buf);
     return true;
 }
 

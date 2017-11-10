@@ -31,6 +31,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RPI_STREAMER_OBSERVER_
 #pragma once
 
+#include <memory>
+#include "raspi_motion.h"
+
 struct StreamerObserver {
     virtual void OnPeerConnected(int peer_id, const std::string& name) = 0;
     virtual void OnPeerDisconnected(int peer_id) = 0;
@@ -49,6 +52,7 @@ protected:
 };
 
 class StreamerProxy;      // forward declaration
+class RaspiMotion;        // forward declaration
 class SocketServerHelper : public SocketServerObserver {
 public:
     SocketServerHelper();
@@ -92,6 +96,7 @@ private:
     ~StreamerProxy() {}
 
     static StreamerProxy* streamer_proxy_;
+    std::unique_ptr <RaspiMotion> raspi_motion_;
     SocketServerObserver *active_socket_observer_;
     StreamerObserver *streamer_callback_;           // streamer callback 
     int active_peer_id_;

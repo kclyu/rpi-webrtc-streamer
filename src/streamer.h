@@ -30,7 +30,7 @@
 #include "webrtc/api/mediaconstraintsinterface.h"
 #include "webrtc/api/peerconnectioninterface.h"
 #include "streamer_observer.h"
-#include "streamer_config.h"
+#include "config_streamer.h"
 
 
 namespace webrtc {

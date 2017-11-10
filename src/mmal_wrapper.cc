@@ -50,7 +50,7 @@ MMALEncoderWrapper* getMMALEncoderWrapper() {
 // Frame Queue
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-int  FrameQueue::kEventWaitPeriod = 3;    // minimal wait period between frame
+int  FrameQueue::kEventWaitPeriod = 30;    // minimal wait period between frame
 
 FrameQueue::FrameQueue() 
     : Event(false,false), num_(FRAME_QUEUE_LENGTH), size_(FRAME_BUFFER_SIZE),
@@ -109,29 +109,18 @@ int FrameQueue::Length() {
     return mmal_queue_length( encoded_frame_queue_);
 }
 
-MMAL_BUFFER_HEADER_T * FrameQueue::GetBufferFromPool() {
-    RTC_DCHECK(inited_);
-
-    return mmal_queue_get( pool_internal_->queue);
-}
-
-void FrameQueue::ReturnToPool( MMAL_BUFFER_HEADER_T *buffer ) {
+void FrameQueue::ReleaseFrame( MMAL_BUFFER_HEADER_T *buffer ) {
     RTC_DCHECK(inited_);
     mmal_buffer_header_release(buffer);
 }
 
-void FrameQueue::QueueingFrame( MMAL_BUFFER_HEADER_T *buffer ) {
-    RTC_DCHECK(inited_);
-    mmal_queue_put( encoded_frame_queue_, buffer);
-}
-
-MMAL_BUFFER_HEADER_T *FrameQueue::DequeueFrame() {
+MMAL_BUFFER_HEADER_T *FrameQueue::GetEncodedFrame() {
     RTC_DCHECK(inited_);
     Wait(kEventWaitPeriod);    // Waiting for Event or Timeout
     return mmal_queue_get(encoded_frame_queue_);
 }
 
-void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
+void FrameQueue::HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer ) {
     RTC_DCHECK(inited_);
     RTC_DCHECK(buffer != NULL);
     RTC_DCHECK_GE((mmal_queue_length(encoded_frame_queue_)+
@@ -140,8 +129,8 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
     // it should be same as FRAME_QUEUE_LENGTH except one queue in the encoder
     // there is something in the buffer
     if( buffer->length < FRAME_BUFFER_SIZE && buffer->length > 0 ) {
-
-        // there is no end of frame mark in this buffer, so keep it in the internal buffer
+        // there is no end of frame mark in this buffer, 
+        // so keep it in the internal buffer
         if( !(buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END) ||
                 (buffer->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG ) ) {
             RTC_DCHECK(frame_buf_pos_ < size_);
@@ -153,7 +142,8 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
             mmal_buffer_header_mem_unlock(buffer);      
         }
         // end of frame marked
-        else if( buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END ) {
+        else if( buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END ||
+                buffer->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO ) { // Motion Vector
             if( (int)(frame_buf_pos_ + buffer->length) >= size_) {
                 LOG(INFO) << "frame_buf_pos : " << frame_buf_pos_
                           << ", buffer length: " << buffer->length;
@@ -182,23 +172,18 @@ void FrameQueue::ProcessBuffer( MMAL_BUFFER_HEADER_T *buffer ) {
                 frame_segment_cnt_  = frame_buf_pos_ = 0;
                 // one frame done
                 mmal_queue_put( encoded_frame_queue_, frame);
-                Set();  // Wakeup DrainThread within Wait
+
+                Set();  // Event set to wake up DrainThread 
             }
             else {
                 frame_drop_ ++;
-                LOG(INFO) << "MMAL Frame Dropped during ProcessBuffer : " << frame_drop_;
+                LOG(INFO) << "MMAL Frame Dropped during HandlingMMALFrame : " << frame_drop_;
             }
         }
 
         // frame count statistics
         frame_count_++;
     }
-}
-
-void FrameQueue::dumpFrameQueueInfo() {
-    RTC_DCHECK(inited_);
-    LOG(INFO) << "Queue length: " << mmal_queue_length(encoded_frame_queue_);
-    LOG(INFO) << "Pool length: " << mmal_queue_length(pool_internal_->queue);
 }
 
 
@@ -241,6 +226,7 @@ public:
     }
 
 private:
+
     bool Run() override {
         if (stop_) 
             return true;  // TaskQueue will free this task.
@@ -254,17 +240,19 @@ private:
 
     EncoderDelayedInit* const encoder_delay_init_;
     bool stop_ = false;
+
 };
 
 
 EncoderDelayedInit::EncoderDelayedInit(MMALEncoderWrapper* mmal_encoder) 
     : clock_(Clock::GetRealTimeClock()), 
     last_init_timestamp_ms_(clock_->TimeInMilliseconds()),
-    status_(INIT_PASS),mmal_encoder_(mmal_encoder) {
+    status_(INIT_PASS),mmal_encoder_(mmal_encoder),delayinit_task_(nullptr) {
 }
 
 EncoderDelayedInit::~EncoderDelayedInit() {
-    delayinit_task_->Stop();
+    if(delayinit_task_)
+        delayinit_task_->Stop();
 }
 
 bool EncoderDelayedInit::InitEncoder(int width, int height, int framerate, int bitrate){
@@ -391,6 +379,42 @@ void MMALEncoderWrapper::SetVideoFlip(bool vflip, bool hflip) {
     state_.camera_parameters.hflip = (hflip?1:0);
 }
 
+void MMALEncoderWrapper::SetVideoAnnotate(bool annotate_enable) {
+    if( annotate_enable ) {
+        state_.camera_parameters.enable_annotate 
+            =  (ANNOTATE_DATE_TEXT | ANNOTATE_TIME_TEXT | ANNOTATE_BLACK_BACKGROUND );
+    }
+    else {
+        // disable annotation
+        state_.camera_parameters.enable_annotate  = 0;
+    }
+}
+
+void MMALEncoderWrapper::SetVideoAnnotateUserText(const std::string user_text) {
+    if( user_text.length() > 0 ) {
+        if( user_text.length() < MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2 ) {
+            strcpy( state_.camera_parameters.annotate_string, 
+                    user_text.c_str() );
+        }
+        else {
+            strncpy( state_.camera_parameters.annotate_string, 
+                    user_text.c_str(), MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2 );
+        }
+    }
+}
+
+void MMALEncoderWrapper::SetVideoAnnotateTextSize(const int text_size) {
+    state_.camera_parameters.annotate_text_size  = text_size;
+}
+
+void MMALEncoderWrapper::SetInlineMotionVectors(bool motion_enable) {
+    state_.bInlineMotionVector = motion_enable;
+}
+
+void MMALEncoderWrapper::SetIntraPeriod(int frame_period) {
+    state_.intraPeriod = frame_period;
+}
+
 
 bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, 
         int bitrate) {
@@ -515,6 +539,7 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height,
 
     LOG(INFO) << "Start reinitialize the MMAL encode wrapper."
               << width << "x" << height << "@" << framerate << ", " << bitrate << "kbps";
+
     //
     // disable all component
     //
@@ -522,10 +547,6 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height,
         LOG(LS_ERROR) << "Unable to unset capture start";
         return false;
     }
-
-    //
-    // dump_component((char *)"camera: ", state_.camera_component );
-    // dump_component((char *)"encoder: ", state_.encoder_component );
 
     // Disable all our ports that are not handled by connections
     check_disable_port(camera_still_port_);
@@ -687,7 +708,7 @@ void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port,
     PORT_USERDATA *pData = (PORT_USERDATA *)port->userdata;
 
     if (pData) {
-        ProcessBuffer(buffer);
+        HandlingMMALFrame(buffer);
     }
     else {
         vcos_log_error("Received a encoder buffer callback with no state");
@@ -715,7 +736,6 @@ void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port,
         last_second = current_time/1000;
     }
 }
-
 
 bool MMALEncoderWrapper::StartCapture() {
     // Send all the buffers to the encoder output port
@@ -812,9 +832,7 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
     return true;
 }
 
-
-//
-bool MMALEncoderWrapper::ForceKeyFrame() {
+bool MMALEncoderWrapper::SetForceNextKeyFrame() {
     if( mmal_initialized_ == false ) return true;
     rtc::CritScope cs(&crit_sect_);
     LOG(INFO) << "MMAL force key frame encoding";

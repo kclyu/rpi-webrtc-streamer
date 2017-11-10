@@ -43,8 +43,15 @@ TARGET = ../webrtc-streamer
 #
 SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc \
 	app_channel.cc  direct_socket.cc streamer_observer.cc streamer.cc \
-	streamer_config.cc main.cc raspi_encoder.cc mmal_wrapper.cc utils.cc \
-	raspi_quality_config.cc file_logger.cc  media_config.cc  app_ws_client.cc app_client.cc
+	main.cc raspi_encoder.cc mmal_wrapper.cc utils.cc \
+	raspi_quality_config.cc file_logger.cc app_ws_client.cc app_client.cc \
+	raspi_motion.cc raspi_motionvector.cc raspi_motionblob.cc raspi_motionfile.cc \
+	config_media.cc  config_streamer.cc  config_motion.cc
+
+#SOURCES.CC = config_streamer.cc config_motion.cc main.cc mmal_wrapper.cc utils.cc \
+#	raspi_quality_config.cc file_logger.cc  config_media.cc\
+#	raspi_motion.cc raspi_motionvector.cc raspi_motionblob.cc \
+#	raspi_motionfile.cc
 
 SOURCES.C = websocket_server_util.c mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c \
 	raspicamcontrol.c raspipreview.c 
