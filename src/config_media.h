@@ -30,11 +30,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CONFIG_MEDIA_H_
 #define CONFIG_MEDIA_H_
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/optionsfile.h"
+#include "rtc_base/pathutils.h"
 
 //
 // The config part for global media config is required.

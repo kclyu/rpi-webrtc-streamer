@@ -33,11 +33,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <utility>
 
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/optional.h"
+#include "common_types.h"
+#include "api/optional.h"
 
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/modules/video_coding/utility/moving_average.h"
+#include "system_wrappers/include/clock.h"
+#include "modules/video_coding/utility/moving_average.h"
 
 
 enum Adaptation {

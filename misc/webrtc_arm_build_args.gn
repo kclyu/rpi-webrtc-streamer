@@ -36,12 +36,12 @@ is_desktop_linux=false
 #
 # Uncomment this when you want to use internal libcxx of 
 # WebRTC native package (default is true)
-#use_custom_libcxx=false    
+use_custom_libcxx=false    
 is_chrome_branded=true
 rtc_build_with_neon=true
-enable_nacl=false
+rtc_libvpx_build_vp9=false  # do not build VP9
 rtc_use_h264=true
-use_openh264=true
+use_openh264=false
 rtc_initialize_ffmpeg=false
 rtc_include_tests=false
 rtc_include_pulse_audio=false

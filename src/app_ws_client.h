@@ -33,14 +33,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <deque>
 
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
-#include "webrtc/rtc_base/json.h"
+#include "api/mediastreaminterface.h"
+#include "api/mediaconstraintsinterface.h"
+#include "api/peerconnectioninterface.h"
+#include "rtc_base/json.h"
 
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/optionsfile.h"
+#include "rtc_base/pathutils.h"
 
 #include "websocket_server.h"
 #include "streamer_observer.h"

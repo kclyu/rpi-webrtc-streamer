@@ -26,9 +26,6 @@ is_desktop_linux=false
 #
 #
 is_chrome_branded=true
-enable_nacl=false
-#enable_pdf=false
-#enable_webvr=false
 rtc_use_h264=true
 use_openh264=true
 rtc_initialize_ffmpeg=false

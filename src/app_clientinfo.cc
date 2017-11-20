@@ -33,8 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 #include <vector>
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "app_clientinfo.h"
 
 static const uint32_t kClientIDLength = 8;
@@ -55,7 +55,7 @@ AppClientInfo::AppClientInfo () : clock_(webrtc::Clock::GetRealTimeClock()),
 bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
     int min, max;
     uint64_t timestamp_diff;
-    LOG(LS_VERBOSE) << __FUNCTION__ << ": Roomid " << room_id
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": Roomid " << room_id
         << ",Client id: " << client_id;
 
     // Validate Client status 
@@ -64,7 +64,7 @@ bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
             timestamp_diff = clock_->TimeInMilliseconds() - last_wait_timestamp_;
             // checking connect wait timeout
             if( timestamp_diff < kWaitTimeout ) {
-                LOG(LS_VERBOSE) << "Rejecting CONNECT_WAIT during WAIT state";
+                RTC_LOG(LS_VERBOSE) << "Rejecting CONNECT_WAIT during WAIT state";
                 return false;   
             };
             break;
@@ -90,7 +90,7 @@ bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
 }
 
 bool AppClientInfo::Connected (int websocket_id, int room_id, int client_id)  {
-    LOG(LS_VERBOSE) << __FUNCTION__ << "WS id: " << websocket_id
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << "WS id: " << websocket_id
         << ", Roomid " << room_id << ",Client id: " << client_id;
     RTC_DCHECK( websocket_id >= 0 );
     RTC_DCHECK( room_id >= 0 );
@@ -124,7 +124,7 @@ bool AppClientInfo::Connected (int websocket_id, int room_id, int client_id)  {
 }
 
 bool AppClientInfo::DisconnectWait(int room_id, int client_id)  {
-    LOG(LS_VERBOSE) << __FUNCTION__ << ": Roomid " << room_id 
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": Roomid " << room_id 
         << ",Client id: " << client_id;
     RTC_DCHECK( room_id_ == room_id );
     RTC_DCHECK( client_id_ == client_id );
@@ -139,7 +139,7 @@ bool AppClientInfo::DisconnectWait(int room_id, int client_id)  {
 }
 
 bool AppClientInfo::DisconnectWait(int websocket_id )  {
-    LOG(LS_VERBOSE) << __FUNCTION__ << ": Websocket id " << websocket_id ;
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": Websocket id " << websocket_id ;
     RTC_DCHECK( websocket_id_ == websocket_id );
     switch( state_ ) {
         case ClientState::CLIENT_CONNECTED:
@@ -152,7 +152,7 @@ bool AppClientInfo::DisconnectWait(int websocket_id )  {
 }
 
 bool AppClientInfo::GetWebsocketId(int client_id, int& websocket_id)  {
-    LOG(LS_VERBOSE) << __FUNCTION__ << ":Client id: " << client_id;
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ":Client id: " << client_id;
     RTC_DCHECK( client_id_ == client_id );
     if( client_id_ == client_id ) {
         websocket_id = websocket_id_;
@@ -179,7 +179,7 @@ bool AppClientInfo::IsConnected (int websocket_id)  {
 }
 
 void AppClientInfo::Reset()  {
-    LOG(LS_VERBOSE) << __FUNCTION__ ;
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ ;
     client_id_ = room_id_ = websocket_id_ = 0;
     state_ =  CLIENT_DISCONNECTED;
 }

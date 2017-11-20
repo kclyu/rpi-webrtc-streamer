@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <vector>
 
-#include "webrtc/rtc_base/stringencode.h"
+#include "rtc_base/stringencode.h"
 #include "websocket_server.h"
 #include "app_client.h"
 #include "utils.h"
@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Adding Simple Json Key Value and INFO loggging
 #define JK_SD(param, key_id, value) \
     param[key_id] = value; \
-    LOG(LS_INFO) << "Key: " << key_id << " : " << value;
+    RTC_LOG(LS_INFO) << "Key: " << key_id << " : " << value;
 
 // Adding Simple Json Key Value 
 #define JK_S(param, key_id, value ) \
@@ -235,17 +235,17 @@ std::string AppClient::GetWebSocketURL() {
 }
 
 void AppClient::OnConnect(int sockid) {
-    LOG(INFO) << "WebSocket connnection id : " << sockid;
+    RTC_LOG(INFO) << "WebSocket connnection id : " << sockid;
 }
 
 bool AppClient::OnMessage(int sockid, const std::string& message) {
-    LOG(INFO) << __FUNCTION__ << "(" << sockid << ")";
+    RTC_LOG(INFO) << __FUNCTION__ << "(" << sockid << ")";
     Json::Reader json_reader;
     Json::Value json_value;
     std::string cmd;
 
     if(json_reader.parse(message, json_value) == false){
-        LOG(INFO) << __FUNCTION__ << ", Failed to parse message :" << message;
+        RTC_LOG(INFO) << __FUNCTION__ << ", Failed to parse message :" << message;
         return true;   
     };
 
@@ -259,18 +259,18 @@ bool AppClient::OnMessage(int sockid, const std::string& message) {
             int client_id, room_id;  
             if( !rtc::GetIntFromJsonObject(json_value, kJsonRegisterRoomId, &room_id) ||
                 !rtc::GetIntFromJsonObject(json_value, kJsonRegisterClientId, &client_id)) {
-                LOG(LS_ERROR) << "Not found clientid/roomid :" << message;
+                RTC_LOG(LS_ERROR) << "Not found clientid/roomid :" << message;
                 return true;
             }
 
-            LOG(INFO) << "Tyring to register RoomId: " << room_id << ", ClientID: " << client_id;
+            RTC_LOG(INFO) << "Tyring to register RoomId: " << room_id << ", ClientID: " << client_id;
 
             //  If one of the three (socketid, room_id, client_id) does not match, 
             //  the Websocket connection will not be connected.
             if( app_client_.Connected( sockid, room_id, client_id ) == false ) {
-                LOG(LS_ERROR) << "Failed to register room_id/client_id :" << message;
+                RTC_LOG(LS_ERROR) << "Failed to register room_id/client_id :" << message;
                 if ( IsStreamSessionActive() == true ) {
-                    LOG(INFO) << "Streamer Session already Active. Try to drop connection: " 
+                    RTC_LOG(INFO) << "Streamer Session already Active. Try to drop connection: " 
                         << sockid;
                     app_client_.DisconnectWait(sockid);
                     DeactivateStreamSession();
@@ -287,25 +287,25 @@ bool AppClient::OnMessage(int sockid, const std::string& message) {
             Json::Value json_msg_value;
             rtc::GetStringFromJsonObject(json_value, kJsonSendMsg, &msg);
             if(json_reader.parse(msg, json_msg_value) == false){
-                LOG(INFO) << __FUNCTION__ << ", Failed to parse message :" << msg;
+                RTC_LOG(INFO) << __FUNCTION__ << ", Failed to parse message :" << msg;
                 return true;   
             }
             rtc::GetStringFromJsonObject(json_msg_value, kJsonSendMsgType, &msg_type);
             if(msg_type.compare(kJsonSendMsgTypeBye) == 0) {
-                LOG(INFO) << __FUNCTION__ << "Terminating Websocket connection";
+                RTC_LOG(INFO) << __FUNCTION__ << "Terminating Websocket connection";
                 return false;
             }
 
         }
 
     };
-    LOG(LS_ERROR) << "Received unknown protocol message. " << message;
+    RTC_LOG(LS_ERROR) << "Received unknown protocol message. " << message;
     return true;
 }
 
 
 void AppClient::OnDisconnect(int sockid) {
-    LOG(INFO) << "WebSocket connnection id : " << sockid << " disconnected";
+    RTC_LOG(INFO) << "WebSocket connnection id : " << sockid << " disconnected";
     app_client_.DisconnectWait(sockid);
     if ( IsStreamSessionActive() == true ) {
         DeactivateStreamSession();
@@ -319,7 +319,7 @@ bool AppClient::SendMessageToPeer(const int peer_id, const std::string &message)
     RTC_DCHECK(websocket_message_ != nullptr ) << "WebSocket Server instance is nullptr";
     int websocket_id;
 
-    LOG(INFO) << __FUNCTION__;
+    RTC_LOG(INFO) << __FUNCTION__;
     if( app_client_.GetWebsocketId(peer_id, websocket_id ) == true ) {
         Json::StyledWriter json_writer;
         Json::Value json_message;
@@ -340,7 +340,7 @@ bool AppClient::SendMessageToPeer(const int peer_id, const std::string &message)
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result ){
-    LOG(INFO) << __FUNCTION__ << ", URL : " << req->url_;
+    RTC_LOG(INFO) << __FUNCTION__ << ", URL : " << req->url_;
     int room_id, client_id;
     std::vector<std::string> splited;
     std::string string_value;
@@ -354,7 +354,7 @@ bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result 
             splited_num != URL_CMD_JOIN_SPLITED_NUM || 
             utils::StringToInt( splited[URL_SPLITED_POS_ROOMID], &room_id ) 
             == false ) {
-        LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
+        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
             << splited[URL_SPLITED_POS_ROOMID];
         result.state_ = INVALID_REQUEST;
         return false;
@@ -363,7 +363,7 @@ bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result 
     // Validate the room_id value by comparing it with room_id of join request.
     if( use_room_id_ )  {
         if( room_id_.compare(splited[URL_SPLITED_POS_ROOMID])) {
-            LOG(LS_ERROR) << __FUNCTION__ << "Room ID does not match ((config)"
+            RTC_LOG(LS_ERROR) << __FUNCTION__ << "Room ID does not match ((config)"
                 << room_id_ << " != (request)" 
                 << splited[URL_SPLITED_POS_ROOMID] << "), Rejecting Join request" ;
             result.state_ = INVALID_REQUEST;
@@ -444,7 +444,7 @@ bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result 
 }
 
 bool AppClient::MessageRestCall(HttpRequest* req, HttpResponse* res,Result &result ){
-    LOG(INFO) << __FUNCTION__ << ", URL : " << req->url_;
+    RTC_LOG(INFO) << __FUNCTION__ << ", URL : " << req->url_;
     Json::Reader json_reader;
     Json::Value json_value;
     int room_id, client_id;
@@ -458,21 +458,21 @@ bool AppClient::MessageRestCall(HttpRequest* req, HttpResponse* res,Result &resu
              == false) ||
             (utils::StringToInt( splited[URL_SPLITED_POS_CLIENTID], &client_id ) 
              == false)) {
-        LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
+        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
             << splited[URL_SPLITED_POS_ROOMID]
             << splited[URL_SPLITED_POS_CLIENTID];
         result.state_ = INVALID_REQUEST;
         return false;
     }
     if( app_client_.IsConnected(room_id, client_id) == false )  {
-        LOG(LS_ERROR) << "Client " << client_id << " trying to  exchange message ";
+        RTC_LOG(LS_ERROR) << "Client " << client_id << " trying to  exchange message ";
         result.state_ = ERROR;
         return false;
     }
 
-    LOG(INFO) << __FUNCTION__ << " Data : " << req->data_;
+    RTC_LOG(INFO) << __FUNCTION__ << " Data : " << req->data_;
     if(json_reader.parse(req->data_, json_value) == false){
-        LOG(INFO) << "Failed to JSON parse : " << req->data_;
+        RTC_LOG(INFO) << "Failed to JSON parse : " << req->data_;
         return false;
     }
 
@@ -498,7 +498,7 @@ bool AppClient::MessageRestCall(HttpRequest* req, HttpResponse* res,Result &resu
 }
 
 bool AppClient::LeaveRestCall(HttpRequest* req, HttpResponse* res,Result &result ){
-    LOG(INFO) << __FUNCTION__ << ", URL : " << req->url_;
+    RTC_LOG(INFO) << __FUNCTION__ << ", URL : " << req->url_;
     int room_id, client_id;
     std::vector<std::string> splited;
     size_t splited_num = rtc::split( req->url_, '/', &splited);
@@ -508,7 +508,7 @@ bool AppClient::LeaveRestCall(HttpRequest* req, HttpResponse* res,Result &result
              == false) ||
             (utils::StringToInt( splited[URL_SPLITED_POS_CLIENTID], &client_id ) 
              == false)) {
-        LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
+        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
             << splited[URL_SPLITED_POS_ROOMID]
             << splited[URL_SPLITED_POS_CLIENTID];
         result.state_ = INVALID_REQUEST;
@@ -593,7 +593,7 @@ bool AppClient::DoPost(HttpRequest* req, HttpResponse* res)  {
 }
 
 bool AppClient::DoGet(HttpRequest* req, HttpResponse* res)  {
-    LOG(INFO) << __FUNCTION__ << ", URL : " << req->url_;
+    RTC_LOG(INFO) << __FUNCTION__ << ", URL : " << req->url_;
     Json::StyledWriter writer;
     Json::Value json_result;
     Result result;

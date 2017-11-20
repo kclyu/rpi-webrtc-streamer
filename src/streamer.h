@@ -3,7 +3,7 @@
  *
  * stream.h
  *
- * Modified version of webrtc/src/webrtc/examples/peer/client/peer_connection.h 
+ * Modified version of src/webrtc/examples/peer/client/peer_connection.h 
  * in WebRTC source tree
  * The origianl copyright info below.
  */
@@ -26,9 +26,9 @@
 #include <set>
 #include <string>
 
-#include "webrtc/api/mediastreaminterface.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/api/peerconnectioninterface.h"
+#include "api/mediastreaminterface.h"
+#include "api/mediaconstraintsinterface.h"
+#include "api/peerconnectioninterface.h"
 #include "streamer_observer.h"
 #include "config_streamer.h"
 

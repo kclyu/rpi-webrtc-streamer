@@ -59,7 +59,7 @@ void AppWsClient::RegisterWebSocketMessage(WebSocketMessage *server_instance) {
 }
 
 void AppWsClient::OnConnect(int sockid) {
-    LOG(INFO) << "New WebSocket connnection id : " << sockid;
+    RTC_LOG(INFO) << "New WebSocket connnection id : " << sockid;
     // reset the chunked_frames list container
     chunked_frames_.clear();
     num_chunked_frames_=0;
@@ -67,7 +67,7 @@ void AppWsClient::OnConnect(int sockid) {
 
 
 bool AppWsClient::OnMessage(int sockid, const std::string& message) {
-    LOG(INFO) << __FUNCTION__ << "(" << sockid << ")";
+    RTC_LOG(INFO) << __FUNCTION__ << "(" << sockid << ")";
 
     Json::Reader json_reader;
     Json::Value json_value;
@@ -84,19 +84,19 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
 
     if ( parsing_successful && !cmd.empty() ) {
         // parsing success and found the cmd keyword...
-        LOG(INFO) << "JSON Parsing Success: " << message;
+        RTC_LOG(INFO) << "JSON Parsing Success: " << message;
     }
     else {
         static const int kMaxChunkedFrames=5;
 
         // json_value.clear();
         chunked_frames_.append(message);
-        LOG(INFO) << "Chunked Frame (" << num_chunked_frames_ << "), Message : " 
+        RTC_LOG(INFO) << "Chunked Frame (" << num_chunked_frames_ << "), Message : " 
             << chunked_frames_;
         if (!json_reader.parse(chunked_frames_, json_value)) {
             // parsing failed
             if( num_chunked_frames_++ > kMaxChunkedFrames )  {
-                LOG(INFO) << "Failed to parse, Dropping Chunked frames: " 
+                RTC_LOG(INFO) << "Failed to parse, Dropping Chunked frames: " 
                     << chunked_frames_;
                 num_chunked_frames_ = 0;
                 chunked_frames_.clear();
@@ -109,7 +109,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             return true;
         }
         // parsing success and cmd keyword found.
-        LOG(INFO) << "Chunked frames successful: " << chunked_frames_;
+        RTC_LOG(INFO) << "Chunked frames successful: " << chunked_frames_;
         num_chunked_frames_ = 0;
         chunked_frames_.clear();
         // finally successful parsing
@@ -122,23 +122,23 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             int client_id, room_id;  
             if( !rtc::GetIntFromJsonObject(json_value, kJsonRegisterRoomId, &room_id) ||
                 !rtc::GetIntFromJsonObject(json_value, kJsonRegisterClientId, &client_id)) {
-                LOG(LS_ERROR) << "Not found clientid/roomid :" << message;
+                RTC_LOG(LS_ERROR) << "Not found clientid/roomid :" << message;
                 return true;
             }
-            LOG(INFO) << "Room ID: " << room_id << ", Client ID: " << client_id;
+            RTC_LOG(INFO) << "Room ID: " << room_id << ", Client ID: " << client_id;
             if( app_client_.Connected( sockid, room_id, client_id ) == false ) {
-                LOG(LS_ERROR) << "Failed to set room_id/client_id :" << message;
+                RTC_LOG(LS_ERROR) << "Failed to set room_id/client_id :" << message;
                 return false;
             };
 
             if ( IsStreamSessionActive() == false ) {
                 if( ActivateStreamSession(client_id,utils::IntToString(client_id))  == true ) {
-                    LOG(INFO) << "New WebSocket Name: " << client_id;
+                    RTC_LOG(INFO) << "New WebSocket Name: " << client_id;
                 };
                 return true;
             }
             // TODO(kclyu) need to send response of room busy error message
-            LOG(INFO) << "Streamer Session already Active. Try to drop connection: " << client_id;
+            RTC_LOG(INFO) << "Streamer Session already Active. Try to drop connection: " << client_id;
             return true;
         }
         // command send
@@ -149,17 +149,17 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 MessageFromPeer(msg);
                 return true;
             }
-            LOG(LS_ERROR) << "Failed to pass received message :" << message;
+            RTC_LOG(LS_ERROR) << "Failed to pass received message :" << message;
         }
         return true;
     };
-    LOG(LS_ERROR) << "Received unknown protocol message. " << message;
+    RTC_LOG(LS_ERROR) << "Received unknown protocol message. " << message;
     return true;
 }
 
 
 void AppWsClient::OnDisconnect(int sockid) {
-    LOG(INFO) << "WebSocket connnection id : " << sockid << " closed";
+    RTC_LOG(INFO) << "WebSocket connnection id : " << sockid << " closed";
     app_client_.DisconnectWait(sockid);
     app_client_.Reset();    
     if ( IsStreamSessionActive() == true ) {
@@ -174,7 +174,7 @@ bool AppWsClient::SendMessageToPeer(const int peer_id, const std::string &messag
     RTC_DCHECK(websocket_message_ != nullptr ) << "WebSocket Server instance is nullptr";
     int websocket_id;
 
-    LOG(INFO) << __FUNCTION__;
+    RTC_LOG(INFO) << __FUNCTION__;
     if( app_client_.GetWebsocketId(peer_id, websocket_id ) == true ) {
         Json::StyledWriter json_writer;
         Json::Value json_message;

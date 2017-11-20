@@ -3,7 +3,7 @@
  *
  * utils.cc
  *
- * Modified version of webrtc/src/webrtc/examples/peer/client/utils.cc in WebRTC source tree
+ * Modified version of webrtc/src/examples/peer/client/utils.cc in WebRTC source tree
  * The origianl copyright info below.
  */
 /*
@@ -22,14 +22,14 @@
 #include <string>
 #include <iostream>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/filerotatingstream.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/logsinks.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/filerotatingstream.h"
+#include "rtc_base/pathutils.h"
+#include "rtc_base/logsinks.h"
 
 #include "file_logger.h"
 
@@ -57,7 +57,7 @@ bool FileLogger::Init() {
     if( inited_ == true ) return true;  // no more initialization
 
     if( MoveLogFiletoNextShiftFolder() == false ) {
-        LOG(LS_ERROR) << "Failed to rotate log files at path: " << dir_path_;
+        RTC_LOG(LS_ERROR) << "Failed to rotate log files at path: " << dir_path_;
         return false;
     };
 
@@ -65,7 +65,7 @@ bool FileLogger::Init() {
                 LOGGING_FILENAME, log_max_file_size_, MAX_LOG_FILE_NUM ));
 
     if(!logSink_->Init()) {
-        LOG(LS_ERROR) << "Failed to open log files at path: " << dir_path_;
+        RTC_LOG(LS_ERROR) << "Failed to open log files at path: " << dir_path_;
         logSink_.reset();
         return false;
     }
@@ -112,20 +112,22 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
     rtc::DirectoryIterator it;
     rtc::Pathname src_file, dest_file;
 
+#ifdef _0   // TODO remove CreateFolder
     // check src & dest path is directory
     if( !rtc::Filesystem::IsFolder(dest)) {
         if( rtc::Filesystem::CreateFolder( dest ) == false ) 
-            LOG(LS_ERROR) << "Failed to create dest directory: " 
+            RTC_LOG(LS_ERROR) << "Failed to create dest directory: " 
                 << dest.pathname();
     }
     if( !rtc::Filesystem::IsFolder(src)) {
         if( rtc::Filesystem::CreateFolder( src ) == false ) {
-            LOG(LS_ERROR) << "Failed to create src directory: " 
+            RTC_LOG(LS_ERROR) << "Failed to create src directory: " 
                 << src.pathname();
             // source directory is just created, so nothing to move files
             return true;
         };
     }
+#endif
 
     // iterate source directory 
     if (!it.Iterate(src)) {
@@ -137,7 +139,7 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
             src_file.SetPathname(src.folder(), filename);
             dest_file.SetPathname(dest.folder(), filename);
             if( rtc::Filesystem::MoveFile(src_file, dest_file) == false ) 
-                LOG(LS_ERROR) << "Failed to move file : " 
+                RTC_LOG(LS_ERROR) << "Failed to move file : " 
                     << src_file.pathname() << ", to: " 
                     << dest_file.pathname();
         };
@@ -154,7 +156,7 @@ bool FileLogger::MoveLogFiletoNextShiftFolder() {
     base_log_path.SetFolder( dir_path_ );
     // checking whether the base log directory is exist
     if( rtc::Filesystem::IsFolder( base_log_path ) == false ) {
-        LOG(LS_ERROR) << "Log directory does not exist : " 
+        RTC_LOG(LS_ERROR) << "Log directory does not exist : " 
                     << base_log_path.pathname() ;
         return false;
     };

@@ -29,8 +29,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 #include "limits.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 #include "raspi_quality_config.h"
 #include "config_media.h"
@@ -132,19 +132,19 @@ void QualityConfig::ReportChannelParameters(uint32_t packet_loss, uint64_t rtt )
 
 void QualityConfig::ReportFrameRate(int framerate) {
     if( target_framerate_ == framerate ) return;
-    LOG(INFO) << "FrameRate changed from " << target_framerate_ << ", to " 
+    RTC_LOG(INFO) << "FrameRate changed from " << target_framerate_ << ", to " 
         << framerate;
     target_framerate_ = framerate;
 }
 
 void QualityConfig::ReportMaxBitrate(int bitrate) {
-    LOG(INFO) << "Setting Max Bitrate : " << bitrate;
+    RTC_LOG(INFO) << "Setting Max Bitrate : " << bitrate;
     max_bitrate_ = bitrate;
 }
 
 void QualityConfig::ReportTargetBitrate(int bitrate) {
     if( bitrate == target_bitrate_ ) return;
-    // LOG(INFO) << "Bitrate changed from " << target_bitrate_ 
+    // RTC_LOG(INFO) << "Bitrate changed from " << target_bitrate_ 
     //    << ", to " << bitrate ;
     target_bitrate_ = bitrate;
 }
@@ -236,7 +236,7 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
             if( resolution.width_ != current_res_.width_ ||
                 resolution.height_ != current_res_.height_ ) {
                 current_res_ = resolution;
-                LOG(INFO) << "BestMatch Resolution for bitrate " 
+                RTC_LOG(INFO) << "BestMatch Resolution for bitrate " 
                     << target_bitrate_ << " : "
                     << candidate.width_ << "x" << candidate.height_ ;
                 return true;
@@ -245,7 +245,7 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
                 return false;
         }
     }
-    LOG(INFO) << "BestMatch Resolution (end of loop): " 
+    RTC_LOG(INFO) << "BestMatch Resolution (end of loop): " 
         << candidate.width_ << "x" << candidate.height_ ;
     current_res_ = resolution;
     return true;

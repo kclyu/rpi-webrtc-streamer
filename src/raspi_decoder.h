@@ -27,39 +27,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RASPI_ENCODER_H_
-#define RASPI_ENCODER_H_
+#ifndef RASPI_DECODER_H_
+#define RASPI_DECODER_H_
 
 #include <memory>
 #include <vector>
 
 #include "media/base/codec.h"
 #include "api/video_codecs/sdp_video_format.h"
-#include "api/video_codecs/video_encoder_factory.h"
-#include "api/video_codecs/video_encoder.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_decoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
 
 namespace webrtc {
 
 
-
-class RaspiEncoder : public VideoEncoder {
+class RaspiDecoder : public VideoDecoder {
 public:
-    static std::unique_ptr<RaspiEncoder> Create(const cricket::VideoCodec& codec);
+    static std::unique_ptr<RaspiDecoder> Create();
     static bool IsSupported();
-    ~RaspiEncoder() override {}
+    ~RaspiDecoder() override {}
 };
 
 //
-// Implementation of Raspberry video encoder factory 
-class RaspiVideoEncoderFactory : public VideoEncoderFactory {
+// Implementation of Raspberry video decoder factory 
+class RaspiVideoDecoderFactory : public VideoDecoderFactory {
 public:
-    RaspiVideoEncoderFactory();
-    virtual ~RaspiVideoEncoderFactory() override;
-    static RaspiVideoEncoderFactory* CreateVideoEncoderFactory();
+    RaspiVideoDecoderFactory();
+    virtual ~RaspiVideoDecoderFactory() override;
+    static RaspiVideoDecoderFactory* CreateVideoDecoderFactory();
 
-    std::unique_ptr<VideoEncoder> CreateVideoEncoder(
+    std::unique_ptr<VideoDecoder> CreateVideoDecoder(
         const SdpVideoFormat& format) override;
 
     // Returns a list of supported codecs in order of preference.
@@ -67,13 +66,11 @@ public:
         return supported_formats_;
     }
 
-    CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
-
  private:
     std::vector<SdpVideoFormat> supported_formats_;
-    const std::unique_ptr<cricket::WebRtcVideoEncoderFactory> internal_encoder_factory_;
+    const std::unique_ptr<cricket::WebRtcVideoDecoderFactory> internal_decoder_factory_;
 };
 
 }  // namespace webrtc
 
-#endif  // RASPI_ENCODER_H_
+#endif  // RASPI_DECODER_H_

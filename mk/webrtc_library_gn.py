@@ -12,7 +12,7 @@ import re
 """
 Global variable for peerconnection ninja build file
 """
-peerconnection_ninja_file = '/obj/webrtc/examples/peerconnection_client.ninja'
+peerconnection_ninja_file = '/obj/examples/peerconnection_client.ninja'
 
 
 search_path = ""

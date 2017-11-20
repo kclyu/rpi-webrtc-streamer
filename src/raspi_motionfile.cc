@@ -32,15 +32,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <list>
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/pathutils.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/platform_thread.h"
 
 
 #include "config_motion.h"
@@ -173,10 +173,10 @@ bool RaspiMotionFile::StartWriterThread() {
         writerThread_->Start();
         writerThread_->SetPriority(rtc::kHighPriority);
         writerThreadStarted_ = true;
-        LOG(LS_VERBOSE) << "Motion File Writer thread initialized.";
+        RTC_LOG(LS_VERBOSE) << "Motion File Writer thread initialized.";
         return true;
     }
-    LOG(LS_VERBOSE) << "Motion File Writer thread already initialized!";
+    RTC_LOG(LS_VERBOSE) << "Motion File Writer thread already initialized!";
     return false;
 }
 
@@ -187,7 +187,7 @@ bool RaspiMotionFile::StopWriterThread() {
         writerThreadStarted_ = false;
         writerThread_->Stop();
         writerThread_.reset();
-        LOG(INFO) << "Motion File Writer thread terminated.";
+        RTC_LOG(INFO) << "Motion File Writer thread terminated.";
 
         // stop motion file writer thread ;
         CloseWriterFiles();
@@ -225,25 +225,25 @@ bool RaspiMotionFile::OpenWriterFiles(void) {
     const std::string date_string = GetDateTimeString();
     std::string frame_filename = prefix_ + "_" + date_string + videoFileExtension;
 
-    LOG(INFO) << "Video File : " <<  base_path_ + "/" + frame_filename;
+    RTC_LOG(INFO) << "Video File : " <<  base_path_ + "/" + frame_filename;
 
     // reset file written size
     total_frame_written_size_ = 0;
     if( (frame_file_ = rtc::File::Create( base_path_ + "/" + frame_filename ))
             .IsOpen() == false  ) {
-        LOG(LS_ERROR) << "Error in opening video file : " <<  frame_filename;
+        RTC_LOG(LS_ERROR) << "Error in opening video file : " <<  frame_filename;
         return false;
     }
 
     // open imv file when the flag is enabled
     if( config_motion::motion_save_imv_file  == true ) {
         std::string imv_filename = prefix_ + "_" + date_string + imvFileExtension;
-        LOG(INFO) << "IMV File : " <<  base_path_ + "/" + imv_filename;
+        RTC_LOG(INFO) << "IMV File : " <<  base_path_ + "/" + imv_filename;
         if( (imv_file_ = rtc::File::Create( base_path_ + "/" + imv_filename ))
                 .IsOpen() == false  ) {
             frame_file_.Close(); // closing already opened video file
             rtc::File::Remove( frame_filename ); // and remove the video file
-            LOG(LS_ERROR) << "Error in opening imv file : " <<  imv_filename;
+            RTC_LOG(LS_ERROR) << "Error in opening imv file : " <<  imv_filename;
             return false;
         };
     };
@@ -267,7 +267,7 @@ bool RaspiMotionFile::FrameFileWrite() {
         }
         if( (write_length = frame_file_.Write( frame_writer_buffer_, read_length ) ) 
                 < read_length) {
-            LOG(LS_ERROR) << "Error in Write frame buffer : #" <<  frame_counter_;
+            RTC_LOG(LS_ERROR) << "Error in Write frame buffer : #" <<  frame_counter_;
             return false;
         }
         frame_counter_++;
@@ -275,7 +275,7 @@ bool RaspiMotionFile::FrameFileWrite() {
 
         return true;
     }
-    LOG(LS_ERROR) << "Failed to read Frame from queue";
+    RTC_LOG(LS_ERROR) << "Failed to read Frame from queue";
 
     // failed to write frame to file
     return false;
@@ -289,13 +289,13 @@ bool RaspiMotionFile::ImvFileWrite() {
     if( imv_queue_->ReadFront(frame_writer_buffer_, DefaultVideoFrameBufferSize, 
                 &read_length) == true )  {
         if( imv_file_.Write( frame_writer_buffer_, read_length ) < read_length) {
-            LOG(LS_ERROR) << "Error in Write Imv buffer : #" <<  imv_counter_;
+            RTC_LOG(LS_ERROR) << "Error in Write Imv buffer : #" <<  imv_counter_;
             return false;
         }
         imv_counter_++;
         return true;
     }
-    LOG(LS_ERROR) << "Failed to read Imv frame queue";
+    RTC_LOG(LS_ERROR) << "Failed to read Imv frame queue";
 
     // failed to write frame to file
     return false;
@@ -305,13 +305,13 @@ bool RaspiMotionFile::ImvFileWrite() {
 bool RaspiMotionFile::CloseWriterFiles(void) {
     bool close_status = true;
     if( frame_file_.IsOpen() == false ) {
-        LOG(LS_ERROR) << "Trying to close the video file is not opened";
+        RTC_LOG(LS_ERROR) << "Trying to close the video file is not opened";
         close_status = false;
     }
     frame_file_.Close();
     if( config_motion::motion_save_imv_file  == true ) {
         if( imv_file_.IsOpen() == false ) {
-            LOG(LS_ERROR) << "Trying to close the imv file is not opened";
+            RTC_LOG(LS_ERROR) << "Trying to close the imv file is not opened";
             close_status = false;
         }
         imv_file_.Close();
@@ -345,14 +345,14 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
 
     // check video path is folder
     if( !rtc::Filesystem::IsFolder(video_files_folder)) {
-        LOG(LS_ERROR) << "Motion file path is not folder : "
+        RTC_LOG(LS_ERROR) << "Motion file path is not folder : "
             << video_files_folder.pathname();
         return false;
     };
 
     // iterate video file directory 
     if (!it.Iterate(video_files_folder)) {
-        LOG(LS_ERROR) << "Could't make DirectoryIterator"
+        RTC_LOG(LS_ERROR) << "Could't make DirectoryIterator"
             << video_files_folder.pathname();
         return false;
     } 
@@ -373,7 +373,7 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     // sorting the video file list
     video_file_list.sort(VideoFileCompare);
 
-    LOG(INFO) << "Directory \"" << video_files_folder.pathname()
+    RTC_LOG(INFO) << "Directory \"" << video_files_folder.pathname()
         << "\" " <<  file_counter << " files, total size: " 
         << total_directory_size;
 
@@ -383,7 +383,7 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
         total_directory_size -= video_file_list.front().size_;
         video_file_path.SetPathname( video_files_folder.pathname(),
                 video_file_list.front().video_file_);
-        LOG(INFO) << "Removing Video File :" << video_file_list.front().video_file_;
+        RTC_LOG(INFO) << "Removing Video File :" << video_file_list.front().video_file_;
         rtc::File::Remove( video_file_path );
         video_file_list.pop_front();
     };

@@ -41,9 +41,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RTC_DCHECK CHECK
 #define RTC_ERROR  LOG(ERROR)
 #else
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "common_types.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #define RTC_ERROR  LOG(LS_ERROR)
 #endif
 
@@ -273,7 +273,7 @@ bool RaspiMotionVector::GetBlobImage(uint8_t *buffer, int len ) {
 }
 
 void RaspiMotionVector::SetBlobEnable(bool blob_enable) {
-    LOG(INFO) << "Blob Analyse Enable: " << blob_enable;
+    RTC_LOG(INFO) << "Blob Analyse Enable: " << blob_enable;
     if( blob_enable ) {
         blob_enable_ = true;
         blob_.reset(new RaspiMotionBlob(mvx_ , mvy_));

@@ -35,12 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(WEBRTC_POSIX)
 #include <unistd.h>
 #endif
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/socket.h"
-#include "webrtc/rtc_base/timeutils.h"
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/stringencode.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/timeutils.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/stringencode.h"
 
 #include "utils.h"
 
@@ -71,10 +71,10 @@ bool DirectSocketServer::Listen(const rtc::SocketAddress& address) {
     listener_->SignalReadEvent.connect(this, &DirectSocketServer::OnAccept);
     if ((listener_->Bind(address) != SOCKET_ERROR) &&
             (listener_->Listen(5) != SOCKET_ERROR)) {
-        LOG(INFO) << "Start listening " << address  << ".";
+        RTC_LOG(INFO) << "Start listening " << address  << ".";
         return true;
     }
-    LOG(LS_ERROR) << "Failed to listen " << address  << ".";
+    RTC_LOG(LS_ERROR) << "Failed to listen " << address  << ".";
     return false;
 }
 
@@ -86,7 +86,7 @@ void DirectSocketServer::StopListening(void) {
 }
 
 void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
-    LOG(INFO) << __FUNCTION__;
+    RTC_LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(socket == listener_.get());
     rtc::AsyncSocket* incoming = listener_->Accept(nullptr);
     RTC_CHECK(incoming != nullptr );
@@ -98,7 +98,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
         socket_peer_id_ = DIRECTSOCKET_FAKE_PEERID;
         socket_peer_name_ = DIRECTSOCKET_FAKE_NAME_PREFIX + 
             incoming->GetRemoteAddress().ToString();
-        LOG(INFO) << "New Session Name: " << socket_peer_name_;
+        RTC_LOG(INFO) << "New Session Name: " << socket_peer_name_;
 
         if( ActivateStreamSession(socket_peer_id_, socket_peer_name_) == true) {
             direct_socket_.reset(incoming);
@@ -120,9 +120,9 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
                 < FORCE_CONNECTION_DROP_VALID_DURATION ) {
             connection_reject_count_ += 1;
             last_reject_time_ms_  = rtc::TimeMillis();
-            LOG(INFO) << "Forced Connection Counter: " << connection_reject_count_;
+            RTC_LOG(INFO) << "Forced Connection Counter: " << connection_reject_count_;
             if ( connection_reject_count_ >  FORCE_CONNECTION_DROP_TRYCOUNT_THRESHOLD  )
-                LOG(INFO) << "Forced Connection close performed, " 
+                RTC_LOG(INFO) << "Forced Connection close performed, " 
                     << " counter reached to threahold.";
                 // Release the current active stream session
                 OnClose(  direct_socket_.get(), 0);
@@ -137,11 +137,11 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
 
 //  
 void DirectSocketServer::RegisterObserver(StreamerObserver* callback) {
-    LOG(INFO) << __FUNCTION__;
+    RTC_LOG(INFO) << __FUNCTION__;
 }
 
 void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
-    LOG(INFO) << __FUNCTION__ << ", Error: " << err ;
+    RTC_LOG(INFO) << __FUNCTION__ << ", Error: " << err ;
 
     // Close the stream session
     socket->SignalCloseEvent.disconnect(this);
@@ -151,7 +151,7 @@ void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
 }
 
 void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
-    LOG(INFO) << __FUNCTION__;
+    RTC_LOG(INFO) << __FUNCTION__;
     RTC_DCHECK( socket != nullptr );
 
     char buffer[4096]= {0x00};
@@ -166,7 +166,7 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
 
     size_t index = buffered_read_.find("\n");
     if ( index != std::string::npos ) {
-        LOG(INFO) << "Message IN from client: \"" << buffered_read_ << "\""; 
+        RTC_LOG(INFO) << "Message IN from client: \"" << buffered_read_ << "\""; 
         // '\n' delimiter found in read buffer
         MessageFromPeer(buffered_read_);
         buffered_read_.clear();
@@ -175,14 +175,14 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
 
 bool DirectSocketServer::SendMessageToPeer(const int peer_id, 
         const std::string &message) {
-    LOG(INFO) << __FUNCTION__;
+    RTC_LOG(INFO) << __FUNCTION__;
     std::string trimmed_message( message );
     trimmed_message.erase(
             std::remove(trimmed_message.begin(), trimmed_message.end(), '\n'), 
             trimmed_message.end());
     trimmed_message.append("\n");
 
-    LOG(INFO) << "Message OUT to client: \"" << trimmed_message << "\""; 
+    RTC_LOG(INFO) << "Message OUT to client: \"" << trimmed_message << "\""; 
     return (direct_socket_->Send(trimmed_message.data(), 
                 trimmed_message.length()) != SOCKET_ERROR);
 }

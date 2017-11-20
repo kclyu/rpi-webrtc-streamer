@@ -30,13 +30,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RPI_STREAMER_CONFIG_
 #define RPI_STREAMER_CONFIG_
 
-#include "webrtc/rtc_base/checks.h"
+#include "rtc_base/checks.h"
 
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/optionsfile.h"
+#include "rtc_base/pathutils.h"
 
-#include "webrtc/api/peerconnectioninterface.h"
+#include "api/peerconnectioninterface.h"
 
 class StreamerConfig  {
 public:

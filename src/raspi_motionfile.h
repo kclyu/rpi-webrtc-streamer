@@ -32,10 +32,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 
-#include "webrtc/rtc_base/platform_thread.h"
+#include "rtc_base/platform_thread.h"
 
-#include "webrtc/rtc_base/file.h"
-#include "webrtc/rtc_base/bufferqueue.h"
+#include "rtc_base/file.h"
+#include "rtc_base/bufferqueue.h"
 
 class RaspiMotionFile : public rtc::Event {
 public:

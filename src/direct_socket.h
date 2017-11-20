@@ -35,10 +35,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <string>
 
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/physicalsocketserver.h"
-#include "webrtc/rtc_base/signalthread.h"
-#include "webrtc/rtc_base/sigslot.h"
+#include "rtc_base/nethelpers.h"
+#include "rtc_base/physicalsocketserver.h"
+#include "rtc_base/signalthread.h"
+#include "rtc_base/sigslot.h"
 
 #include "streamer_observer.h"
 

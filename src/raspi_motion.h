@@ -33,11 +33,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "system_wrappers/include/clock.h"
+#include "rtc_base/platform_thread.h"
 
-#include "webrtc/rtc_base/bufferqueue.h"
-#include "webrtc/modules/video_coding/utility/moving_average.h"
+#include "rtc_base/bufferqueue.h"
+#include "modules/video_coding/utility/moving_average.h"
 
 #include "mmal_wrapper.h"
 #include "raspi_motionvector.h"

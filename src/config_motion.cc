@@ -34,10 +34,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 #include <string>
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/fileutils.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/fileutils.h"
+#include "rtc_base/pathutils.h"
 
 #include "config_defines.h"
 #include "config_motion.h"
@@ -78,7 +78,7 @@ CONFIG_DEFINE( MotionTotalFileSizeLimit, motion_file_total_size_limit, int, 4000
 // or return false otherwise.
 bool validate_motion_directory_path(std::string path, std::string default_value) {
     if( !rtc::Filesystem::IsFolder(path)) {
-        LOG(LS_ERROR) << "Path \"" << path << "\" is not directory. using default:"
+        RTC_LOG(LS_ERROR) << "Path \"" << path << "\" is not directory. using default:"
             << default_value;
         return false;
     }
@@ -89,7 +89,7 @@ bool validate_motion_directory_path(std::string path, std::string default_value)
 // or return false otherwise.
 bool validate_motion_annotate_text_size(int text_size, int default_value) {
     if( text_size <  6 || text_size >= 160 ) {
-        LOG(LS_ERROR) << "Annotate text size is not valid\"" << text_size 
+        RTC_LOG(LS_ERROR) << "Annotate text size is not valid\"" << text_size 
             << "\" text size should be within 6 - 160, using default:"
             << default_value;
         return false;

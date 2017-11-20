@@ -34,8 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <vector>
 
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/pathutils.h"
+#include "rtc_base/network.h"
+#include "rtc_base/pathutils.h"
 
 #include "websocket_server.h"
 #include "../lib/private-libwebsockets.h"
@@ -99,16 +99,16 @@ void LibWebSocketServer::Log(int level, const char *line) {
 
 	switch (level) {
 	case LLL_ERR:
-		LOG(LS_ERROR) << log_line_header << line_buffer;
+		RTC_LOG(LS_ERROR) << log_line_header << line_buffer;
 		break;
 	case LLL_WARN:
-		LOG(WARNING) << log_line_header << line_buffer;
+		RTC_LOG(WARNING) << log_line_header << line_buffer;
 		break;
 	case LLL_NOTICE:
-		LOG(INFO) << log_line_header << line_buffer;
+		RTC_LOG(INFO) << log_line_header << line_buffer;
 		break;
 	case LLL_INFO:
-		LOG(INFO) << log_line_header << line_buffer;
+		RTC_LOG(INFO) << log_line_header << line_buffer;
 		break;
 	}
 }
@@ -239,7 +239,7 @@ void LibWebSocketServer::AddFileMapping(const std::string path,
     for(std::list<FileMapping>::iterator iter = file_mapping_.begin(); 
             iter != file_mapping_.end(); iter++) {
         if( iter->uri_prefix_ == path ) {
-            LOG(LS_ERROR) << "Do not allow same URI path in file mapping";
+            RTC_LOG(LS_ERROR) << "Do not allow same URI path in file mapping";
             return;
         }
     }
@@ -256,7 +256,7 @@ bool LibWebSocketServer::GetFileMapping(const std::string path,
             // compare only the uri_prefix_ size
             if( iter->uri_prefix_.compare(0, 
                         iter->uri_prefix_.size(),path) == 0) {
-                LOG(INFO) << "Found DIR type File Mapping URI in mapping : " << 
+                RTC_LOG(INFO) << "Found DIR type File Mapping URI in mapping : " << 
                     iter->uri_prefix_ << "(" << iter->uri_resource_path_  << ")";
 
                 file_mapping  = iter->uri_resource_path_ + path;
@@ -265,7 +265,7 @@ bool LibWebSocketServer::GetFileMapping(const std::string path,
         }
         else if( iter->type_ == MAPPING_FILE ) {
             if( iter->uri_prefix_ == path ) {
-                LOG(INFO) << "Found FILE type Mapping URI in mapping : " << 
+                RTC_LOG(INFO) << "Found FILE type Mapping URI in mapping : " << 
                     iter->uri_prefix_ << "(" << iter->uri_resource_path_  << ")";
                 file_mapping = iter->uri_resource_path_;
                 return true;
@@ -319,7 +319,7 @@ void LibWebSocketServer::AddWebSocketHandler (const std::string path,
     for(std::list<WSInternalHandlerConfig>::iterator iter 
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->path_ == path ) {
-            LOG(LS_ERROR) << "Do not allow same URI path in handler config";
+            RTC_LOG(LS_ERROR) << "Do not allow same URI path in handler config";
             return;
         }
     }
@@ -340,7 +340,7 @@ bool LibWebSocketServer::IsValidWSPath(const char *path) {
     for(std::list<WSInternalHandlerConfig>::iterator iter 
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->path_ == path ) {
-            LOG(INFO) << "Found handler URI in config : " << iter->path_;
+            RTC_LOG(INFO) << "Found handler URI in config : " << iter->path_;
             return true;
         }
     }
@@ -551,7 +551,7 @@ void HttpRequest::AddHeader(int header_id, const std::string value ) {
         }
     }
     else {
-        LOG(LS_ERROR) << "header_id(" << header_id << ") already exist.";
+        RTC_LOG(LS_ERROR) << "header_id(" << header_id << ") already exist.";
     }
 }
 
@@ -564,7 +564,7 @@ void HttpRequest::AddArgs(const std::string args_param ) {
         args_[param] = args_param.substr(pos+delimiter.size(),std::string::npos );
     }
     else {
-        LOG(LS_ERROR) << "Failed to get argument param from (" << param << ").";
+        RTC_LOG(LS_ERROR) << "Failed to get argument param from (" << param << ").";
     }
 }
 
@@ -573,22 +573,22 @@ void HttpRequest::AddData(const std::string data ) {
 }
 
 void HttpRequest::Print() {
-    LOG(INFO) << "Request Type : " << GetRequestTypeString(type_);
-    LOG(INFO) << "Request Content-Length : " << content_length_;
-    LOG(INFO) << "Request Server: " << server_;
-    LOG(INFO) << "Request Headers(" << header_.size() << "):";
+    RTC_LOG(INFO) << "Request Type : " << GetRequestTypeString(type_);
+    RTC_LOG(INFO) << "Request Content-Length : " << content_length_;
+    RTC_LOG(INFO) << "Request Server: " << server_;
+    RTC_LOG(INFO) << "Request Headers(" << header_.size() << "):";
     for(auto t: header_) {
-        LOG(INFO) << " " << t.first << ":" 
+        RTC_LOG(INFO) << " " << t.first << ":" 
               << t.second;
     };
-    LOG(INFO) << "Request Args(" << args_.size() << "):";
+    RTC_LOG(INFO) << "Request Args(" << args_.size() << "):";
     for(auto t: args_) {
-        LOG(INFO) << " " << t.first << ":" 
+        RTC_LOG(INFO) << " " << t.first << ":" 
               << t.second;
     };
     if( type_ == HTTP_POST ) {
-        LOG(INFO) << "Data size : " << data_.size();
-        LOG(INFO) << "Data: " << data_;
+        RTC_LOG(INFO) << "Data size : " << data_.size();
+        RTC_LOG(INFO) << "Data: " << data_;
     }
 }
 
@@ -604,7 +604,7 @@ void HttpResponse::AddHeader(int header_id, const std::string value ) {
     if( iter == header_.end()) {
         header_[header_id] = value;
     };
-    LOG(LS_ERROR) << "header_id(" << header_id << ") already exist.";
+    RTC_LOG(LS_ERROR) << "header_id(" << header_id << ") already exist.";
 }
 
 void HttpResponse::SetHeaderSent() {
@@ -616,15 +616,15 @@ bool HttpResponse::IsHeaderSent() {
 }
 
 void HttpResponse::Print() {
-    LOG(INFO) << "Response Status : " << status_;
-    LOG(INFO) << "Response Header(" << header_.size() << "):";
+    RTC_LOG(INFO) << "Response Status : " << status_;
+    RTC_LOG(INFO) << "Response Header(" << header_.size() << "):";
     for(auto t: header_) {
-        LOG(INFO) << " " << t.first << ":" 
+        RTC_LOG(INFO) << " " << t.first << ":" 
               << t.second;
     };
-    LOG(INFO) << "Response mine type : " << mime_;
-    LOG(INFO) << "Response size : " << response_.size();
-    LOG(INFO) << "Response: " << response_;
+    RTC_LOG(INFO) << "Response mine type : " << mime_;
+    RTC_LOG(INFO) << "Response size : " << response_.size();
+    RTC_LOG(INFO) << "Response: " << response_;
 }
 
 

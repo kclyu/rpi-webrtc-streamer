@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CONFIG_DEFINES_H_
 #include <string>
 
-#include "webrtc/rtc_base/optionsfile.h"
-#include "webrtc/rtc_base/stringencode.h"
+#include "rtc_base/optionsfile.h"
+#include "rtc_base/stringencode.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +51,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             if( config_.GetStringValue(kConfig ## key, &flag_value ) == true){ \
                 if(flag_value.compare("true") == 0) value = true; \
                 else if (flag_value.compare("false") == 0) value = false; \
-                else LOG(INFO) << "Default Config \"" <<  kConfig ## key \
+                else RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## key \
                         << "\" value is not valid" << flag_value; \
             }; \
         };
@@ -63,7 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 if(flag_value.compare("true") == 0) value = true; \
                 else if (flag_value.compare("false") == 0) value = false; \
                 else { \
-                    LOG(INFO) << "Default Config \"" <<  kConfig ## key \
+                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## key \
                         << "\" value is not valid" << flag_value; \
                     value = default_value; \
                 };  \
@@ -86,7 +86,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef CONFIG_LOAD_DUMP 
     #define DUMP_KEY_AND_VALUE(dkey,dconf,dvalue)  \
-        LOG(INFO) << "Config Key \"" <<  dkey << "\" Setting : \"" \
+        RTC_LOG(INFO) << "Config Key \"" <<  dkey << "\" Setting : \"" \
             << dconf << "\" Loaded Value : \"" << dvalue << "\""; 
 #else
     #define DUMP_KEY_AND_VALUE(dkey,dconf,dvalue) 
@@ -100,7 +100,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 if(flag_value.compare("true") == 0) value = true; \
                 else if (flag_value.compare("false") == 0) value = false; \
                 else { \
-                    LOG(INFO) << "Default Config \"" <<  kConfig ## key \
+                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## key \
                         << "\" value is not valid" << flag_value; \
                     value = kDefault ## key; \
                 };  \
@@ -122,9 +122,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             std::string flag_value; \
             if( config_.GetStringValue(kConfig ## key, &flag_value ) == true){ \
                 if( rtc::FromString( flag_value, &value ) == false ) { \
-                    LOG(INFO) << "Invalid config \"" << kConfig ## key \
+                    RTC_LOG(INFO) << "Invalid config \"" << kConfig ## key \
                         << "\", value : " << flag_value ; \
-                    LOG(INFO) << "Default Config \"" <<  kConfig ## key \
+                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## key \
                         << "\" value is not valid" << flag_value; \
                     value = kDefault ## key; \
                 } \

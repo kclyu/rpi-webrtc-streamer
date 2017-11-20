@@ -55,20 +55,20 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
 
     // LibWebSocket debug log
     if(config.GetLibwebsocketDebugEnable() ) {
-        LOG(INFO) << "Enable Websocket Library debug logging mesage";
+        RTC_LOG(INFO) << "Enable Websocket Library debug logging mesage";
         LogLevel(LibWebSocketServer::DEBUG_LEVEL_ALL);
     };
 
     config.GetWebSocketPort(port_num);
-    LOG(INFO) << "WebSocket port num : " << port_num;
+    RTC_LOG(INFO) << "WebSocket port num : " << port_num;
     if( Init(port_num) == false ) return false;
 
     config.GetWebRootPath(web_root);
-    LOG(INFO) << "Using File Mapping : " << web_root;
+    RTC_LOG(INFO) << "Using File Mapping : " << web_root;
     AddFileMapping("/", MAPPING_DEFAULT, web_root );
 
     config.GetRwsWsURL(ws_url);
-    LOG(INFO) << "Using RWS WS client url : " << ws_url;
+    RTC_LOG(INFO) << "Using RWS WS client url : " << ws_url;
     ws_client_.RegisterWebSocketMessage(this);
     AddWebSocketHandler(ws_url, SINGLE_INSTANCE, &ws_client_);
 
@@ -83,7 +83,7 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
     config.GetAdditionalWSRule(additional_ws_rule);
     app_client_.SetAdditionalWSRule(additional_ws_rule);
 
-    LOG(INFO) << "Using App client url : " << app_client_.GetWebSocketURL();
+    RTC_LOG(INFO) << "Using App client url : " << app_client_.GetWebSocketURL();
     AddWebSocketHandler(app_client_.GetWebSocketURL(), SINGLE_INSTANCE, &app_client_);
     AddHttpHandler(URL_JOIN_CMD, &app_client_);
     AddHttpHandler(URL_MESSAGE_CMD, &app_client_);

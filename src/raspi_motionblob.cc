@@ -40,10 +40,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RTC_DCHECK CHECK
 #define RTC_ERROR  LOG(ERROR)
 #else
-#include "webrtc/common_types.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#define RTC_ERROR  LOG(LS_ERROR)
+#include "common_types.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#define RTC_ERROR  RTC_LOG(LS_ERROR)
 #endif
 
 #include <list>
@@ -111,7 +111,7 @@ RaspiMotionBlob::RaspiMotionBlob(int mvx, int mvy)
 : mvx_(mvx), mvy_(mvy){
     blob_cancel_threshold_ = (mvx_ * mvy_ * config_motion::blob_cancel_threshold)/100;
     blob_tracking_threshold_ = config_motion::blob_tracking_threshold;
-    LOG(INFO) << "Cancel Treshold : " << blob_cancel_threshold_
+    RTC_LOG(INFO) << "Cancel Treshold : " << blob_cancel_threshold_
         << ", Track treshold : " << blob_tracking_threshold_ 
         << ", IMV size: " << mvx_*mvy_;
     extracted_ = new uint8_t [mvx_ * mvy_];
@@ -422,7 +422,7 @@ bool RaspiMotionBlob::AccquireBlobId(int* blob_id){
             return true;
         }
     };
-    LOG(INFO) << "Blob id is not available!";
+    RTC_LOG(INFO) << "Blob id is not available!";
     return false;
 }
 

@@ -3,7 +3,7 @@
  *
  * main.cc
  *
- * Modified version of webrtc/src/webrtc/examples/peer/client/main.cc in WebRTC source tree
+ * Modified version of src/webrtc/examples/peer/client/main.cc in WebRTC source tree
  * The origianl copyright info below.
  */
 /*
@@ -24,21 +24,21 @@
 #include <iostream>
 #include <vector>
 
-#include "webrtc/rtc_base/network.h"
-#include "webrtc/rtc_base/nethelpers.h"
-#include "webrtc/rtc_base/networkmonitor.h"
-#include "webrtc/rtc_base/physicalsocketserver.h"
-#include "webrtc/rtc_base/signalthread.h"
-#include "webrtc/rtc_base/sigslot.h"
-#include "webrtc/rtc_base/ssladapter.h"
+#include "rtc_base/network.h"
+#include "rtc_base/nethelpers.h"
+#include "rtc_base/networkmonitor.h"
+#include "rtc_base/physicalsocketserver.h"
+#include "rtc_base/signalthread.h"
+#include "rtc_base/sigslot.h"
+#include "rtc_base/ssladapter.h"
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>
 #include <net/if.h>
-#include "webrtc/rtc_base/ifaddrs_converter.h"
+#include "rtc_base/ifaddrs_converter.h"
 #endif  // defined(WEBRTC_POSIX)
 
 
-#include "webrtc/rtc_base/flags.h"
+#include "rtc_base/flags.h"
 
 #include "websocket_server.h"
 #include "app_channel.h"
@@ -156,17 +156,17 @@ int main(int argc, char** argv) {
 
     if( streamer_config.GetMediaConfig(config_filename) == true ) {
         if( config_media::config_load(config_filename) == false ) {
-            LOG(LS_WARNING) << "Failed to load media option config file:" 
+            RTC_LOG(LS_WARNING) << "Failed to load media option config file:" 
                 << config_filename;
         }
-        LOG(INFO) << "Using Media Config file: " << config_filename;
+        RTC_LOG(INFO) << "Using Media Config file: " << config_filename;
     };
     if( streamer_config.GetMotionConfig(config_filename) == true ) {
         if( config_motion::config_load(config_filename) == false ) {
-            LOG(LS_WARNING) << "Failed to load motion option config file:" 
+            RTC_LOG(LS_WARNING) << "Failed to load motion option config file:" 
                 << config_filename;
         }
-        LOG(INFO) << "Using Motion Config file: " << config_filename;
+        RTC_LOG(INFO) << "Using Motion Config file: " << config_filename;
     };
     
     std::unique_ptr<DirectSocketServer> direct_socket_server;
@@ -182,12 +182,12 @@ int main(int argc, char** argv) {
         int direct_socket_port_num;
 
         if( !streamer_config.GetDirectSocketPort(direct_socket_port_num) ) {
-            LOG(LS_ERROR) << "Error in getting direct socket port number: " 
+            RTC_LOG(LS_ERROR) << "Error in getting direct socket port number: " 
                 << direct_socket_port_num;
             rtc::CleanupSSL();
             return -1;
         }
-        LOG(INFO) << "Direct socket port num: " << direct_socket_port_num;
+        RTC_LOG(INFO) << "Direct socket port num: " << direct_socket_port_num;
         rtc::SocketAddress addr( "0.0.0.0", direct_socket_port_num );
 
         direct_socket_server.reset(new DirectSocketServer());

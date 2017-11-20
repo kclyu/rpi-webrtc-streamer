@@ -30,10 +30,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __MMAL_WRAPPER_H__
 #define __MMAL_WRAPPER_H__
 
-#include "webrtc/system_wrappers/include/clock.h"
-#include "webrtc/rtc_base/criticalsection.h"
-#include "webrtc/rtc_base/sequenced_task_checker.h"
-#include "webrtc/rtc_base/event.h"
+#include "system_wrappers/include/clock.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/event.h"
 #include "mmal_encoder.h"
 
 namespace webrtc {

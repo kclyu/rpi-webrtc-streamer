@@ -6,10 +6,10 @@ include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk
 
 RWS_INSTALL_DIR=\"/opt/rws\"
-RWS_VERSION=\"$(shell git describe --abbrev=8 --dirty --always --tags)\"
-WEBRTC_GIT=$(shell (cd $(WEBRTC_ROOT)/src/; git describe --abbrev=8 --dirty --always --tags))
-WEBRTC_NATIVE_PACKAGE=$(shell cat ../misc/WEBRTC_BRANCH.conf)
-
+RWS_VERSION=\"$(shell git describe --abbrev=32 --dirty --always --tags)\"
+WEBRTC_GIT=$(shell (cd $(WEBRTC_ROOT)/src/; git describe --abbrev=32 --dirty --always --tags))
+WEBRTC_CRPOSITION=$(shell (cd $(WEBRTC_ROOT)/src/;\
+	git log -1 | gawk 'match($$0,/Cr-Commit-Position/){print $$0}' | sed 's/ //g'))
 
 #
 #
@@ -22,9 +22,9 @@ BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS) $(H264_BITSTREAM_LIBS)
 SYSLIBS += $(LWS_SYS_LIBS) $(WEBRTC_SYSLIBS)
 LDFLAGS += $(WEBRTC_LDFLAGS) $(MMAL_LDFLAGS) 
 
-# Adding Version Inforation
+# Adding Version Information
 CCFLAGS += -D__RWS_VERSION__=$(RWS_VERSION) \
-		   -D__WEBRTC_VERSION__="\"$(WEBRTC_GIT),$(WEBRTC_NATIVE_PACKAGE)\""
+		   -D__WEBRTC_VERSION__="\"$(WEBRTC_GIT),$(WEBRTC_CRPOSITION)\""
 
 #$(info CFLAGS is "$(CFLAGS)")
 #$(info CCFLAGS is  "$(CCFLAGS)")
@@ -42,8 +42,9 @@ TARGET = ../webrtc-streamer
 # source & object list definition
 #
 SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc \
-	app_channel.cc  direct_socket.cc streamer_observer.cc streamer.cc \
-	main.cc raspi_encoder.cc mmal_wrapper.cc utils.cc \
+	app_channel.cc  direct_socket.cc  \
+	raspi_decoder_dummy.cc raspi_decoder.cc raspi_encoder.cc raspi_encoder_impl.cc \
+	mmal_wrapper.cc utils.cc streamer_observer.cc streamer.cc main.cc \
 	raspi_quality_config.cc file_logger.cc app_ws_client.cc app_client.cc \
 	raspi_motion.cc raspi_motionvector.cc raspi_motionblob.cc raspi_motionfile.cc \
 	config_media.cc  config_streamer.cc  config_motion.cc

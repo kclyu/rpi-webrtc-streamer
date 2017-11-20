@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 #include "websocket_server.h"
 #include "../lib/private-libwebsockets.h"
@@ -52,7 +52,7 @@ static size_t LWS_PRE_SIZE = LWS_PRE;
     if( (handler = reinterpret_cast<LibWebSocketServer *> \
             (wsi->protocol->user)->GetWebsocketHandler(pss->uri_path)) \
             == nullptr ) {  \
-        LOG(LS_ERROR) << "Callback Handler is not found in URI: "  \
+        RTC_LOG(LS_ERROR) << "Callback Handler is not found in URI: "  \
             << pss->uri_path; \
         return 0;\
     }; 
@@ -205,7 +205,7 @@ static SendResult WriteHttpResponseBody(struct lws *wsi,
         write_buffer_size = lws_write(wsi, buffer + LWS_PRE_SIZE, buffer_size, 
                 LWS_WRITE_HTTP);
         if( write_buffer_size < 0 ) {
-            LOG(LS_ERROR) << "write failed in the " <<  __FUNCTION__ 
+            RTC_LOG(LS_ERROR) << "write failed in the " <<  __FUNCTION__ 
                 << ", Trying to drop onnection";
             /* write failed, close conn */
 		    return SendResult::ERROR_DROP_CONNECTION;
@@ -291,7 +291,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             // keep the uri_path data in the pss
             strcpy(pss->uri_path, buf);
 
-            LOG(LS_INFO) << "Internal Http Handler for URI: " 
+            RTC_LOG(LS_INFO) << "Internal Http Handler for URI: " 
                     << pss->uri_path;
             HttpHandler *handler  = INTERNAL__GET_HTTPHANDLER;
             if(handler != nullptr ){
@@ -332,13 +332,13 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                 int  header_size = 0, retvalue;
 
                 INTERNAL__GET_WSSINSTANCE ->GetFileMapping(pss->uri_path,mapping_path);
-                LOG(INFO) << "File Request: " << pss->uri_path;
+                RTC_LOG(INFO) << "File Request: " << pss->uri_path;
 
                 header_ptr = header_buffer;
                 /* refuse to serve files we don't understand */
                 mimetype = get_mimetype(mapping_path.c_str());
                 if (!mimetype) {
-                    LOG(LS_ERROR) << "Unknown mimetype for " <<  mapping_path.c_str();
+                    RTC_LOG(LS_ERROR) << "Unknown mimetype for " <<  mapping_path.c_str();
                     lws_return_http_status(wsi,
                             HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE, NULL);
                     return -1;
@@ -361,7 +361,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                         header_size);
                 if (retvalue < 0 || ((retvalue > 0) && 
                             lws_http_transaction_completed(wsi)))
-                    LOG(INFO) << "Fail to send: " << mapping_path.c_str();
+                    RTC_LOG(INFO) << "Fail to send: " << mapping_path.c_str();
                     return -1; /* error or can't reuse connection: close the socket */
             }
         }
@@ -380,7 +380,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                     return 0;
                 case ERROR_REUSE_CONNECTION:
                 case ERROR_DROP_CONNECTION:
-                    LOG(LS_ERROR) << "Failed to send during WRITEABLE";
+                    RTC_LOG(LS_ERROR) << "Failed to send during WRITEABLE";
                     return -1;
             }
         }
@@ -391,7 +391,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
         internal_buffer[len] = 0x00;
         // append data on HttpRequest
         pss->http_request->AddData(internal_buffer);
-        LOG(LS_INFO) << "POST URI Adding Data";
+        RTC_LOG(LS_INFO) << "POST URI Adding Data";
 		break;
 	case LWS_CALLBACK_HTTP_BODY_COMPLETION:
         {
@@ -408,7 +408,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             }
 
             lws_get_peer_simple(wsi, buf, sizeof(buf));
-            LOG(INFO) <<  "HTTP connect from " <<  buf;
+            RTC_LOG(INFO) <<  "HTTP connect from " <<  buf;
 
             HttpHandler *handler  = INTERNAL__GET_HTTPHANDLER;
             if(handler != nullptr ){
@@ -466,7 +466,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 	case LWS_CALLBACK_ESTABLISHED:
         {
             WSInternalHandlerConfig *handler;
-            LOG(INFO) << "LWS_CALLBACK_ESTABLISHED";
+            RTC_LOG(INFO) << "LWS_CALLBACK_ESTABLISHED";
 
             INTERNAL__GET_WEBSOCKETHANDLER 
             handler->CreateHandlerRuntime(sockid, wsi);
@@ -478,7 +478,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 	case LWS_CALLBACK_CLOSED:
         {
             WSInternalHandlerConfig *handler;
-            LOG(INFO) << __FUNCTION__ << "LWS_CALLBACK_CLOSED";
+            RTC_LOG(INFO) << __FUNCTION__ << "LWS_CALLBACK_CLOSED";
 
             INTERNAL__GET_WEBSOCKETHANDLER
             handler->OnDisconnect(sockid);
@@ -517,12 +517,12 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                         pss->ring_buffer[pss->ring_buffer_index].payload +
                         LWS_PRE_SIZE, message_length, LWS_WRITE_TEXT);
                 if (num_sent < 0) {
-                    LOG(LS_ERROR) << "ERROR " << num_sent 
+                    RTC_LOG(LS_ERROR) << "ERROR " << num_sent 
                         << " writing to socket for sending meesage to peer";
                     return -1;
                 }
                 if (num_sent < message_length)
-                    LOG(LS_ERROR) << "ERROR socket partial write " << num_sent 
+                    RTC_LOG(LS_ERROR) << "ERROR socket partial write " << num_sent 
                         << " vs " <<  message_length;
 
                 // increse ring_buffer_index for next usage
@@ -565,9 +565,9 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 
             // check whether requested uri is in the he handler config
             if( INTERNAL__GET_WSSINSTANCE ->IsValidWSPath(pss->uri_path) ) 
-		        LOG(INFO) << "URI Path exist " <<  pss->uri_path;
+		        RTC_LOG(INFO) << "URI Path exist " <<  pss->uri_path;
             else {
-		        LOG(LS_ERROR) << "URI Path does not exist "
+		        RTC_LOG(LS_ERROR) << "URI Path does not exist "
                    << pss->uri_path << ", droping this connection\n", 
                 // reject the connection
 		        lws_rx_flow_control(wsi, 0);

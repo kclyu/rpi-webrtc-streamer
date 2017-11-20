@@ -3,7 +3,7 @@
  *
  * utils.cc
  *
- * Modified version of webrtc/src/webrtc/examples/peer/client/utils.cc in WebRTC source tree
+ * Modified version of src/webrtc/examples/peer/client/utils.cc in WebRTC source tree
  * The origianl copyright info below.
  */
 /*
@@ -22,14 +22,14 @@
 #include <string>
 #include <iostream>
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
-#include "webrtc/rtc_base/stringutils.h"
-#include "webrtc/rtc_base/stringencode.h"
-#include "webrtc/rtc_base/filerotatingstream.h"
-#include "webrtc/rtc_base/pathutils.h"
-#include "webrtc/rtc_base/logsinks.h"
+#include "rtc_base/stringutils.h"
+#include "rtc_base/stringencode.h"
+#include "rtc_base/filerotatingstream.h"
+#include "rtc_base/pathutils.h"
+#include "rtc_base/logsinks.h"
 
 #include "utils.h"
 
@@ -41,9 +41,9 @@ namespace utils {
 
 // Print verion information for command line option
 void PrintVersionInfo() {
-    std::cout << "RWS " << __RWS_VERSION__ << std::endl;
+    std::cout << "RWS Version: " << __RWS_VERSION__ << std::endl;
     std::cout << "RWS (rpi-webrtc-streamer) is a WebRTC H.264 streamer designed "
-        << " to run on Raspberry PI \nand Raspberry PI camera board hardware." 
+        << "to run on Raspberry PI \nand Raspberry PI camera board hardware." 
         << std::endl;
     std::cout << 
         "(Using WebRTC native package: " << __WEBRTC_VERSION__ << ")" << std::endl;

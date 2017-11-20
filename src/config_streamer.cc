@@ -35,10 +35,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <memory>
 #include <string>
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/arraysize.h"
-#include "webrtc/rtc_base/fileutils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/fileutils.h"
 
 #include "config_streamer.h"
 
@@ -96,7 +96,7 @@ static const char kConfigLibraryDebug[] = "libwebsocket_debug";
                 if(flag_value.compare("true") == 0) return true; \
                 else if (flag_value.compare("false") == 0) return false; \
                 else { \
-                    LOG(INFO) << "Default Config \"" <<  key \
+                    RTC_LOG(INFO) << "Default Config \"" <<  key \
                         << "\" value is not valid" << flag_value; \
                     return default_value; \
                 };  \
@@ -129,8 +129,8 @@ static const char kConfigLibraryDebug[] = "libwebsocket_debug";
 ///////////////////////////////////////////////////////////////////////////////////////////
 static bool validate__portnumber(int &port_number, int default_value ) {
     if ((port_number < 1) || (port_number > 65535)) {
-            LOG(LS_ERROR) << "Error in port value," << port_number << " is not a valid port";
-            LOG(LS_ERROR) << "Resetting to default value";
+            RTC_LOG(LS_ERROR) << "Error in port value," << port_number << " is not a valid port";
+            RTC_LOG(LS_ERROR) << "Resetting to default value";
             port_number = default_value;
             return false;
     }
@@ -270,7 +270,7 @@ bool StreamerConfig::GetStunServer(webrtc::PeerConnectionInterface::IceServer &s
             server.urls.push_back(token);
         }
         else {
-            LOG(LS_ERROR) << "Ignored stun server url : " << token;
+            RTC_LOG(LS_ERROR) << "Ignored stun server url : " << token;
         }
     }
 
@@ -305,10 +305,10 @@ bool StreamerConfig::GetTurnServer(webrtc::PeerConnectionInterface::IceServer &s
         if( token.compare(0, 5 /* kTurnPrefix len*/, kTurnPrefix) == 0 )  {
             count++;
             server.urls.push_back(token);
-            LOG(LS_ERROR) << "Adding Turn server url : " << token;
+            RTC_LOG(LS_ERROR) << "Adding Turn server url : " << token;
         }
         else {
-            LOG(LS_ERROR) << "Ignored Turn server url : " << token;
+            RTC_LOG(LS_ERROR) << "Ignored Turn server url : " << token;
         }
     }
 

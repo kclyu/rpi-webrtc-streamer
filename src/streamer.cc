@@ -3,7 +3,7 @@
  *
  * streamer.cc
  *
- * Modified version of webrtc/src/webrtc/examples/peer/client/conductor.cc in WebRTC source tree
+ * Modified version of src/webrtc/examples/peer/client/conductor.cc in WebRTC source tree
  * The origianl copyright info below.
  */
 
@@ -21,21 +21,27 @@
 #include <utility>
 #include <vector>
 
-#include "webrtc/rtc_base/json.h"
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/api/mediaconstraintsinterface.h"
-#include "webrtc/media/engine/webrtcvideodecoderfactory.h"
-#include "webrtc/media/engine/webrtcvideoencoderfactory.h"
-#include "webrtc/media/engine/webrtcvideocapturerfactory.h"
-#include "webrtc/modules/video_capture/video_capture_factory.h"
+#include "rtc_base/json.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "api/mediaconstraintsinterface.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "media/engine/webrtcvideocapturerfactory.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/video_capture/video_capture_factory.h"
+#include "modules/audio_processing/include/audio_processing.h"  
 
-#include "webrtc/system_wrappers/include/trace.h"
-
-#include "webrtc/api/rtpsenderinterface.h"
-#include "webrtc/api/test/fakeconstraints.h"
-#include "webrtc/media/base/fakevideocapturer.h"
+#include "api/audio/audio_mixer.h"
+#include "api/rtpsenderinterface.h"
+#include "api/test/fakeconstraints.h"
+#include "media/base/fakevideocapturer.h"
 #include "raspi_encoder.h"
+#include "raspi_encoder_impl.h"
+#include "raspi_decoder.h"
+#include "raspi_decoder_dummy.h"
 
 #include "streamer.h"
 #include "streamer_observer.h"
@@ -72,10 +78,10 @@ public:
             new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
     }
     virtual void OnSuccess() {
-        LOG(INFO) << __FUNCTION__;
+        RTC_LOG(INFO) << __FUNCTION__;
     }
     virtual void OnFailure(const std::string& error) {
-        LOG(INFO) << __FUNCTION__ << " " << error;
+        RTC_LOG(INFO) << __FUNCTION__ << " " << error;
     }
 
 protected:
@@ -122,21 +128,52 @@ bool Streamer::InitializePeerConnection() {
     signaling_thread_->SetName("signaling_thread", nullptr);
     RTC_CHECK(signaling_thread_->Start()) << "Failed to start signaling thread";
 
-    cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
-    encoder_factory = new webrtc::MMALVideoEncoderFactory();
+    // cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
+    // encoder_factory = new webrtc::MMALVideoEncoderFactory();
+    
+    rtc::scoped_refptr<webrtc::AudioDeviceModule> adm 
+        = webrtc::AudioDeviceModule::Create(webrtc::AudioDeviceModule::kLinuxAlsaAudio);
+
+    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer = nullptr;
+    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processor = nullptr;
+
+    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory = 
+        std::unique_ptr<webrtc::VideoDecoderFactory>
+        (webrtc::RaspiVideoDecoderFactory::CreateVideoDecoderFactory());
+    std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory = 
+        std::unique_ptr<webrtc::VideoEncoderFactory>
+        (webrtc::RaspiVideoEncoderFactory::CreateVideoEncoderFactory());
+
+    /***********
+rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+    rtc::Thread* network_thread,
+    rtc::Thread* worker_thread,
+    rtc::Thread* signaling_thread,
+    rtc::scoped_refptr<AudioDeviceModule> default_adm,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
+    std::unique_ptr<VideoEncoderFactory> video_encoder_factory,
+    std::unique_ptr<VideoDecoderFactory> video_decoder_factory,
+    rtc::scoped_refptr<AudioMixer> audio_mixer,
+    rtc::scoped_refptr<AudioProcessing> audio_processing) {
+    ************/
 
     peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
             network_thread_.get(), worker_thread_.get(), 
-            signaling_thread_.get(), nullptr, 
-            encoder_factory, nullptr );
+            signaling_thread_.get(), 
+            adm, 
+            webrtc::CreateBuiltinAudioEncoderFactory(),
+            webrtc::CreateBuiltinAudioDecoderFactory(),
+            std::move(video_encoder_factory), std::move(video_decoder_factory),
+            audio_mixer, audio_processor );
     if (!peer_connection_factory_.get()) {
-        LOG(LS_ERROR) << __FUNCTION__ << "Failed to initialize PeerConnectionFactory";
+        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to initialize PeerConnectionFactory";
         DeletePeerConnection();
         return false;
     }
 
     if (!CreatePeerConnection()) {
-        LOG(LS_ERROR) << __FUNCTION__ << "CreatePeerConnection failed";
+        RTC_LOG(LS_ERROR) << __FUNCTION__ << "CreatePeerConnection failed";
         DeletePeerConnection();
     }
     AddStreams();
@@ -153,15 +190,15 @@ void Streamer::UpdateMaxBitrate() {
             webrtc::RtpParameters parameters =  sender->GetParameters();
             for (webrtc::RtpEncodingParameters& encoding : parameters.encodings) {
                  if (encoding.max_bitrate_bps) {
-                     LOG(INFO) << "Previous Max Bitrate Bps setting already exists: " 
+                     RTC_LOG(INFO) << "Previous Max Bitrate Bps setting already exists: " 
                          << *encoding.max_bitrate_bps;
-                     LOG(INFO) << "Do not modifying Max Bitrate Bps";
+                     RTC_LOG(INFO) << "Do not modifying Max Bitrate Bps";
                     return;
                  }
                  else {
                      encoding.max_bitrate_bps 
                          = rtc::Optional<int>(config_media::max_bitrate);
-                     LOG(INFO) << "Changing Max Bitrate Bps: " << *encoding.max_bitrate_bps;
+                     RTC_LOG(INFO) << "Changing Max Bitrate Bps: " << *encoding.max_bitrate_bps;
                      sender->SetParameters(parameters);
                      return;
                  }
@@ -207,16 +244,16 @@ void Streamer::DeletePeerConnection() {
 // Called when a remote stream is added
 void Streamer::OnAddStream(
         rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    LOG(INFO) << __FUNCTION__ << "Remote Stream added!" << stream->label();
+    RTC_LOG(INFO) << __FUNCTION__ << "Remote Stream added!" << stream->label();
 }
 
 void Streamer::OnRemoveStream(
         rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    LOG(INFO) << __FUNCTION__ << "Remote Stream removed!" << stream->label();
+    RTC_LOG(INFO) << __FUNCTION__ << "Remote Stream removed!" << stream->label();
 }
 
 void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
-    LOG(INFO) << __FUNCTION__ << " " << candidate->sdp_mline_index();
+    RTC_LOG(INFO) << __FUNCTION__ << " " << candidate->sdp_mline_index();
 
     Json::StyledWriter writer;
     Json::Value jmessage;
@@ -227,7 +264,7 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
     jmessage[kCandidateSdpMlineIndexName] = candidate->sdp_mline_index();
     std::string sdp;
     if (!candidate->ToString(&sdp)) {
-        LOG(LS_ERROR) << "Failed to serialize candidate";
+        RTC_LOG(LS_ERROR) << "Failed to serialize candidate";
         return;
     }
     jmessage[kCandidateSdpName] = sdp;
@@ -240,11 +277,11 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
     RTC_DCHECK(peer_id_ == -1);
     RTC_DCHECK(peer_id != -1);
-    LOG(INFO) << __FUNCTION__ << "Peer " << peer_id  << ", " << name.c_str()
+    RTC_LOG(INFO) << __FUNCTION__ << "Peer " << peer_id  << ", " << name.c_str()
               << " connected, trying to initialize streamer instance";
 
     if (peer_connection_.get()) {
-        LOG(LS_ERROR) << "We only support connecting to one peer at a time";
+        RTC_LOG(LS_ERROR) << "We only support connecting to one peer at a time";
         return;
     }
 
@@ -258,14 +295,14 @@ void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
         peer_id_ = peer_id;
         peer_connection_->CreateOffer(this, offer_options);
     } else {
-        LOG(LS_ERROR) << "Failed to initialize PeerConnection";
+        RTC_LOG(LS_ERROR) << "Failed to initialize PeerConnection";
     }
 }
 
 void Streamer::OnPeerDisconnected(int peer_id) {
-    LOG(INFO) << __FUNCTION__;
+    RTC_LOG(INFO) << __FUNCTION__;
     if (peer_id == peer_id_ && peer_connection_.get()) {
-        LOG(INFO) << "Peer disconnected";
+        RTC_LOG(INFO) << "Peer disconnected";
         DeletePeerConnection();
     }
 }
@@ -279,12 +316,12 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         peer_id_ = peer_id;
 
         if (!InitializePeerConnection()) {
-            LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
+            RTC_LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
             return;
         }
     } else if (peer_id != peer_id_) {
         RTC_DCHECK(peer_id_ != -1);
-        LOG(WARNING) << "Received a message from unknown peer while already in a "
+        RTC_LOG(WARNING) << "Received a message from unknown peer while already in a "
                      "conversation with a different peer.";
         return;
     }
@@ -292,7 +329,7 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
     Json::Reader reader;
     Json::Value jmessage;
     if (!reader.parse(message, jmessage)) {
-        LOG(WARNING) << "Received unknown message. " << message;
+        RTC_LOG(WARNING) << "Received unknown message. " << message;
         return;
     }
     std::string sdp;
@@ -303,8 +340,8 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         std::string sdp;
         if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
                                           &sdp)) {
-            LOG(WARNING) << "Can't parse received session description message.";
-            LOG(WARNING) << ":" << message << ":";
+            RTC_LOG(WARNING) << "Can't parse received session description message.";
+            RTC_LOG(WARNING) << ":" << message << ":";
             return;
         }
         std::string type;
@@ -314,11 +351,11 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         webrtc::SessionDescriptionInterface* session_description(
             webrtc::CreateSessionDescription(type, sdp, &error));
         if (!session_description) {
-            LOG(WARNING) << "Can't parse received session description message. "
+            RTC_LOG(WARNING) << "Can't parse received session description message. "
                          << "SdpParseError was: " << error.description;
             return;
         }
-        LOG(INFO) << " Received session description : \"" << message << "\"";
+        RTC_LOG(INFO) << " Received session description : \"" << message << "\"";
         peer_connection_->SetRemoteDescription(
             DummySetSessionDescriptionObserver::Create(), session_description);
 
@@ -349,7 +386,7 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
                 !rtc::GetIntFromJsonObject(jmessage, kCandidateSdpMlineIndexName,
                                            &sdp_mlineindex) ||
                 !rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName, &sdp)) {
-            LOG(WARNING) << "Can't parse received message.";
+            RTC_LOG(WARNING) << "Can't parse received message.";
             return;
         }
 
@@ -357,21 +394,21 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         std::unique_ptr<webrtc::IceCandidateInterface> candidate(
             webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, &error));
         if (!candidate.get()) {
-            LOG(WARNING) << "Can't parse received candidate message. "
+            RTC_LOG(WARNING) << "Can't parse received candidate message. "
                          << "SdpParseError was: " << error.description;
             return;
         }
         if (!peer_connection_->AddIceCandidate(candidate.get())) {
-            LOG(WARNING) << "Failed to apply the received candidate";
+            RTC_LOG(WARNING) << "Failed to apply the received candidate";
             return;
         }
-        LOG(INFO) << " Received candidate :" << message;
+        RTC_LOG(INFO) << " Received candidate :" << message;
         return;
     }
 }
 
 void Streamer::OnMessageSent(int err) {
-    LOG(INFO) << __FUNCTION__ << "Message Sent result : " << err;
+    RTC_LOG(INFO) << __FUNCTION__ << "Message Sent result : " << err;
 }
 
 std::unique_ptr<cricket::VideoCapturer> Streamer::OpenVideoCaptureDevice() {
@@ -423,7 +460,7 @@ void Streamer::AddStreams() {
     if( config_media::audio_level_control == true ) 
             options.level_control = rtc::Optional<bool>(true);
 
-    LOG(INFO) << "Audio options: " << options.ToString();
+    RTC_LOG(INFO) << "Audio options: " << options.ToString();
 
     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         peer_connection_factory_->CreateAudioTrack(
@@ -441,7 +478,7 @@ void Streamer::AddStreams() {
     stream->AddTrack(audio_track);
     stream->AddTrack(video_track);
     if (!peer_connection_->AddStream(stream)) {
-        LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
+        RTC_LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
     }
 
     typedef std::pair<std::string,
@@ -466,11 +503,11 @@ void Streamer::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 }
 
 void Streamer::OnFailure(const std::string& error) {
-    LOG(LERROR) << error;
+    RTC_LOG(LERROR) << error;
 }
 
 void Streamer::SendMessage(const std::string& json_object) {
-    LOG(INFO) << "Sending Message to Peer: " << json_object.c_str();
+    RTC_LOG(INFO) << "Sending Message to Peer: " << json_object.c_str();
     session_->SendMessageToPeer( peer_id_, json_object );
 }
 

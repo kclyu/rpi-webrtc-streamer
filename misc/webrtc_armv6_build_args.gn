@@ -43,14 +43,8 @@ is_desktop_linux=false
 #
 #
 is_chrome_branded=true
-enable_nacl=false
-#enable_pdf=false
-#enable_webvr=false
 rtc_use_h264=false
-#use_openh264=false
 rtc_initialize_ffmpeg=false
-#ffmpeg_branding="Chromium"
-#is_component_ffmpeg=true
 rtc_include_tests=false
 rtc_include_pulse_audio=false
 rtc_enable_protobuf=false

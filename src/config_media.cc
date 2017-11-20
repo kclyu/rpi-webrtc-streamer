@@ -34,9 +34,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 #include <string>
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/arraysize.h"
 
 #include "config_defines.h"
 #include "config_media.h"
@@ -131,9 +131,9 @@ bool audio_level_control = true;
 void validate__video_rotation(int &video_rotation, int default_value ) {
     if( !((video_rotation == 0) || (video_rotation == 90) ||
                 (video_rotation == 180) || (video_rotation == 270)) ) {
-        LOG(LS_ERROR) << "Error in video roration value: " 
+        RTC_LOG(LS_ERROR) << "Error in video roration value: " 
             << video_rotation << " is not a valid video rotation value";
-        LOG(LS_ERROR) << "Resetting to default value : "
+        RTC_LOG(LS_ERROR) << "Resetting to default value : "
             << default_value;
         video_rotation = default_value;
     }
@@ -142,9 +142,9 @@ void validate__video_rotation(int &video_rotation, int default_value ) {
 void validate__video_maxbitrate(int &video_maxbitrate, int default_value ) {
     // 17000000 values from RaspiVid.c bitrate for 1080p
     if ((video_maxbitrate < 200) || (video_maxbitrate > 17000000)) {
-        LOG(LS_ERROR) << "Error in video max bitrate value: " 
+        RTC_LOG(LS_ERROR) << "Error in video max bitrate value: " 
             << video_rotation << " is not a valid video max bitrate value";
-        LOG(LS_ERROR) << "Resetting to default value : "
+        RTC_LOG(LS_ERROR) << "Resetting to default value : "
             << default_value;
         video_maxbitrate = default_value;
     }
@@ -164,7 +164,7 @@ bool parse_vidio_resolution(const std::string resolution_list,
             resolution.push_back(ResolutionConfig(width,height));
         }
         else {
-            LOG(LS_ERROR) << "Failed to add resolution : " << token;
+            RTC_LOG(LS_ERROR) << "Failed to add resolution : " << token;
         }
     }
     return (count?true:false);
@@ -273,19 +273,19 @@ bool config_load(const std::string config_filename) {
                         use_initial_video_resolution = true;
                     }
                     else {
-                        LOG(LS_ERROR) << "Default resolution \"" 
+                        RTC_LOG(LS_ERROR) << "Default resolution \"" 
                             <<  width << "x" << height << "\" is not valid";
                     }
                 }
             }
             else {
-                LOG(LS_ERROR) << "Initial Video Resolution config is not found.";
+                RTC_LOG(LS_ERROR) << "Initial Video Resolution config is not found.";
             } 
         }
         else if( flag_use_initial_resolution.compare("false") == 0 ) 
             use_initial_video_resolution = false;
         else {
-            LOG(LS_ERROR) << "Initial Resolution \"" << kConfigVideoInitialResolution
+            RTC_LOG(LS_ERROR) << "Initial Resolution \"" << kConfigVideoInitialResolution
                 << "\" value is not valid" << flag_use_initial_resolution;
             // default value for use_initial_video_resolution is false
             use_initial_video_resolution = false;
@@ -296,8 +296,8 @@ bool config_load(const std::string config_filename) {
     // one of setting should be enabled.
     if( use_dynamic_video_resolution == false && 
             use_initial_video_resolution == false ) {
-        LOG(LS_ERROR) << "Both of dynamic video resolution and initial resolution disabled";
-        LOG(LS_ERROR) << "Overriding configuration setting to initial video resolution to enable";
+        RTC_LOG(LS_ERROR) << "Both of dynamic video resolution and initial resolution disabled";
+        RTC_LOG(LS_ERROR) << "Overriding configuration setting to initial video resolution to enable";
         use_initial_video_resolution = true;
     };
  

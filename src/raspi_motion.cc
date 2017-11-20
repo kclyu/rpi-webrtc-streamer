@@ -31,12 +31,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <string>
 
-#include "webrtc/common_types.h"
+#include "common_types.h"
 
-#include "webrtc/rtc_base/checks.h"
-#include "webrtc/rtc_base/logging.h"
-#include "webrtc/rtc_base/thread.h"
-#include "webrtc/rtc_base/platform_thread.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/platform_thread.h"
 
 #include "mmal_encoder.h"
 
@@ -97,11 +97,11 @@ bool RaspiMotion::IsActive() const {
 }
 
 bool RaspiMotion::StartCapture() {
-    LOG(INFO) << "Raspi Motion Starting";
+    RTC_LOG(INFO) << "Raspi Motion Starting";
 
     // Get the instance of MMAL encoder wrapper
     if( (mmal_encoder_ = webrtc::getMMALEncoderWrapper() ) == nullptr ) {
-        LOG(LS_ERROR) << "Failed to get MMAL encoder wrapper";
+        RTC_LOG(LS_ERROR) << "Failed to get MMAL encoder wrapper";
         return false;
     }
 
@@ -118,7 +118,7 @@ bool RaspiMotion::StartCapture() {
     mmal_encoder_->SetVideoAnnotateUserText(config_motion::motion_annotate_text);
     mmal_encoder_->SetVideoAnnotateTextSize(config_motion::motion_annotate_text_size );
 
-    LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_ 
+    RTC_LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_ 
         << "@" << framerate_ << ", " << bitrate_ << " kbps";
     if(mmal_encoder_->InitEncoder(width_, height_, framerate_, bitrate_ ) == false ){
         return false;
@@ -129,7 +129,7 @@ bool RaspiMotion::StartCapture() {
 
     // start drain thread ;
     if ( !drainThread_) {
-        LOG(INFO) << "Frame drain thread initialized.";
+        RTC_LOG(INFO) << "Frame drain thread initialized.";
         drainThread_.reset(new rtc::PlatformThread(
                                RaspiMotion::DrainThread, this, "FrameDrain"));
         drainThread_->Start();
@@ -139,7 +139,7 @@ bool RaspiMotion::StartCapture() {
 
     // start Motion Vector thread ;
     if ( !motionVectorThread_) {
-        LOG(INFO) << "Motion Vector analyse thread initialized.";
+        RTC_LOG(INFO) << "Motion Vector analyse thread initialized.";
         motionVectorThread_.reset(new rtc::PlatformThread(
                                RaspiMotion::MotionVectorThread, this, "MotionVector"));
         motionVectorThread_->Start();
@@ -174,7 +174,7 @@ void RaspiMotion::StopCapture() {
 }
 
 RaspiMotion::~RaspiMotion() {
-    LOG(INFO) << "Raspi Motion Stopping";
+    RTC_LOG(INFO) << "Raspi Motion Stopping";
     StopCapture();
 }
 
@@ -186,27 +186,27 @@ RaspiMotion::~RaspiMotion() {
 void RaspiMotion::OnMotionTriggered(int active_nums)  {
     // Changing state to TRIGGERED
     if( motion_state_ == CLEARED ) {
-        LOG(INFO) << "Motion Changing state CLEAR to TRIGGERED. active num:"
+        RTC_LOG(INFO) << "Motion Changing state CLEAR to TRIGGERED. active num:"
             << active_nums;
         // motion_file_->StartWriterThread();
     }
     else if( motion_state_ == WAIT_CLEAR ) {
-        LOG(INFO) << "Motion Changing state WAIT_CLEAR to TRIGGERED. active num:"
+        RTC_LOG(INFO) << "Motion Changing state WAIT_CLEAR to TRIGGERED. active num:"
             << active_nums;
     }
     motion_state_ = TRIGGERED;
 }
 
 void RaspiMotion::OnMotionCleared(int updates) {
-    LOG(INFO) << "Motion Blob Deactivated. update count was: " << updates;
+    RTC_LOG(INFO) << "Motion Blob Deactivated. update count was: " << updates;
     // Changing state to WAIT_CLEAR
     if( motion_state_ == TRIGGERED ) {
-        LOG(INFO) << "Motion Changing state TRIGGERED to WAIT_CLEAR ";
+        RTC_LOG(INFO) << "Motion Changing state TRIGGERED to WAIT_CLEAR ";
         motion_clear_wait_timestamp_ = clock_->TimeInMilliseconds();
         motion_state_ = WAIT_CLEAR;
     }
     else if( motion_state_ == CLEARED ) {
-        LOG(INFO) << "Invalid Motion state changing CLEARED to WAIT_CLEAR ";
+        RTC_LOG(INFO) << "Invalid Motion state changing CLEARED to WAIT_CLEAR ";
     }
 }
 
@@ -223,13 +223,13 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points){
             last_average_print_timestamp_ = current_timestamp;
             if( motion_state_ == TRIGGERED ||
                     motion_state_ == WAIT_CLEAR ) {
-                LOG(INFO) << "Motion active percent:  " << *moving_average;
+                RTC_LOG(INFO) << "Motion active percent:  " << *moving_average;
             };
         }
         if( motion_state_ == WAIT_CLEAR ) {
             if( *moving_average <  motion_active_percent_clear_threshold_ &&
                 current_timestamp - motion_clear_wait_timestamp_ > motion_clear_wait_period_  )  {
-                LOG(INFO) << "Motion Changing state WAIT_CLEAR to CLEAR ";
+                RTC_LOG(INFO) << "Motion Changing state WAIT_CLEAR to CLEAR ";
                 // motion_file_->StopWriterThread();
                 motion_state_ = CLEARED;
             }
@@ -263,13 +263,13 @@ bool RaspiMotion::DrainProcess() {
             // queuing the motion vector for file writer
             if( motion_file_->ImvQueuing(buf->data, buf->length, &length, is_keyframe) 
                     == false ) {
-                LOG(LS_ERROR) << "Failed to WriteBack in MV queue ";
+                RTC_LOG(LS_ERROR) << "Failed to WriteBack in MV queue ";
             };
 
             // queuing motion vector for motion analysis
             if( mv_shared_buffer_->WriteBack(buf->data, buf->length, &length) 
                     == false ) {
-                LOG(LS_ERROR) << "Faild to queue in MV shared buffer";
+                RTC_LOG(LS_ERROR) << "Faild to queue in MV shared buffer";
                 Set(); // Event Set to wake up 
             };
         }
@@ -277,7 +277,7 @@ bool RaspiMotion::DrainProcess() {
             // queuing video frame for file writing
             if( motion_file_->FrameQueuing(buf->data, buf->length, &length, is_keyframe) 
                     == false ) {
-                LOG(LS_ERROR) << "Failed to WriteBack in frame queue ";
+                RTC_LOG(LS_ERROR) << "Failed to WriteBack in frame queue ";
             };
         }
     }
