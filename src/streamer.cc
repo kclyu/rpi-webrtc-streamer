@@ -128,9 +128,6 @@ bool Streamer::InitializePeerConnection() {
     signaling_thread_->SetName("signaling_thread", nullptr);
     RTC_CHECK(signaling_thread_->Start()) << "Failed to start signaling thread";
 
-    // cricket::WebRtcVideoEncoderFactory* encoder_factory = nullptr;
-    // encoder_factory = new webrtc::MMALVideoEncoderFactory();
-    
     rtc::scoped_refptr<webrtc::AudioDeviceModule> adm 
         = webrtc::AudioDeviceModule::Create(webrtc::AudioDeviceModule::kLinuxAlsaAudio);
 
@@ -144,20 +141,6 @@ bool Streamer::InitializePeerConnection() {
         std::unique_ptr<webrtc::VideoEncoderFactory>
         (webrtc::RaspiVideoEncoderFactory::CreateVideoEncoderFactory());
 
-    /***********
-rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    rtc::scoped_refptr<AudioDeviceModule> default_adm,
-    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
-    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
-    std::unique_ptr<VideoEncoderFactory> video_encoder_factory,
-    std::unique_ptr<VideoDecoderFactory> video_decoder_factory,
-    rtc::scoped_refptr<AudioMixer> audio_mixer,
-    rtc::scoped_refptr<AudioProcessing> audio_processing) {
-    ************/
-
     peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
             network_thread_.get(), worker_thread_.get(), 
             signaling_thread_.get(), 
@@ -167,7 +150,8 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
             std::move(video_encoder_factory), std::move(video_decoder_factory),
             audio_mixer, audio_processor );
     if (!peer_connection_factory_.get()) {
-        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to initialize PeerConnectionFactory";
+        RTC_LOG(LS_ERROR) << __FUNCTION__ 
+            << "Failed to initialize PeerConnectionFactory";
         DeletePeerConnection();
         return false;
     }
@@ -198,7 +182,8 @@ void Streamer::UpdateMaxBitrate() {
                  else {
                      encoding.max_bitrate_bps 
                          = rtc::Optional<int>(config_media::max_bitrate);
-                     RTC_LOG(INFO) << "Changing Max Bitrate Bps: " << *encoding.max_bitrate_bps;
+                     RTC_LOG(INFO) << "Changing Max Bitrate Bps: " 
+                         << *encoding.max_bitrate_bps;
                      sender->SetParameters(parameters);
                      return;
                  }

@@ -31,6 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CONFIG_DEFINES_H_
 #include <string>
 
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/optionsfile.h"
 #include "rtc_base/stringencode.h"
 
@@ -40,42 +42,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // macro to define configuration
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
-#define CONFIG_DEFINE(name, config, config_type, default_value) \
-    static const char kConfig## name[] = #config ; \
+#define CONFIG_DEFINE(name, config_var, config_type, default_value) \
+    static const char kConfig## name[] = #config_var ; \
     static const config_type kDefault## name = default_value ; \
-    config_type config = default_value; 
+    static bool config_loaded__ ## name = false; \
+    config_type config_var = default_value; 
 
-#define CONFIG_LOAD_BOOL(key,value) \
+#define CONFIG_LOAD_BOOL(name,config_var) \
         { \
             std::string flag_value; \
-            if( config_.GetStringValue(kConfig ## key, &flag_value ) == true){ \
-                if(flag_value.compare("true") == 0) value = true; \
-                else if (flag_value.compare("false") == 0) value = false; \
-                else RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## key \
+            if( config_.GetStringValue(kConfig ## name, &flag_value ) == true){ \
+                if(flag_value.compare("true") == 0) config_var = true; \
+                else if (flag_value.compare("false") == 0) config_var = false; \
+                else { \
+                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## name \
                         << "\" value is not valid" << flag_value; \
+                } \
             }; \
         };
 
-#define CONFIG_LOAD_BOOL_WITH_DEFAULT(key,value,default_value) \
+#define CONFIG_LOAD_BOOL_WITH_DEFAULT(name,config_var,default_value) \
         { \
             std::string flag_value; \
-            if( config_.GetStringValue(kConfig ## key, &flag_value ) == true){ \
-                if(flag_value.compare("true") == 0) value = true; \
-                else if (flag_value.compare("false") == 0) value = false; \
+            if( config_.GetStringValue(kConfig ## name, &flag_value ) == true){ \
+                if(flag_value.compare("true") == 0) config_var = true; \
+                else if (flag_value.compare("false") == 0) config_var = false; \
                 else { \
-                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## key \
+                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## name \
                         << "\" value is not valid" << flag_value; \
-                    value = default_value; \
+                    config_var = default_value; \
                 };  \
             }; \
         };
 
-#define CONFIG_LOAD_INT_WITH_DEFAULT(key,value,validate_function,default_value) \
+#define CONFIG_LOAD_INT_WITH_DEFAULT(name,config_var,validate_function,default_value) \
         { \
-            if( config_.GetIntValue(kConfig ## key, &value ) == true){ \
-                validate_function(value, default_value); \
+            if( config_.GetIntValue(kConfig ## name, &config_var ) == true){ \
+                validate_function(config_var, default_value); \
             } \
-            else value = default_value; \
+            else config_var = default_value; \
         };
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -84,6 +89,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
+
+// macro for dummping config name and config_var 
+// need to insert the "#define CONFIG_LOAD_DUMP" before including this header file
 #ifdef CONFIG_LOAD_DUMP 
     #define DUMP_KEY_AND_VALUE(dkey,dconf,dvalue)  \
         RTC_LOG(INFO) << "Config Key \"" <<  dkey << "\" Setting : \"" \
@@ -93,69 +101,146 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif 
 
 
-#define DEFINE_CONFIG_LOAD_BOOL(key,value) \
+// 
+// Macros for loading config
+//
+#define DEFINE_CONFIG_LOAD_BOOL(name,config_var) \
         { \
             std::string flag_value; \
-            if( config_.GetStringValue(kConfig ## key, &flag_value ) == true){ \
-                if(flag_value.compare("true") == 0) value = true; \
-                else if (flag_value.compare("false") == 0) value = false; \
+            if( config_.GetStringValue(kConfig ## name, &flag_value ) == true){ \
+                config_loaded__ ## name = true; \
+                if(flag_value.compare("true") == 0) config_var = true; \
+                else if (flag_value.compare("false") == 0) config_var = false; \
                 else { \
-                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## key \
+                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## name \
                         << "\" value is not valid" << flag_value; \
-                    value = kDefault ## key; \
+                    config_var = kDefault ## name; \
+                    config_loaded__ ## name = false; \
                 };  \
             }; \
-            DUMP_KEY_AND_VALUE( kConfig ## key, flag_value, value ); \
+            DUMP_KEY_AND_VALUE( kConfig ## name, flag_value, config_var ); \
         };
 
 
-#define DEFINE_CONFIG_LOAD_INT(key,value) \
+#define DEFINE_CONFIG_LOAD_INT(name,config_var) \
         { \
-            if( config_.GetIntValue(kConfig ## key, &value ) == false){ \
-                value = kDefault ## key; \
+            if( config_.GetIntValue(kConfig ## name, &config_var ) == false){ \
+                config_var = kDefault ## name; \
             } \
-            DUMP_KEY_AND_VALUE( kConfig ## key, "n/a", value ); \
+            else { \
+                config_loaded__ ## name = true; \
+            } \
+            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
         };
 
-#define DEFINE_CONFIG_LOAD_FLOAT(key,value) \
+#define DEFINE_CONFIG_LOAD_FLOAT(name,config_var) \
         { \
             std::string flag_value; \
-            if( config_.GetStringValue(kConfig ## key, &flag_value ) == true){ \
-                if( rtc::FromString( flag_value, &value ) == false ) { \
-                    RTC_LOG(INFO) << "Invalid config \"" << kConfig ## key \
+            if( config_.GetStringValue(kConfig ## name, &flag_value ) == true){ \
+                config_loaded__ ## name = true; \
+                if( rtc::FromString( flag_value, &config_var ) == false ) { \
+                    RTC_LOG(INFO) << "Invalid config \"" << kConfig ## name \
                         << "\", value : " << flag_value ; \
-                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## key \
+                    RTC_LOG(INFO) << "Default Config \"" <<  kConfig ## name \
                         << "\" value is not valid" << flag_value; \
-                    value = kDefault ## key; \
+                    config_var = kDefault ## name; \
+                    config_loaded__ ## name = false; \
                 } \
             } \
-            DUMP_KEY_AND_VALUE( kConfig ## key, flag_value, value ); \
+            DUMP_KEY_AND_VALUE( kConfig ## name, flag_value, config_var ); \
         };
 
-#define DEFINE_CONFIG_LOAD_STR(key,value ) \
+#define DEFINE_CONFIG_LOAD_STR(name,config_var ) \
         { \
-            if( config_.GetStringValue(kConfig ## key, &value ) == false){ \
-                value = kDefault ## key; \
+            if( config_.GetStringValue(kConfig ## name, &config_var ) == false){ \
+                config_var = kDefault ## name; \
+            } \
+            else { \
+                config_loaded__ ## name = true; \
+            } \
+            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+        };
+
+//
+// Macros for loading config with validation function
+//
+#define DEFINE_CONFIG_LOAD_INT_VALIDATE(name,config_var,validate_function) \
+        { \
+            if( config_.GetIntValue(kConfig ## name, &config_var ) == true){ \
+                config_loaded__ ## name = true; \
+                if( validate_function(config_var, kDefault ## name ) == false ) {\
+                    config_var = kDefault ## name; \
+                    config_loaded__ ## name = false; \
+                } \
+            } \
+            else config_var = kDefault ## name; \
+            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+        };
+
+#define DEFINE_CONFIG_LOAD_STR_VALIDATE(name,config_var,validate_function) \
+        { \
+            if( config_.GetStringValue(kConfig ## name, &config_var ) == true){ \
+                config_loaded__ ## name = true; \
+                if( validate_function(config_var, kDefault ## name ) == false ) { \
+                    config_var = kDefault ## name; \
+                    config_loaded__ ## name = false; \
+                } \
+            } \
+            else config_var = kDefault ## name; \
+            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+        };
+
+
+//
+// Macros for loading config for config_streamer.cc
+//
+#define DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(name) \
+        { \
+            std::string config_var; \
+            if( config_->GetStringValue(kConfig ## name, &config_var ) == true){ \
+                config_loaded__ ## name = true; \
+                if(config_var.compare("true") == 0) {   \
+                    DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                    return true; \
+                }   \
+                else if (config_var.compare("false") == 0) { \
+                    DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                    return false; \
+                } \
+                else { \
+                    config_loaded__ ## name = false; \
+                    DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                    return kDefault ## name; \
+                };  \
             }; \
-            DUMP_KEY_AND_VALUE( kConfig ## key, "n/a", value ); \
+            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, kDefault ## name); \
+            return kDefault ## name; \
         };
 
-#define DEFINE_CONFIG_LOAD_INT_VALIDATE(key,value,validate_function) \
+#define DEFINE_CONFIG_LOAD_INT_WITH_RETURN(name,config_var,validate_function) \
         { \
-            if( config_.GetIntValue(kConfig ## key, &value ) == true){ \
-                validate_function(value, kDefault ## key ); \
+            if( config_->GetIntValue(kConfig ## name, &config_var ) == true){ \
+                config_loaded__ ## name = true; \
+                DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                return validate_function(config_var, kDefault ## name); \
             } \
-            else value = kDefault ## key; \
-            DUMP_KEY_AND_VALUE( kConfig ## key, "n/a", value ); \
+            config_loaded__ ## name = false; \
+            config_var = kDefault ## name; \
+            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+            return false; \
         };
 
-#define DEFINE_CONFIG_LOAD_STR_VALIDATE(key,value,validate_function) \
+#define DEFINE_CONFIG_LOAD_STR_WITH_RETURN(name, config_var) \
         { \
-            if( config_.GetStringValue(kConfig ## key, &value ) == true){ \
-                validate_function(value, kDefault ## key ); \
-            } \
-            else value = kDefault ## key; \
-            DUMP_KEY_AND_VALUE( kConfig ## key, "n/a", value ); \
+            if( config_->GetStringValue(kConfig ## name, &config_var ) == true){ \
+                config_loaded__ ## name = true; \
+                DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                return true; \
+            }; \
+            config_loaded__ ## name = false; \
+            config_var = kDefault ## name; \
+            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+            return false; \
         };
 
 #endif  // CONFIG_DEFINES_H_

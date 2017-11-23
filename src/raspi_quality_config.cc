@@ -180,8 +180,8 @@ bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
     // The initial resolution will be used 
     // if the use default resolution flag is on.
     if( use_initial_resolution_ == true) {
-        candidate.width_ = config_media::initial_video_resolution.width_;
-        candidate.height_ = config_media::initial_video_resolution.height_;
+        candidate.width_ = config_media::initial_resolution.width_;
+        candidate.height_ = config_media::initial_resolution.height_;
         candidate.framerate_ = kMaxFrameRate;
         candidate.bitrate_ = static_cast<int>(
                 (candidate.width_ * candidate.height_ * kMaxFrameRate * 

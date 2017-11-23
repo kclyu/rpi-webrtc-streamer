@@ -38,119 +38,107 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/logging.h"
 #include "rtc_base/arraysize.h"
 
+#define CONFIG_LOAD_DUMP
+
 #include "config_defines.h"
 #include "config_media.h"
 #include "utils.h"
 
 namespace config_media {
 
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // media config key name and constants values
 //
-///////////////////////////////////////////////////////////////////////////////////////////
-
 ////////////////////////////////////////////////////////////////////////////////
-// Config Key
-////////////////////////////////////////////////////////////////////////////////
-// video
-static const char kConfigMaxBitrate[] = "max_bitrate";
-static const char kConfigResolution4_3[] = "use_4_3_video_resolution";
-static const char kConfigVideoResolution[] = "initial_video_resolution";
-static const char kConfigVideoFrameRate[] = "initial_video_framerate";
-static const char kConfigVideoInitialResolution[] = "use_initial_video_resolution";
-static const char kConfigVideoDynamicResolution[] = "use_dynamic_video_resolution";
-
-static const char kConfigVideoResolutionList43[] = "video_resolution_list_4_3";
-static const char kConfigVideoResolutionList169[] = "video_resolution_list_16_9";
-
-static const char kConfigVideoRotation[] = "video_rotation";
-static const char kConfigVideoVFlip[] = "video_vflip";
-static const char kConfigVideoHFlip[] = "video_hflip";
-
-// audio
-static const char kConfigAudioProcessing[] = "audio_processing_enable";
-static const char kConfigAudioEchoCancel[] = "audio_echo_cancellation";
-static const char kConfigAudioGainControl[] = "audio_gain_control";
-static const char kConfigAudioHighPassFilter[] = "audio_high_passfilter";
-static const char kConfigAudioNoiseSuppression[] = "audio_noise_suppression";
-static const char kConfigAudioLevelControl[] = "audio_level_control_enable";
-
-static const char kConfigVideoResolutionDelimiter=',';
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Default Values
 ////////////////////////////////////////////////////////////////////////////////
+static const char kConfigVideoResolutionDelimiter=',';
 static const int  kDefaultVideoMaxFrameRate=30;
-static const int  kDefaultMaxBitrate = 3500000;
-static const int  kDefaultVideoRotation = 0;
-static const bool  kDefaultVideoVFlip = false;
-static const bool  kDefaultVideoHFlip = false;
 
-static const char kDefaultVideoResolution43[] =  
-    "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232";
-static const char kDefaultVideoResolution169[] = 
-    "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080";
+////////////////////////////////////////////////////////////////////////////////
+// Config Key
+////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////
-// Config Value
-///////////////////////////////////////////////////////////////////////////////////////////
+// video related config
+CONFIG_DEFINE( MaxBitrate, max_bitrate, int, 3500000 );
 
-// video
-int max_bitrate = kDefaultMaxBitrate;
-bool resolution_4_3_enable = true;
-int video_rotation = 0;
-bool video_vflip = false;
-bool video_hflip = false;
+CONFIG_DEFINE( Resolution4_3, resolution_4_3_enable, bool, true );
+CONFIG_DEFINE( VideoRotation, video_rotation, int, 0);
+CONFIG_DEFINE( VideoVFlip, video_vflip, bool, false );
+CONFIG_DEFINE( VideoHFlip, video_hflip, bool, false );
 
-struct ResolutionConfig initial_video_resolution(640,480);
+CONFIG_DEFINE( VideoResolutionList43, video_resolution_list_4_3, std::string, \
+    "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232" );
+CONFIG_DEFINE( VideoResolutionList169, video_resolution_list_16_9, std::string, \
+    "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080");
+
+CONFIG_DEFINE( VideoDynamicResolution, use_dynamic_video_resolution, bool, true );
+CONFIG_DEFINE( VideoInitialResolution, use_initial_video_resolution, bool, false );
+
+CONFIG_DEFINE( InitialVideoResolution, initial_video_resolution, 
+        std::string, "640x480");
+CONFIG_DEFINE( VideoFrameRate, initial_video_framerate, int, 30 );
+
+// audio related config
+// this feature will require high CPU usage 
+CONFIG_DEFINE( AudioProcessing, audio_processing_enable, bool, false );
+CONFIG_DEFINE( AudioEchoCancel, audio_echo_cancel, bool, true );
+CONFIG_DEFINE( AudioGainControl, audio_gain_control, bool, true );
+CONFIG_DEFINE( AudioHighPassFilter, audio_highpass_filter, bool, true );
+CONFIG_DEFINE( AudioNoiseSuppression, audio_noise_suppression, bool, true );
+CONFIG_DEFINE( AudioLevelControl,  audio_level_control, bool, true );
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Internal vaiables for storing configuration settings
+//
+////////////////////////////////////////////////////////////////////////////////
+
+struct ResolutionConfig initial_resolution(640,480);
 int default_video_framerate = kDefaultVideoMaxFrameRate;
-
-bool use_initial_video_resolution = false;
-bool use_dynamic_video_resolution = true;
 
 std::list <ResolutionConfig> resolution_list_4_3;
 std::list <ResolutionConfig> resolution_list_16_9;
 
-// audio related config
-// this feature will require high CPU usage 
-bool audio_processing_enable = false;
-bool audio_echo_cancel = true;
-bool audio_gain_control = true;
-bool audio_highpass_filter = true;
-bool audio_noise_suppression = true;
-bool audio_level_control = true;
 
-
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // config loading and helper functions
 //
-///////////////////////////////////////////////////////////////////////////////////////////
-void validate__video_rotation(int &video_rotation, int default_value ) {
+////////////////////////////////////////////////////////////////////////////////
+bool validate__video_rotation(int video_rotation, int default_value ) {
     if( !((video_rotation == 0) || (video_rotation == 90) ||
                 (video_rotation == 180) || (video_rotation == 270)) ) {
         RTC_LOG(LS_ERROR) << "Error in video roration value: " 
             << video_rotation << " is not a valid video rotation value";
-        RTC_LOG(LS_ERROR) << "Resetting to default value : "
-            << default_value;
-        video_rotation = default_value;
+        return false;
     }
+    return true;
 }
 
-void validate__video_maxbitrate(int &video_maxbitrate, int default_value ) {
+bool validate__video_maxbitrate(int video_maxbitrate, int default_value ) {
     // 17000000 values from RaspiVid.c bitrate for 1080p
     if ((video_maxbitrate < 200) || (video_maxbitrate > 17000000)) {
         RTC_LOG(LS_ERROR) << "Error in video max bitrate value: " 
             << video_rotation << " is not a valid video max bitrate value";
-        RTC_LOG(LS_ERROR) << "Resetting to default value : "
-            << default_value;
-        video_maxbitrate = default_value;
+        return false;
     }
+    return true;
 }
 
-//
+bool validate__video_framerate(int framerate, int default_value ) {
+    if ((framerate < 15) || (framerate > 30)) {
+        RTC_LOG(LS_ERROR) << "Error in video frame rate value: " 
+            << video_rotation << " is not a valid video frame rate value";
+        return false;
+    }
+    return true;
+}
+
 bool parse_vidio_resolution(const std::string resolution_list, 
         std::list <ResolutionConfig> &resolution ) {
     std::stringstream ss(resolution_list);
@@ -158,6 +146,7 @@ bool parse_vidio_resolution(const std::string resolution_list,
     int count=0;
 
     while( getline(ss, token, kConfigVideoResolutionDelimiter) ) {
+        RTC_LOG(INFO) << "Video Resolution Token: " << token;
         int width, height;
         if( utils::ParseVideoResolution(token, &width, &height ) == true )  {
             count++;
@@ -167,6 +156,7 @@ bool parse_vidio_resolution(const std::string resolution_list,
             RTC_LOG(LS_ERROR) << "Failed to add resolution : " << token;
         }
     }
+    RTC_LOG(INFO) << "Video List Size: " << count;
     return (count?true:false);
 }
 
@@ -192,11 +182,11 @@ bool validate_resolution(int width, int height) {
     return false;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
-// mainx config loading function
+// main config loading function
 //
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 bool config_load(const std::string config_filename) {
     rtc::OptionsFile config_(config_filename);
 
@@ -205,22 +195,16 @@ bool config_load(const std::string config_filename) {
     };
 
     // loading max_bitrate
-    CONFIG_LOAD_INT_WITH_DEFAULT(MaxBitrate, max_bitrate,  
-            validate__video_maxbitrate, kDefaultMaxBitrate );
-
+    DEFINE_CONFIG_LOAD_INT(MaxBitrate, max_bitrate );      
     // loading video rotation config
-    CONFIG_LOAD_INT_WITH_DEFAULT(VideoRotation, video_rotation,  
-            validate__video_rotation, kDefaultVideoRotation );
+    DEFINE_CONFIG_LOAD_INT(VideoRotation, video_rotation ); 
 
     // loading vflip & hflip
-    CONFIG_LOAD_BOOL_WITH_DEFAULT(VideoVFlip,
-            video_vflip,false);
-    CONFIG_LOAD_BOOL_WITH_DEFAULT(VideoHFlip,
-            video_hflip,false);
+    DEFINE_CONFIG_LOAD_BOOL(VideoVFlip, video_vflip);
+    DEFINE_CONFIG_LOAD_BOOL(VideoHFlip, video_hflip);
 
     // loading 4:3 or 16:9 resolution config
-    CONFIG_LOAD_BOOL_WITH_DEFAULT(Resolution4_3,
-            resolution_4_3_enable,true);
+    DEFINE_CONFIG_LOAD_BOOL(Resolution4_3, resolution_4_3_enable );
 
     // loading dynamic video resolution config
     //
@@ -231,93 +215,87 @@ bool config_load(const std::string config_filename) {
     // If it is disabled, it keeps the initial resolution set in InitEncoder. 
     // If you want to disable it, you must enable use_initial_video_resoltuion 
     // and set the desired resolution to initial_video_resolution.
-    CONFIG_LOAD_BOOL_WITH_DEFAULT(VideoDynamicResolution,
-            use_dynamic_video_resolution, true);
+    DEFINE_CONFIG_LOAD_BOOL(VideoDynamicResolution, 
+            use_dynamic_video_resolution );
 
     // loading default video resolution config
-    std::string resolution_list;
-    config_.GetStringValue(kConfigVideoResolutionList43, &resolution_list );
-    if( parse_vidio_resolution( resolution_list, resolution_list_4_3 ) == false ) {
+    DEFINE_CONFIG_LOAD_STR( VideoResolutionList43, 
+            video_resolution_list_4_3);
+    if( parse_vidio_resolution( video_resolution_list_4_3, 
+                resolution_list_4_3 ) == false ) {
         // Loading default video resolution list
-        parse_vidio_resolution( kDefaultVideoResolution43, resolution_list_4_3 );
+        parse_vidio_resolution( kDefaultVideoResolutionList43, 
+                resolution_list_4_3 );
     };
-    config_.GetStringValue(kConfigVideoResolutionList169, &resolution_list );
-    if( parse_vidio_resolution( resolution_list, resolution_list_16_9 ) == false ) {
+    DEFINE_CONFIG_LOAD_STR( VideoResolutionList169, 
+            video_resolution_list_16_9 );
+    if( parse_vidio_resolution( video_resolution_list_16_9, 
+                resolution_list_16_9 ) == false ) {
         // Loading default video resolution list
-        parse_vidio_resolution( kDefaultVideoResolution169, resolution_list_16_9 );
+        parse_vidio_resolution( kDefaultVideoResolutionList169, 
+                resolution_list_16_9 );
     };
 
     // loading flag for default video resolution 
-    std::string flag_use_initial_resolution;
-    if( config_.GetStringValue(kConfigVideoInitialResolution, 
-                &flag_use_initial_resolution ) == true ) {
-        if( flag_use_initial_resolution.compare("true") == 0 )  {
+    DEFINE_CONFIG_LOAD_BOOL(VideoInitialResolution, 
+            use_initial_video_resolution );
+    if( use_initial_video_resolution == true ) {
+        // loading default video resolution config
+        DEFINE_CONFIG_LOAD_STR( InitialVideoResolution, 
+                initial_video_resolution);
+        if( config_loaded__InitialVideoResolution == true ){
 
-            // loading default video resolution config
-            std::string resolution_config;
-            if( config_.GetStringValue(kConfigVideoResolution, 
-                        &resolution_config ) == true ){
+            // Getting default framerate config
+            DEFINE_CONFIG_LOAD_INT_VALIDATE( VideoFrameRate, 
+                    initial_video_framerate, validate__video_framerate);
 
-                // Getting default framerate config
-                config_.GetIntValue(kConfigVideoFrameRate, 
-                        &default_video_framerate);
-                if( default_video_framerate == 0 ) default_video_framerate = 30;
+            // need video width and height config 
+            // to enable use_initial_video_resolution
+            DEFINE_CONFIG_LOAD_STR( InitialVideoResolution, 
+                    initial_video_resolution);
 
-                // need video width and height config 
-                // to enable use_initial_video_resolution
-                int width, height;
-                if( utils::ParseVideoResolution( resolution_config, &width, &height ) == true ) {
-                    if(validate_resolution(width, height) == true ) {
-                        initial_video_resolution.width_ = width;
-                        initial_video_resolution.height_ = height;
-                        use_initial_video_resolution = true;
-                    }
-                    else {
-                        RTC_LOG(LS_ERROR) << "Default resolution \"" 
-                            <<  width << "x" << height << "\" is not valid";
-                    }
+            int width, height;
+            if( utils::ParseVideoResolution( initial_video_resolution, 
+                        &width, &height ) == true ) {
+                if(validate_resolution(width, height) == true ) {
+                    initial_resolution.width_ = width;
+                    initial_resolution.height_ = height;
                 }
-            }
-            else {
-                RTC_LOG(LS_ERROR) << "Initial Video Resolution config is not found.";
-            } 
+                else {
+                    RTC_LOG(LS_ERROR) << "Default resolution \"" 
+                        <<  width << "x" << height << "\" is not valid";
+                    use_initial_video_resolution = false;
+                }
+            };
         }
-        else if( flag_use_initial_resolution.compare("false") == 0 ) 
-            use_initial_video_resolution = false;
         else {
-            RTC_LOG(LS_ERROR) << "Initial Resolution \"" << kConfigVideoInitialResolution
-                << "\" value is not valid" << flag_use_initial_resolution;
-            // default value for use_initial_video_resolution is false
+            RTC_LOG(LS_ERROR) << "Initial Video Resolution config is not found.";
             use_initial_video_resolution = false;
-        }
-    };
+        } 
+    }
 
     // validate the initial_video_resolution and dynamic_video_resolution
     // one of setting should be enabled.
     if( use_dynamic_video_resolution == false && 
             use_initial_video_resolution == false ) {
-        RTC_LOG(LS_ERROR) << "Both of dynamic video resolution and initial resolution disabled";
-        RTC_LOG(LS_ERROR) << "Overriding configuration setting to initial video resolution to enable";
+        RTC_LOG(LS_ERROR) 
+            << "Both of dynamic video resolution and initial resolution disabled\n"
+            << "Overriding configuration setting to initial video resolution to enable";
         use_initial_video_resolution = true;
     };
  
     // loading flag for audio processing 
-    std::string flag_use_audio_processing;
-    if( ( config_.GetStringValue(kConfigAudioProcessing, 
-                &flag_use_audio_processing ) == true )  && 
-        (flag_use_audio_processing.compare("true") == 0 ) ) {
-
+    DEFINE_CONFIG_LOAD_BOOL(AudioProcessing, audio_processing_enable);
+    if( audio_processing_enable ) {
         // audio processing is enabled
-        audio_processing_enable = true;
-
-        CONFIG_LOAD_BOOL(AudioEchoCancel,audio_echo_cancel);
-        CONFIG_LOAD_BOOL(AudioGainControl,audio_gain_control);
-        CONFIG_LOAD_BOOL(AudioHighPassFilter,audio_highpass_filter);
-        CONFIG_LOAD_BOOL(AudioNoiseSuppression,audio_noise_suppression);
+        DEFINE_CONFIG_LOAD_BOOL(AudioEchoCancel,audio_echo_cancel);
+        DEFINE_CONFIG_LOAD_BOOL(AudioGainControl,audio_gain_control);
+        DEFINE_CONFIG_LOAD_BOOL(AudioHighPassFilter,audio_highpass_filter);
+        DEFINE_CONFIG_LOAD_BOOL(AudioNoiseSuppression,audio_noise_suppression);
     };
 
     // level control is not depend on the audio processing
-    CONFIG_LOAD_BOOL(AudioLevelControl,audio_level_control);
+    DEFINE_CONFIG_LOAD_BOOL(AudioLevelControl,audio_level_control);
 
     return true;
 }

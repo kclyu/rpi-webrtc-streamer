@@ -52,14 +52,14 @@ namespace config_media {
     extern int max_bitrate;
     extern bool resolution_4_3_enable;
 
-    extern struct ResolutionConfig initial_video_resolution;
+    extern struct ResolutionConfig initial_resolution;
     extern int initial_video_framerate;
     extern bool use_initial_video_resolution;
     extern bool use_dynamic_video_resolution;
     extern std::list <ResolutionConfig> resolution_list_4_3;
     extern std::list <ResolutionConfig> resolution_list_16_9;
 
-    // this feature will require high CPU usage because all of audio enhancement 
+    // this feature will require CPU usage because all of audio enhancement 
     // feature is S/W based
     extern bool audio_processing_enable;
     extern bool audio_echo_cancel;

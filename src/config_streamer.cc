@@ -41,92 +41,58 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/fileutils.h"
 
 #include "config_streamer.h"
+#include "config_defines.h"
 
 ////////////////////////////////////////////////////////////////////////////////
-// Default Values
+//
+// Default values
+// 
 ////////////////////////////////////////////////////////////////////////////////
-static const uint16_t kDefaultWebSocketPort = 8889;
-        // port number 8888 is fiexed for direct socket
-static const uint16_t kDefaultDirectSocketPort = 8888; 
+
 static const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
-static const char kDefaultMediaConfig[] = "etc/media_config.conf";
-static const char kDefaultMotionConfig[] = "etc/motion_config.conf";
+static const char kServerListDelimiter=',';
+static const char kStunPrefix[] = "stun:";
+static const char kTurnPrefix[] = "turn:";
+static const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
 
-static const char kDefaultWebRoot[] = INSTALL_DIR "/web-root";
-static const char kDefaultRoomId[] = "123456789";
+////////////////////////////////////////////////////////////////////////////////
+//
+// streamer config key name and constants values
+//
+////////////////////////////////////////////////////////////////////////////////
+
+CONFIG_DEFINE( WebSocketEnable, websocket_enable, bool, true );
+CONFIG_DEFINE( WebSocketPort, websocket_port, int, 8889 );
+CONFIG_DEFINE( DirectSocketPort, direct_socket_port, int, 8888 );
+CONFIG_DEFINE( DirectSocketEnable, direct_socket_enable, bool, false );
+CONFIG_DEFINE( MediaConfig, media_config, std::string, "etc/media_config.conf");
+CONFIG_DEFINE( MotionConfig, motion_config, std::string,  "etc/motion_config.conf");
+
+CONFIG_DEFINE( DisableLogBuffering, disable_log_buffering, bool, true );
+CONFIG_DEFINE( LibraryDebug, libwebsocket_debug, bool, false );
+CONFIG_DEFINE( RoomIdEnable, room_id_enable, bool, false );
+
+CONFIG_DEFINE( WebRoot, web_root, std::string, INSTALL_DIR "/web-root" );
+CONFIG_DEFINE( RWS_WS_URL,rws_ws_url, std::string, "/rws/ws" );
+CONFIG_DEFINE( AdditionalWSRule, additional_ws_rule, std::string, "");
+CONFIG_DEFINE( RoomId, room_id, std::string, "123456789");
 
 // Stun
-static const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
-static const char kDefaultRWS_WS_URL[] = "/rws/ws";
-
 ////////////////////////////////////////////////////////////////////////////////
 // Config Key
 ////////////////////////////////////////////////////////////////////////////////
-static const char kConfigWebSocketEnable[] = "websocket_enable";
-static const char kConfigWebSocketPort[] = "websocket_port";
-static const char kConfigDirectSocketEnable[] = "direct_socket_enable";
-static const char kConfigDirectSocketPort[] = "direct_socket_port";
-static const char kConfigMediaConfig[] = "media_config";
-static const char kConfigMotionConfig[] = "motion_config";
-static const char kConfigDisableLogBuffering[] = "disable_log_buffering";
-static const char kConfigRWS_WS_URL[] = "rws_ws_url";
-static const char kConfigAdditionalWSRule[] = "additional_ws_rule";
-static const char kConfigRoomIdEnable[] = "room_id_enable";
-static const char kConfigRoomId[] = "room_id";
 
 // STUN and TURN config
 static const char kConfigStunServer[] = "stun_server";
-
 static const char kConfigTurnServer[] = "turn_server";
 static const char kConfigTurnUsername[] = "turn_username";
 static const char kConfigTurnCredential[] = "turn_credential";
 
-static const char kServerListDelimiter=',';
-static const char kStunPrefix[] = "stun:";
-static const char kTurnPrefix[] = "turn:";
-
-// WebSocket Config
-static const char kConfigWebRoot[] = "web_root";
-static const char kConfigLibraryDebug[] = "libwebsocket_debug";
-
-#define CONFIG_RETURN_BOOL_WITH_DEFAULT(key,default_value) \
-        { \
-            std::string flag_value; \
-            if( config_->GetStringValue(key, &flag_value ) == true){ \
-                if(flag_value.compare("true") == 0) return true; \
-                else if (flag_value.compare("false") == 0) return false; \
-                else { \
-                    RTC_LOG(INFO) << "Default Config \"" <<  key \
-                        << "\" value is not valid" << flag_value; \
-                    return default_value; \
-                };  \
-            }; \
-            return default_value; \
-        };
-
-#define CONFIG_RETURN_INT_WITH_DEFAULT(key,value,validate_function,default_value) \
-        { \
-            if( config_->GetIntValue(key, &value ) == true){ \
-                return validate_function(value, default_value); \
-            } \
-            value = default_value; \
-            return false; \
-        };
-
-#define CONFIG_RETURN_STR_WITH_DEFAULT(key,value, default_value) \
-        { \
-            if( config_->GetStringValue(key, &value ) == true){ \
-                return true; \
-            }; \
-            value = default_value; \
-            return false; \
-        };
-
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // config helper function
 //
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 static bool validate__portnumber(int &port_number, int default_value ) {
     if ((port_number < 1) || (port_number > 65535)) {
             RTC_LOG(LS_ERROR) << "Error in port value," << port_number << " is not a valid port";
@@ -180,70 +146,69 @@ bool StreamerConfig::LoadConfig()  {
 // DisableLogBuffering
 bool StreamerConfig::GetDisableLogBuffering() {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigDisableLogBuffering, true );
+    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(DisableLogBuffering);
 }
 
 // WebSocketEnable
 bool StreamerConfig::GetWebSocketEnable() {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigWebSocketEnable, true );
+    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(WebSocketEnable );
 }
 
 // WebSocketPort
 bool StreamerConfig::GetWebSocketPort(int& port) {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_INT_WITH_DEFAULT(kConfigWebSocketPort, port, 
-            validate__portnumber,  kDefaultWebSocketPort);
+    DEFINE_CONFIG_LOAD_INT_WITH_RETURN(WebSocketPort, port, 
+            validate__portnumber);
 }
 
 // LibwebsocketDebugEnable
 bool StreamerConfig::GetLibwebsocketDebugEnable() {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigLibraryDebug, false );
+    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(LibraryDebug );
 }
 
 // WebRootPath
 bool StreamerConfig::GetWebRootPath(std::string& path) {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_STR_WITH_DEFAULT(kConfigWebRoot, path, kDefaultWebRoot );
+    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(WebRoot, path);
 }
 
 // RWS WS URL
 bool StreamerConfig::GetRwsWsURL(std::string& ws_url) {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_STR_WITH_DEFAULT(kConfigRWS_WS_URL, ws_url, 
-            kDefaultRWS_WS_URL );
+    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(RWS_WS_URL, ws_url);
 }
 
 // AdditionalWSRule
 bool StreamerConfig::GetAdditionalWSRule(std::string& rule) {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_STR_WITH_DEFAULT(kConfigAdditionalWSRule, rule, "" );
+    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(AdditionalWSRule, rule);
 }
 
 // DirectSocketEnable
 bool StreamerConfig::GetDirectSocketEnable() {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigDirectSocketEnable, false );
+    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(DirectSocketEnable);
 }
 
 // DirectSocketPort
 bool StreamerConfig::GetDirectSocketPort(int& port) {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_INT_WITH_DEFAULT(kConfigDirectSocketPort, port, 
-            validate__portnumber,  kDefaultDirectSocketPort);
+    DEFINE_CONFIG_LOAD_INT_WITH_RETURN(DirectSocketPort, port, 
+            validate__portnumber  );
 }
 
 // RoomIdEnable
 bool StreamerConfig::GetRoomIdEnable() {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_BOOL_WITH_DEFAULT(kConfigRoomIdEnable, false );
+    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(RoomIdEnable );
 }
 
 // RoomId
 bool StreamerConfig::GetRoomId(std::string& room_id) {
     RTC_DCHECK( config_loaded_ == true );
-    CONFIG_RETURN_STR_WITH_DEFAULT(kConfigRoomId, room_id, kDefaultRoomId);
+    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(RoomId, room_id);
 }
 
 // StunServer
@@ -320,6 +285,7 @@ bool StreamerConfig::GetMediaConfig(std::string& conf) {
     // default media config value is "etc/media_config.conf"
     if( config_->GetStringValue(kConfigMediaConfig, &conf ) == true ) {
         conf = config_dir_basename_ + conf;
+        config_loaded__MediaConfig = true;  // to suppress warning
         return true;
     }
     conf = config_dir_basename_ + kDefaultMediaConfig;
@@ -331,6 +297,7 @@ bool StreamerConfig::GetMotionConfig(std::string& conf) {
     // default media config value is "etc/motion_config.conf"
     if( config_->GetStringValue(kConfigMotionConfig, &conf ) == true ) {
         conf = config_dir_basename_ + conf;
+        config_loaded__MotionConfig = true; // to supporess warning
         return true;
     }
     conf = config_dir_basename_ + kDefaultMediaConfig;
