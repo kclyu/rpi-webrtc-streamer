@@ -38,8 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/logging.h"
 #include "rtc_base/arraysize.h"
 
-#define CONFIG_LOAD_DUMP
-
 #include "config_defines.h"
 #include "config_media.h"
 #include "utils.h"
@@ -146,7 +144,6 @@ bool parse_vidio_resolution(const std::string resolution_list,
     int count=0;
 
     while( getline(ss, token, kConfigVideoResolutionDelimiter) ) {
-        RTC_LOG(INFO) << "Video Resolution Token: " << token;
         int width, height;
         if( utils::ParseVideoResolution(token, &width, &height ) == true )  {
             count++;
@@ -156,7 +153,6 @@ bool parse_vidio_resolution(const std::string resolution_list,
             RTC_LOG(LS_ERROR) << "Failed to add resolution : " << token;
         }
     }
-    RTC_LOG(INFO) << "Video List Size: " << count;
     return (count?true:false);
 }
 

@@ -231,23 +231,17 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
             candidate.framerate_ = target_framerate_;
             last_diff = diff;
         }
-        else {
-            resolution = candidate;
-            if( resolution.width_ != current_res_.width_ ||
-                resolution.height_ != current_res_.height_ ) {
-                current_res_ = resolution;
-                RTC_LOG(INFO) << "BestMatch Resolution for bitrate " 
-                    << target_bitrate_ << " : "
-                    << candidate.width_ << "x" << candidate.height_ ;
-                return true;
-            }
-            else
-                return false;
-        }
     }
-    RTC_LOG(INFO) << "BestMatch Resolution (end of loop): " 
-        << candidate.width_ << "x" << candidate.height_ ;
-    current_res_ = resolution;
-    return true;
+
+    if( candidate.width_ != current_res_.width_ ||
+            candidate.height_ != current_res_.height_ ) {
+        current_res_ = resolution = candidate;
+        RTC_LOG(INFO) << "BestMatch Resolution for bitrate "
+            << target_bitrate_ << " : "
+            << candidate.width_ << "x" << candidate.height_ ;
+        return true;
+    }
+    resolution = candidate;
+    return false;
 }
 

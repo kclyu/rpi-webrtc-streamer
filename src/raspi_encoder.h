@@ -42,8 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace webrtc {
 
-
-
 class RaspiEncoder : public VideoEncoder {
 public:
     static std::unique_ptr<RaspiEncoder> Create(const cricket::VideoCodec& codec);
