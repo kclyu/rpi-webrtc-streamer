@@ -67,7 +67,6 @@ QualityConfig::QualityConfig()
     packet_loss_(3 * 30), rtt_(3 * 30), average_qp_(3 * 30) {
 
     use_dynamic_resolution_  =  config_media::use_dynamic_video_resolution;
-    use_initial_resolution_  =  config_media::use_initial_video_resolution;
     use_4_3_resolution_  =  config_media::resolution_4_3_enable;
 
     //  TODO Need to check these resolution have same FOV between resolutions
@@ -179,9 +178,9 @@ bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
     
     // The initial resolution will be used 
     // if the use default resolution flag is on.
-    if( use_initial_resolution_ == true) {
-        candidate.width_ = config_media::initial_resolution.width_;
-        candidate.height_ = config_media::initial_resolution.height_;
+    if( use_dynamic_resolution_ == false) {
+        candidate.width_ = config_media::fixed_resolution.width_;
+        candidate.height_ = config_media::fixed_resolution.height_;
         candidate.framerate_ = kMaxFrameRate;
         candidate.bitrate_ = static_cast<int>(
                 (candidate.width_ * candidate.height_ * kMaxFrameRate * 

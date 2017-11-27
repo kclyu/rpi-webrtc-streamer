@@ -74,11 +74,9 @@ CONFIG_DEFINE( VideoResolutionList169, video_resolution_list_16_9, std::string, 
     "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080");
 
 CONFIG_DEFINE( VideoDynamicResolution, use_dynamic_video_resolution, bool, true );
-CONFIG_DEFINE( VideoInitialResolution, use_initial_video_resolution, bool, false );
 
-CONFIG_DEFINE( InitialVideoResolution, initial_video_resolution, 
+CONFIG_DEFINE( FixedVideoResolution, fixed_video_resolution, 
         std::string, "640x480");
-CONFIG_DEFINE( VideoFrameRate, initial_video_framerate, int, 30 );
 
 // audio related config
 // this feature will require high CPU usage 
@@ -96,7 +94,7 @@ CONFIG_DEFINE( AudioLevelControl,  audio_level_control, bool, true );
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-struct ResolutionConfig initial_resolution(640,480);
+struct ResolutionConfig fixed_resolution(640,480);
 int default_video_framerate = kDefaultVideoMaxFrameRate;
 
 std::list <ResolutionConfig> resolution_list_4_3;
@@ -210,7 +208,7 @@ bool config_load(const std::string config_filename) {
     //
     // If it is disabled, it keeps the initial resolution set in InitEncoder. 
     // If you want to disable it, you must enable use_initial_video_resoltuion 
-    // and set the desired resolution to initial_video_resolution.
+    // and set the desired resolution to fixed_video_resolution.
     DEFINE_CONFIG_LOAD_BOOL(VideoDynamicResolution, 
             use_dynamic_video_resolution );
 
@@ -232,54 +230,39 @@ bool config_load(const std::string config_filename) {
                 resolution_list_16_9 );
     };
 
-    // loading flag for default video resolution 
-    DEFINE_CONFIG_LOAD_BOOL(VideoInitialResolution, 
-            use_initial_video_resolution );
-    if( use_initial_video_resolution == true ) {
+    // loading flag for fixed video resolution 
+    if( use_dynamic_video_resolution == false ) {
         // loading default video resolution config
-        DEFINE_CONFIG_LOAD_STR( InitialVideoResolution, 
-                initial_video_resolution);
-        if( config_loaded__InitialVideoResolution == true ){
-
-            // Getting default framerate config
-            DEFINE_CONFIG_LOAD_INT_VALIDATE( VideoFrameRate, 
-                    initial_video_framerate, validate__video_framerate);
-
+        DEFINE_CONFIG_LOAD_STR( FixedVideoResolution, 
+                fixed_video_resolution);
+        if( config_loaded__FixedVideoResolution == true ){
             // need video width and height config 
-            // to enable use_initial_video_resolution
-            DEFINE_CONFIG_LOAD_STR( InitialVideoResolution, 
-                    initial_video_resolution);
+            // to enable fixed_video_resolution
+            DEFINE_CONFIG_LOAD_STR( FixedVideoResolution, 
+                    fixed_video_resolution);
 
             int width, height;
-            if( utils::ParseVideoResolution( initial_video_resolution, 
+            if( utils::ParseVideoResolution( fixed_video_resolution, 
                         &width, &height ) == true ) {
                 if(validate_resolution(width, height) == true ) {
-                    initial_resolution.width_ = width;
-                    initial_resolution.height_ = height;
+                    fixed_resolution.width_ = width;
+                    fixed_resolution.height_ = height;
                 }
                 else {
                     RTC_LOG(LS_ERROR) << "Default resolution \"" 
                         <<  width << "x" << height << "\" is not valid";
-                    use_initial_video_resolution = false;
                 }
             };
         }
         else {
-            RTC_LOG(LS_ERROR) << "Initial Video Resolution config is not found.";
-            use_initial_video_resolution = false;
+            RTC_LOG(LS_ERROR) 
+                << "Fixed Video Resolution config is not found.";
+            RTC_LOG(LS_ERROR) 
+                << "Using default dyanmic video resolution instead of fixed video resolution.";
+            use_dynamic_video_resolution = true;
         } 
     }
 
-    // validate the initial_video_resolution and dynamic_video_resolution
-    // one of setting should be enabled.
-    if( use_dynamic_video_resolution == false && 
-            use_initial_video_resolution == false ) {
-        RTC_LOG(LS_ERROR) 
-            << "Both of dynamic video resolution and initial resolution disabled\n"
-            << "Overriding configuration setting to initial video resolution to enable";
-        use_initial_video_resolution = true;
-    };
- 
     // loading flag for audio processing 
     DEFINE_CONFIG_LOAD_BOOL(AudioProcessing, audio_processing_enable);
     if( audio_processing_enable ) {
