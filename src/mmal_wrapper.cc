@@ -400,6 +400,7 @@ void MMALEncoderWrapper::SetVideoAnnotateUserText(const std::string user_text) {
             strncpy( state_.camera_parameters.annotate_string, 
                     user_text.c_str(), MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2 );
         }
+        state_.camera_parameters.enable_annotate |=  ANNOTATE_USER_TEXT;
     }
 }
 

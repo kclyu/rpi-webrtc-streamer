@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 #include <string>
+
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/fileutils.h"
@@ -73,6 +74,11 @@ CONFIG_DEFINE( MotionBlobTrackingThreshold, blob_tracking_threshold, int, 15 );
 
 CONFIG_DEFINE( MotionTotalFileSizeLimit, motion_file_total_size_limit, int, 4000); // Mbytes
 
+///////////////////////////////////////////////////////////////////////////////////////////
+//
+// config validation helper functions
+//
+///////////////////////////////////////////////////////////////////////////////////////////
 
 // Returns true if the specifiec directory path exists
 // or return false otherwise.
@@ -99,7 +105,7 @@ bool validate_motion_annotate_text_size(int text_size, int default_value) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
-// motion config loading function
+// motion config loading functions
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
 
