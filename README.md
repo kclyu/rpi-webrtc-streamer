@@ -22,10 +22,11 @@ alt="" width="560" height="315" border="10" /></a>
 
 ###  WebRTC H.264 Codec supported browsers
 
-Browser|Supported|H.264 Codec Status|
-----------------|---------------|-----------|
-Chrome |Yes|[Software encoder/decoder](https://www.chromestatus.com/feature/6417796455989248)|
-Firefox|Yes|Browser plugin|
+|Browser|Supported|H.264 Codec Status|
+|----------------|---------------|-----------|
+|Chrome |Yes|Software encoder/decoder|
+|Opera |Yes|Software encoder/decoder|
+|Firefox|Yes|Browser plugin|
 
 ## Hardware Requirement
 ### Raspberry PI 
@@ -49,7 +50,7 @@ Please refer to [Rpi-Webrtc-Streamer-deb Repo](https://github.com/kclyu/rpi-webr
 
 ## Cross Compile on Ubuntu Linux
 
-Please refer to [BUILD_ubuntu.md document](../master/BUILD_ubuntu.md).
+Please refer to [README_building.md document](../master/README_building.md).
 
 ## Known Issues and Bugs
 TBD
@@ -58,6 +59,9 @@ TBD
 TBD
 
 ## Version History
+* 2017/11/29 v0.72:
+	- Motion detection using IMV(Inline Motion Vector)
+	- Motion detected part saved as video file
 * 2017/06/09 v0.65:
 	- Adding log file shifting between folders
     - Prepare first deb package for systemd	

@@ -34,8 +34,12 @@ Please refer to the  [README_audio.md](https://github.com/kclyu/rpi-webrtc-strea
 |direct_socket_enable|boolean|enable/disable the direct socket server|
 |turn_server|URL|specify the turn server URL(not implemented yet)|
 |sturn_server|URL|specify the sturn server (using google stun server as default)|
-|app_channel_config|file path|specify the App Channel config (not implemented yet)|
 |media_config|file path|specify the WebRTC media parameters|
+|motion_config|file path|specify the RWS motion configuration parameter|
+|web_root|path|specify the internal HTTP server web root|
+|libwebsocket_debug|boolean|enable/disable libwebsockets debug message printing|
+|wss_url|string|setting for WebSocket URL (By default, wss_url is set to 'wss_url=__ WS_SERVER __/rws/ws'. The value of '/rws/ws' is used by default in html examples such as native-peerconnection. If you change /rws/ws, you also have to modify the contents of each html file and so on.)
+
 
 #### WebRTC Media Config file
 
@@ -43,36 +47,30 @@ Please refer to the  [README_audio.md](https://github.com/kclyu/rpi-webrtc-strea
 |----------------|-----------------|--------------|
 |max_bitrate|integer|specify the maximum bit rate for audio/video (default value is 350000(3.5M) bps.)|
 |use_4_3_video_resolution|boolean|specify screen resolution ratio ( true: using 4:3, false using 16:9)|
-|use_dynamic_video_resolution|boolean|specify using dynamic resolution changing based on the bandwidth estimation|
-|video_resolution_list_4_3|resolution list|list of 4:3 ratio screen resolution|
-|video_resolution_list_16_9|resolution list|list of 16:9 ratio screen resolution |
+|use_dynamic_video_resolution|boolean|specify using dynamic resolution changing based on the bandwidth estimation (If set to true, dynamic resolution feature is enabled; if set to false, fixed_resolution will be used.)|
+|video_resolution_list_4_3|video resolution list|list of 4:3 ratio screen resolution|
+|video_resolution_list_16_9|video resolution list|list of 16:9 ratio screen resolution |
 |use_initial_video_resolution|boolean|use or not use initial video resolution specified by initial_video_resolution|
-|initial_video_resolution|screen resolution|screen resolution to use at startup|
+|fixed_video_resolution|video resolution|The specified video resolution will be used from startup, and video resolution will not be changed dynamically *Note 1*|
 |audio_processing|boolean|enable/disable below audio processing feature|
 |audio_echo_cancellation|boolean|enable/disable google echo cancellation feature|
 |auido_gain_control|boolean|enable/disable google gain control feature|
 |audio_high_passfilter|boolean|enable/disable google high pass filter feature|
 |auido_noise_suppression|boolean|enable/disable google noise suppression feature|
 |audio_level_control_enable|boolean|enable/disable audio level control feature (this feature does not depend on the audio_processing config)||
+*Note1 : the configuration name is changed from initial_video_resolution*
 
-#### Channel config file
-
-|config|Value|Description|
-|----------------|-----------------|--------------|
-|web_root|path|specify the internal HTTP server web root|
-|libwebsocket_debug|boolean|enable/disable libwebsockets debug message printing|
-|wss_url|string|setting for WebSocket URL (By default, wss_url is set to 'wss_url=__ WS_SERVER __/rws/ws'. The value of '/rws/ws' is used by default in html examples such as native-peerconnection. If you change /rws/ws, you also have to modify the contents of each html file and so on.)
-
+#### Motion Config file
+Please refer to [README_motion.md](https://github.com/kclyu/rpi-webrtc-streamer/blob/master/README_motion.md) document for setting of Motion conf file.
 
 ## Running RWS in Standalone Configuration
 ### Setup configuration file for RWS 
 
 ```
 cd $(WHERE_RWS_DIRECTORY)/etc
-cp app_channel.conf.template app_channel.conf 
 cp webrtc_streamer.conf.template webrtc_streamer.conf
 cp media_config.conf.template media_config.conf
-vi app_channel.conf  # change the 'your.dns_hostname.here' to your domain name. 
+cp motion_config.conf.template motion_config.conf
 ``` 
 
 ### Running RWS

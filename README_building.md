@@ -17,7 +17,7 @@ RWS will be compiled using the Raspbery PI sysroot created through rpi_rootfs. F
 cd ~/Workspace
 git clone https://github.com/kclyu/rpi_rootfs.git
 cd rpi_rootfs
-tar tvzf tools_gcc_4.9.4.tar.gz  # note1
+tar xvzf tools_gcc_4.9.4.tar.gz  # note1
 cd /opt
 sudo ln -sf ~/Workspace/rpi_rootfs
 ```
@@ -134,10 +134,9 @@ After compilation is finished without an error, go to the next step to compile r
    
 1. build RWS
 
-RWS uses third party libraries. Before running make to build RWS, you must first create the libraries using config_h264bitstream.sh and config_libwebsockets.sh. For a real example, see the command example below.
+RWS uses third party libraries. Before running make to build RWS, you must first create the libwebsockets library using config_libwebsockets.sh. For a real example, see the command example below.
  ```
 cd ~/Workspace/rpi-webrtc-streamer/src
-sh ../mk/config_h264bitstream.sh
 sh ../mk/config_libwebsockets.sh 
 make
 ```
