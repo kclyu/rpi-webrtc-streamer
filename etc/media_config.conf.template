@@ -1,5 +1,5 @@
 max_bitrate=3500000
-use_4_3_video_resolution=true
+resolution_4_3_enable=true
 video_rotation=0
 video_hflip=false
 video_vflip=false

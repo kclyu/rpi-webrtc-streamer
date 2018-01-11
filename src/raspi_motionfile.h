@@ -92,6 +92,9 @@ private:
     uint32_t frame_counter_;
     uint32_t imv_counter_;
 
+    rtc::Pathname h264_filename_;
+    rtc::Pathname h264_temp_;
+
     uint8_t *frame_writer_buffer_;
 
     rtc::CriticalSection crit_sect_;

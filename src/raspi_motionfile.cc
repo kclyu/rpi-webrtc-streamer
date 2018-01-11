@@ -227,10 +227,14 @@ bool RaspiMotionFile::OpenWriterFiles(void) {
 
     RTC_LOG(INFO) << "Video File : " <<  base_path_ + "/" + frame_filename;
 
+    // marking h264 video file name and h264 video tempoary file name
+    h264_filename_.SetPathname(base_path_,frame_filename);
+    frame_filename.append(".saving");
+    h264_temp_.SetPathname(base_path_,frame_filename);
+
     // reset file written size
     total_frame_written_size_ = 0;
-    if( (frame_file_ = rtc::File::Create( base_path_ + "/" + frame_filename ))
-            .IsOpen() == false  ) {
+    if( (frame_file_ = rtc::File::Create(h264_temp_)).IsOpen() == false  ) {
         RTC_LOG(LS_ERROR) << "Error in opening video file : " <<  frame_filename;
         return false;
     }
@@ -309,6 +313,10 @@ bool RaspiMotionFile::CloseWriterFiles(void) {
         close_status = false;
     }
     frame_file_.Close();
+
+    // Rename the video temporary file to video file name
+    rtc::Filesystem::MoveFile(h264_temp_, h264_filename_);
+
     if( config_motion::motion_save_imv_file  == true ) {
         if( imv_file_.IsOpen() == false ) {
             RTC_LOG(LS_ERROR) << "Trying to close the imv file is not opened";
