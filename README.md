@@ -12,10 +12,18 @@ Generally, the components of WebRTC service are classified into Signaling Server
 To get the camera feed from Raspberry PI, i.e. H.264 video stream, RWS use MMAL(Multi-Media Abstraction Layer) library can be found on [ARM side libraries for interfacing to Raspberry Pi GPU](https://github.com/raspberrypi/userland). it provides lower level API to multi-media components running on Broadcom VideoCore. For  convenience,  this streamer directly integrated  [raspivid](https://github.com/raspberrypi/userland/tree/master/host_applications/linux/apps/raspicam)
 with encoding parameter changing in H.264 stream and passing video frame through WebRTC native code package.
 
-### Rpi-WebRTC-Streamer 
+### Motion Detection
+Motion Detection feature provided by Rpi-WebRTC-Streamer uses Inline Motion Vector which is generated during video encoding.  And use this to get the approximate Motion Detection function while using minimal CPU resources.
+
+Please refer to [README_motion document](../master/README_motion.md).
+
+### Messenger Notification 
+The motion detection event message can be transmitted to the user through the telegram messenger. It can send motion detection message and detected video clip to Telegram Messenger client so that it can be used as a private security bot.
+For more information, Please refer to [README_TelegramBot document](../master/README_TelegramBot.md).
 
 
-####  Demo Video
+## Rpi WebRTC Streamer
+### Demo Video
 
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=I1E8MrA5lhw" target="_blank"><img src="http://img.youtube.com/vi/I1E8MrA5lhw/0.jpg" 
 alt="" width="560" height="315" border="10" /></a>
@@ -59,6 +67,10 @@ TBD
 TBD
 
 ## Version History
+* 2018/01/13 v0.73:
+   - Adding Telegram Bot to convert detected motion video file to MP4 and 
+     sends message to Telegram Messenger client
+   - Motion detection video syncing with 
 * 2017/11/29 v0.72:
 	- Motion detection using IMV(Inline Motion Vector)
 	- Motion detected part saved as video file

@@ -46,7 +46,7 @@ Please refer to the  [README_audio.md](https://github.com/kclyu/rpi-webrtc-strea
 |config|Value|Description|
 |----------------|-----------------|--------------|
 |max_bitrate|integer|specify the maximum bit rate for audio/video (default value is 350000(3.5M) bps.)|
-|use_4_3_video_resolution|boolean|specify screen resolution ratio ( true: using 4:3, false using 16:9)|
+|resolution_4_3_enable|boolean|specify screen resolution ratio ( true: using 4:3, false using 16:9)|
 |use_dynamic_video_resolution|boolean|specify using dynamic resolution changing based on the bandwidth estimation (If set to true, dynamic resolution feature is enabled; if set to false, fixed_resolution will be used.)|
 |video_resolution_list_4_3|video resolution list|list of 4:3 ratio screen resolution|
 |video_resolution_list_16_9|video resolution list|list of 16:9 ratio screen resolution |
