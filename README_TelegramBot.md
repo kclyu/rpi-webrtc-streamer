@@ -10,7 +10,7 @@ Motion Video File is created by Motion Detection function in Rpi-WebRTC-Streamer
 ### TelegramBot Token
 You need auth_token to configure this telegramBot for Rpi-WebRTC-Streamer. auth_token is the authoriization code for Telegram Bot to work with Telegram Bot Server. You need to create a new bot through Telegram BotFather (sending `/newbot` command to BotFather and a few procedures) , then BotFather will generate and display a Auth Token for the new Bot. The corresponding Auth Token should be copied and added to the configuration file later.
 
-<img src="https://changhome.dlinkddns.com/web/telegram_botfather.png " width="500">
+<img src="https://github.com/kclyu/rpi-webrtc-streamer/blob/master/misc/telegram_botfather.png" width="500">
 
 **(The name of the new bot should be different from the example.)**
 
