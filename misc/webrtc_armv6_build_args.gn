@@ -42,6 +42,10 @@ is_desktop_linux=false
 
 #
 #
+#
+# Uncomment this when you want to use internal libcxx of 
+# WebRTC native package (default is true)
+use_custom_libcxx=false
 is_chrome_branded=true
 rtc_use_h264=false
 rtc_initialize_ffmpeg=false

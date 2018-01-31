@@ -208,7 +208,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     QualityConfig::Resolution resolution;
     uint32_t framerate_updated_;
 
-    // TODO (kclyu) :  __FIXED_FRAMERATE__  check at next branch
+    // TODO (kclyu) :  __DYNAMIC_FRAMERATE__  check at next branch
     // 
     // The framerate and bitrate quality control of BWE do not differ 
     // from Branch to Branch but they are still being modified. 
@@ -217,14 +217,15 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     // 
     // Now it is fixed at 30 fps, but it needs to be modified 
     // so that it is adaptive fps again according to Google implementation situation.
-#ifdef __FIXED_FRAMERATE__
+#define __DYNAMIC_FRAMERATE__
+#ifdef __DYNAMIC_FRAMERATE__
     if( framerate > 30 ) 
         framerate_updated_ = 30;
     else 
         framerate_updated_ = framerate;
 #else
     framerate_updated_ = 30;
-#endif  /*  __FIXED_FRAMERATE__ */
+#endif  /*  __DYNAMIC_FRAMERATE__ */
 
     if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
