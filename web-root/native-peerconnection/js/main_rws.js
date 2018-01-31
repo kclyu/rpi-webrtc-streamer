@@ -14,7 +14,7 @@ var messageCounter = 0;
 var peerConnection;    
 
 var localTestingUrl = "ws://10.0.0.11:8889/rws/ws";
-var pcConfig = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
+var pcConfig = {"iceServers": [{"urls": "stun:stun.l.google.com:19302"}]};
 var pcOptions = { optional: [ {DtlsSrtpKeyAgreement: true} ] };
 var mediaConstraints = {'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true }};
 var remoteStream;
@@ -34,6 +34,7 @@ function isPrivateIP(ip) {
 function createPeerConnection() {
 	try {
 		peerConnection = new RTCPeerConnection(pcConfig, pcOptions);
+
 		peerConnection.onicecandidate = function(event) {
 			if (event.candidate) {
 				var candidate = { type: 'candidate',
@@ -53,8 +54,7 @@ function createPeerConnection() {
 		trace("Created RTCPeerConnnection with config: " + JSON.stringify(pcConfig));
 	} 
 	catch (e) {
-		trace("Failed to create PeerConnection with " + 
-                connectionId + ", exception: " + e.message);
+		trace("Failed to create PeerConnection exception: " + e.message);
 	}
 }
 
@@ -92,7 +92,8 @@ function doHandlePeerMessage(data) {
         dataJson.sdp = sdp_returned;
         // Creating PeerConnection
         createPeerConnection();
-        peerConnection.setRemoteDescription(new RTCSessionDescription(dataJson), onRemoteSdpSucces, onRemoteSdpError);              
+        peerConnection.setRemoteDescription(new RTCSessionDescription(dataJson),
+                onRemoteSdpSucces, onRemoteSdpError);
         peerConnection.createAnswer(function(sessionDescription) {
             trace("Create answer:", sessionDescription);
             peerConnection.setLocalDescription(sessionDescription,sld_success_cb,sld_failure_cb);
@@ -104,9 +105,14 @@ function doHandlePeerMessage(data) {
         }, mediaConstraints); // type error           
     }
     else if (dataJson["type"] == "candidate" ) {    // Processing candidate
-        trace("Adding ICE candiate " + dataJson["candidate"]);
-        var candidate = new RTCIceCandidate({sdpMLineIndex: dataJson.sdpMLineIndex, candidate: dataJson.candidate});
-        peerConnection.addIceCandidate(candidate, aic_success_cb, aic_failure_cb);
+        trace("Adding ICE candiate " + dataJson.candidate);
+        trace("Adding mLineIndex " + dataJson.label);
+            var ice_candidate = new RTCIceCandidate({
+                sdpMLineIndex: dataJson.label,
+                sdpMid: dataJson.id,
+                candidate: dataJson.candidate
+                });
+         peerConnection.addIceCandidate(ice_candidate, aic_success_cb, aic_failure_cb);
     }
 }
 
