@@ -35,7 +35,9 @@ alt="" width="560" height="315" border="10" /></a>
 |Chrome |Yes|Software encoder/decoder|
 |Opera |Yes|Software encoder/decoder|
 |Firefox|Yes|Browser plugin|
+|Safari|Yes<sup>*note 1*</sup>||
 
+*note 1: MacOS/Safari need 'WebRTC/Enable Legacy WebRTC API' enabled*
 ## Hardware Requirement
 ### Raspberry PI 
 - Raspberry PI 2/3
@@ -69,8 +71,7 @@ TBD
 ## Version History
 * 2018/01/13 v0.73:
    - Adding Telegram Bot to convert detected motion video file to MP4 and 
-     sends message to Telegram Messenger client
-   - Motion detection video syncing with 
+     sends message to Telegram Messenger client 
 * 2017/11/29 v0.72:
 	- Motion detection using IMV(Inline Motion Vector)
 	- Motion detected part saved as video file

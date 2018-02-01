@@ -1,99 +1,119 @@
 
 # Setup Rpi-WebRTC-Streamer 
 
-Once you have successfully built the RWS, It can be used in the following configuration.
+Once you have successfully installed Rpi-WebRTC-Streamer(RWS), It can be used in the following configuration.
 
 - RWS Standalone
 - HTTP server with Reverse Proxy + RWS
 - HTTP server with Reverse proxy  + Client Certs + RWS
 
-RWS has a simple HTTP and WebSocket function that can be used in a local/private network that does not require security.  You can use RWS standalone configuration at this situation only it is  protected behind F/W or NAT. However, if it is possible to access from the Internet directly, it is necessary to implement a function that can restrict the user with the HTTP server.  In this case, you must use security features by using reverse proxying with user authentification or client certs through HTTP server.
+RWS has a simple HTTP and WebSocket interface that can be used in a local/private network that does not require security.  You can use RWS standalone configuration at this situation only it is  protected behind F/W or NAT. However, If you need to access directly from public internet, it is necessary to implement a function that can restrict the other user from RWS.  In this case, you must use security features by using the VPN or client certs or the ability to authenticate users.
 
-
-## RWS running environment
-The RWS executable directory should contain the following directories: The "etc" directory contains the configuration file, and the "log" directory contains the RWS log file. The "web-root" must have html and javascript files for use by the RWS HTTP server.
-
-### Required Hardware 
+## Required Hardware
+### Raspberry PI 
 - Raspberry PI 2 (or Upper version)
-- Raspberry Zero W  (Currently under examination)
-#### Video Camera
+- Raspberry Zero W  
+### Video Camera
 - RPI Camera board V1/V2
-#### Audio hardware
+### Audio hardware (optional)
 Please refer to the  [README_audio.md](https://github.com/kclyu/rpi-webrtc-streamer/blob/master/README_audio.md)
 
 
-### Configuration Files
+## Setup configuration file for RWS 
+The directories where RWS is installed include the following directories: There is a log directory where RWS log files are stored, an etc directory with RWS configuration files, and a tools directory with other tools that can be used with RWS. There is a web-root that contains html and javascript files.
 
-#### Server Main Configuration
+If you installed RWS with a deb file, the default conf files are installed in the etc directory. Please refer to 'Configuration Files' section below for configuration file settings and description of each setting item.
 
-
-|config|Value|Description|
-|----------------|-----------------|--------------|
-|websocket_enable|boolean|enable/disable the websocket server|
-|websocket_port|integer|RWS websocket server port number|
-|direct_socket_enable|boolean|enable/disable the direct socket server|
-|turn_server|URL|specify the turn server URL(not implemented yet)|
-|sturn_server|URL|specify the sturn server (using google stun server as default)|
-|media_config|file path|specify the WebRTC media parameters|
-|motion_config|file path|specify the RWS motion configuration parameter|
-|web_root|path|specify the internal HTTP server web root|
-|libwebsocket_debug|boolean|enable/disable libwebsockets debug message printing|
-|wss_url|string|setting for WebSocket URL (By default, wss_url is set to 'wss_url=__ WS_SERVER __/rws/ws'. The value of '/rws/ws' is used by default in html examples such as native-peerconnection. If you change /rws/ws, you also have to modify the contents of each html file and so on.)
-
-
-#### WebRTC Media Config file
-
-|config|Value|Description|
-|----------------|-----------------|--------------|
-|max_bitrate|integer|specify the maximum bit rate for audio/video (default value is 350000(3.5M) bps.)|
-|resolution_4_3_enable|boolean|specify screen resolution ratio ( true: using 4:3, false using 16:9)|
-|use_dynamic_video_resolution|boolean|specify using dynamic resolution changing based on the bandwidth estimation (If set to true, dynamic resolution feature is enabled; if set to false, fixed_resolution will be used.)|
-|video_resolution_list_4_3|video resolution list|list of 4:3 ratio screen resolution|
-|video_resolution_list_16_9|video resolution list|list of 16:9 ratio screen resolution |
-|use_initial_video_resolution|boolean|use or not use initial video resolution specified by initial_video_resolution|
-|fixed_video_resolution|video resolution|The specified video resolution will be used from startup, and video resolution will not be changed dynamically *Note 1*|
-|audio_processing|boolean|enable/disable below audio processing feature|
-|audio_echo_cancellation|boolean|enable/disable google echo cancellation feature|
-|auido_gain_control|boolean|enable/disable google gain control feature|
-|audio_high_passfilter|boolean|enable/disable google high pass filter feature|
-|auido_noise_suppression|boolean|enable/disable google noise suppression feature|
-|audio_level_control_enable|boolean|enable/disable audio level control feature (this feature does not depend on the audio_processing config)||
-*Note1 : the configuration name is changed from initial_video_resolution*
-
-#### Motion Config file
-Please refer to [README_motion.md](https://github.com/kclyu/rpi-webrtc-streamer/blob/master/README_motion.md) document for setting of Motion conf file.
-
-## Running RWS in Standalone Configuration
-### Setup configuration file for RWS 
+If you want to build and install RWS, modify the necessary files using the configuration file template included in etc/template as shown in the example below.
 
 ```
 cd $(WHERE_RWS_DIRECTORY)/etc
-cp webrtc_streamer.conf.template webrtc_streamer.conf
-cp media_config.conf.template media_config.conf
-cp motion_config.conf.template motion_config.conf
+cp template/webrtc_streamer.conf webrtc_streamer.conf
+cp template/media_config.conf media_config.conf
+cp template/motion_config.conf motion_config.conf
 ``` 
 
-### Running RWS
-RWS has not been created the scripts for a process monitoring and start/restart. You can simply enter the following command to start RWS.
+##  Process Management 
+RWS is only compatible with systemd. To execute the process and check the status, use the following command.
 
+### Start
 ```
-cd $(WHERE_RWS_DIRECTORY)
-webrtc-streamer >& /dev/null &
+sudo systemctl start rws
 ```
+### Stop
+```
+sudo systemctl stop rws
+```
+### Status/Monitoring
+`sudo systemctl status rws` is used for process status checking.
+`sudo journalctl -u rws` for  log message for process start/stop/standard error log checking.
+```
+sudo systemctl status rws
+● rws.service - Rpi WebRTC Streamer
+   Loaded: loaded (/etc/systemd/system/rws.service; enabled)
+   Active: active (running) since Thu 2017-06-08 21:08:45 KST; 2h 47min ago
+ Main PID: 14968 (webrtc-streamer)
+   CGroup: /system.slice/rws.service
+           └─14968 /opt/rws/webrtc-streamer --log /opt/rws/log
 
-This command will start listening at 8889 port number.
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib pcm.c:2239:(snd_pcm_open_noupdate) Unknown PCM
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib pcm.c:2239:(snd_pcm_open_noupdate) Unknown PCM
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib pcm.c:2239:(snd_pcm_open_noupdate) Unknown PCM
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 22:04:44 raspberrypi webrtc-streamer[14968]: ALSA lib pcm.c:2239:(snd_pcm_open_noupdate) Unknown PCM
+Hint: Some lines were ellipsized, use -l to show in full.
 
+sudo journalctl -u rws
+Jun 08 19:56:05 raspberrypi systemd[1]: Stopped Rpi WebRTC Streamer.
+Jun 08 19:56:05 raspberrypi systemd[1]: Stopped Rpi WebRTC Streamer.
+Jun 08 21:08:45 raspberrypi systemd[1]: Starting Rpi WebRTC Streamer...
+Jun 08 21:08:45 raspberrypi systemd[1]: Started Rpi WebRTC Streamer.
+Jun 08 21:08:45 raspberrypi systemd[1]: Started Rpi WebRTC Streamer.
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib pcm.c:2239:(snd_pcm_open_noupdate) Unknown PCM
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib pcm.c:2239:(snd_pcm_open_noupdate) Unknown PCM
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib control.c:953:(snd_ctl_open_noupdate) Invalid CTL
+Jun 08 21:09:18 raspberrypi webrtc-streamer[14968]: ALSA lib pcm.c:2239:(snd_pcm_open_noupdate) Unknown PCM
+```
+## RWS Standalone configuration 
+It is a configuration that can be used in a local/private network using one of the default http server port 8889 without having to depend on another Http server like Nginx.
 
-### Open in Browser
-As mentioned above, Standalone Configuration only need RWS running environment.
+If you installed RWS using deb file, configuration files based on port 8889 for HTTP and WebSocket server will be installed as default conf file when installing. Once the installation is complete, you can use the browser to open the URL as shown below.
 
-Open the following URL in the chrome browser will display the native-peerconnection testing page.
+### Open Testing URL in Chrome Browser
+Open the following URL in the browser will display the native-peerconnection testing page.
 
 ```
 http://your-private-ip-address:8889/native-peerconnection/
 ```
 *`8889` port number is the websocket_port specified in the config file, and the URL protocol uses http instead of https.*
 
+
+### Using VPN
+If you can use a VPN on your router, you can use it on the public internet as if you are using a local/private network without any additional https or client certs file configuration. It is the recommended way to use RWS on public internet.
+
+The method for configuring the VPN will be included in the NAT or F/W product manual you are using.
+
+Android and iOS have different types of VPN protocol stack that they support. In general, the basic VPN protocol supported by Android is PPTP/L2TP/IPSec, though it depends on the phone vendor. IOS supports L2TP / IPSec / IKEV2.
+
+If the same protocol is supported by Phone and Router, you can use VPN service by configuring VPN on Router and Phone. You can find out how to set detailed VPN settings for Phone and Router by searching the Internet.
+
+If you have successfully set up the VPN and can use the network through the VPN, you can use it in your browser using http instead of https as you used the RWS testing page on the local network above.
+	
+
+``` 
+http://your-private-ip-address:8889/native-peerconnection/
+```
+*`8889` port number is the websocket_port specified in the config file, and the URL protocol uses http instead of https.*
 ### Open in Android AppRTC app
 Android AppRTCMobile is a WebRTC app for Android designed to work with Google's https://appr.tc. One of the unique features of the Android App is that it provides a function to directly link without the signaling server (appr.tc) using a TCP socket called Direct RTC Client.
 
@@ -109,7 +129,6 @@ Please change the following in AppRTC Settings menu of App.
    - 'Select default video codec' -- select one of H264 baseline or H264 High
 
 To work with RWS, enter the IP address of RWS is installed in the room number input field.
-
 
 ## Running RWS with Nginx
 The HTTP function of RWS has no room for adding user-friendly HTTP return code and other functions. Therefore, it is recommended to use reverse proxy in front of RWS to add user authentication or other logging function in addition to using RWS in local network.
@@ -141,7 +160,7 @@ server {
 
 
 ####  Nginx with Client Side Certificate Auth as a Reverse Proxy
-Below is an example of how RWS works with Nginx. It shows how to use Nginx as HTTP and WebScoket Reverse Proxy and cover the security part with client side certs. Other configurations or other requirements may require Googling, web server configuration, or security expert advice. (It may not be enough to emphasize as much, I recommend that you do not leave the camera feed open to the public internet without any security measures.)
+Below is an example of how RWS works with Nginx. It shows how to use Nginx as HTTPS and Secured WebScoket Reverse Proxy and cover the security part with client side certs. Other configurations or other requirements may require Googling, web server configuration, or security expert advice. (It may not be enough to emphasize as much, I recommend that you do not leave the camera feed open to the public internet without any security measures.)
 
 ```
 ###
@@ -203,16 +222,54 @@ cd $(WHERE_RWS_DIRECTORY)/web-root
 sudo cp -r native-peerconnection /usr/share/nginx/html
 ``` 
 
-
 #### Testing RWS in browser
 To test RWS WebRTC streaming in browser, Open the following URL in the latest chrome or firefox browser.
 ```
 https://server.example.com/native-connection/index.html
 ```
 
-To use the h.264 webrtc streaming in chrome or firefox, browser settings are required for each browser.
-For the chrome browser case: you need to to enable the '#enable-webrtc-h264-with-openh264-ffmpeg' entry in the 'chrome//flags' URL. For more information, please refer to the googling or [PSA](https://groups.google.com/forum/#!topic/discuss-webrtc/8ov4YW6HLgo).
+### Configuration Files
 
-For the firefox browser case: Please refer to [Checking H264 Capability on Firefox](https://github.com/EricssonResearch/openwebrtc/issues/425).
+#### Server Main Configuration
+
+
+|config|Value|Description|
+|----------------|-----------------|--------------|
+|websocket_enable|boolean|enable/disable the websocket server|
+|websocket_port|integer|RWS websocket server port number|
+|direct_socket_enable|boolean|enable/disable the direct socket server|
+|turn_server|URL|specify the turn server URL(not implemented yet)|
+|sturn_server|URL|specify the sturn server (using google stun server as default)|
+|media_config|file path|specify the WebRTC media parameters|
+|motion_config|file path|specify the RWS motion configuration parameter|
+|web_root|path|specify the internal HTTP server web root|
+|libwebsocket_debug|boolean|enable/disable libwebsockets debug message printing|
+|wss_url|string|setting for WebSocket URL (By default, wss_url is set to 'wss_url=__ WS_SERVER __/rws/ws'. The value of '/rws/ws' is used by default in html examples such as native-peerconnection. If you change /rws/ws, you also have to modify the contents of each html file and so on.)
+
+
+#### WebRTC Media Config file
+
+|config|Value|Description|
+|----------------|-----------------|--------------|
+|max_bitrate|integer|specify the maximum bit rate for audio/video (default value is 350000(3.5M) bps.)|
+|resolution_4_3_enable|boolean|specify screen resolution ratio ( true: using 4:3, false using 16:9)|
+|use_dynamic_video_resolution|boolean|specify using dynamic resolution changing based on the bandwidth estimation (If set to true, dynamic resolution feature is enabled; if set to false, fixed_resolution will be used.)|
+|video_resolution_list_4_3|video resolution list|list of 4:3 ratio screen resolution|
+|video_resolution_list_16_9|video resolution list|list of 16:9 ratio screen resolution |
+|use_initial_video_resolution|boolean|use or not use initial video resolution specified by initial_video_resolution|
+|fixed_video_resolution|video resolution|The specified video resolution will be used from startup, and video resolution will not be changed dynamically *Note 1*|
+|audio_processing|boolean|enable/disable below audio processing feature|
+|audio_echo_cancellation|boolean|enable/disable google echo cancellation feature|
+|auido_gain_control|boolean|enable/disable google gain control feature|
+|audio_high_passfilter|boolean|enable/disable google high pass filter feature|
+|auido_noise_suppression|boolean|enable/disable google noise suppression feature|
+|audio_level_control_enable|boolean|enable/disable audio level control feature (this feature does not depend on the audio_processing config)||
+*Note1 : the configuration name is changed from initial_video_resolution*
+
+#### Motion Config file
+Please refer to [README_motion.md](https://github.com/kclyu/rpi-webrtc-streamer/blob/master/README_motion.md) document for setting of Motion conf file.
+
+
+
 
 
