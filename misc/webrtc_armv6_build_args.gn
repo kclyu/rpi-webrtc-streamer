@@ -14,6 +14,7 @@ use_sysroot=true
 target_sysroot="/opt/rpi_rootfs"
 system_libdir="/opt/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
 gold_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
+binutils_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
 
 # taget CPU optimization for PI ZeroW
 target_os="linux"
@@ -42,9 +43,6 @@ is_desktop_linux=false
 
 #
 #
-#
-# Uncomment this when you want to use internal libcxx of 
-# WebRTC native package (default is true)
 use_custom_libcxx=false
 is_chrome_branded=true
 rtc_use_h264=false

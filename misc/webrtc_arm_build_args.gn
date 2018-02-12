@@ -14,6 +14,7 @@ use_sysroot=true
 target_sysroot="/opt/rpi_rootfs"
 system_libdir="/opt/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
 gold_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
+binutils_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
 
 # target CPU optimization for PI2
 target_os="linux"
@@ -34,8 +35,6 @@ use_ozone=true
 is_desktop_linux=false
 
 #
-# Uncomment this when you want to use internal libcxx of 
-# WebRTC native package (default is true)
 use_custom_libcxx=false    
 is_chrome_branded=true
 rtc_build_with_neon=true
