@@ -372,6 +372,7 @@ bool MMALEncoderWrapper::IsInited() {
 
 void MMALEncoderWrapper::SetVideoRotation(int rotation) {
     state_.camera_parameters.rotation = rotation;
+    state_.camera_parameters.drc_level = MMAL_PARAMETER_DRC_STRENGTH_HIGH;
 }
 
 void MMALEncoderWrapper::SetVideoFlip(bool vflip, bool hflip) {
@@ -405,17 +406,69 @@ void MMALEncoderWrapper::SetVideoAnnotateUserText(const std::string user_text) {
 }
 
 void MMALEncoderWrapper::SetVideoAnnotateTextSize(const int text_size) {
+    RTC_DCHECK( mmal_initialized_ == true );
     state_.camera_parameters.annotate_text_size  = text_size;
 }
 
 void MMALEncoderWrapper::SetInlineMotionVectors(bool motion_enable) {
+    RTC_DCHECK( mmal_initialized_ == true );
     state_.bInlineMotionVector = motion_enable;
 }
 
 void MMALEncoderWrapper::SetIntraPeriod(int frame_period) {
+    RTC_DCHECK( mmal_initialized_ == true );
     state_.intraPeriod = frame_period;
 }
 
+
+void MMALEncoderWrapper::SetVideoSharpness(const int sharpness ) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.sharpness  = sharpness;
+}
+
+void MMALEncoderWrapper::SetVideoContrast(const int contrast) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.contrast  = contrast;
+}
+
+void MMALEncoderWrapper::SetVideoBrightness(const int brightness) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.brightness  = brightness;
+}
+
+void MMALEncoderWrapper::SetVideoSaturation(const int saturation) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.saturation  = saturation;
+}
+
+void MMALEncoderWrapper::SetVideoEV(const int ev) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.exposureCompensation  = ev;
+}
+
+void MMALEncoderWrapper::SetVideoExposureMode(const std::string exposure_mode) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.exposureMode  = 
+        exposure_mode_from_string(exposure_mode.c_str());
+}
+
+void MMALEncoderWrapper::SetVideoFlickerMode(const std::string flicker_mode) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.flickerAvoidMode  = 
+        flicker_avoid_mode_from_string(flicker_mode.c_str());
+}
+
+void MMALEncoderWrapper::SetVideoAwbMode(const std::string awb_mode) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.awbMode  = 
+        awb_mode_from_string(awb_mode.c_str());
+}
+
+void MMALEncoderWrapper::SetVideoDrcMode(const std::string drc_mode) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.drc_level  = 
+        drc_mode_from_string(drc_mode.c_str());
+}
 
 bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, 
         int bitrate) {

@@ -40,7 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/fileutils.h"
 #include "rtc_base/pathutils.h"
 
-#include "config_defines.h"
 #include "config_motion.h"
 #include "utils.h"
 

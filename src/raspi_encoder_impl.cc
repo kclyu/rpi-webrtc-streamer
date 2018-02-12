@@ -148,6 +148,19 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     // Do not use Text Annotataion in RTC video stream
     mmal_encoder_->SetVideoAnnotate(false);
 
+    // Video Image related parameter settings
+    mmal_encoder_->SetVideoSharpness(config_media::video_sharpness);
+    mmal_encoder_->SetVideoContrast(config_media::video_contrast);
+    mmal_encoder_->SetVideoBrightness(config_media::video_brightness);
+    mmal_encoder_->SetVideoSaturation(config_media::video_saturation);
+    mmal_encoder_->SetVideoEV(config_media::video_ev);
+    mmal_encoder_->SetVideoExposureMode(config_media::video_exposure_mode);
+    mmal_encoder_->SetVideoFlickerMode(config_media::video_flicker_mode);
+    mmal_encoder_->SetVideoAwbMode(config_media::video_awb_mode);
+    mmal_encoder_->SetVideoDrcMode(config_media::video_drc_mode);
+
+    // Settings for Quality
+
     // GetInitialBestMatch should be used only when initializing 
     // the Encoder, and only when the use_default_resolution flag is on.
     QualityConfig::Resolution initial_res;
@@ -208,24 +221,10 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     QualityConfig::Resolution resolution;
     uint32_t framerate_updated_;
 
-    // TODO (kclyu) :  __DYNAMIC_FRAMERATE__  check at next branch
-    // 
-    // The framerate and bitrate quality control of BWE do not differ 
-    // from Branch to Branch but they are still being modified. 
-    // It seems that there is now a problem with the framerate 
-    // according to the BWE bitrate in the version Branch / 59.
-    // 
-    // Now it is fixed at 30 fps, but it needs to be modified 
-    // so that it is adaptive fps again according to Google implementation situation.
-#define __DYNAMIC_FRAMERATE__
-#ifdef __DYNAMIC_FRAMERATE__
     if( framerate > 30 ) 
         framerate_updated_ = 30;
     else 
         framerate_updated_ = framerate;
-#else
-    framerate_updated_ = 30;
-#endif  /*  __DYNAMIC_FRAMERATE__ */
 
     if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;

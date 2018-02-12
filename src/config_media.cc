@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/logging.h"
 #include "rtc_base/arraysize.h"
 
-#include "config_defines.h"
 #include "config_media.h"
 #include "utils.h"
 
@@ -87,6 +86,17 @@ CONFIG_DEFINE( AudioHighPassFilter, audio_highpass_filter, bool, true );
 CONFIG_DEFINE( AudioNoiseSuppression, audio_noise_suppression, bool, true );
 CONFIG_DEFINE( AudioLevelControl,  audio_level_control, bool, true );
 
+
+// video configuration config
+CONFIG_DEFINE( VideoSharpness, video_sharpness, int, 0 );   // -100 - 100
+CONFIG_DEFINE( VideoContrast, video_contrast, int, 0 );     // ~100 - 100
+CONFIG_DEFINE( VideoBrightness, video_brightness, int, 50 );    // 0 - 100
+CONFIG_DEFINE( VideoSaturation, video_saturation, int, 0 );   //-100 - 100
+CONFIG_DEFINE( VideoEV, video_ev, int, 0 );
+CONFIG_DEFINE( VideoExposureMode, video_exposure_mode, std::string, "auto" );
+CONFIG_DEFINE( VideoFlickerMode, video_flicker_mode, std::string, "auto" );
+CONFIG_DEFINE( VideoAwbMode, video_awb_mode, std::string, "auto" );
+CONFIG_DEFINE( VideoDrcMode, video_drc_mode, std::string, "off" );
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -176,6 +186,72 @@ bool validate_resolution(int width, int height) {
     return false;
 }
 
+// 
+//  Video setting validation
+// 
+bool validate__value_sharpness( int sharpness, int /*default_value*/) {
+    if( sharpness >= -100 &&  sharpness  <= 100 ) return true;
+    RTC_LOG(LS_ERROR) << "Error in sharpness value: "  << sharpness;
+    return false;
+}
+
+bool validate__value_contrast( int contrast, int /*default_value*/) {
+    if( contrast >= -100 &&  contrast  <= 100 ) return true;
+    RTC_LOG(LS_ERROR) << "Error in contrast value: "  << contrast;
+    return false;
+}
+
+bool validate__value_brightness( int brightness, int /*default_value*/) {
+    if( brightness >= 0 &&  brightness  <= 100 ) return true;
+    RTC_LOG(LS_ERROR) << "Error in brightness value: "  << brightness;
+    return false;
+}
+
+bool validate__value_saturation( int saturation, int /*default_value*/) {
+    if( saturation >= -100 &&  saturation  <= 100 )
+        return true;
+    RTC_LOG(LS_ERROR) << "Error in saturation value: "  << saturation;
+    return false;
+}
+
+bool validate__value_exposure_compensation( int ec, int /*default_value*/) {
+    if( ec >= -10 &&  ec  <= 10 ) return true;
+    RTC_LOG(LS_ERROR) << "Error in EC value: "  << ec;
+    return false;
+}
+
+bool validate__value_exposure_mode(const std::string exposure_mode, 
+        std::string /* defalut_value */ ) {
+    if( check_optionvalue_exposure_mode(exposure_mode.c_str()))
+        return true;
+    RTC_LOG(LS_ERROR) << "Unknown exposure_mode: "  << exposure_mode;
+    return false;
+}
+
+bool validate__value_flicker_mode(const std::string flicker_mode,
+        std::string /* defalut_value */ ) {
+    if( check_optionvalue_flicker_mode(flicker_mode.c_str()))
+        return true;
+    RTC_LOG(LS_ERROR) << "Unknown flicker mode: "  << flicker_mode;
+    return false;
+}
+
+bool validate__value_awb_mode(const std::string awb_mode,
+        std::string /* defalut_value */ ) {
+    if( check_optionvalue_awb_mode(awb_mode.c_str()))
+        return true;
+    RTC_LOG(LS_ERROR) << "Unknown AWB mode: "  << awb_mode;
+    return false;
+}
+
+bool validate__value_drc_mode(const std::string drc_mode,
+        std::string /* defalut_value */ ) {
+    if( check_optionvalue_drc_mode(drc_mode.c_str()))
+        return true;
+    RTC_LOG(LS_ERROR) << "Unknown DRC level : "  << drc_mode;
+    return false;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // main config loading function
@@ -189,9 +265,11 @@ bool config_load(const std::string config_filename) {
     };
 
     // loading max_bitrate
-    DEFINE_CONFIG_LOAD_INT(MaxBitrate, max_bitrate );      
+    DEFINE_CONFIG_LOAD_INT_VALIDATE(MaxBitrate, max_bitrate, 
+            validate__video_maxbitrate);      
     // loading video rotation config
-    DEFINE_CONFIG_LOAD_INT(VideoRotation, video_rotation ); 
+    DEFINE_CONFIG_LOAD_INT_VALIDATE(VideoRotation, video_rotation,
+            validate__video_rotation ); 
 
     // loading vflip & hflip
     DEFINE_CONFIG_LOAD_BOOL(VideoVFlip, video_vflip);
@@ -276,10 +354,32 @@ bool config_load(const std::string config_filename) {
     // level control is not depend on the audio processing
     DEFINE_CONFIG_LOAD_BOOL(AudioLevelControl,audio_level_control);
 
+    // Video Setting
+    DEFINE_CONFIG_LOAD_INT_VALIDATE( VideoSharpness, video_sharpness,
+            validate__value_sharpness );
+    DEFINE_CONFIG_LOAD_INT_VALIDATE( VideoContrast, video_contrast,
+            validate__value_contrast );
+    DEFINE_CONFIG_LOAD_INT_VALIDATE( VideoBrightness, video_brightness,
+            validate__value_brightness );
+    DEFINE_CONFIG_LOAD_INT_VALIDATE( VideoSaturation, video_saturation,
+            validate__value_saturation );
+    DEFINE_CONFIG_LOAD_INT_VALIDATE( VideoEV, video_ev,
+            validate__value_exposure_compensation );
+
+    DEFINE_CONFIG_LOAD_STR_VALIDATE( VideoExposureMode, video_exposure_mode,
+            validate__value_exposure_mode );
+    DEFINE_CONFIG_LOAD_STR_VALIDATE( VideoFlickerMode, video_flicker_mode,
+            validate__value_flicker_mode );
+    DEFINE_CONFIG_LOAD_STR_VALIDATE( VideoAwbMode, video_awb_mode,
+            validate__value_awb_mode );
+    DEFINE_CONFIG_LOAD_STR_VALIDATE( VideoDrcMode, video_drc_mode,
+            validate__value_drc_mode );
+
     return true;
 }
 
 }   // config_media namespace
+
 
 
 

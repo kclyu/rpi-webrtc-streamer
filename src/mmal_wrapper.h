@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/event.h"
-#include "mmal_encoder.h"
+#include "mmal_video.h"
 
 namespace webrtc {
 
@@ -180,6 +180,17 @@ public:
     void SetVideoAnnotate(bool annotate_enable);
     void SetVideoAnnotateUserText(const std::string user_text);
     void SetVideoAnnotateTextSize(const int text_size);
+
+    // Video Image related parameter settings
+    void SetVideoSharpness(const int sharpness);
+    void SetVideoContrast(const int contrast);
+    void SetVideoBrightness(const int brightness);
+    void SetVideoSaturation(const int saturation);
+    void SetVideoEV(const int ev);
+    void SetVideoExposureMode(const std::string exposure_mode);
+    void SetVideoFlickerMode(const std::string flicker_mode);
+    void SetVideoAwbMode(const std::string awb_mode);
+    void SetVideoDrcMode(const std::string drc_mode);
 
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);

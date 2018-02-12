@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/thread.h"
 #include "rtc_base/platform_thread.h"
 
-#include "mmal_encoder.h"
+#include "mmal_video.h"
 
 #include "raspi_motion.h"
 #include "config_media.h"
@@ -117,6 +117,17 @@ bool RaspiMotion::StartCapture() {
     mmal_encoder_->SetVideoAnnotate(config_motion::motion_enable_annotate_text);
     mmal_encoder_->SetVideoAnnotateUserText(config_motion::motion_annotate_text);
     mmal_encoder_->SetVideoAnnotateTextSize(config_motion::motion_annotate_text_size );
+
+    // Video Image related parameter settings
+    mmal_encoder_->SetVideoSharpness(config_media::video_sharpness);
+    mmal_encoder_->SetVideoContrast(config_media::video_contrast);
+    mmal_encoder_->SetVideoBrightness(config_media::video_brightness);
+    mmal_encoder_->SetVideoSaturation(config_media::video_saturation);
+    mmal_encoder_->SetVideoEV(config_media::video_ev);
+    mmal_encoder_->SetVideoExposureMode(config_media::video_exposure_mode);
+    mmal_encoder_->SetVideoFlickerMode(config_media::video_flicker_mode);
+    mmal_encoder_->SetVideoAwbMode(config_media::video_awb_mode);
+    mmal_encoder_->SetVideoDrcMode(config_media::video_drc_mode);
 
     RTC_LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_ 
         << "@" << framerate_ << ", " << bitrate_ << " kbps";

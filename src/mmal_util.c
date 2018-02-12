@@ -35,20 +35,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sys/types.h>
 
-#include "mmal_encoder.h"
+#include "mmal_video.h"
 
 
 // static variable for holding camera settings
 static MMAL_PARAMETER_CAMERA_SETTINGS_T camera_settings;
 static uint16_t camera_setting_updated = 0;
 
-void mmal_encoder_copy_camera_settings( MMAL_PARAMETER_CAMERA_SETTINGS_T *settings )
+void mmal_video_copy_camera_settings( MMAL_PARAMETER_CAMERA_SETTINGS_T *settings )
 {
     camera_setting_updated = MMAL_TRUE;
     memcpy( &camera_settings, settings, sizeof(MMAL_PARAMETER_CAMERA_SETTINGS_T));
 }
 
-void mmal_encoder_print_camera_settings( void )
+void mmal_video_print_camera_settings( void )
 {
     DLOG_FORMAT("Exposure now %u, analog gain %u/%u, digital gain %u/%u",
                 camera_settings.exposure,
@@ -62,7 +62,7 @@ void mmal_encoder_print_camera_settings( void )
 
 
 /*****************************************************************************/
-int mmal_encoder_set_camera_settings(MMAL_COMPONENT_T *camera )
+int mmal_video_set_camera_settings(MMAL_COMPONENT_T *camera )
 {
     MMAL_PARAMETER_CAMERA_SETTINGS_T setting;
     memcpy(&setting, &camera_settings, sizeof( camera_settings));
@@ -73,7 +73,7 @@ int mmal_encoder_set_camera_settings(MMAL_COMPONENT_T *camera )
     if( camera_setting_updated == 0 ) return 1;
 
     DLOG("Resetting camera setting with previous one");
-    mmal_encoder_print_camera_settings();
+    mmal_video_print_camera_settings();
 
     return mmal_status_to_int(mmal_port_parameter_set(camera->control, &setting.hdr));
 }

@@ -5,6 +5,11 @@ include ../mk/cross_arm_build.mk
 include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk
 
+#
+# fakevideocapturer.cc has been added and we need to compile this file
+#
+VPATH = .:$(WEBRTC_ROOT)/src/media/base
+
 RWS_INSTALL_DIR=\"/opt/rws\"
 RWS_VERSION=\"$(shell git describe --abbrev=32 --dirty --always --tags)\"
 WEBRTC_GIT=$(shell (cd $(WEBRTC_ROOT)/src/; git describe --abbrev=32 --dirty --always --tags))
@@ -47,16 +52,10 @@ SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc 
 	mmal_wrapper.cc utils.cc streamer_observer.cc streamer.cc main.cc \
 	raspi_quality_config.cc file_logger.cc app_ws_client.cc app_client.cc \
 	raspi_motion.cc raspi_motionvector.cc raspi_motionblob.cc raspi_motionfile.cc \
-	config_media.cc  config_streamer.cc  config_motion.cc
+	config_media.cc  config_streamer.cc  config_motion.cc fakevideocapturer.cc
 
-#SOURCES.CC = config_streamer.cc config_motion.cc main.cc mmal_wrapper.cc utils.cc \
-#	raspi_quality_config.cc file_logger.cc  config_media.cc\
-#	raspi_motion.cc raspi_motionvector.cc raspi_motionblob.cc \
-#	raspi_motionfile.cc
-
-SOURCES.C = websocket_server_util.c mmal_encoder.c mmal_encoder_reset.c mmal_util.c raspicli.c \
+SOURCES.C = websocket_server_util.c mmal_video.c mmal_video_reset.c mmal_util.c raspicli.c \
 	raspicamcontrol.c raspipreview.c 
-
 
 OBJECTS.CC = $(SOURCES.CC:.cc=.o) 
 OBJECTS.CPP = $(SOURCES.CPP:.cpp=.o) 

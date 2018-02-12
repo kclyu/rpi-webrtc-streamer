@@ -263,7 +263,17 @@ https://server.example.com/native-connection/index.html
 |auido_gain_control|boolean|enable/disable google gain control feature|
 |audio_high_passfilter|boolean|enable/disable google high pass filter feature|
 |auido_noise_suppression|boolean|enable/disable google noise suppression feature|
-|audio_level_control_enable|boolean|enable/disable audio level control feature (this feature does not depend on the audio_processing config)||
+|audio_level_control|boolean|enable/disable audio level control feature (this feature does not depend on the audio_processing config)||
+|video_sharpness |integer|set image sharpness (-100 to 100), 0 is the default.|
+|video_contrast |integer|set image contrast (-100 to 100), 0 is the default|
+|video_brightness |integer|set image brightness (0 to 100), 50 is the default. 0 is black, 100 is white.|
+|video_saturation |integer|set image saturation (-100 to 100), 0 is the default.|
+|video_ev |integer|set the EV compensation. Range is -10 to +10, default is 0.|
+|video_exposure_mode|exposure mode |set exposure mode, auto is the default. possible exposure mode: off, auto, night, nightpreview, snow, beach, verylong, fixedfps, antishake, fireworks |
+|video_flicker_mode |flicker mode|set flicker avoid mode, off is the default, possible flicker mode : off, auto, 50hz, 60hz|
+|video_awb_mode |awb mode|set Automatic White Balance (AWB) mode, auto is the default. possible awb_mode: off, auto, sun, cloud, shade, tungsten, fluorescent, incandescent, flash, horizon |
+|video_drc_mode |drc mode|set DRC Level, off is the default. possible DRC mode: off,low,med,high|
+
 *Note1 : the configuration name is changed from initial_video_resolution*
 
 #### Motion Config file

@@ -32,33 +32,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rtc_base/checks.h"
 
+#include "config_defines.h"
 
 //
 // The config part for global config is required.
 //
 namespace config_motion {
-    extern bool motion_detection_enable;
-    extern int motion_width;
-    extern int motion_height;
-    extern int motion_fps;
-    extern int motion_bitrate;
-    extern int motion_clear_percent;
-    extern int motion_clear_wait_period;
 
-    extern std::string motion_directory;
-    extern std::string motion_file_prefix;
+    CONFIG_DEFINE_H( MotionDetectionEnable, motion_detection_enable, bool);
+    CONFIG_DEFINE_H( MotionWidth, motion_width, int );
+    CONFIG_DEFINE_H( MotionHeight, motion_height, int);
+    CONFIG_DEFINE_H( MotionFps, motion_fps, int);
+    CONFIG_DEFINE_H( MotionBitrate, motion_bitrate, int);
+    CONFIG_DEFINE_H( MotionClearPercent, motion_clear_percent, int);
+    CONFIG_DEFINE_H( MotionClearWaitPeriod, motion_clear_wait_period, int);
 
-    extern int motion_file_size_limit; // K bytes
-    extern bool motion_save_imv_file;
+    CONFIG_DEFINE_H( MotionDirBase, motion_directory, std::string);
+    CONFIG_DEFINE_H( MotionFilePrefix, motion_file_prefix, std::string);
+    CONFIG_DEFINE_H( MotionFileSizeLimit, motion_file_size_limit, int);
+    CONFIG_DEFINE_H( MotionSaveImvFile, motion_save_imv_file, bool);
 
-    extern bool motion_enable_annotate_text;
-    extern std::string motion_annotate_text;
-    extern int motion_annotate_text_size;
+    CONFIG_DEFINE_H( MotionEnableAnnotateText, motion_enable_annotate_text, bool);
+    CONFIG_DEFINE_H( MotionAnnotateText, motion_annotate_text, std::string);
+    CONFIG_DEFINE_H( MotionAnnotateTextSize, motion_annotate_text_size, int);
 
-    extern float blob_cancel_threshold;
-    extern int blob_tracking_threshold;
+    CONFIG_DEFINE_H( MotionBlobCancelThreshold, blob_cancel_threshold, float);
+    CONFIG_DEFINE_H( MotionBlobTrackingThreshold, blob_tracking_threshold, int);
 
-    extern int motion_file_total_size_limit; // Mbytes
+    CONFIG_DEFINE_H( MotionTotalFileSizeLimit, motion_file_total_size_limit, int);
 
     bool config_load(const std::string config_filename);
 

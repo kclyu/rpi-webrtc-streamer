@@ -53,6 +53,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             MMAL_PARAM_EXPOSUREMODE_ANTISHAKE,
             MMAL_PARAM_EXPOSUREMODE_FIREWORKS,
  *
+ * Flicker Avoid Mode
+ *          MMAL_PARAM_FLICKERAVOID_OFF,
+            MMAL_PARAM_FLICKERAVOID_AUTO,
+            MMAL_PARAM_FLICKERAVOID_50HZ,
+            MMAL_PARAM_FLICKERAVOID_60HZ,
+ *
+ *
  * AWB Mode
  *          MMAL_PARAM_AWBMODE_OFF,
             MMAL_PARAM_AWBMODE_AUTO,
@@ -149,6 +156,7 @@ typedef struct
     MMAL_PARAM_IMAGEFX_T imageEffect;
     MMAL_PARAMETER_IMAGEFX_PARAMETERS_T imageEffectsParameters;
     MMAL_PARAM_COLOURFX_T colourEffects;
+    MMAL_PARAM_FLICKERAVOID_T flickerAvoidMode;
     int rotation;              /// 0-359
     int hflip;                 /// 0 or 1
     int vflip;                 /// 0 or 1
@@ -164,6 +172,8 @@ typedef struct
     int annotate_text_colour;  // Text colour for annotation
     int annotate_bg_colour;    // Background colour for annotation
     MMAL_PARAMETER_STEREOSCOPIC_MODE_T stereo_mode;
+    float analog_gain;         // Analog gain
+    float digital_gain;        // Digital gain
 } RASPICAM_CAMERA_PARAMETERS;
 
 
@@ -173,7 +183,6 @@ void raspicamcontrol_get_camera(int *supported, int *detected);
 
 int raspicamcontrol_parse_cmdline(RASPICAM_CAMERA_PARAMETERS *params, const char *arg1, const char *arg2);
 void raspicamcontrol_display_help();
-int raspicamcontrol_cycle_test(MMAL_COMPONENT_T *camera);
 
 int raspicamcontrol_set_all_parameters(MMAL_COMPONENT_T *camera, const RASPICAM_CAMERA_PARAMETERS *params);
 int raspicamcontrol_get_all_parameters(MMAL_COMPONENT_T *camera, RASPICAM_CAMERA_PARAMETERS *params);
@@ -193,6 +202,7 @@ int raspicamcontrol_set_metering_mode(MMAL_COMPONENT_T *camera, MMAL_PARAM_EXPOS
 int raspicamcontrol_set_video_stabilisation(MMAL_COMPONENT_T *camera, int vstabilisation);
 int raspicamcontrol_set_exposure_compensation(MMAL_COMPONENT_T *camera, int exp_comp);
 int raspicamcontrol_set_exposure_mode(MMAL_COMPONENT_T *camera, MMAL_PARAM_EXPOSUREMODE_T mode);
+int raspicamcontrol_set_flicker_avoid_mode(MMAL_COMPONENT_T *camera, MMAL_PARAM_FLICKERAVOID_T mode);
 int raspicamcontrol_set_awb_mode(MMAL_COMPONENT_T *camera, MMAL_PARAM_AWBMODE_T awb_mode);
 int raspicamcontrol_set_awb_gains(MMAL_COMPONENT_T *camera, float r_gain, float b_gain);
 int raspicamcontrol_set_imageFX(MMAL_COMPONENT_T *camera, MMAL_PARAM_IMAGEFX_T imageFX);
@@ -206,6 +216,7 @@ int raspicamcontrol_set_stats_pass(MMAL_COMPONENT_T *camera, int stats_pass);
 int raspicamcontrol_set_annotate(MMAL_COMPONENT_T *camera, const int bitmask, const char *string,
                                  const int text_size, const int text_colour, const int bg_colour);
 int raspicamcontrol_set_stereo_mode(MMAL_PORT_T *port, MMAL_PARAMETER_STEREOSCOPIC_MODE_T *stereo_mode);
+int raspicamcontrol_set_gains(MMAL_COMPONENT_T *camera, float analog, float digital);
 
 //Individual getting functions
 int raspicamcontrol_get_saturation(MMAL_COMPONENT_T *camera);
@@ -218,11 +229,24 @@ int raspicamcontrol_get_video_stabilisation(MMAL_COMPONENT_T *camera);
 int raspicamcontrol_get_exposure_compensation(MMAL_COMPONENT_T *camera);
 MMAL_PARAM_THUMBNAIL_CONFIG_T raspicamcontrol_get_thumbnail_parameters(MMAL_COMPONENT_T *camera);
 MMAL_PARAM_EXPOSUREMODE_T raspicamcontrol_get_exposure_mode(MMAL_COMPONENT_T *camera);
+MMAL_PARAM_FLICKERAVOID_T raspicamcontrol_get_flicker_avoid_mode(MMAL_COMPONENT_T *camera);
 MMAL_PARAM_AWBMODE_T raspicamcontrol_get_awb_mode(MMAL_COMPONENT_T *camera);
 MMAL_PARAM_IMAGEFX_T raspicamcontrol_get_imageFX(MMAL_COMPONENT_T *camera);
 MMAL_PARAM_COLOURFX_T raspicamcontrol_get_colourFX(MMAL_COMPONENT_T *camera);
 
+/******************************************************************************
+ *
+ * The following functions delete the static prefix and are defined below 
+ * for use in mmal_wrapper.
+ *
+******************************************************************************/
 
-
+MMAL_PARAM_EXPOSUREMODE_T exposure_mode_from_string(const char *str);
+MMAL_PARAM_FLICKERAVOID_T flicker_avoid_mode_from_string(const char *str);
+MMAL_PARAM_AWBMODE_T awb_mode_from_string(const char *str);
+MMAL_PARAM_IMAGEFX_T imagefx_mode_from_string(const char *str);
+MMAL_PARAM_EXPOSUREMETERINGMODE_T metering_mode_from_string(const char *str);
+MMAL_PARAMETER_DRC_STRENGTH_T drc_mode_from_string(const char *str);
+MMAL_STEREOSCOPIC_MODE_T stereo_mode_from_string(const char *str);
 
 #endif /* RASPICAMCONTROL_H_ */

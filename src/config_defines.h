@@ -42,11 +42,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // macro to define configuration
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
+// For config source file definition
 #define CONFIG_DEFINE(name, config_var, config_type, default_value) \
     static const char kConfig## name[] = #config_var ; \
     static const config_type kDefault## name = default_value ; \
     static bool config_loaded__ ## name = false; \
-    config_type config_var = default_value; 
+    config_type config_var = default_value;  \
+    bool IsLoaded__ ## name (void) { return config_loaded__ ## name; }
+
+// For config include file definition
+#define CONFIG_DEFINE_H(name, config_var, config_type ) \
+    extern config_type config_var; \
+    bool IsLoaded__ ## name (void);
 
 #define CONFIG_LOAD_BOOL(name,config_var) \
         { \
@@ -93,11 +100,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // macro for dummping config name and config_var 
 // need to insert the "#define CONFIG_LOAD_DUMP" before including this header file
 #ifdef CONFIG_LOAD_DUMP 
-    #define DUMP_KEY_AND_VALUE(dkey,dconf,dvalue)  \
-        RTC_LOG(INFO) << "Config Key \"" <<  dkey << "\" Setting : \"" \
-            << dconf << "\" Loaded Value : \"" << dvalue << "\""; 
+    #define DUMP_KEY_AND_VALUE(name,conf,loaded_value)  \
+        RTC_LOG(INFO) << "Key \"" <<  kConfig ## name << "\", In conf : \""  << conf  \
+            << "\", Value (" << config_loaded__ ## name << ") : \"" << loaded_value << "\"";
+    
 #else
-    #define DUMP_KEY_AND_VALUE(dkey,dconf,dvalue) 
+    #define DUMP_KEY_AND_VALUE(dkey,conf,dvalue) 
 #endif 
 
 
@@ -118,7 +126,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     config_loaded__ ## name = false; \
                 };  \
             }; \
-            DUMP_KEY_AND_VALUE( kConfig ## name, flag_value, config_var ); \
+            DUMP_KEY_AND_VALUE( name, flag_value, config_var ); \
         };
 
 
@@ -130,7 +138,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             else { \
                 config_loaded__ ## name = true; \
             } \
-            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+            DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
         };
 
 #define DEFINE_CONFIG_LOAD_FLOAT(name,config_var) \
@@ -147,7 +155,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                     config_loaded__ ## name = false; \
                 } \
             } \
-            DUMP_KEY_AND_VALUE( kConfig ## name, flag_value, config_var ); \
+            DUMP_KEY_AND_VALUE( name, flag_value, config_var ); \
         };
 
 #define DEFINE_CONFIG_LOAD_STR(name,config_var ) \
@@ -158,7 +166,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             else { \
                 config_loaded__ ## name = true; \
             } \
-            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+            DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
         };
 
 //
@@ -174,7 +182,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 } \
             } \
             else config_var = kDefault ## name; \
-            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+            DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
         };
 
 #define DEFINE_CONFIG_LOAD_STR_VALIDATE(name,config_var,validate_function) \
@@ -187,7 +195,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 } \
             } \
             else config_var = kDefault ## name; \
-            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+            DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
         };
 
 
@@ -200,20 +208,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             if( config_->GetStringValue(kConfig ## name, &config_var ) == true){ \
                 config_loaded__ ## name = true; \
                 if(config_var.compare("true") == 0) {   \
-                    DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                    DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
                     return true; \
                 }   \
                 else if (config_var.compare("false") == 0) { \
-                    DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                    DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
                     return false; \
                 } \
                 else { \
                     config_loaded__ ## name = false; \
-                    DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                    DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
                     return kDefault ## name; \
                 };  \
             }; \
-            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, kDefault ## name); \
+            DUMP_KEY_AND_VALUE( name, kDefault ## name, kDefault ## name); \
             return kDefault ## name; \
         };
 
@@ -221,12 +229,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         { \
             if( config_->GetIntValue(kConfig ## name, &config_var ) == true){ \
                 config_loaded__ ## name = true; \
-                DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
                 return validate_function(config_var, kDefault ## name); \
             } \
             config_loaded__ ## name = false; \
             config_var = kDefault ## name; \
-            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+            DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
             return false; \
         };
 
@@ -234,12 +242,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         { \
             if( config_->GetStringValue(kConfig ## name, &config_var ) == true){ \
                 config_loaded__ ## name = true; \
-                DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+                DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
                 return true; \
             }; \
             config_loaded__ ## name = false; \
             config_var = kDefault ## name; \
-            DUMP_KEY_AND_VALUE( kConfig ## name, kDefault ## name, config_var ); \
+            DUMP_KEY_AND_VALUE( name, "n/a", config_var ); \
             return false; \
         };
 
