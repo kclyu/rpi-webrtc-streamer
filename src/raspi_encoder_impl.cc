@@ -96,7 +96,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
                                      int32_t number_of_cores,
                                      size_t max_payload_size) {
     RTC_LOG(INFO) << __FUNCTION__;
-    int updated_framerate;
+    int framerate_updated;
 
     ReportInit();
     if (!codec_settings ||
@@ -113,9 +113,13 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
 
-    updated_framerate = static_cast<int>(codec_settings->maxFramerate);
-    if( updated_framerate > 30 ) updated_framerate = 30;
-    quality_config_.ReportFrameRate( updated_framerate);
+    framerate_updated = static_cast<int>(codec_settings->maxFramerate);
+    if( config_media::use_dynamic_video_fps == false) 
+        // using fixed fps when use_dynamic_video_fps is disabled
+        framerate_updated = config_media::fixed_video_fps;
+
+    if( framerate_updated > 30 ) framerate_updated = 30;
+    quality_config_.ReportFrameRate( framerate_updated);
 
     mode_ = codec_settings->mode;
     key_frame_interval_ = codec_settings->H264().keyFrameInterval;
@@ -219,30 +223,36 @@ int32_t RaspiEncoderImpl::RegisterEncodeCompleteCallback(
 int32_t RaspiEncoderImpl::SetRateAllocation( 
         const BitrateAllocation& bitrate_allocation, uint32_t framerate) {
     QualityConfig::Resolution resolution;
-    uint32_t framerate_updated_;
+    uint32_t framerate_updated;
 
-    if( framerate > 30 ) 
-        framerate_updated_ = 30;
+    if( config_media::use_dynamic_video_fps == true ) {
+        // using dynamic fps, so update fps when required
+        if( framerate > 30 ) 
+            framerate_updated = 30;
+        else 
+            framerate_updated = framerate;
+    }
     else 
-        framerate_updated_ = framerate;
+        // using fixed fps when use_dynamic_video_fps is disabled
+        framerate_updated = config_media::fixed_video_fps; 
 
     if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
 
-    quality_config_.ReportFrameRate(static_cast<int>(framerate_updated_) );
+    quality_config_.ReportFrameRate(static_cast<int>(framerate_updated) );
     quality_config_.ReportTargetBitrate( bitrate_allocation.get_sum_kbps());
     if( quality_config_.GetBestMatch( resolution) ) {
         RTC_LOG(INFO) << "Resolution Changing by Bitrate Changing "
             << "To : "  << resolution.width_ << "x" << resolution.height_;
 
         if(mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution.width_, 
-                    resolution.height_, framerate_updated_, 
+                    resolution.height_, framerate_updated, 
                     resolution.bitrate_) == false ) {
             RTC_LOG(LS_ERROR) << "Failed to reinit MMAL encoder";
         }
     }
     else 
-        mmal_encoder_->SetRate( static_cast<uint32_t>(framerate_updated_), 
+        mmal_encoder_->SetRate( static_cast<uint32_t>(framerate_updated), 
                 bitrate_allocation.get_sum_kbps() );
     return WEBRTC_VIDEO_CODEC_OK;
 }

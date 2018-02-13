@@ -76,7 +76,9 @@ namespace config_media {
     CONFIG_DEFINE_H( MaxBitrate, max_bitrate, int );
     CONFIG_DEFINE_H( Resolution4_3, resolution_4_3_enable, bool );
     CONFIG_DEFINE_H( VideoDynamicResolution, use_dynamic_video_resolution, bool);
+    CONFIG_DEFINE_H( VideoDynamicFps, use_dynamic_video_fps, bool);
     CONFIG_DEFINE_H( VideoRotation, video_rotation, int);
+    CONFIG_DEFINE_H( FixedVideoFps, fixed_video_fps, int);
     CONFIG_DEFINE_H( VideoVFlip, video_vflip, bool);
     CONFIG_DEFINE_H( VideoHFlip, video_hflip, bool);
 

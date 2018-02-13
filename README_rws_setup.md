@@ -254,10 +254,12 @@ https://server.example.com/native-connection/index.html
 |max_bitrate|integer|specify the maximum bit rate for audio/video (default value is 350000(3.5M) bps.)|
 |resolution_4_3_enable|boolean|specify screen resolution ratio ( true: using 4:3, false using 16:9)|
 |use_dynamic_video_resolution|boolean|specify using dynamic resolution changing based on the bandwidth estimation (If set to true, dynamic resolution feature is enabled; if set to false, fixed_resolution will be used.)|
+|use_dynamic_video_fps|boolean|specify using dynamic fps changing based on the bandwidth estimation (If set to true, dynamic fps feature is enabled; if set to false, fixed_video_fps will be used.)|
 |video_resolution_list_4_3|video resolution list|list of 4:3 ratio screen resolution|
 |video_resolution_list_16_9|video resolution list|list of 16:9 ratio screen resolution |
 |use_initial_video_resolution|boolean|use or not use initial video resolution specified by initial_video_resolution|
 |fixed_video_resolution|video resolution|The specified video resolution will be used from startup, and video resolution will not be changed dynamically *Note 1*|
+|fixed_video_fps|integer|The specified video fps will be used from startup, and video fps will not be changed dynamically|
 |audio_processing|boolean|enable/disable below audio processing feature|
 |audio_echo_cancellation|boolean|enable/disable google echo cancellation feature|
 |auido_gain_control|boolean|enable/disable google gain control feature|

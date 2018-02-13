@@ -73,9 +73,10 @@ CONFIG_DEFINE( VideoResolutionList169, video_resolution_list_16_9, std::string, 
     "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080");
 
 CONFIG_DEFINE( VideoDynamicResolution, use_dynamic_video_resolution, bool, true );
+CONFIG_DEFINE( VideoDynamicFps, use_dynamic_video_fps, bool, true);
 
-CONFIG_DEFINE( FixedVideoResolution, fixed_video_resolution, 
-        std::string, "640x480");
+CONFIG_DEFINE( FixedVideoResolution, fixed_video_resolution, std::string, "640x480");
+CONFIG_DEFINE( FixedVideoFps, fixed_video_fps, int, 30);
 
 // audio related config
 // this feature will require high CPU usage 
@@ -137,7 +138,7 @@ bool validate__video_maxbitrate(int video_maxbitrate, int default_value ) {
 }
 
 bool validate__video_framerate(int framerate, int default_value ) {
-    if ((framerate < 15) || (framerate > 30)) {
+    if ((framerate < 5) || (framerate > 30)) {
         RTC_LOG(LS_ERROR) << "Error in video frame rate value: " 
             << video_rotation << " is not a valid video frame rate value";
         return false;
@@ -289,6 +290,7 @@ bool config_load(const std::string config_filename) {
     // and set the desired resolution to fixed_video_resolution.
     DEFINE_CONFIG_LOAD_BOOL(VideoDynamicResolution, 
             use_dynamic_video_resolution );
+    DEFINE_CONFIG_LOAD_BOOL(VideoDynamicFps, use_dynamic_video_fps );
 
     // loading default video resolution config
     DEFINE_CONFIG_LOAD_STR( VideoResolutionList43, 
@@ -339,6 +341,10 @@ bool config_load(const std::string config_filename) {
                 << "Using default dyanmic video resolution instead of fixed video resolution.";
             use_dynamic_video_resolution = true;
         } 
+    }
+    if( use_dynamic_video_fps == false ) {
+        DEFINE_CONFIG_LOAD_INT_VALIDATE( FixedVideoFps, fixed_video_fps,
+            validate__video_framerate );
     }
 
     // loading flag for audio processing 
