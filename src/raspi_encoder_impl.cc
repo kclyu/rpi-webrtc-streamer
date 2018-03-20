@@ -61,6 +61,9 @@ enum H264EncoderImplEvent {
 };
 }  // namespace
 
+// QP scaling thresholds.
+static const int kLowH264QpThreshold = 24;
+static const int kHighH264QpThreshold = 37;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -332,15 +335,11 @@ int32_t RaspiEncoderImpl::SetChannelParameters( uint32_t packet_loss, int64_t rt
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t RaspiEncoderImpl::SetPeriodicKeyFrames(bool enable) {
-    RTC_LOG(INFO) << "Periodic Key Frame request: "
-              << static_cast<const char *>(enable?"enable":"disable");
-    return WEBRTC_VIDEO_CODEC_OK;
+VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
+  return VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
 }
 
-VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
-  return VideoEncoder::ScalingSettings(true);
-}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////

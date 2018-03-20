@@ -55,7 +55,7 @@ using webrtc::PeerConnectionInterface;
 // Names used for SDP label
 static const char kAudioLabel[] = "audio_label";
 static const char kVideoLabel[] = "video_label";
-static const char kStreamLabel[] = "stream_label";
+static const char kStreamId[] = "stream_id";
 
 // Names used for a Android Direct IceCandidate JSON object.
 static const char kCandidateSdpMidName[] = "id";
@@ -77,9 +77,7 @@ public:
         return
             new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
     }
-    virtual void OnSuccess() {
-        RTC_LOG(INFO) << __FUNCTION__;
-    }
+    virtual void OnSuccess() { RTC_LOG(INFO) << __FUNCTION__; }
     virtual void OnFailure(const std::string& error) {
         RTC_LOG(INFO) << __FUNCTION__ << " " << error;
     }
@@ -229,12 +227,12 @@ void Streamer::DeletePeerConnection() {
 // Called when a remote stream is added
 void Streamer::OnAddStream(
         rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    RTC_LOG(INFO) << __FUNCTION__ << "Remote Stream added!" << stream->label();
+    RTC_LOG(INFO) << __FUNCTION__ << "Remote Stream added!" << stream->id();
 }
 
 void Streamer::OnRemoveStream(
         rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    RTC_LOG(INFO) << __FUNCTION__ << "Remote Stream removed!" << stream->label();
+    RTC_LOG(INFO) << __FUNCTION__ << "Remote Stream removed!" << stream->id();
 }
 
 void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
@@ -428,7 +426,7 @@ std::unique_ptr<cricket::VideoCapturer> Streamer::OpenVideoCaptureDevice() {
 }
 
 void Streamer::AddStreams() {
-    if (active_streams_.find(kStreamLabel) != active_streams_.end())
+    if (active_streams_.find(kStreamId) != active_streams_.end())
         return;  // Already added.
 
     cricket::AudioOptions options;
@@ -442,8 +440,9 @@ void Streamer::AddStreams() {
         if( config_media::audio_noise_suppression == true ) 
             options.noise_suppression = rtc::Optional<bool>(true);
     };
-    if( config_media::audio_level_control == true ) 
-            options.level_control = rtc::Optional<bool>(true);
+    // audio_level_control is removed
+    // if( config_media::audio_level_control == true ) 
+    //         options.level_control = rtc::Optional<bool>(true);
 
     RTC_LOG(INFO) << "Audio options: " << options.ToString();
 
@@ -458,7 +457,7 @@ void Streamer::AddStreams() {
                     nullptr)));
 
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-        peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
+        peer_connection_factory_->CreateLocalMediaStream(kStreamId);
 
     stream->AddTrack(audio_track);
     stream->AddTrack(video_track);
@@ -469,7 +468,7 @@ void Streamer::AddStreams() {
     typedef std::pair<std::string,
             rtc::scoped_refptr<webrtc::MediaStreamInterface> >
             MediaStreamPair;
-    active_streams_.insert(MediaStreamPair(stream->label(), stream));
+    active_streams_.insert(MediaStreamPair(stream->id(), stream));
 }
 
 
