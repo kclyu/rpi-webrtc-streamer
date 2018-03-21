@@ -152,8 +152,6 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     // Setting Video Rotation and Flip setting
     mmal_encoder_->SetVideoRotation(config_media::video_rotation);
     mmal_encoder_->SetVideoFlip(config_media::video_vflip, config_media::video_hflip);
-    // Do not use Text Annotataion in RTC video stream
-    mmal_encoder_->SetVideoAnnotate(false);
 
     // Video Image related parameter settings
     mmal_encoder_->SetVideoSharpness(config_media::video_sharpness);
@@ -165,6 +163,13 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     mmal_encoder_->SetVideoFlickerMode(config_media::video_flicker_mode);
     mmal_encoder_->SetVideoAwbMode(config_media::video_awb_mode);
     mmal_encoder_->SetVideoDrcMode(config_media::video_drc_mode);
+    mmal_encoder_->SetVideoVideoStabilisation(config_media::video_stabilisation);
+
+    // Video Annotation
+    mmal_encoder_->SetVideoAnnotate(config_media::video_enable_annotate_text);
+    mmal_encoder_->SetVideoAnnotateUserText(config_media::video_annotate_text);
+    mmal_encoder_->SetVideoAnnotateTextSizeRatio( 
+            config_media::video_annotate_text_size_ratio );
 
     // Settings for Quality
 
@@ -172,7 +177,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     // the Encoder, and only when the use_default_resolution flag is on.
     QualityConfig::Resolution initial_res;
     quality_config_.GetInitialBestMatch( initial_res );
-    //quality_config_.GetBestMatch( initial_res );
+
 
     RTC_LOG(INFO) << "InitEncode request: " 
         << initial_res.width_ << " x " << initial_res.height_;

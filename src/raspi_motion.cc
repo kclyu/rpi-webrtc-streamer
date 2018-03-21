@@ -118,6 +118,9 @@ bool RaspiMotion::StartCapture() {
     mmal_encoder_->SetVideoAnnotateUserText(config_motion::motion_annotate_text);
     mmal_encoder_->SetVideoAnnotateTextSize(config_motion::motion_annotate_text_size );
 
+    // clear Annotation text size ratio value
+    mmal_encoder_->SetVideoAnnotateTextSizeRatio(0);
+
     // Video Image related parameter settings
     mmal_encoder_->SetVideoSharpness(config_media::video_sharpness);
     mmal_encoder_->SetVideoContrast(config_media::video_contrast);

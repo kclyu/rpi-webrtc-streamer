@@ -100,6 +100,12 @@ namespace config_media {
     CONFIG_DEFINE_H( VideoFlickerMode, video_flicker_mode, std::string);
     CONFIG_DEFINE_H( VideoAwbMode, video_awb_mode, std::string);
     CONFIG_DEFINE_H( VideoDrcMode, video_drc_mode, std::string);
+    CONFIG_DEFINE_H( VideoStabilisation, video_stabilisation, bool);
+
+    // Annotation Text
+    CONFIG_DEFINE_H( VideoEnableAnnotateText, video_enable_annotate_text, bool);
+    CONFIG_DEFINE_H( VideoAonnotateText, video_annotate_text, std::string);
+    CONFIG_DEFINE_H( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, int);
 
     bool config_load(const std::string config_filename);
 

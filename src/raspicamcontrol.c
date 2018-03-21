@@ -394,6 +394,7 @@ void raspicamcontrol_set_defaults(RASPICAM_CAMERA_PARAMETERS *params)
     params->enable_annotate = 0;
     params->annotate_string[0] = '\0';
     params->annotate_text_size = 0;	//Use firmware default
+    params->annotate_text_size_ratio = 0;	// disable annotation text ratio
     params->annotate_text_colour = -1;   //Use firmware default
     params->annotate_bg_colour = -1;     //Use firmware default
     params->stereo_mode.mode = MMAL_STEREOSCOPIC_MODE_NONE;

@@ -180,6 +180,7 @@ public:
     void SetVideoAnnotate(bool annotate_enable);
     void SetVideoAnnotateUserText(const std::string user_text);
     void SetVideoAnnotateTextSize(const int text_size);
+    void SetVideoAnnotateTextSizeRatio(const int text_ratio);
 
     // Video Image related parameter settings
     void SetVideoSharpness(const int sharpness);
@@ -191,6 +192,7 @@ public:
     void SetVideoFlickerMode(const std::string flicker_mode);
     void SetVideoAwbMode(const std::string awb_mode);
     void SetVideoDrcMode(const std::string drc_mode);
+    void SetVideoVideoStabilisation(bool stab_enable);
 
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);

@@ -410,6 +410,11 @@ void MMALEncoderWrapper::SetVideoAnnotateTextSize(const int text_size) {
     state_.camera_parameters.annotate_text_size  = text_size;
 }
 
+void MMALEncoderWrapper::SetVideoAnnotateTextSizeRatio(const int text_size_ratio) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.annotate_text_size_ratio  = text_size_ratio;
+}
+
 void MMALEncoderWrapper::SetInlineMotionVectors(bool motion_enable) {
     RTC_DCHECK( mmal_initialized_ == true );
     state_.bInlineMotionVector = motion_enable;
@@ -470,6 +475,11 @@ void MMALEncoderWrapper::SetVideoDrcMode(const std::string drc_mode) {
         drc_mode_from_string(drc_mode.c_str());
 }
 
+void MMALEncoderWrapper::SetVideoVideoStabilisation(bool stab_enable) {
+    RTC_DCHECK( mmal_initialized_ == true );
+    state_.camera_parameters.videoStabilisation  = stab_enable;
+}
+
 bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate, 
         int bitrate) {
     MMAL_STATUS_T status = MMAL_SUCCESS;
@@ -485,6 +495,12 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
     state_.height =  height;
     state_.framerate =  framerate;
     state_.bitrate =  bitrate * 1000;
+
+    // set annotation text size based on text size ratio
+    if( state_.camera_parameters.annotate_text_size_ratio != 0 ) {
+        state_.camera_parameters.annotate_text_size = 
+            (width * state_.camera_parameters.annotate_text_size_ratio)/100 +1;
+    }
 
     if ((status = create_camera_component(&state_)) != MMAL_SUCCESS) {
         RTC_LOG(LS_ERROR) << "Failed to create camera component";
@@ -588,6 +604,12 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height,
     state_.height =  height;
     state_.framerate =  framerate;
     state_.bitrate =  bitrate * 1000;
+
+    // set annotation text size based on text size ratio
+    if( state_.camera_parameters.annotate_text_size_ratio != 0 ) {
+        state_.camera_parameters.annotate_text_size = 
+            (width * state_.camera_parameters.annotate_text_size_ratio)/100 +1;
+    }
 
     rtc::CritScope cs(&crit_sect_);
 

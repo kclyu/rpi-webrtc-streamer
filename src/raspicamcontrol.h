@@ -169,6 +169,7 @@ typedef struct
     int enable_annotate;       /// Flag to enable the annotate, 0 = disabled, otherwise a bitmask of what needs to be displayed
     char annotate_string[MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2]; /// String to use for annotate - overrides certain bitmask settings
     int annotate_text_size;    // Text size for annotation
+    int annotate_text_size_ratio;  // Text size ratio for annotation
     int annotate_text_colour;  // Text colour for annotation
     int annotate_bg_colour;    // Background colour for annotation
     MMAL_PARAMETER_STEREOSCOPIC_MODE_T stereo_mode;

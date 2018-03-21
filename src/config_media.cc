@@ -87,7 +87,6 @@ CONFIG_DEFINE( AudioHighPassFilter, audio_highpass_filter, bool, true );
 CONFIG_DEFINE( AudioNoiseSuppression, audio_noise_suppression, bool, true );
 CONFIG_DEFINE( AudioLevelControl,  audio_level_control, bool, true );
 
-
 // video configuration config
 CONFIG_DEFINE( VideoSharpness, video_sharpness, int, 0 );   // -100 - 100
 CONFIG_DEFINE( VideoContrast, video_contrast, int, 0 );     // ~100 - 100
@@ -98,6 +97,13 @@ CONFIG_DEFINE( VideoExposureMode, video_exposure_mode, std::string, "auto" );
 CONFIG_DEFINE( VideoFlickerMode, video_flicker_mode, std::string, "auto" );
 CONFIG_DEFINE( VideoAwbMode, video_awb_mode, std::string, "auto" );
 CONFIG_DEFINE( VideoDrcMode, video_drc_mode, std::string, "off" );
+CONFIG_DEFINE( VideoStabilisation,  video_stabilisation, bool, false );
+
+// Video Annotation 
+CONFIG_DEFINE( VideoEnableAnnotateText, video_enable_annotate_text, bool, false );
+CONFIG_DEFINE( VideoAnnotateText, video_annotate_text, std::string,"" );
+CONFIG_DEFINE( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, int, 3 );
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -253,6 +259,18 @@ bool validate__value_drc_mode(const std::string drc_mode,
     return false;
 }
 
+// Returns true if the specifiec text size within valid range
+// or return false otherwise.
+bool validate_video_annotate_text_size_ratio(int text_size, int default_value) {
+    if( text_size <  2 || text_size >= 10) {
+        RTC_LOG(LS_ERROR) << "Annotate text size ratio is not valid\"" << text_size 
+            << "\" text size ratio should be within 2 - 10, using default:"
+            << default_value;
+        return false;
+    }
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // main config loading function
@@ -357,9 +375,6 @@ bool config_load(const std::string config_filename) {
         DEFINE_CONFIG_LOAD_BOOL(AudioNoiseSuppression,audio_noise_suppression);
     };
 
-    // level control is not depend on the audio processing
-    DEFINE_CONFIG_LOAD_BOOL(AudioLevelControl,audio_level_control);
-
     // Video Setting
     DEFINE_CONFIG_LOAD_INT_VALIDATE( VideoSharpness, video_sharpness,
             validate__value_sharpness );
@@ -380,6 +395,12 @@ bool config_load(const std::string config_filename) {
             validate__value_awb_mode );
     DEFINE_CONFIG_LOAD_STR_VALIDATE( VideoDrcMode, video_drc_mode,
             validate__value_drc_mode );
+    DEFINE_CONFIG_LOAD_BOOL(VideoStabilisation,video_stabilisation);
+
+    DEFINE_CONFIG_LOAD_BOOL(VideoEnableAnnotateText, video_enable_annotate_text );
+    DEFINE_CONFIG_LOAD_STR(VideoAnnotateText, video_annotate_text);
+    DEFINE_CONFIG_LOAD_INT_VALIDATE(VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio,
+        validate_video_annotate_text_size_ratio);
 
     return true;
 }
