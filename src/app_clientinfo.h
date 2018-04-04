@@ -58,7 +58,9 @@ public:
     bool Connected(int websocket_id, int room_id, int client_id);
     bool DisconnectWait(int room_id, int client_id);
     bool DisconnectWait(int websocket_id );
-    bool GetWebsocketId(int room_id, int& client_id);
+    bool GetWebsocketId(int room_id, int& websocket_id);
+    int  GetRoomId();
+    int  GetClientId();
     bool IsConnected(int room_id, int client_id);
     bool IsConnected(int websocket_id );
     void Reset();

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2018, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -38,12 +38,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "app_ws_client.h"
 #include "utils.h"
 
-static const char kJsonCmd[] = "cmd";
-static const char kJsonCmdRegister[] = "register";
-static const char kJsonCmdSend[] = "send";
-static const char kJsonRegisterRoomId[] = "roomid";
-static const char kJsonRegisterClientId[] = "clientid";
-static const char kJsonSendMsg[] = "msg";
+static const char kKeyCmd[] = "cmd";
+static const char kValueCmdRegister[] = "register";
+static const char kValueCmdSend[] = "send";
+
+static const char kKeyRegisterRoomId[] = "roomid";
+static const char kKeyRegisterClientId[] = "clientid";
+static const char kKeyCmdSendMessage[] = "msg";
+static const char kKeyCmdSendType[] = "type";
+static const char kValueCmdSendTypeBye[] = "bye";
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -79,7 +82,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
     // If JSON parsing fails, it will be kept in chunked_frrames up to 5 times and 
     // try to parse the collected chunked_frames again until the next message succeeds.
     if((parsing_successful = json_reader.parse(message, json_value)) == true){
-        rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
+        rtc::GetStringFromJsonObject(json_value, kKeyCmd, &cmd);
     };
 
     if ( parsing_successful && !cmd.empty() ) {
@@ -104,7 +107,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             return true;
         }
 
-        rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
+        rtc::GetStringFromJsonObject(json_value, kKeyCmd, &cmd);
         if( cmd.empty() ) {
             return true;
         }
@@ -115,37 +118,66 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
         // finally successful parsing
     }
 
-    rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
+    rtc::GetStringFromJsonObject(json_value, kKeyCmd, &cmd);
     if( !cmd.empty() ) {    // found cmd id
         // command register 
-        if(cmd.compare(kJsonCmdRegister)== 0) {
-            int client_id, room_id;  
-            if( !rtc::GetIntFromJsonObject(json_value, kJsonRegisterRoomId, &room_id) ||
-                !rtc::GetIntFromJsonObject(json_value, kJsonRegisterClientId, &client_id)) {
+        if(cmd.compare(kValueCmdRegister)== 0) {
+            int client_id, room_id;
+            if( !rtc::GetIntFromJsonObject(json_value, kKeyRegisterRoomId, &room_id) ||
+                !rtc::GetIntFromJsonObject(json_value, kKeyRegisterClientId, &client_id)) {
                 RTC_LOG(LS_ERROR) << "Not found clientid/roomid :" << message;
                 return true;
             }
             RTC_LOG(INFO) << "Room ID: " << room_id << ", Client ID: " << client_id;
             if( app_client_.Connected( sockid, room_id, client_id ) == false ) {
                 RTC_LOG(LS_ERROR) << "Failed to set room_id/client_id :" << message;
+                // Drop current connection
                 return false;
             };
 
             if ( IsStreamSessionActive() == false ) {
-                if( ActivateStreamSession(client_id,utils::IntToString(client_id))  == true ) {
+                if( ActivateStreamSession(client_id,utils::IntToString(client_id))
+                        == true ) {
                     RTC_LOG(INFO) << "New WebSocket Name: " << client_id;
                 };
                 return true;
             }
             // TODO(kclyu) need to send response of room busy error message
-            RTC_LOG(INFO) << "Streamer Session already Active. Try to drop connection: " << client_id;
+            RTC_LOG(INFO) << "Streamer Session already Active. Try to drop connection: "
+                << client_id;
             return true;
         }
         // command send
-        else if(cmd.compare(kJsonCmdSend)== 0) {
+        else if(cmd.compare(kValueCmdSend) == 0) {
             std::string msg;
-            rtc::GetStringFromJsonObject(json_value, kJsonSendMsg, &msg);
+            rtc::GetStringFromJsonObject(json_value, kKeyCmdSendMessage, &msg);
             if( !msg.empty() ) {
+                Json::Value json_msg_value;
+                std::string json_msg_type;
+
+                // trying to parse msg value to check whether it is json type msg
+                if (!json_reader.parse(msg, json_msg_value)) {
+                    RTC_LOG(WARNING) << "Failed to parse send message string. "
+                        << msg;
+                    return false;
+                }
+
+                rtc::GetStringFromJsonObject(json_msg_value, kKeyCmdSendType,
+                        &json_msg_type);
+                // checking send command is type:bye
+                if( !json_msg_type.empty() &&
+                    json_msg_type.compare(kValueCmdSendTypeBye) == 0) {
+                    // command 'send' message is type: bye
+                    // reset the app_clientinfo and deactivate the streaming
+                    if( app_client_.IsConnected( sockid ) == true ) {
+                        app_client_.Reset();
+                        if ( IsStreamSessionActive() == true ) {
+                            DeactivateStreamSession();
+                        };
+                    };
+                    return true;
+                };
+
                 MessageFromPeer(msg);
                 return true;
             }
@@ -179,8 +211,8 @@ bool AppWsClient::SendMessageToPeer(const int peer_id, const std::string &messag
         Json::StyledWriter json_writer;
         Json::Value json_message;
 
-        json_message[kJsonCmd] = kJsonCmdSend;
-        json_message[kJsonSendMsg] = message;
+        json_message[kKeyCmd] = kValueCmdSend;
+        json_message[kKeyCmdSendMessage] = message;
         websocket_message_->SendMessage(websocket_id, json_writer.write(json_message));
         return true;
     }

@@ -169,6 +169,20 @@ bool AppClientInfo::IsConnected (int room_id, int client_id)  {
     return false;
 }
 
+int AppClientInfo::GetRoomId ()  {
+    if( (state_ == ClientState::CLIENT_CONNECTED ||
+            state_ == ClientState::CLIENT_CONNECT_WAIT ) )
+        return room_id_;
+    return 0;
+}
+
+int AppClientInfo::GetClientId ()  {
+    if( (state_ == ClientState::CLIENT_CONNECTED ||
+            state_ == ClientState::CLIENT_CONNECT_WAIT ) )
+        return client_id_;
+    return 0;
+}
+
 
 bool AppClientInfo::IsConnected (int websocket_id)  {
     if( (state_ == ClientState::CLIENT_CONNECTED ||
