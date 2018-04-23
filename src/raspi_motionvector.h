@@ -39,7 +39,7 @@ struct MotionVector {
     int8_t mx_;
     int8_t my_;
     uint16_t sad;
-}; 
+};
 
 struct MotionBlobObserver {
     virtual void OnMotionTriggered(int active_nums) = 0;
@@ -62,8 +62,8 @@ public:
     ~RaspiMotionVector();
 
     bool Analyse(uint8_t *buffer, int len);
-    
-    void GetIMVImage(uint8_t *buffer, int buflen ); 
+
+    void GetIMVImage(uint8_t *buffer, int buflen );
     void GetMotionImage(uint8_t *buffer, int buflen );
     // available only when blob is enabled
     bool GetBlobImage(uint8_t *buffer, int buflen );

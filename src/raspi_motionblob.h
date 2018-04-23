@@ -41,8 +41,8 @@ struct MotionBlob {
         COLLECTING,
         ACTIVE,
     };
-    MotionBlob() 
-        : sx_(0), sy_(0), status_(UNUSED), size_(0), 
+    MotionBlob()
+        : sx_(0), sy_(0), status_(UNUSED), size_(0),
         overlap_size_(0), update_counter_(0),blob_(nullptr) {};
     uint8_t sx_, sy_;
     MotionBlobStatus status_;
@@ -68,7 +68,7 @@ struct ActiveBlob {
 
 class RaspiMotionBlob {
 public:
-    explicit RaspiMotionBlob(int mvx, int mvy ); 
+    explicit RaspiMotionBlob(int mvx, int mvy );
     ~RaspiMotionBlob();
 
     bool UpdateBlob(uint8_t *motion, size_t size);
@@ -87,7 +87,7 @@ private:
     void UnaccquireBlobId(int blob_id);
 
     size_t SearchConnectedBlob(uint8_t x, uint8_t y, int blob_id );
-    bool SearchConnectedNeighbor(uint8_t x, uint8_t y, int blob_id, 
+    bool SearchConnectedNeighbor(uint8_t x, uint8_t y, int blob_id,
             std::list<BlobPoint> &connected_list);
 
     void MergeActiveBlob(std::list<int> &active_blob_list);

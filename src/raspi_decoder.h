@@ -51,7 +51,7 @@ public:
 };
 
 //
-// Implementation of Raspberry video decoder factory 
+// Implementation of Raspberry video decoder factory
 class RaspiVideoDecoderFactory : public VideoDecoderFactory {
 public:
     RaspiVideoDecoderFactory();

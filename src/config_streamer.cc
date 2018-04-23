@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Default values
-// 
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 static const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
@@ -106,10 +106,10 @@ static bool validate__portnumber(int &port_number, int default_value ) {
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// StreamerConfig, main config loading 
+// StreamerConfig, main config loading
 //
 ////////////////////////////////////////////////////////////////////////////////
-StreamerConfig::StreamerConfig(const std::string &config_file) 
+StreamerConfig::StreamerConfig(const std::string &config_file)
     : config_loaded_(false), config_file_(config_file) {}
 
 
@@ -119,9 +119,9 @@ bool StreamerConfig::LoadConfig()  {
 
     // trying to check flag config_file is regular file
     if( rtc::Filesystem::IsFile(path) == false)  {
-        // there is no config file in command line flag 
+        // there is no config file in command line flag
         // so, trying to load config from installation directory config path
-        path.SetPathname( std::string(INSTALL_DIR) 
+        path.SetPathname( std::string(INSTALL_DIR)
                 + "/"  + std::string(kDefaultStreamerConfig) );
         if( rtc::Filesystem::IsFile(path) == false)  {
             std::cerr << "Failed to find config options:" << path.pathname() << std::endl;
@@ -137,7 +137,7 @@ bool StreamerConfig::LoadConfig()  {
 
     config_file_ = path.pathname();
     config_dir_basename_ = path.parent_folder();
-    std::cout << "Using config file base path:" << 
+    std::cout << "Using config file base path:" <<
         ((config_dir_basename_.size() == 0)?"CWD":config_dir_basename_) << std::endl;
     config_loaded_ = true;
     return true;
@@ -159,7 +159,7 @@ bool StreamerConfig::GetWebSocketEnable() {
 // WebSocketPort
 bool StreamerConfig::GetWebSocketPort(int& port) {
     RTC_DCHECK( config_loaded_ == true );
-    DEFINE_CONFIG_LOAD_INT_WITH_RETURN(WebSocketPort, port, 
+    DEFINE_CONFIG_LOAD_INT_WITH_RETURN(WebSocketPort, port,
             validate__portnumber);
 }
 
@@ -196,7 +196,7 @@ bool StreamerConfig::GetDirectSocketEnable() {
 // DirectSocketPort
 bool StreamerConfig::GetDirectSocketPort(int& port) {
     RTC_DCHECK( config_loaded_ == true );
-    DEFINE_CONFIG_LOAD_INT_WITH_RETURN(DirectSocketPort, port, 
+    DEFINE_CONFIG_LOAD_INT_WITH_RETURN(DirectSocketPort, port,
             validate__portnumber  );
 }
 
@@ -251,7 +251,7 @@ bool StreamerConfig::GetTurnServer(webrtc::PeerConnectionInterface::IceServer &s
     std::string username, credential;
 
     if( config_->GetStringValue(kConfigTurnServer, &server_list ) == false ) {
-        // there is no default turn server 
+        // there is no default turn server
         return false;
     }
 
@@ -305,23 +305,23 @@ bool StreamerConfig::GetMotionConfig(std::string& conf) {
     return false;
 }
 
-// Just validate the log path, 
+// Just validate the log path,
 // if the log path does not found, it will return false
 bool StreamerConfig::GetLogPath(std::string& log_path) {
     RTC_DCHECK( config_loaded_ == true );
     rtc::Pathname path;
     path.SetPathname( log_path );
 
-    // trying to check log path is directory 
+    // trying to check log path is directory
     if( path.folder().size() == 0 &&  rtc::Filesystem::IsFolder(path) == true )  {
-        // log path is current working directory 
+        // log path is current working directory
         std::cerr << "Using message logging log directory in CWD\n";
         std::cerr << "Using CWD log is for only development support feature"
             << " do not use deployment/packaging environment\n";
         return true;
     }
 
-    // trying to check comamand flag log path is directory 
+    // trying to check comamand flag log path is directory
     if( rtc::Filesystem::IsFolder(path) == true )  {
         return true;
     }
@@ -329,7 +329,7 @@ bool StreamerConfig::GetLogPath(std::string& log_path) {
     // checking INSTALL_DIR log path
     path.SetPathname( std::string(INSTALL_DIR) + "/log" );
     if( rtc::Filesystem::IsFolder(path) == false )  {
-        std::cerr << "Failed to find the log directory " 
+        std::cerr << "Failed to find the log directory "
             << path.pathname() << "\n";
         return false;
     }

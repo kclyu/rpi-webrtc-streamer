@@ -44,10 +44,10 @@ public:
     ~RaspiMotionFile();
 
     // Frame queuing
-    bool FrameQueuing(const void* data, size_t bytes, 
+    bool FrameQueuing(const void* data, size_t bytes,
             size_t* bytes_written, bool is_keyframe);
     // Inline Motion Vector queuing
-    bool ImvQueuing(const void* data, size_t bytes, 
+    bool ImvQueuing(const void* data, size_t bytes,
             size_t* bytes_written, bool is_keyframe);
 
 

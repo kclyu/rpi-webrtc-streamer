@@ -51,7 +51,7 @@ public:
     // Disable Log buffering
     bool GetDisableLogBuffering();
 
-    // LibWebsocket Libbrary debug 
+    // LibWebsocket Libbrary debug
     bool GetLibwebsocketDebugEnable();
 
     // HTTP web-root path

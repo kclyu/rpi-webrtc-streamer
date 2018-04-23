@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define APP_CLINETINFO_H_
 
 
-// AppClient does not have room concept and only one clinet connection..  
+// AppClient does not have room concept and only one clinet connection..
 // so room_id and client_id will be held within AppClientInfo
 class AppClientInfo {
     enum ClientState {

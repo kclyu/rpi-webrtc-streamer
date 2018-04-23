@@ -70,7 +70,7 @@ private:
     AppClientInfo app_client_;
     WebSocketMessage  *websocket_message_;
 
-    // WebSocket chunked frames 
+    // WebSocket chunked frames
     std::string chunked_frames_;
     int num_chunked_frames_;
 };

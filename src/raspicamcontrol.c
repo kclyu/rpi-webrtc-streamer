@@ -49,7 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "raspicli.h"
 
 // #define __USE_CAMERA_GAIN__
-// ANALOG_GAIN and DIGITAL_GAIN 
+// ANALOG_GAIN and DIGITAL_GAIN
 
 /// Structure to cross reference exposure strings against the MMAL parameter equivalent
 static XREF_T  exposure_map[] =
@@ -1104,9 +1104,9 @@ void raspicamcontrol_check_configuration(int min_gpu_mem)
 
 /******************************************************************************
  *
- * Helper functions to validate camera setting value 
+ * Helper functions to validate camera setting value
  *
- * Ensure that the config value has the same value as the already defined 
+ * Ensure that the config value has the same value as the already defined
  * option mode.
  *
 ******************************************************************************/

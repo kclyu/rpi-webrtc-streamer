@@ -48,7 +48,7 @@ static const uint64_t kWaitTimeout = 1000;
 // AppClientInfo
 //
 //////////////////////////////////////////////////////////////////////////////////////////
-AppClientInfo::AppClientInfo () : clock_(webrtc::Clock::GetRealTimeClock()), 
+AppClientInfo::AppClientInfo () : clock_(webrtc::Clock::GetRealTimeClock()),
     last_wait_timestamp_(0), state_(ClientState::CLIENT_DISCONNECTED) {
 }
 
@@ -58,14 +58,14 @@ bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
     RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": Roomid " << room_id
         << ",Client id: " << client_id;
 
-    // Validate Client status 
+    // Validate Client status
     switch( state_ ) {
         case ClientState::CLIENT_CONNECT_WAIT:
             timestamp_diff = clock_->TimeInMilliseconds() - last_wait_timestamp_;
             // checking connect wait timeout
             if( timestamp_diff < kWaitTimeout ) {
                 RTC_LOG(LS_VERBOSE) << "Rejecting CONNECT_WAIT during WAIT state";
-                return false;   
+                return false;
             };
             break;
         case ClientState::CLIENT_CONNECTED:
@@ -117,14 +117,14 @@ bool AppClientInfo::Connected (int websocket_id, int room_id, int client_id)  {
     // TODO: Need to check remote ip is private ip address
     if( room_id_ == 0 && client_id_ == 0 ) {
         room_id_ = room_id; client_id_ = client_id;
-    } 
+    }
 
     state_ = CLIENT_CONNECTED;
     return true;
 }
 
 bool AppClientInfo::DisconnectWait(int room_id, int client_id)  {
-    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": Roomid " << room_id 
+    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": Roomid " << room_id
         << ",Client id: " << client_id;
     RTC_DCHECK( room_id_ == room_id );
     RTC_DCHECK( client_id_ == client_id );

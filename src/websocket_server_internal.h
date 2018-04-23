@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus 
+#endif // __cplusplus
 
 
 void dump_handshake_info(struct lws *wsi);
@@ -53,4 +53,4 @@ const char* to_httpstatus_str(int status);
 
 #ifdef __cplusplus
 };
-#endif // __cplusplus 
+#endif // __cplusplus

@@ -38,12 +38,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace webrtc {
 
-
 #define FRAME_BUFFER_SIZE	65536*3
 #define FRAME_QUEUE_LENGTH 5
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Frame Queue
 //
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -59,8 +58,8 @@ public:
     int Length();
 
     // Obtain a frame from the encoded frame queue.
-    // If there is no frame in FrameQueue, it will be blocked for a certain period and 
-    // return nullptr when timeout is reached. 
+    // If there is no frame in FrameQueue, it will be blocked for a certain period and
+    // return nullptr when timeout is reached.
     // If there is a frame, it returns the corresponding frame.
     MMAL_BUFFER_HEADER_T *GetEncodedFrame();
 
@@ -68,10 +67,10 @@ public:
     void ReleaseFrame( MMAL_BUFFER_HEADER_T *buffer );
 
 protected:
-    // Make the frame uploaded from MMAL into one H.264 frame, 
+    // Make the frame uploaded from MMAL into one H.264 frame,
     // and buffering it in the encoded frame of FrameQueue.
     void HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer );
-    
+
 private:
     static int  kEventWaitPeriod;    // minimal wait period between frame
 
@@ -111,9 +110,9 @@ private:
 //
 class MMALEncoderWrapper;   // forward
 enum EncoderDelayedInitStatus {
-    INIT_UNKNOWN = 0,       
-    INIT_PASS,       
-    INIT_DELAY, 
+    INIT_UNKNOWN = 0,
+    INIT_PASS,
+    INIT_DELAY,
     INIT_WAITING
 };
 
@@ -137,8 +136,8 @@ private:
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
-// 
-// MMAL Encoder Wrapper 
+//
+// MMAL Encoder Wrapper
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 class MMALEncoderWrapper : public FrameQueue {
@@ -153,23 +152,23 @@ public:
 
     bool InitEncoder(int width, int height, int framerate, int bitrate);
     bool UninitEncoder();
-    
-    // It is used when reinitialization is required after InitEncoder. 
+
+    // It is used when reinitialization is required after InitEncoder.
     // and used when changing the resolution.
     // TODO: merge the ReinitEncoder to SetParam and Reinit Internal
     bool ReinitEncoder(int width, int height, int framerate, int bitrate );
 
-    // Used in EncoderDelayInit. Init parameters should be initialized first 
+    // Used in EncoderDelayInit. Init parameters should be initialized first
     // and then Init must be done, so the two functions are separated.
     bool SetEncodingParams(int width, int height,int framerate, int bitrate );
     bool ReinitEncoderInternal();
 
     bool StartCapture();
     bool StopCapture();
-    
+
     bool SetRate(int framerate, int bitrate);
 
-    // When there is a KeyFrame request, it requests the MMAL to generate a key frame. 
+    // When there is a KeyFrame request, it requests the MMAL to generate a key frame.
     // MMAL generates a key frame, and then operates as it is currently set.
     bool SetForceNextKeyFrame();
 
@@ -215,8 +214,20 @@ private:
     rtc::CriticalSection crit_sect_;
 };
 
-// singleton wrappper
-MMALEncoderWrapper* getMMALEncoderWrapper();
+
+
+class MMALWrapper {
+public:
+    // Singleton, constructor and destructor are private.
+    static MMALEncoderWrapper* Instance();
+
+private:
+    MMALWrapper();
+    ~MMALWrapper();
+
+    RTC_DISALLOW_COPY_AND_ASSIGN(MMALWrapper);
+};
+
 
 }	// namespace webrtc
 

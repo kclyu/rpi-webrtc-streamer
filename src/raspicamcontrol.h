@@ -179,7 +179,7 @@ typedef struct
 
 
 void raspicamcontrol_check_configuration(int min_gpu_mem);
-int raspicamcontrol_get_mem_gpu(void);          
+int raspicamcontrol_get_mem_gpu(void);
 void raspicamcontrol_get_camera(int *supported, int *detected);
 
 int raspicamcontrol_parse_cmdline(RASPICAM_CAMERA_PARAMETERS *params, const char *arg1, const char *arg2);
@@ -237,7 +237,7 @@ MMAL_PARAM_COLOURFX_T raspicamcontrol_get_colourFX(MMAL_COMPONENT_T *camera);
 
 /******************************************************************************
  *
- * The following functions delete the static prefix and are defined below 
+ * The following functions delete the static prefix and are defined below
  * for use in mmal_wrapper.
  *
 ******************************************************************************/

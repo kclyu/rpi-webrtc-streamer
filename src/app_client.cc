@@ -53,9 +53,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     param[key_id] = value; \
     RTC_LOG(LS_INFO) << "Key: " << key_id << " : " << value;
 
-// Adding Simple Json Key Value 
+// Adding Simple Json Key Value
 #define JK_S(param, key_id, value ) \
-    param[key_id] = value; 
+    param[key_id] = value;
 
 #define TPL_REPLACE(source, tpl, replace_value) \
     {\
@@ -71,32 +71,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Param Result Example
 //
-// {"is_initiator": "true", 
-// "room_link"    : "https://appr.tc/r/123456723", 
-// "turn_server_override": [], 
-// "ice_server_transports": "", 
-// "media_constraints": "{\"audio\": true, \"video\": true}", 
-// "include_loopback_js": "", 
-// "turn_url": "https://computeengineondemand.appspot.com/turn?username=81603595&key=4080218913", 
-// "wss_url": "wss://apprtc-ws.webrtc.org:443/ws",     
-// "pc_constraints": "{\"optional\": []}", 
-// "pc_config": "{\"rtcpMuxPolicy\": \"require\", \"bundlePolicy\":\"max-bundle\", \"iceServers\": []}", 
-// "wss_post_url": "https://apprtc-ws.webrtc.org:443", 
-// "ice_server_url"    : "https://networktraversal.googleapis.com/v1alpha/iceconfig?key=AIzaSyAJdh2HkajseEIltlZ3SIXO02Tze9sO3NY",     
-// "warning_messages": [], 
-// "room_id": "123456723", 
-// "include_rtstats_js": "<script src=\"/js/rtstats.js\"></script><script src=\"/pako/pako.min.js\"></script>", 
-// "version_info": 
-//              "{\"gitHash\": \"b85a94fc34c98523de194b6b682a738bb4b02de2\", 
-//              \"branch\": \"master\", 
-//              \"time\": \"Tue Feb 14 16:10:04 2017 +0100\"}", 
-// "error_messages": [], 
-// "client_id": "81603595", 
-// "bypass_join_confirmation": "false", 
-// "is_loopback": "false", 
-// "offer_options": "{}", 
-// "messages": [], 
-// "callstats_params": "{\"appSecret\": \"Ew03QUKBLp5D:hdEwlXtR0IwwOi8nhfAK8zLfKZjPBBYWCvz72h/P908=\",// \"appId\": \"110765241\"}"}, 
+// {"is_initiator": "true",
+// "room_link"    : "https://appr.tc/r/123456723",
+// "turn_server_override": [],
+// "ice_server_transports": "",
+// "media_constraints": "{\"audio\": true, \"video\": true}",
+// "include_loopback_js": "",
+// "turn_url": "https://computeengineondemand.appspot.com/turn?username=81603595&key=4080218913",
+// "wss_url": "wss://apprtc-ws.webrtc.org:443/ws",
+// "pc_constraints": "{\"optional\": []}",
+// "pc_config": "{\"rtcpMuxPolicy\": \"require\", \"bundlePolicy\":\"max-bundle\", \"iceServers\": []}",
+// "wss_post_url": "https://apprtc-ws.webrtc.org:443",
+// "ice_server_url"    : "https://networktraversal.googleapis.com/v1alpha/iceconfig?key=AIzaSyAJdh2HkajseEIltlZ3SIXO02Tze9sO3NY",
+// "warning_messages": [],
+// "room_id": "123456723",
+// "include_rtstats_js": "<script src=\"/js/rtstats.js\"></script><script src=\"/pako/pako.min.js\"></script>",
+// "version_info":
+//              "{\"gitHash\": \"b85a94fc34c98523de194b6b682a738bb4b02de2\",
+//              \"branch\": \"master\",
+//              \"time\": \"Tue Feb 14 16:10:04 2017 +0100\"}",
+// "error_messages": [],
+// "client_id": "81603595",
+// "bypass_join_confirmation": "false",
+// "is_loopback": "false",
+// "offer_options": "{}",
+// "messages": [],
+// "callstats_params": "{\"appSecret\": \"Ew03QUKBLp5D:hdEwlXtR0IwwOi8nhfAK8zLfKZjPBBYWCvz72h/P908=\",// \"appId\": \"110765241\"}"},
 // "result": "SUCCESS"}
 //
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -126,7 +126,7 @@ static const char kErrorMessage[] = "error_messages";
 static const char kClientId[] = "client_id";
 static const char kBypassJoinConfirmation[] = "bypass_join_confirmation";
 static const char kIsLoopback[] = "is_loopback";
-static const char kOfferOptions[] = "offer_options"; 
+static const char kOfferOptions[] = "offer_options";
 static const char kMessages[] = "messages";
 static const char kCallstatsParams[] = "callstats_params";
 
@@ -168,8 +168,8 @@ static const char kSessionDescriptionSdpName[] = "sdp";
 //  URL: https://appr.tc/join/123456723
 //      Message: null
 //      Response:
-//      Room response: {"params": {"is_initiator": "true", 
-//          "room_link": "https://appr.tc/r/123456723", "turn_server_override": [], 
+//      Room response: {"params": {"is_initiator": "true",
+//          "room_link": "https://appr.tc/r/123456723", "turn_server_override": [],
 //          ...
 //          \"appId\": \"110765241\"}"}, "result": "SUCCESS"}
 //  C->WSS: {"cmd":"register","roomid":"123456723","clientid":"05242738"}
@@ -178,24 +178,24 @@ static const char kSessionDescriptionSdpName[] = "sdp";
 //
 //  - Http Post
 //  URL: https://appr.tc/message/123456723/05242738
-//      Message: {"sdp":"v=0\r\no=- 5551224427190256041 2 IN IP4 
+//      Message: {"sdp":"v=0\r\no=- 5551224427190256041 2 IN IP4
 //              ...
 //              1024\r\n","type":"offer"}
-//      
+//
 //  URL: https://appr.tc/message/123456723/05242738
-//      Message: {"type":"candidate","label":0,"id":"audio","candidate":"candidate:1672956178 
-//              1 udp 2122260223 10.0.0.101 60746 typ host generation 0 ufrag WbhF network-id 
+//      Message: {"type":"candidate","label":0,"id":"audio","candidate":"candidate:1672956178
+//              1 udp 2122260223 10.0.0.101 60746 typ host generation 0 ufrag WbhF network-id
 //              3 network-cost 10"}
 //  - WebSocket
 //  WSS->C: {"msg":"{\"type\":\"candidate\",\"label\":0,\" ... "work-cost 10\"}","error":""}
-//  WSS->C: {"msg":"{\"sdp\":\"v=0\\r\\no=- 8977826303674326566 2 IN ...  webrtc-datachannel 
+//  WSS->C: {"msg":"{\"sdp\":\"v=0\\r\\no=- 8977826303674326566 2 IN ...  webrtc-datachannel
 //              1024\\r\\n\" //  ,\"type\":\"answer\"}","error":""}
 //
 //  ** Connection Termination **
 //
 //  C->WSS: {"cmd":"send","msg":"{\"type\": \"bye\"}"}
 //
-//  Http Post 
+//  Http Post
 //  URL: https://appr.tc/leave/123456723/05242738
 //      Message: null
 //
@@ -209,7 +209,7 @@ static const char kSessionDescriptionSdpName[] = "sdp";
 // AppRTC Interface Channel
 //
 //////////////////////////////////////////////////////////////////////////////////////////
-AppClient::AppClient() 
+AppClient::AppClient()
     : websocket_message_(nullptr), use_room_id_(false){
     websocket_url_ = URL_APP_WS;
     additional_ws_rule_ = "";
@@ -246,17 +246,17 @@ bool AppClient::OnMessage(int sockid, const std::string& message) {
 
     if(json_reader.parse(message, json_value) == false){
         RTC_LOG(INFO) << __FUNCTION__ << ", Failed to parse message :" << message;
-        return true;   
+        return true;
     };
 
-    // The websocket connection does not receive the message directly 
-    // from the peer client, it will receive command type message(register/bye). 
-    // Websocket will send messages which generated from rws to the client 
+    // The websocket connection does not receive the message directly
+    // from the peer client, it will receive command type message(register/bye).
+    // Websocket will send messages which generated from rws to the client
     rtc::GetStringFromJsonObject(json_value, kJsonCmd, &cmd);
     if( !cmd.empty() ) {    // found cmd id
-        // command register 
+        // command register
         if(cmd.compare(kJsonCmdRegister)== 0) {
-            int client_id, room_id;  
+            int client_id, room_id;
             if( !rtc::GetIntFromJsonObject(json_value, kJsonRegisterRoomId, &room_id) ||
                 !rtc::GetIntFromJsonObject(json_value, kJsonRegisterClientId, &client_id)) {
                 RTC_LOG(LS_ERROR) << "Not found clientid/roomid :" << message;
@@ -265,12 +265,12 @@ bool AppClient::OnMessage(int sockid, const std::string& message) {
 
             RTC_LOG(INFO) << "Tyring to register RoomId: " << room_id << ", ClientID: " << client_id;
 
-            //  If one of the three (socketid, room_id, client_id) does not match, 
+            //  If one of the three (socketid, room_id, client_id) does not match,
             //  the Websocket connection will not be connected.
             if( app_client_.Connected( sockid, room_id, client_id ) == false ) {
                 RTC_LOG(LS_ERROR) << "Failed to register room_id/client_id :" << message;
                 if ( IsStreamSessionActive() == true ) {
-                    RTC_LOG(INFO) << "Streamer Session already Active. Try to drop connection: " 
+                    RTC_LOG(INFO) << "Streamer Session already Active. Try to drop connection: "
                         << sockid;
                     app_client_.DisconnectWait(sockid);
                     DeactivateStreamSession();
@@ -288,7 +288,7 @@ bool AppClient::OnMessage(int sockid, const std::string& message) {
             rtc::GetStringFromJsonObject(json_value, kJsonSendMsg, &msg);
             if(json_reader.parse(msg, json_msg_value) == false){
                 RTC_LOG(INFO) << __FUNCTION__ << ", Failed to parse message :" << msg;
-                return true;   
+                return true;
             }
             rtc::GetStringFromJsonObject(json_msg_value, kJsonSendMsgType, &msg_type);
             if(msg_type.compare(kJsonSendMsgTypeBye) == 0) {
@@ -351,8 +351,8 @@ bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result 
 
     size_t splited_num = rtc::split( req->url_, '/', &splited);
     if( req->type_ != HttpRequestType::HTTP_POST ||
-            splited_num != URL_CMD_JOIN_SPLITED_NUM || 
-            utils::StringToInt( splited[URL_SPLITED_POS_ROOMID], &room_id ) 
+            splited_num != URL_CMD_JOIN_SPLITED_NUM ||
+            utils::StringToInt( splited[URL_SPLITED_POS_ROOMID], &room_id )
             == false ) {
         RTC_LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
             << splited[URL_SPLITED_POS_ROOMID];
@@ -364,13 +364,13 @@ bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result 
     if( use_room_id_ )  {
         if( room_id_.compare(splited[URL_SPLITED_POS_ROOMID])) {
             RTC_LOG(LS_ERROR) << __FUNCTION__ << "Room ID does not match ((config)"
-                << room_id_ << " != (request)" 
+                << room_id_ << " != (request)"
                 << splited[URL_SPLITED_POS_ROOMID] << "), Rejecting Join request" ;
             result.state_ = INVALID_REQUEST;
             return false;
         }
     }
- 
+
     // Changing app client to CONNECT WAIT state
     if( app_client_.ConnectWait(room_id, client_id) == false ){
         result.state_ = FULL;
@@ -382,14 +382,14 @@ bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result 
     //  RoomLink
     string_value  = "https://__HTTP_SERVER__/r/__ROOMID__";
     TPL_REPLACE(string_value, kHttpServerTemplate, req->server_ );
-    TPL_REPLACE(string_value, kRoomTemplate, utils::IntToString(room_id)); 
+    TPL_REPLACE(string_value, kRoomTemplate, utils::IntToString(room_id));
     JK_SD( result.json_params,  kRoomLink,  string_value );
     // TurnServerOverride
     JK_S( result.json_params,  kTurnServerOverride,  json_arrry_value );
     // IceServerTransports
     JK_S( result.json_params,  kIceServerTransports,  "" );
     // MediaConstraints
-    JK_S( result.json_params,  kMediaConstraints,  
+    JK_S( result.json_params,  kMediaConstraints,
             "{\"audio\": true, \"video\": true}" );
     // IncludeLoopbackJs
     JK_S( result.json_params,  kIncludeLoopbackJs,  "" );
@@ -406,7 +406,7 @@ bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result 
     JK_S( result.json_params,  kPcConstraints,  "{\"optional\": []}");
     // PcConfig -- using default stun server URL
     // TODO change iceServers based on the configuration
-    JK_S( result.json_params,  kPcConfig,  
+    JK_S( result.json_params,  kPcConfig,
             "{\"rtcpMuxPolicy\": \"require\", \"bundlePolicy\":\"max-bundle\", \
 \"iceServers\": [ {\"urls\": \"stun:stun.l.google.com:19302\"}]}");     // TODO config
     // WssPostUrl
@@ -421,7 +421,7 @@ bool AppClient::JoinRestCall(HttpRequest* req, HttpResponse* res,Result &result 
     JK_S( result.json_params,  kWarningMessage,  "" );
     // RoomId
     JK_SD( result.json_params,  kRoomId, utils::IntToString(room_id) );
-    // IncludeRtsstatsJs 
+    // IncludeRtsstatsJs
     JK_S( result.json_params,  kIncludeRtstatsJs, "" );
     // VersionInfo
     JK_S( result.json_params,  kVersionInfo, "" );
@@ -453,10 +453,10 @@ bool AppClient::MessageRestCall(HttpRequest* req, HttpResponse* res,Result &resu
 
     size_t splited_num = rtc::split( req->url_, '/', &splited);
     if( req->type_ != HttpRequestType::HTTP_POST ||
-            splited_num != URL_CMD_MESSAGE_SPLITED_NUM || 
-            (utils::StringToInt( splited[URL_SPLITED_POS_ROOMID], &room_id) 
+            splited_num != URL_CMD_MESSAGE_SPLITED_NUM ||
+            (utils::StringToInt( splited[URL_SPLITED_POS_ROOMID], &room_id)
              == false) ||
-            (utils::StringToInt( splited[URL_SPLITED_POS_CLIENTID], &client_id ) 
+            (utils::StringToInt( splited[URL_SPLITED_POS_CLIENTID], &client_id )
              == false)) {
         RTC_LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
             << splited[URL_SPLITED_POS_ROOMID]
@@ -503,10 +503,10 @@ bool AppClient::LeaveRestCall(HttpRequest* req, HttpResponse* res,Result &result
     std::vector<std::string> splited;
     size_t splited_num = rtc::split( req->url_, '/', &splited);
     if( req->type_ != HttpRequestType::HTTP_POST ||
-            splited_num != URL_CMD_LEAVE_SPLITED_NUM || 
-            (utils::StringToInt( splited[URL_SPLITED_POS_ROOMID], &room_id) 
+            splited_num != URL_CMD_LEAVE_SPLITED_NUM ||
+            (utils::StringToInt( splited[URL_SPLITED_POS_ROOMID], &room_id)
              == false) ||
-            (utils::StringToInt( splited[URL_SPLITED_POS_CLIENTID], &client_id ) 
+            (utils::StringToInt( splited[URL_SPLITED_POS_CLIENTID], &client_id )
              == false)) {
         RTC_LOG(LS_ERROR) << __FUNCTION__ << "Error in parameters : "
             << splited[URL_SPLITED_POS_ROOMID]
@@ -532,7 +532,7 @@ bool AppClient::DoPost(HttpRequest* req, HttpResponse* res)  {
     Json::Value json_result;
     Result result;
 
-    if( req->url_.compare(0, sizeof(URL_JOIN_CMD) - 1, URL_JOIN_CMD) == 0 ) { 
+    if( req->url_.compare(0, sizeof(URL_JOIN_CMD) - 1, URL_JOIN_CMD) == 0 ) {
         if( JoinRestCall( req, res, result) == false ) {
             JK_S( json_result,  kParams, "");
             JK_S( json_result,  kResult, "ERROR" );
@@ -566,7 +566,7 @@ bool AppClient::DoPost(HttpRequest* req, HttpResponse* res)  {
             JK_S( json_result,  kParams, result.json_params);
         }
     }
-    else if( req->url_.compare(0, sizeof(URL_MESSAGE_CMD) - 1, 
+    else if( req->url_.compare(0, sizeof(URL_MESSAGE_CMD) - 1,
                 URL_MESSAGE_CMD) == 0 ) {
         if( MessageRestCall( req, res, result) == false ) {
             res->status_ = 400;  //
@@ -575,7 +575,7 @@ bool AppClient::DoPost(HttpRequest* req, HttpResponse* res)  {
             return true;
         }
     }
-    else if( req->url_.compare(0, sizeof(URL_LEAVE_CMD) - 1, 
+    else if( req->url_.compare(0, sizeof(URL_LEAVE_CMD) - 1,
                 URL_LEAVE_CMD) == 0 ) {
         if( LeaveRestCall( req, res, result) == false ) {
             res->status_ = 400;  //

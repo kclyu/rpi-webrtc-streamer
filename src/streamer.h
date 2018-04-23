@@ -3,7 +3,7 @@
  *
  * stream.h
  *
- * Modified version of src/webrtc/examples/peer/client/peer_connection.h 
+ * Modified version of src/webrtc/examples/peer/client/peer_connection.h
  * in WebRTC source tree
  * The origianl copyright info below.
  */
@@ -39,7 +39,7 @@ class VideoCaptureModule;
 
 
 class Streamer
-    : public webrtc::PeerConnectionObserver, 
+    : public webrtc::PeerConnectionObserver,
       public webrtc::CreateSessionDescriptionObserver,
       public StreamerObserver
 {

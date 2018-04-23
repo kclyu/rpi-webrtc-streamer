@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2017, rpi-webrtc-streamer  Lyu,KeunChang
  *
  * main.cc
@@ -52,9 +52,10 @@
 #include "raspi_motion.h"
 #include "utils.h"
 #include "file_logger.h"
+#include "mmal_wrapper.h"
 
 
-// 
+//
 //
 class StreamingSocketServer : public rtc::PhysicalSocketServer {
 public:
@@ -84,7 +85,7 @@ protected:
 
 //
 //  flags definition for streamer
-// 
+//
 DEFINE_bool(help, false, "Prints this message");
 DEFINE_bool(verbose, false, "Print logging message on stdout");
 DEFINE_string(conf, "etc/webrtc_streamer.conf",
@@ -103,17 +104,25 @@ int main(int argc, char** argv) {
     std::string config_filename;
     std::string baselog_dir;
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+    webrtc::MMALEncoderWrapper* mmal_encoder;
+
+    // To initialize the MMAL library at the beginning of the program,
+    // first import the MMAL wrapper instance.
+    if((mmal_encoder =  webrtc::MMALWrapper::Instance() ) == nullptr ) {
+        RTC_LOG(LS_ERROR) << "Failed to get MMALEncoderWrapper";
+        return -1;
+    }
 
     if( FLAG_help ) {
         rtc::FlagList::Print(NULL, false);
         return 0;
     }
-    
+
     if( FLAG_licenses ) {
         utils::PrintLicenseInfo();
         return 0;
     };
-    
+
     if( FLAG_version ) {
         utils::PrintVersionInfo();
         return 0;
@@ -122,24 +131,24 @@ int main(int argc, char** argv) {
     // Load the streamer configuration from file
     StreamerConfig streamer_config(FLAG_conf);
     if( streamer_config.LoadConfig() == false ) {
-        std::cerr  << "Failed to load config options:" 
+        std::cerr  << "Failed to load config options:"
                 << streamer_config.GetConfigFilename() << "\n";
         return -1;
     };
 
-    // Getting the log directory path 
+    // Getting the log directory path
     // The priorities are as follows.
     //      1. Use command line flag when path of command line flag exists
     //      2. If not, use the INSTALL_DIR + log path
     baselog_dir = FLAG_log;
     if( streamer_config.GetLogPath(baselog_dir) == false ) {
-        std::cerr << "Failed to get log directory : " 
+        std::cerr << "Failed to get log directory : "
             << baselog_dir << "\n";
         return -1;
     };
 
     rtc::LoggingSeverity severity = utils::String2LogSeverity(FLAG_severity);
-    utils::FileLogger file_logger(baselog_dir, severity, 
+    utils::FileLogger file_logger(baselog_dir, severity,
             streamer_config.GetDisableLogBuffering());
     if( FLAG_verbose )  {
         // changing severity to INFO level
@@ -156,19 +165,19 @@ int main(int argc, char** argv) {
 
     if( streamer_config.GetMediaConfig(config_filename) == true ) {
         if( config_media::config_load(config_filename) == false ) {
-            RTC_LOG(LS_WARNING) << "Failed to load media option config file:" 
+            RTC_LOG(LS_WARNING) << "Failed to load media option config file:"
                 << config_filename;
         }
         RTC_LOG(INFO) << "Using Media Config file: " << config_filename;
     };
     if( streamer_config.GetMotionConfig(config_filename) == true ) {
         if( config_motion::config_load(config_filename) == false ) {
-            RTC_LOG(LS_WARNING) << "Failed to load motion option config file:" 
+            RTC_LOG(LS_WARNING) << "Failed to load motion option config file:"
                 << config_filename;
         }
         RTC_LOG(INFO) << "Using Motion Config file: " << config_filename;
     };
-    
+
     std::unique_ptr<DirectSocketServer> direct_socket_server;
     std::unique_ptr<AppChannel> app_channel;
 
@@ -177,12 +186,12 @@ int main(int argc, char** argv) {
 
     rtc::InitializeSSL();
 
-    // DirectSocket 
+    // DirectSocket
     if(streamer_config.GetDirectSocketEnable() == true) {
         int direct_socket_port_num;
 
         if( !streamer_config.GetDirectSocketPort(direct_socket_port_num) ) {
-            RTC_LOG(LS_ERROR) << "Error in getting direct socket port number: " 
+            RTC_LOG(LS_ERROR) << "Error in getting direct socket port number: "
                 << direct_socket_port_num;
             rtc::CleanupSSL();
             return -1;
@@ -206,7 +215,7 @@ int main(int argc, char** argv) {
     };
 
     rtc::scoped_refptr<Streamer> streamer(
-        new rtc::RefCountedObject<Streamer>(StreamerProxy::GetInstance(), 
+        new rtc::RefCountedObject<Streamer>(StreamerProxy::GetInstance(),
         &streamer_config));
 
     // Running Loop

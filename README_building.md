@@ -26,18 +26,25 @@ git clone https://github.com/kclyu/rpi_rootfs
 	
 *If you are familiar with the process of cross compiling or already using your own cross compile method, ignore the rpi_rootfs and Custom Compiled GCC download. But, The procedure described below is based on rpi_rootfs, so please modify the necessary parts yourself.*
 ```
+mkdir -p ~/Workspace
+git clone https://github.com/kclyu/rpi_rootfs
 cd rpi_rootfs
+mkdir tools
+cd tools
 # (Download Custom Compiled GCC) # note1
-mv ~/Downloads/tools_gcc_4.9.4.tar.gz  .
-tar xvzf tools_gcc_4.9.4.tar.gz  # note 2
+xz -dc ~/Downloads/gcc-linaro-6.4.1-2017.01-x86_64_arm-linux-gnueabihf.tar.xz  | tar xvf -
+ln -sf gcc-linaro-6.4.1-2017.01-x86_64_arm-linux-gnueabihf  arm-linux-gnueabihf
 cd /opt
 sudo ln -sf ~/Workspace/rpi_rootfs
 export PATH=/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin:$PATH
 ```
-*Note 1:  Custom Compiled GCC : Please click this [tools_gcc-4.9.4.tar.gz](https://drive.google.com/open?id=0B4FN-EnejHTaLWVILVFkVTZteWM) link to download it. Because of the large file size, google drive link is available for download. You may get a warning message that "file size is too large to scan for viruses" and "You can not 'Preview'" during downloading from google drive.*
-		 
-*Note 2: `tools_gcc-4.9.4.tar.gz` is a cross compile gcc for Raspberry PI and is a custom compiled compiler. Please refer to rpi_rootfs/raspi_gcc_4.9.4.ct-ng.config for more tools_gcc_4.9_4 specs.*
-    
+*Note 1: Custom Compiled GCC : Please click  gcc-linaro-6.4.1-2017.01-x86_64_arm-linux-gnueabihf.tar.xz link to download it. Because of the large file size, google drive link is available for download. You may get a warning message that "file size is too large to scan for viruses" and "You can not 'Preview'" during downloading from google drive.*
+
+
+|URL|SHAsum|Remarks|
+|----------------|---------------|------------|
+|[gcc-linaro-6.4.1-2017.01-x86_64_arm-linux-gnueabihf.tar.xz](https://drive.google.com/open?id=1s67nRSYZtLkIlRDz-BsDPkBXaTA94tsZ)|1e9aa3bac3d864f514f7fae8b2b4cdf3747e5681|RASPBIAN STRETCH|
+
 ## 2. Download Source Repo
 ### 2.1. The directory name specified by source package
 Currently, the directory name is fixed for each source package. If possible, use the directory name mentioned below, and if you want to change it, need to change the directory name specified in the RWS Makefile and script.
@@ -87,7 +94,7 @@ libexpat1 libffi6 libfontconfig1 libfreetype6  libglib2.0-0 libgnome-keyring0  \
 libgtk2.0-0 libpam0g libpango1.0-0  libpcre3 libpixman-1-0 libpng12-0 libstdc++6  \
 libx11-6 libx11-xcb1 libxau6 libxcb1 libxcomposite1 libxcursor1 libxdamage1   \
 libxdmcp6 libxext6 libxfixes3 libxi6 libxinerama1 libxrandr2 libxrender1  \
-libxtst6 zlib1g 
+libxtst6 zlib1g gtk+-3.0
 ```
 
 ### 3.2. Installing prerequisite s/w package in Ubuntu Linux

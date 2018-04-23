@@ -48,12 +48,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static const char videoFileExtension[] = ".h264";
 static const char imvFileExtension[] = ".imv";
-static const size_t DefaultVideoFrameBufferSize=65535*2;  
+static const size_t DefaultVideoFrameBufferSize=65535*2;
 
 int  RaspiMotionFile::kEventWaitPeriod = 20;    // minimal wait ms period between frame
 
 RaspiMotionFile::RaspiMotionFile(const std::string base_path,const std::string prefix,
-            int queue_capacity, int frame_queue_size, int motion_queue_size) 
+            int queue_capacity, int frame_queue_size, int motion_queue_size)
     :   Event(false,false),
     base_path_(base_path), prefix_(prefix) {
 
@@ -62,7 +62,7 @@ RaspiMotionFile::RaspiMotionFile(const std::string base_path,const std::string p
     frame_queue_.reset( new rtc::BufferQueue(queue_capacity, frame_queue_size ));
     imv_queue_.reset( new rtc::BufferQueue(queue_capacity, motion_queue_size ));
 
-    // Since the imv file is relatively small compared to the video file size, 
+    // Since the imv file is relatively small compared to the video file size,
     // the size limit is used only for the video file.
     frame_file_size_limit_ = config_motion::motion_file_size_limit * 1024;
 
@@ -78,29 +78,29 @@ RaspiMotionFile::~RaspiMotionFile() {
 // Queuing the video and imv frame in buffer queue
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool RaspiMotionFile::FrameQueuing(const void* data, size_t bytes, 
+bool RaspiMotionFile::FrameQueuing(const void* data, size_t bytes,
         size_t* bytes_written, bool is_keyframe) {
     rtc::CritScope cs(&crit_sect_);
     size_t queue_length = frame_queue_->size();
 
-    if( writerThreadStarted_ == false && queue_length == 0 
+    if( writerThreadStarted_ == false && queue_length == 0
             && is_keyframe == false) {
         // reject the frame when the first queuing frame is not keyframe
         // if writerThread is not enabled
         return true;
     }
 
-    if( writerThreadStarted_ == true ) 
-        Set(); // Event Set to wake up 
+    if( writerThreadStarted_ == true )
+        Set(); // Event Set to wake up
     return  frame_queue_->WriteBack(data, bytes, bytes_written);
 }
 
-bool RaspiMotionFile::ImvQueuing(const void* data, size_t bytes, 
+bool RaspiMotionFile::ImvQueuing(const void* data, size_t bytes,
         size_t* bytes_written, bool is_keyframe) {
     rtc::CritScope cs(&crit_sect_);
     size_t queue_length = imv_queue_->size();
 
-    if( writerThreadStarted_ == false && queue_length == 0 
+    if( writerThreadStarted_ == false && queue_length == 0
             && is_keyframe == false) {
         // reject the frame when the first queuing frame is not keyframe
         // if writerThread is not enabled
@@ -127,7 +127,7 @@ size_t RaspiMotionFile::ImvQueueSize(void) const {
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Motion File Writer Thread 
+// Motion File Writer Thread
 //
 ///////////////////////////////////////////////////////////////////////////////
 bool RaspiMotionFile::WriterThread(void* obj) {
@@ -135,7 +135,7 @@ bool RaspiMotionFile::WriterThread(void* obj) {
 }
 
 bool RaspiMotionFile::WriterProcess() {
-    RTC_DCHECK( writerThreadStarted_ == true ) 
+    RTC_DCHECK( writerThreadStarted_ == true )
         << "Unknown Internal Error, Thread activated without flag enabled";
 
     if( frame_queue_->size() == 0 && imv_queue_->size() == 0 ) {
@@ -261,15 +261,15 @@ bool RaspiMotionFile::FrameFileWrite() {
     size_t write_length;
     if( frame_file_.IsOpen() == false ) return false;
 
-    if( frame_queue_->ReadFront(frame_writer_buffer_, DefaultVideoFrameBufferSize, 
+    if( frame_queue_->ReadFront(frame_writer_buffer_, DefaultVideoFrameBufferSize,
                 &read_length) == true )  {
-        if( frame_file_size_limit_ != 0 && 
+        if( frame_file_size_limit_ != 0 &&
                 total_frame_written_size_ >= frame_file_size_limit_ ) {
             // frame_file_size_limit_ == 0 means size no limit in size
-            // reject the additional file 
+            // reject the additional file
             return true;
         }
-        if( (write_length = frame_file_.Write( frame_writer_buffer_, read_length ) ) 
+        if( (write_length = frame_file_.Write( frame_writer_buffer_, read_length ) )
                 < read_length) {
             RTC_LOG(LS_ERROR) << "Error in Write frame buffer : #" <<  frame_counter_;
             return false;
@@ -290,7 +290,7 @@ bool RaspiMotionFile::ImvFileWrite() {
     size_t read_length;
     if( imv_file_.IsOpen() == false ) return false;
 
-    if( imv_queue_->ReadFront(frame_writer_buffer_, DefaultVideoFrameBufferSize, 
+    if( imv_queue_->ReadFront(frame_writer_buffer_, DefaultVideoFrameBufferSize,
                 &read_length) == true )  {
         if( imv_file_.Write( frame_writer_buffer_, read_length ) < read_length) {
             RTC_LOG(LS_ERROR) << "Error in Write Imv buffer : #" <<  imv_counter_;
@@ -358,12 +358,12 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
         return false;
     };
 
-    // iterate video file directory 
+    // iterate video file directory
     if (!it.Iterate(video_files_folder)) {
         RTC_LOG(LS_ERROR) << "Could't make DirectoryIterator"
             << video_files_folder.pathname();
         return false;
-    } 
+    }
     do {
         std::string filename = it.Name();
         video_file_path.SetPathname(video_files_folder.folder(), filename);
@@ -382,11 +382,11 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     video_file_list.sort(VideoFileCompare);
 
     RTC_LOG(INFO) << "Directory \"" << video_files_folder.pathname()
-        << "\" " <<  file_counter << " files, total size: " 
+        << "\" " <<  file_counter << " files, total size: "
         << total_directory_size;
 
-    while ( video_file_list.size() > 0 && 
-            ((total_directory_size - video_file_list.front().size_) 
+    while ( video_file_list.size() > 0 &&
+            ((total_directory_size - video_file_list.front().size_)
             > (size_t)config_motion::motion_file_total_size_limit * 1000000) ) {
         total_directory_size -= video_file_list.front().size_;
         video_file_path.SetPathname( video_files_folder.pathname(),

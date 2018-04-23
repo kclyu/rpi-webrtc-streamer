@@ -53,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define URL_LEAVE_CMD       "/leave"
 #define URL_TURN_SERVER       "/turn_server"
 
-class AppClient : public WebSocketHandler, public HttpHandler, 
+class AppClient : public WebSocketHandler, public HttpHandler,
     public SocketServerHelper {
 public:
     explicit AppClient();
@@ -62,10 +62,10 @@ public:
     enum State{
         SUCCESS = 0,
         ERROR,
-        FULL, 
-        UNKNOWN_ROOM, 
-        UNKNOWN_CLIENT, 
-        DUPLICATE_CLIENT, 
+        FULL,
+        UNKNOWN_ROOM,
+        UNKNOWN_CLIENT,
+        DUPLICATE_CLIENT,
         INVALID_REQUEST
     };
 

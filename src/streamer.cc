@@ -32,7 +32,7 @@
 #include "media/engine/webrtcvideocapturerfactory.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/video_capture/video_capture_factory.h"
-#include "modules/audio_processing/include/audio_processing.h"  
+#include "modules/audio_processing/include/audio_processing.h"
 
 #include "api/audio/audio_mixer.h"
 #include "api/rtpsenderinterface.h"
@@ -70,7 +70,7 @@ static const char kSessionDescriptionSdpName[] = "sdp";
 // Max Bitrate
 static const int kDefaultMaxBitrate = 3500000;
 
-class DummySetSessionDescriptionObserver 
+class DummySetSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {
 public:
     static DummySetSessionDescriptionObserver* Create() {
@@ -126,29 +126,31 @@ bool Streamer::InitializePeerConnection() {
     signaling_thread_->SetName("signaling_thread", nullptr);
     RTC_CHECK(signaling_thread_->Start()) << "Failed to start signaling thread";
 
-    rtc::scoped_refptr<webrtc::AudioDeviceModule> adm 
+    rtc::scoped_refptr<webrtc::AudioDeviceModule> adm
         = webrtc::AudioDeviceModule::Create(webrtc::AudioDeviceModule::kLinuxAlsaAudio);
 
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer = nullptr;
     rtc::scoped_refptr<webrtc::AudioProcessing> audio_processor = nullptr;
 
-    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory = 
+    auto audio_encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
+    auto audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
+
+    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory =
         std::unique_ptr<webrtc::VideoDecoderFactory>
         (webrtc::RaspiVideoDecoderFactory::CreateVideoDecoderFactory());
-    std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory = 
+    std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory =
         std::unique_ptr<webrtc::VideoEncoderFactory>
         (webrtc::RaspiVideoEncoderFactory::CreateVideoEncoderFactory());
 
     peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
-            network_thread_.get(), worker_thread_.get(), 
-            signaling_thread_.get(), 
-            adm, 
-            webrtc::CreateBuiltinAudioEncoderFactory(),
-            webrtc::CreateBuiltinAudioDecoderFactory(),
+            network_thread_.get(), worker_thread_.get(),
+            signaling_thread_.get(),
+            nullptr /* adm */,
+            audio_encoder_factory, audio_decoder_factory,
             std::move(video_encoder_factory), std::move(video_decoder_factory),
             audio_mixer, audio_processor );
     if (!peer_connection_factory_.get()) {
-        RTC_LOG(LS_ERROR) << __FUNCTION__ 
+        RTC_LOG(LS_ERROR) << __FUNCTION__
             << "Failed to initialize PeerConnectionFactory";
         DeletePeerConnection();
         return false;
@@ -172,15 +174,15 @@ void Streamer::UpdateMaxBitrate() {
             webrtc::RtpParameters parameters =  sender->GetParameters();
             for (webrtc::RtpEncodingParameters& encoding : parameters.encodings) {
                  if (encoding.max_bitrate_bps) {
-                     RTC_LOG(INFO) << "Previous Max Bitrate Bps setting already exists: " 
+                     RTC_LOG(INFO) << "Previous Max Bitrate Bps setting already exists: "
                          << *encoding.max_bitrate_bps;
                      RTC_LOG(INFO) << "Do not modifying Max Bitrate Bps";
                     return;
                  }
                  else {
-                     encoding.max_bitrate_bps 
+                     encoding.max_bitrate_bps
                          = rtc::Optional<int>(config_media::max_bitrate);
-                     RTC_LOG(INFO) << "Changing Max Bitrate Bps: " 
+                     RTC_LOG(INFO) << "Changing Max Bitrate Bps: "
                          << *encoding.max_bitrate_bps;
                      sender->SetParameters(parameters);
                      return;
@@ -348,14 +350,14 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         offer_options.offer_to_receive_video = 0;
         offer_options.offer_to_receive_audio = 1;
 
-        // TODO(kclyu) invalid sdp negotiation makes session_description 
+        // TODO(kclyu) invalid sdp negotiation makes session_description
         // null, need to figure it out how to fix it.
         if (session_description->type() ==
                 webrtc::SessionDescriptionInterface::kOffer) {
             peer_connection_->CreateAnswer(this, offer_options);
         }
 
-        // Update the max bitrate on RTPSender if there is no SDP negotiation 
+        // Update the max bitrate on RTPSender if there is no SDP negotiation
         // of max bitrate between client.
         UpdateMaxBitrate();
         return;
@@ -431,17 +433,17 @@ void Streamer::AddStreams() {
 
     cricket::AudioOptions options;
     if( config_media::audio_processing_enable == true ) {
-        if( config_media::audio_echo_cancel == true ) 
+        if( config_media::audio_echo_cancel == true )
             options.echo_cancellation = rtc::Optional<bool>(true);
-        if( config_media::audio_gain_control == true ) 
+        if( config_media::audio_gain_control == true )
             options.auto_gain_control = rtc::Optional<bool>(true);
-        if( config_media::audio_highpass_filter == true ) 
+        if( config_media::audio_highpass_filter == true )
             options.highpass_filter = rtc::Optional<bool>(true);
-        if( config_media::audio_noise_suppression == true ) 
+        if( config_media::audio_noise_suppression == true )
             options.noise_suppression = rtc::Optional<bool>(true);
     };
     // audio_level_control is removed
-    // if( config_media::audio_level_control == true ) 
+    // if( config_media::audio_level_control == true )
     //         options.level_control = rtc::Optional<bool>(true);
 
     RTC_LOG(INFO) << "Audio options: " << options.ToString();

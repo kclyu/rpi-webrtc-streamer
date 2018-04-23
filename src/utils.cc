@@ -17,7 +17,7 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <memory>
 #include <string>
 #include <iostream>
@@ -43,9 +43,9 @@ namespace utils {
 void PrintVersionInfo() {
     std::cout << "RWS Version: " << __RWS_VERSION__ << std::endl;
     std::cout << "RWS (rpi-webrtc-streamer) is a WebRTC H.264 streamer designed "
-        << "to run on Raspberry PI \nand Raspberry PI camera board hardware." 
+        << "to run on Raspberry PI \nand Raspberry PI camera board hardware."
         << std::endl;
-    std::cout << 
+    std::cout <<
         "(Using WebRTC native package: " << __WEBRTC_VERSION__ << ")" << std::endl;
 }
 
@@ -53,7 +53,7 @@ void PrintVersionInfo() {
 void PrintLicenseInfo() {
     char command_buffer[1024];
     int ret;
-    sprintfn( command_buffer, sizeof(command_buffer), 
+    sprintfn( command_buffer, sizeof(command_buffer),
         "find %s/LICENSE -type f -printf \"********************\\n\
 ********************   %%f\\n********************\\n\\n\" \
 -exec cat {} \\; | pager",

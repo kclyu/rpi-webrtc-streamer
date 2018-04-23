@@ -39,7 +39,7 @@ struct MotionBlob {
         COLLECTING,
         ACTIVE,
     };
-    MotionBlob() 
+    MotionBlob()
         : status_(UNUSED), size_(0), sx_(0), sy_(0), overlap_size_(0), update_counter_(0) {};
     MotionBlobStatus status_;
     int     size_;

@@ -96,7 +96,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
         connection_reject_count_ = 0;       // reinitialize the reject counter
 
         socket_peer_id_ = DIRECTSOCKET_FAKE_PEERID;
-        socket_peer_name_ = DIRECTSOCKET_FAKE_NAME_PREFIX + 
+        socket_peer_name_ = DIRECTSOCKET_FAKE_NAME_PREFIX +
             incoming->GetRemoteAddress().ToString();
         RTC_LOG(INFO) << "New Session Name: " << socket_peer_name_;
 
@@ -115,19 +115,19 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
         // reject the direct socket request from client
         incoming->Close();
 
-        // reset or re-calculate reject counter 
-        if( rtc::TimeDiff( rtc::TimeMillis(),  last_reject_time_ms_ ) 
+        // reset or re-calculate reject counter
+        if( rtc::TimeDiff( rtc::TimeMillis(),  last_reject_time_ms_ )
                 < FORCE_CONNECTION_DROP_VALID_DURATION ) {
             connection_reject_count_ += 1;
             last_reject_time_ms_  = rtc::TimeMillis();
             RTC_LOG(INFO) << "Forced Connection Counter: " << connection_reject_count_;
             if ( connection_reject_count_ >  FORCE_CONNECTION_DROP_TRYCOUNT_THRESHOLD  )
-                RTC_LOG(INFO) << "Forced Connection close performed, " 
+                RTC_LOG(INFO) << "Forced Connection close performed, "
                     << " counter reached to threahold.";
                 // Release the current active stream session
                 OnClose(  direct_socket_.get(), 0);
         }
-        else {  
+        else {
             connection_reject_count_ = 0;
             last_reject_time_ms_  = rtc::TimeMillis();
         }
@@ -135,7 +135,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
 
 }
 
-//  
+//
 void DirectSocketServer::RegisterObserver(StreamerObserver* callback) {
     RTC_LOG(INFO) << __FUNCTION__;
 }
@@ -166,24 +166,24 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
 
     size_t index = buffered_read_.find("\n");
     if ( index != std::string::npos ) {
-        RTC_LOG(INFO) << "Message IN from client: \"" << buffered_read_ << "\""; 
+        RTC_LOG(INFO) << "Message IN from client: \"" << buffered_read_ << "\"";
         // '\n' delimiter found in read buffer
         MessageFromPeer(buffered_read_);
         buffered_read_.clear();
     }
 }
 
-bool DirectSocketServer::SendMessageToPeer(const int peer_id, 
+bool DirectSocketServer::SendMessageToPeer(const int peer_id,
         const std::string &message) {
     RTC_LOG(INFO) << __FUNCTION__;
     std::string trimmed_message( message );
     trimmed_message.erase(
-            std::remove(trimmed_message.begin(), trimmed_message.end(), '\n'), 
+            std::remove(trimmed_message.begin(), trimmed_message.end(), '\n'),
             trimmed_message.end());
     trimmed_message.append("\n");
 
-    RTC_LOG(INFO) << "Message OUT to client: \"" << trimmed_message << "\""; 
-    return (direct_socket_->Send(trimmed_message.data(), 
+    RTC_LOG(INFO) << "Message OUT to client: \"" << trimmed_message << "\"";
+    return (direct_socket_->Send(trimmed_message.data(),
                 trimmed_message.length()) != SOCKET_ERROR);
 }
 

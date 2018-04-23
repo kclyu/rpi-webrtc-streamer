@@ -128,10 +128,10 @@ void default_status(RASPIVID_STATE *state)
     state->bitrate = 0; 			// For variable bitrate setttings
     state->intra_refresh_type = MMAL_VIDEO_INTRA_REFRESH_BOTH;		// cyclic intra rehash type
                                             // every 3 second
-    state->intraPeriod = VIDEO_FRAME_RATE_NUM * VIDEO_INTRAFRAME_PERIOD;	
+    state->intraPeriod = VIDEO_FRAME_RATE_NUM * VIDEO_INTRAFRAME_PERIOD;
     state->bInlineHeaders = MMAL_TRUE;	    // enabling Inline Header
     state->profile = MMAL_VIDEO_PROFILE_H264_MAIN;  // TESTING
-    // state->profile = MMAL_VIDEO_PROFILE_H264_CONSTRAINED_BASELINE;  
+    // state->profile = MMAL_VIDEO_PROFILE_H264_CONSTRAINED_BASELINE;
     state->verbose = MMAL_TRUE;
 
     state->videoRateControl = MMAL_FALSE;
@@ -238,7 +238,7 @@ void update_annotation_data(RASPIVID_STATE *state)
     if (state->camera_parameters.enable_annotate & ANNOTATE_APP_TEXT)
     {
         char *text;
-        const char *refresh = raspicli_unmap_xref(state->intra_refresh_type, 
+        const char *refresh = raspicli_unmap_xref(state->intra_refresh_type,
                 intra_refresh_map, intra_refresh_map_size);
 
         asprintf(&text,  "%dk,%df,%s,%d,%s",
@@ -247,7 +247,7 @@ void update_annotation_data(RASPIVID_STATE *state)
                  state->intraPeriod,
                  raspicli_unmap_xref(state->profile, profile_map, profile_map_size));
 
-        raspicamcontrol_set_annotate(state->camera_component, 
+        raspicamcontrol_set_annotate(state->camera_component,
                 state->camera_parameters.enable_annotate, text,
                 state->camera_parameters.annotate_text_size,
                 state->camera_parameters.annotate_text_colour,
@@ -257,8 +257,8 @@ void update_annotation_data(RASPIVID_STATE *state)
     }
     else
     {
-        raspicamcontrol_set_annotate(state->camera_component, 
-                state->camera_parameters.enable_annotate, 
+        raspicamcontrol_set_annotate(state->camera_component,
+                state->camera_parameters.enable_annotate,
                 state->camera_parameters.annotate_string,
                 state->camera_parameters.annotate_text_size,
                 state->camera_parameters.annotate_text_colour,
@@ -288,11 +288,11 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state) {
         goto error;
     }
 
-    status = raspicamcontrol_set_stereo_mode(camera->output[0], 
+    status = raspicamcontrol_set_stereo_mode(camera->output[0],
             &state->camera_parameters.stereo_mode);
-    status += raspicamcontrol_set_stereo_mode(camera->output[1], 
+    status += raspicamcontrol_set_stereo_mode(camera->output[1],
             &state->camera_parameters.stereo_mode);
-    status += raspicamcontrol_set_stereo_mode(camera->output[2], 
+    status += raspicamcontrol_set_stereo_mode(camera->output[2],
             &state->camera_parameters.stereo_mode);
 
     if (status != MMAL_SUCCESS) {
@@ -315,7 +315,7 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state) {
         goto error;
     }
 
-    status = mmal_port_parameter_set_uint32(camera->control, 
+    status = mmal_port_parameter_set_uint32(camera->control,
             MMAL_PARAMETER_CAMERA_CUSTOM_SENSOR_CONFIG, state->sensor_mode);
 
     if (status != MMAL_SUCCESS)
@@ -330,7 +330,7 @@ MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state) {
 
     if (state->settings) {
         MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T change_event_request =
-        {   {MMAL_PARAMETER_CHANGE_EVENT_REQUEST, 
+        {   {MMAL_PARAMETER_CHANGE_EVENT_REQUEST,
                 sizeof(MMAL_PARAMETER_CHANGE_EVENT_REQUEST_T)},
             MMAL_PARAMETER_CAMERA_SETTINGS, 1
         };
@@ -649,7 +649,7 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
     if (state->encoding == MMAL_ENCODING_H264 &&
             state->intraPeriod != -1)
     {
-        MMAL_PARAMETER_UINT32_T param 
+        MMAL_PARAMETER_UINT32_T param
             = {{ MMAL_PARAMETER_INTRAPERIOD, sizeof(param)}, state->intraPeriod};
         status = mmal_port_parameter_set(encoder_output, &param.hdr);
         if (status != MMAL_SUCCESS)
@@ -723,9 +723,9 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state)
     }
 
     //set INLINE VECTORS flag to request motion vector estimates
-    if (state->encoding == MMAL_ENCODING_H264 && 
-            mmal_port_parameter_set_boolean(encoder_output, 
-                MMAL_PARAMETER_VIDEO_ENCODE_INLINE_VECTORS, state->bInlineMotionVector) 
+    if (state->encoding == MMAL_ENCODING_H264 &&
+            mmal_port_parameter_set_boolean(encoder_output,
+                MMAL_PARAMETER_VIDEO_ENCODE_INLINE_VECTORS, state->bInlineMotionVector)
             != MMAL_SUCCESS) {
         vcos_log_error("failed to set INLINE VECTORS parameters");
         // Continue rather than abort..
@@ -839,11 +839,11 @@ void destroy_encoder_component(RASPIVID_STATE *state)
  * @return Returns a MMAL_STATUS_T giving result of operation
  *
  */
-MMAL_STATUS_T connect_ports(MMAL_PORT_T *output_port, MMAL_PORT_T *input_port, 
+MMAL_STATUS_T connect_ports(MMAL_PORT_T *output_port, MMAL_PORT_T *input_port,
         MMAL_CONNECTION_T **connection) {
     MMAL_STATUS_T status;
 
-    status =  mmal_connection_create(connection, output_port, input_port, 
+    status =  mmal_connection_create(connection, output_port, input_port,
             MMAL_CONNECTION_FLAG_TUNNELLING | MMAL_CONNECTION_FLAG_ALLOCATION_ON_INPUT);
 
     if (status == MMAL_SUCCESS) {

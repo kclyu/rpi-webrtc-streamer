@@ -111,17 +111,17 @@ webrtc::VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncod
 
     for (const webrtc::SdpVideoFormat& supported_format : supported_formats_) {
         if (IsSameFormat(format, supported_format)) {
-            RTC_LOG(INFO) << "Codec " << format.name 
+            RTC_LOG(INFO) << "Codec " << format.name
                 << " found in RaspiVideoEncoderFactory supported format";
             // RaspiVideoEncoder only supports InternalSource H.264 Video Codec
             VideoEncoderFactory::CodecInfo info;
-            info.has_internal_source = true; 
+            info.has_internal_source = true;
             info.is_hardware_accelerated = true;
             return info;
         }
     }
 
-    RTC_LOG(LS_ERROR) << "Codec " << format.name 
+    RTC_LOG(LS_ERROR) << "Codec " << format.name
         << " does not support in RaspiVideoEncoderFactory";
     VideoEncoderFactory::CodecInfo info;
     info.has_internal_source = false;

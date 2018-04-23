@@ -17,7 +17,7 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <memory>
 #include <string>
 #include <iostream>
@@ -45,7 +45,7 @@ namespace utils {
 //
 //////////////////////////////////////////////////////////////////////////////////////////
 FileLogger::FileLogger (const std::string path,
-        const rtc::LoggingSeverity severity, bool disable_buffering) :  
+        const rtc::LoggingSeverity severity, bool disable_buffering) :
     inited_(false), dir_path_(path), severity_(severity),
     log_max_file_size_(MAX_LOG_FILE_SIZE),disable_buffering_(disable_buffering) {
 }
@@ -92,10 +92,10 @@ bool FileLogger::DeleteFolderFiles(const rtc::Pathname &folder) {
         return true;
     }
 
-    // iterate source directory 
+    // iterate source directory
     if (!it.Iterate(folder)) {
         return false;
-    } 
+    }
     do {
         std::string filename = it.Name();
         file.SetPathname(folder.folder(), filename);
@@ -107,7 +107,7 @@ bool FileLogger::DeleteFolderFiles(const rtc::Pathname &folder) {
 }
 
 
-bool FileLogger::MoveLogFiles(const std::string prefix, 
+bool FileLogger::MoveLogFiles(const std::string prefix,
             const rtc::Pathname &src, const rtc::Pathname &dest) {
     rtc::DirectoryIterator it;
     rtc::Pathname src_file, dest_file;
@@ -115,13 +115,13 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
 #ifdef _0   // TODO remove CreateFolder
     // check src & dest path is directory
     if( !rtc::Filesystem::IsFolder(dest)) {
-        if( rtc::Filesystem::CreateFolder( dest ) == false ) 
-            RTC_LOG(LS_ERROR) << "Failed to create dest directory: " 
+        if( rtc::Filesystem::CreateFolder( dest ) == false )
+            RTC_LOG(LS_ERROR) << "Failed to create dest directory: "
                 << dest.pathname();
     }
     if( !rtc::Filesystem::IsFolder(src)) {
         if( rtc::Filesystem::CreateFolder( src ) == false ) {
-            RTC_LOG(LS_ERROR) << "Failed to create src directory: " 
+            RTC_LOG(LS_ERROR) << "Failed to create src directory: "
                 << src.pathname();
             // source directory is just created, so nothing to move files
             return true;
@@ -129,18 +129,18 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
     }
 #endif
 
-    // iterate source directory 
+    // iterate source directory
     if (!it.Iterate(src)) {
         return false;
-    } 
+    }
     do {
         std::string filename = it.Name();
         if( filename.compare(0, prefix.size(), prefix ) == 0 ) {
             src_file.SetPathname(src.folder(), filename);
             dest_file.SetPathname(dest.folder(), filename);
-            if( rtc::Filesystem::MoveFile(src_file, dest_file) == false ) 
-                RTC_LOG(LS_ERROR) << "Failed to move file : " 
-                    << src_file.pathname() << ", to: " 
+            if( rtc::Filesystem::MoveFile(src_file, dest_file) == false )
+                RTC_LOG(LS_ERROR) << "Failed to move file : "
+                    << src_file.pathname() << ", to: "
                     << dest_file.pathname();
         };
     } while ( it.Next() );
@@ -156,7 +156,7 @@ bool FileLogger::MoveLogFiletoNextShiftFolder() {
     base_log_path.SetFolder( dir_path_ );
     // checking whether the base log directory is exist
     if( rtc::Filesystem::IsFolder( base_log_path ) == false ) {
-        RTC_LOG(LS_ERROR) << "Log directory does not exist : " 
+        RTC_LOG(LS_ERROR) << "Log directory does not exist : "
                     << base_log_path.pathname() ;
         return false;
     };
@@ -170,7 +170,7 @@ bool FileLogger::MoveLogFiletoNextShiftFolder() {
 
         // remove last rotate directory
         if( index == 9 ) {
-            if( rtc::Filesystem::IsFolder(dest_log_dir) == true ) 
+            if( rtc::Filesystem::IsFolder(dest_log_dir) == true )
                 DeleteFolderFiles(dest_log_dir);
         };
         if( MoveLogFiles(LOGGING_FILENAME, src_log_dir, dest_log_dir ) == false ){

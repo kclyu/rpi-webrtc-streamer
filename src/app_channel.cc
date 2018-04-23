@@ -72,14 +72,14 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
     ws_client_.RegisterWebSocketMessage(this);
     AddWebSocketHandler(ws_url, SINGLE_INSTANCE, &ws_client_);
 
-    // RoomId 
+    // RoomId
     app_client_.RegisterWebSocketMessage(this);
     if( config.GetRoomIdEnable() ) {
         std::string room_id;
         config.GetRoomId(room_id);
         app_client_.SetRoomId(room_id);
     };
-    // AdditionalWSRule 
+    // AdditionalWSRule
     config.GetAdditionalWSRule(additional_ws_rule);
     app_client_.SetAdditionalWSRule(additional_ws_rule);
 

@@ -63,7 +63,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Debuging Macros 
+// Debuging Macros
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -77,28 +77,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DEBUG_BLOB_FORMAT(format,args...) printf(format, args);
 #define DEBUG_BLOB_LOG(msg) printf("%s", msg );
 #define DEBUG_BLOB_DO(a) a
-#else 
-#define DEBUG_BLOB_FORMAT(format,args...) 
+#else
+#define DEBUG_BLOB_FORMAT(format,args...)
 #define DEBUG_BLOB_LOG(msg)
-#define DEBUG_BLOB_DO(a) 
+#define DEBUG_BLOB_DO(a)
 #endif  //  DEBUG_BLOB_ENABLE
 
 #ifdef DEBUG_BLOB_DUMP_ENABLE
 #define DEBUG_BLOB_DUMP(a) a
 #else
-#define DEBUG_BLOB_DUMP(a) 
+#define DEBUG_BLOB_DUMP(a)
 #endif // DEBUG_BLOB_DUMP_ENABLE
 
 // Blob Tracking debug message
-#ifdef DEBUG_TRACK  
+#ifdef DEBUG_TRACK
 #define DEBUG_TRACK_FORMAT(format,args...) printf(format, args);
 #define DEBUG_TRACK_LOG(msg) printf("%s", msg );
 #define DEBUG_TRACK_DO(a) a
-#else 
-#define DEBUG_TRACK_FORMAT(format,args...) 
+#else
+#define DEBUG_TRACK_FORMAT(format,args...)
 #define DEBUG_TRACK_LOG(msg)
-#define DEBUG_TRACK_DO(a) 
-#endif  //  DEBUG_TRACK 
+#define DEBUG_TRACK_DO(a)
+#endif  //  DEBUG_TRACK
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -107,12 +107,12 @@ static const uint8_t BLOB_ID_CRUMBS = 1;  // used for bread crumbs
 static const uint8_t BLOB_ID_MIN = 2;
 static const uint8_t BLOB_ID_MAX = 255;
 
-RaspiMotionBlob::RaspiMotionBlob(int mvx, int mvy) 
+RaspiMotionBlob::RaspiMotionBlob(int mvx, int mvy)
 : mvx_(mvx), mvy_(mvy){
     blob_cancel_threshold_ = (mvx_ * mvy_ * config_motion::blob_cancel_threshold)/100;
     blob_tracking_threshold_ = config_motion::blob_tracking_threshold;
     RTC_LOG(INFO) << "Cancel Treshold : " << blob_cancel_threshold_
-        << ", Track treshold : " << blob_tracking_threshold_ 
+        << ", Track treshold : " << blob_tracking_threshold_
         << ", IMV size: " << mvx_*mvy_;
     extracted_ = new uint8_t [mvx_ * mvy_];
     extracted_previous_ = new uint8_t [mvx_ * mvy_];
@@ -172,8 +172,8 @@ bool RaspiMotionBlob::UpdateBlob(uint8_t *motion, size_t len){
     DEBUG_TRACK_LOG("Blob Detection Finished and Tracking Active Blob\n");
     DEBUG_BLOB_DUMP(DumpBlobBuffer("Active Blobs(extracted_)", extracted_ ););
 
-    // Create the tracking information by combining the information 
-    // of the overlapping blobs in the previous blob buffer and 
+    // Create the tracking information by combining the information
+    // of the overlapping blobs in the previous blob buffer and
     // the newly created blob buffer.
     TrackingBlob(active_blob_list_);
 
@@ -188,7 +188,7 @@ void RaspiMotionBlob::GetBlobImage(uint8_t *buffer, size_t len){
         base_ey = ey * mvx_;
         for(ex = 0; ex < mvx_; ex++ ) {
             blob_id = extracted_[base_ey + ex];
-            // Only blobs with an update count greater than 
+            // Only blobs with an update count greater than
             // the specified blob_tracking_threshold_ are considered blob images.
             if( blob_id >=  BLOB_ID_MIN &&
                     blob_list_[blob_id].update_counter_ > (int)blob_tracking_threshold_ ) {
@@ -197,13 +197,13 @@ void RaspiMotionBlob::GetBlobImage(uint8_t *buffer, size_t len){
             else {
                 buffer[base_ey + ex] = 0;
             }
-        } 
+        }
     }
 }
 
 int RaspiMotionBlob::GetActiveBlobCount (void) {
     int active_count = 0;
-    for (std::list<int>::iterator it = active_blob_list_.begin() ; 
+    for (std::list<int>::iterator it = active_blob_list_.begin() ;
             it != active_blob_list_.end(); ++it) {
         if( blob_list_[*it].update_counter_  > (int)blob_tracking_threshold_ )
             active_count++;
@@ -213,31 +213,31 @@ int RaspiMotionBlob::GetActiveBlobCount (void) {
 
 int RaspiMotionBlob::GetActiveBlobUpdateCount (void) {
     int max_update_count = 0;
-    for (std::list<int>::iterator it = active_blob_list_.begin() ; 
+    for (std::list<int>::iterator it = active_blob_list_.begin() ;
             it != active_blob_list_.end(); ++it) {
-        max_update_count = std::max(blob_list_[*it].update_counter_, 
+        max_update_count = std::max(blob_list_[*it].update_counter_,
                 max_update_count);
     };
     return max_update_count;
 }
 
 void RaspiMotionBlob::MergeActiveBlob(std::list<int> &active_blob_list){
-    uint16_t ex, ey, base_ey; 
+    uint16_t ex, ey, base_ey;
     int blob_id;
     size_t blob_size;
 
-    for (std::list<int>::iterator it = active_blob_list.begin() ; 
+    for (std::list<int>::iterator it = active_blob_list.begin() ;
             it != active_blob_list.end(); ++it) {
         blob_id = *it;
         blob_size = 0;
         if( blob_list_[blob_id].status_ == MotionBlob::ACTIVE ) {
-            for(ey = blob_list_[blob_id].sy_; 
-                    blob_size != (size_t)blob_list_[blob_id].size_  && 
+            for(ey = blob_list_[blob_id].sy_;
+                    blob_size != (size_t)blob_list_[blob_id].size_  &&
                     ey < mvy_; ey++ ) {
                 base_ey = ey * mvx_;
                 for(ex = 0; ex < mvx_; ex++ ) {
                     if( blob_list_[blob_id].blob_[base_ey + ex] ) {
-                        extracted_[base_ey + ex] 
+                        extracted_[base_ey + ex]
                             = blob_list_[blob_id].blob_[base_ey + ex];
                         blob_size++;
                     }
@@ -245,7 +245,7 @@ void RaspiMotionBlob::MergeActiveBlob(std::list<int> &active_blob_list){
             };
         }
         else {
-            RTC_ERROR << "Internal Error, Motion Blob id is not active: " 
+            RTC_ERROR << "Internal Error, Motion Blob id is not active: "
                 << blob_id;
         }
     }
@@ -286,7 +286,7 @@ size_t RaspiMotionBlob::SearchConnectedBlob(uint8_t x, uint8_t y, int blob_id ){
 
 
 
-bool RaspiMotionBlob::SearchConnectedNeighbor(uint8_t x, uint8_t y, int blob_id, 
+bool RaspiMotionBlob::SearchConnectedNeighbor(uint8_t x, uint8_t y, int blob_id,
         std::list<BlobPoint> &connected_list ){
     BlobPoint blobpoint(0,0);
     bool neighbor_exist = false;
@@ -299,7 +299,7 @@ bool RaspiMotionBlob::SearchConnectedNeighbor(uint8_t x, uint8_t y, int blob_id,
         connected_list.push_back(blobpoint); \
         neighbor_exist = true; \
     };
-    
+
     // Use '+' filter to perform blob detection.
     NEXT_BLOBPOINT( x+1, y, x+1 < (int)mvx_, "R");
     NEXT_BLOBPOINT( x, y+1, y+1 < (int)mvy_, "D");
@@ -324,21 +324,21 @@ void RaspiMotionBlob::TrackingBlob( std::list<int> &active_blob_list) {
             active_bid = extracted_[base_ey+ex];
             previous_bid = extracted_previous_[base_ey+ex];
             // apppend previous blob_id for removing it in active list
-            if( previous_bid && 
-                    std::find(previous_blob_list.begin(), previous_blob_list.end(), 
+            if( previous_bid &&
+                    std::find(previous_blob_list.begin(), previous_blob_list.end(),
                         previous_bid ) == previous_blob_list.end()) {
                 // blobid is not found in container, so append it
                 previous_blob_list.push_back(previous_bid);
             };
 
-            if( active_bid != BLOB_ID_NOT_USED && 
+            if( active_bid != BLOB_ID_NOT_USED &&
                 previous_bid != BLOB_ID_NOT_USED &&
-                blob_list_[active_bid].status_ == MotionBlob::ACTIVE && 
+                blob_list_[active_bid].status_ == MotionBlob::ACTIVE &&
                 blob_list_[previous_bid].status_ == MotionBlob::ACTIVE ) {
 
 #ifdef DEBUG_TRACK
                 // apppend blob_id to active
-                if( std::find(active_blob_list.begin(), active_blob_list.end(), 
+                if( std::find(active_blob_list.begin(), active_blob_list.end(),
                             active_bid ) == active_blob_list.end()) {
                     DEBUG_TRACK_FORMAT("Internal Error, Blob ID %d not in the active blob list",
                             active_bid );
@@ -348,9 +348,9 @@ void RaspiMotionBlob::TrackingBlob( std::list<int> &active_blob_list) {
                 blob_list_[active_bid].overlap_size_ += 1;
                 // merge with previous update_counter
                 blob_list_[active_bid].update_counter_ =
-                    std::max(blob_list_[active_bid].update_counter_, 
+                    std::max(blob_list_[active_bid].update_counter_,
                             blob_list_[previous_bid].update_counter_ + 1);
-            }; 
+            };
         }
     }
 
@@ -363,13 +363,13 @@ void RaspiMotionBlob::TrackingBlob( std::list<int> &active_blob_list) {
     }
 
     DEBUG_TRACK_LOG("Previous Blob list: ");
-    for (std::list<int>::iterator it = previous_blob_list.begin() ; 
+    for (std::list<int>::iterator it = previous_blob_list.begin() ;
             it != previous_blob_list.end(); ++it) {
         DEBUG_TRACK_FORMAT("%d,", *it);
     }
     DEBUG_TRACK_LOG("\n");fflush(0);
     DEBUG_TRACK_LOG("Active Blob list: ");
-    for (std::list<int>::iterator it = active_blob_list.begin() ; 
+    for (std::list<int>::iterator it = active_blob_list.begin() ;
             it != active_blob_list.end(); ++it) {
         DEBUG_TRACK_FORMAT("%d,", *it);
     }
@@ -380,7 +380,7 @@ void RaspiMotionBlob::TrackingBlob( std::list<int> &active_blob_list) {
             blob_list_len , (int)active_blob_list.size(), (int)previous_blob_list.size());
     DEBUG_TRACK_DO(fflush(0));
     DEBUG_TRACK_DO(
-    for (std::list<int>::iterator it = active_blob_list.begin() ; 
+    for (std::list<int>::iterator it = active_blob_list.begin() ;
             it != active_blob_list.end(); ++it) {
         DEBUG_TRACK_FORMAT("Blob ID: %d, status: %d, size: %d, overlap: %d, update: %d\n",
                 *it, blob_list_[*it].status_, blob_list_[*it].size_ ,
@@ -394,7 +394,7 @@ void RaspiMotionBlob::TrackingBlob( std::list<int> &active_blob_list) {
 #endif // DEBUG_TRACK
 
     // remove previous blob_id in blob list
-    for (std::list<int>::iterator it = previous_blob_list.begin() ; 
+    for (std::list<int>::iterator it = previous_blob_list.begin() ;
             it != previous_blob_list.end(); ++it) {
         DEBUG_TRACK_FORMAT("Clearing previous Blob in list: %d\n",  *it );
         UnaccquireBlobId( *it );
@@ -433,13 +433,13 @@ void RaspiMotionBlob::UnaccquireBlobId(int blob_id){
 
 void RaspiMotionBlob::SetBlobCancelThreshold(int cancel_min){
     RTC_DCHECK(cancel_min < 100 && cancel_min > 0 ); // cancel_min percent
-    blob_cancel_threshold_ = mvx_ * mvy_ * (cancel_min/100); 
+    blob_cancel_threshold_ = mvx_ * mvy_ * (cancel_min/100);
 }
 
 
 void RaspiMotionBlob::DumpBlobBuffer(const char *header, uint8_t *buffer){
     uint16_t  base_sy, sx, sy;
-    printf("Dumping %s ------------------\n", header);  
+    printf("Dumping %s ------------------\n", header);
     for ( sy = 0; sy < mvy_; sy++ ) {
         base_sy = sy * mvx_;
         for ( sx = 0; sx < mvx_; sx++ ) {
@@ -448,7 +448,7 @@ void RaspiMotionBlob::DumpBlobBuffer(const char *header, uint8_t *buffer){
                     printf(".");    // cleared
                     break;
                 case 1:
-                    printf("C");    
+                    printf("C");
                     break;
                 default:
                     printf("x");    // marked
@@ -473,7 +473,7 @@ void RaspiMotionBlob::DumpBlobIdList(const char *header) {
     for(int bid = BLOB_ID_MIN; bid < MAX_BLOB_LIST_SIZE; bid++ ) {
         if( blob_list_[bid].status_ != MotionBlob::UNUSED ) {
             DEBUG_TRACK_FORMAT("Blob %d: status(%d),size(%d),update_counter(%d)\n",
-                bid, blob_list_[bid].status_, 
+                bid, blob_list_[bid].status_,
                 blob_list_[bid].size_, blob_list_[bid].update_counter_);
         };
     };

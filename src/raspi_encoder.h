@@ -50,7 +50,7 @@ public:
 };
 
 //
-// Implementation of Raspberry video encoder factory 
+// Implementation of Raspberry video encoder factory
 class RaspiVideoEncoderFactory : public VideoEncoderFactory {
 public:
     RaspiVideoEncoderFactory();

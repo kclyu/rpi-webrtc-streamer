@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 enum WebSocketHandlerType {
-    SINGLE_INSTANCE,        // allow only one handler runtime 
+    SINGLE_INSTANCE,        // allow only one handler runtime
     MULTIPLE_INSTANCE,      // allow multiple handler runtime
 };
 
@@ -56,23 +56,23 @@ enum FileMappingType {
 };
 
 struct FileMapping {
-    FileMapping(const std::string uri_prefix, 
+    FileMapping(const std::string uri_prefix,
             FileMappingType type, const std::string uri_resource_path)
         : uri_prefix_(uri_prefix), type_(type),
         uri_resource_path_(uri_resource_path) {}
     ~FileMapping() {}
     // allowed prefix for input URI
-    const std::string uri_prefix_;           
+    const std::string uri_prefix_;
     FileMappingType type_;
     // mapping local resource path for uri_prefix
-    const std::string uri_resource_path_;    
+    const std::string uri_resource_path_;
 };
 
 struct HttpRequest {
     HttpRequest() : content_length_(-1) {};
-    std::string url_;           // URL 
+    std::string url_;           // URL
     int content_length_;
-    std::string server_;          // Server name 
+    std::string server_;          // Server name
     HttpRequestType type_;      // request type, GET,POST
     std::string data_;          // request data only available on POST
     std::map<int,std::string> header_;
@@ -90,7 +90,7 @@ struct HttpResponse {
     int status_;            // return status value i.e 200, 404
     std::string mime_;      // mime type of response
     std::map<int,std::string> header_;
-    std::string response_;  // response body, allow only text data 
+    std::string response_;  // response body, allow only text data
     void AddHeader(int header_id, const std::string value );
     void Print();
     void SetHeaderSent();
@@ -117,7 +117,7 @@ protected:
 
 struct WebSocketMessage {
     virtual void SendMessage(int sockid, const std::string& message) = 0;
-    virtual void Close(int sockid, int reason_code, 
+    virtual void Close(int sockid, int reason_code,
             const std::string& message) = 0;
 protected:
     virtual ~WebSocketMessage() {}

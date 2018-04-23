@@ -79,7 +79,7 @@ CONFIG_DEFINE( FixedVideoResolution, fixed_video_resolution, std::string, "640x4
 CONFIG_DEFINE( FixedVideoFps, fixed_video_fps, int, 30);
 
 // audio related config
-// this feature will require high CPU usage 
+// this feature will require high CPU usage
 CONFIG_DEFINE( AudioProcessing, audio_processing_enable, bool, false );
 CONFIG_DEFINE( AudioEchoCancel, audio_echo_cancel, bool, true );
 CONFIG_DEFINE( AudioGainControl, audio_gain_control, bool, true );
@@ -99,7 +99,7 @@ CONFIG_DEFINE( VideoAwbMode, video_awb_mode, std::string, "auto" );
 CONFIG_DEFINE( VideoDrcMode, video_drc_mode, std::string, "off" );
 CONFIG_DEFINE( VideoStabilisation,  video_stabilisation, bool, false );
 
-// Video Annotation 
+// Video Annotation
 CONFIG_DEFINE( VideoEnableAnnotateText, video_enable_annotate_text, bool, false );
 CONFIG_DEFINE( VideoAnnotateText, video_annotate_text, std::string,"" );
 CONFIG_DEFINE( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, int, 3 );
@@ -126,7 +126,7 @@ std::list <ResolutionConfig> resolution_list_16_9;
 bool validate__video_rotation(int video_rotation, int default_value ) {
     if( !((video_rotation == 0) || (video_rotation == 90) ||
                 (video_rotation == 180) || (video_rotation == 270)) ) {
-        RTC_LOG(LS_ERROR) << "Error in video roration value: " 
+        RTC_LOG(LS_ERROR) << "Error in video roration value: "
             << video_rotation << " is not a valid video rotation value";
         return false;
     }
@@ -136,7 +136,7 @@ bool validate__video_rotation(int video_rotation, int default_value ) {
 bool validate__video_maxbitrate(int video_maxbitrate, int default_value ) {
     // 17000000 values from RaspiVid.c bitrate for 1080p
     if ((video_maxbitrate < 200) || (video_maxbitrate > 17000000)) {
-        RTC_LOG(LS_ERROR) << "Error in video max bitrate value: " 
+        RTC_LOG(LS_ERROR) << "Error in video max bitrate value: "
             << video_rotation << " is not a valid video max bitrate value";
         return false;
     }
@@ -145,14 +145,14 @@ bool validate__video_maxbitrate(int video_maxbitrate, int default_value ) {
 
 bool validate__video_framerate(int framerate, int default_value ) {
     if ((framerate < 5) || (framerate > 30)) {
-        RTC_LOG(LS_ERROR) << "Error in video frame rate value: " 
+        RTC_LOG(LS_ERROR) << "Error in video frame rate value: "
             << video_rotation << " is not a valid video frame rate value";
         return false;
     }
     return true;
 }
 
-bool parse_vidio_resolution(const std::string resolution_list, 
+bool parse_vidio_resolution(const std::string resolution_list,
         std::list <ResolutionConfig> &resolution ) {
     std::stringstream ss(resolution_list);
     std::string token;
@@ -171,20 +171,20 @@ bool parse_vidio_resolution(const std::string resolution_list,
     return (count?true:false);
 }
 
-// Returns true if the resolution exists in the resolution_list, 
+// Returns true if the resolution exists in the resolution_list,
 // or false otherwise.
 bool validate_resolution(int width, int height) {
     if( resolution_4_3_enable ) {
-        for(std::list<ResolutionConfig>::iterator iter = 
-                resolution_list_4_3.begin(); 
+        for(std::list<ResolutionConfig>::iterator iter =
+                resolution_list_4_3.begin();
             iter != resolution_list_4_3.end(); iter++) {
             if( iter->width_ == width && iter->height_ == height)
                 return true;
         }
     }
     else {
-        for(std::list<ResolutionConfig>::iterator iter = 
-                resolution_list_16_9.begin(); 
+        for(std::list<ResolutionConfig>::iterator iter =
+                resolution_list_16_9.begin();
             iter != resolution_list_16_9.end(); iter++) {
             if( iter->width_ == width && iter->height_ == height)
                 return true;
@@ -193,9 +193,9 @@ bool validate_resolution(int width, int height) {
     return false;
 }
 
-// 
+//
 //  Video setting validation
-// 
+//
 bool validate__value_sharpness( int sharpness, int /*default_value*/) {
     if( sharpness >= -100 &&  sharpness  <= 100 ) return true;
     RTC_LOG(LS_ERROR) << "Error in sharpness value: "  << sharpness;
@@ -227,7 +227,7 @@ bool validate__value_exposure_compensation( int ec, int /*default_value*/) {
     return false;
 }
 
-bool validate__value_exposure_mode(const std::string exposure_mode, 
+bool validate__value_exposure_mode(const std::string exposure_mode,
         std::string /* defalut_value */ ) {
     if( check_optionvalue_exposure_mode(exposure_mode.c_str()))
         return true;
@@ -263,7 +263,7 @@ bool validate__value_drc_mode(const std::string drc_mode,
 // or return false otherwise.
 bool validate_video_annotate_text_size_ratio(int text_size, int default_value) {
     if( text_size <  2 || text_size >= 10) {
-        RTC_LOG(LS_ERROR) << "Annotate text size ratio is not valid\"" << text_size 
+        RTC_LOG(LS_ERROR) << "Annotate text size ratio is not valid\"" << text_size
             << "\" text size ratio should be within 2 - 10, using default:"
             << default_value;
         return false;
@@ -284,11 +284,11 @@ bool config_load(const std::string config_filename) {
     };
 
     // loading max_bitrate
-    DEFINE_CONFIG_LOAD_INT_VALIDATE(MaxBitrate, max_bitrate, 
-            validate__video_maxbitrate);      
+    DEFINE_CONFIG_LOAD_INT_VALIDATE(MaxBitrate, max_bitrate,
+            validate__video_maxbitrate);
     // loading video rotation config
     DEFINE_CONFIG_LOAD_INT_VALIDATE(VideoRotation, video_rotation,
-            validate__video_rotation ); 
+            validate__video_rotation );
 
     // loading vflip & hflip
     DEFINE_CONFIG_LOAD_BOOL(VideoVFlip, video_vflip);
@@ -299,73 +299,73 @@ bool config_load(const std::string config_filename) {
 
     // loading dynamic video resolution config
     //
-    // The use_dynamic_video_resolution config value is used 
-    // in QualityConfig :: GetBestMatch. When enabled, the resolution is changed 
+    // The use_dynamic_video_resolution config value is used
+    // in QualityConfig :: GetBestMatch. When enabled, the resolution is changed
     // to a resolution similar to the average bitrate value of the resolution.
     //
-    // If it is disabled, it keeps the initial resolution set in InitEncoder. 
-    // If you want to disable it, you must enable use_initial_video_resoltuion 
+    // If it is disabled, it keeps the initial resolution set in InitEncoder.
+    // If you want to disable it, you must enable use_initial_video_resoltuion
     // and set the desired resolution to fixed_video_resolution.
-    DEFINE_CONFIG_LOAD_BOOL(VideoDynamicResolution, 
+    DEFINE_CONFIG_LOAD_BOOL(VideoDynamicResolution,
             use_dynamic_video_resolution );
     DEFINE_CONFIG_LOAD_BOOL(VideoDynamicFps, use_dynamic_video_fps );
 
     // loading default video resolution config
-    DEFINE_CONFIG_LOAD_STR( VideoResolutionList43, 
+    DEFINE_CONFIG_LOAD_STR( VideoResolutionList43,
             video_resolution_list_4_3);
-    if( parse_vidio_resolution( video_resolution_list_4_3, 
+    if( parse_vidio_resolution( video_resolution_list_4_3,
                 resolution_list_4_3 ) == false ) {
         // Loading default video resolution list
-        parse_vidio_resolution( kDefaultVideoResolutionList43, 
+        parse_vidio_resolution( kDefaultVideoResolutionList43,
                 resolution_list_4_3 );
     };
-    DEFINE_CONFIG_LOAD_STR( VideoResolutionList169, 
+    DEFINE_CONFIG_LOAD_STR( VideoResolutionList169,
             video_resolution_list_16_9 );
-    if( parse_vidio_resolution( video_resolution_list_16_9, 
+    if( parse_vidio_resolution( video_resolution_list_16_9,
                 resolution_list_16_9 ) == false ) {
         // Loading default video resolution list
-        parse_vidio_resolution( kDefaultVideoResolutionList169, 
+        parse_vidio_resolution( kDefaultVideoResolutionList169,
                 resolution_list_16_9 );
     };
 
-    // loading flag for fixed video resolution 
+    // loading flag for fixed video resolution
     if( use_dynamic_video_resolution == false ) {
         // loading default video resolution config
-        DEFINE_CONFIG_LOAD_STR( FixedVideoResolution, 
+        DEFINE_CONFIG_LOAD_STR( FixedVideoResolution,
                 fixed_video_resolution);
         if( config_loaded__FixedVideoResolution == true ){
-            // need video width and height config 
+            // need video width and height config
             // to enable fixed_video_resolution
-            DEFINE_CONFIG_LOAD_STR( FixedVideoResolution, 
+            DEFINE_CONFIG_LOAD_STR( FixedVideoResolution,
                     fixed_video_resolution);
 
             int width, height;
-            if( utils::ParseVideoResolution( fixed_video_resolution, 
+            if( utils::ParseVideoResolution( fixed_video_resolution,
                         &width, &height ) == true ) {
                 if(validate_resolution(width, height) == true ) {
                     fixed_resolution.width_ = width;
                     fixed_resolution.height_ = height;
                 }
                 else {
-                    RTC_LOG(LS_ERROR) << "Default resolution \"" 
+                    RTC_LOG(LS_ERROR) << "Default resolution \""
                         <<  width << "x" << height << "\" is not valid";
                 }
             };
         }
         else {
-            RTC_LOG(LS_ERROR) 
+            RTC_LOG(LS_ERROR)
                 << "Fixed Video Resolution config is not found.";
-            RTC_LOG(LS_ERROR) 
+            RTC_LOG(LS_ERROR)
                 << "Using default dyanmic video resolution instead of fixed video resolution.";
             use_dynamic_video_resolution = true;
-        } 
+        }
     }
     if( use_dynamic_video_fps == false ) {
         DEFINE_CONFIG_LOAD_INT_VALIDATE( FixedVideoFps, fixed_video_fps,
             validate__video_framerate );
     }
 
-    // loading flag for audio processing 
+    // loading flag for audio processing
     DEFINE_CONFIG_LOAD_BOOL(AudioProcessing, audio_processing_enable);
     if( audio_processing_enable ) {
         // audio processing is enabled

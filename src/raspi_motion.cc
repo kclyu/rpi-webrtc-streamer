@@ -59,17 +59,17 @@ RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
     :   Event(false,false), is_active_(false),
     width_(width), height_(height), framerate_(framerate), bitrate_(bitrate),
     mmal_encoder_(nullptr),clock_(webrtc::Clock::GetRealTimeClock()),
-    motion_(width, height, framerate, false), 
+    motion_(width, height, framerate, false),
     motion_active_average_(kDefaultMotionAverageSize) {
 
-    queue_capacity_ = framerate * VIDEO_INTRAFRAME_PERIOD + 
+    queue_capacity_ = framerate * VIDEO_INTRAFRAME_PERIOD +
         (framerate * VIDEO_INTRAFRAME_PERIOD) *0.1f;
     frame_queue_size_ = (width * height * kKushGaugeConstant * 2)/8;
     mv_queue_size_ = (width/16+1) * (height/16) * 4;
-    
+
     mv_shared_buffer_.reset( new rtc::BufferQueue(queue_capacity_, mv_queue_size_ ));
 
-    motion_file_.reset( new RaspiMotionFile(config_motion::motion_directory, 
+    motion_file_.reset( new RaspiMotionFile(config_motion::motion_directory,
                 config_motion::motion_file_prefix,
                 queue_capacity_, frame_queue_size_, mv_queue_size_ ));
 
@@ -86,7 +86,7 @@ RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
 }
 
 RaspiMotion::RaspiMotion() :
-    RaspiMotion(config_motion::motion_width, config_motion::motion_height, 
+    RaspiMotion(config_motion::motion_width, config_motion::motion_height,
             config_motion::motion_fps,config_motion::motion_bitrate) {
     motion_clear_wait_period_ = config_motion::motion_clear_wait_period;
     motion_active_percent_clear_threshold_ = config_motion::motion_clear_percent;
@@ -100,7 +100,7 @@ bool RaspiMotion::StartCapture() {
     RTC_LOG(INFO) << "Raspi Motion Starting";
 
     // Get the instance of MMAL encoder wrapper
-    if( (mmal_encoder_ = webrtc::getMMALEncoderWrapper() ) == nullptr ) {
+    if( (mmal_encoder_ = webrtc::MMALWrapper::Instance() ) == nullptr ) {
         RTC_LOG(LS_ERROR) << "Failed to get MMAL encoder wrapper";
         return false;
     }
@@ -132,7 +132,7 @@ bool RaspiMotion::StartCapture() {
     mmal_encoder_->SetVideoAwbMode(config_media::video_awb_mode);
     mmal_encoder_->SetVideoDrcMode(config_media::video_drc_mode);
 
-    RTC_LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_ 
+    RTC_LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_
         << "@" << framerate_ << ", " << bitrate_ << " kbps";
     if(mmal_encoder_->InitEncoder(width_, height_, framerate_, bitrate_ ) == false ){
         return false;
@@ -161,12 +161,12 @@ bool RaspiMotion::StartCapture() {
         motionVectorThreadStarted_ = true;
     }
 
-    is_active_ = true;  
+    is_active_ = true;
     return true;
 }
 
 void RaspiMotion::StopCapture() {
-    is_active_ = false;  
+    is_active_ = false;
 
     if (motionVectorThread_) {
         motionVectorThreadStarted_ = false;
@@ -227,12 +227,12 @@ void RaspiMotion::OnMotionCleared(int updates) {
 void RaspiMotion::OnActivePoints(int total_points, int active_points){
     double active_percent = active_points*100/total_points;
     uint64_t current_timestamp;
-    
+
     motion_active_average_.AddSample( (int)active_percent );
     rtc::Optional<int> moving_average = motion_active_average_.GetAverage();
     if( moving_average ){
         current_timestamp = clock_->TimeInMilliseconds();
-        if( current_timestamp - last_average_print_timestamp_ 
+        if( current_timestamp - last_average_print_timestamp_
                 > kDefaultMotionAveragePrintDiff ) {
             last_average_print_timestamp_ = current_timestamp;
             if( motion_state_ == TRIGGERED ||
@@ -275,21 +275,21 @@ bool RaspiMotion::DrainProcess() {
 
         if( buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO ) {
             // queuing the motion vector for file writer
-            if( motion_file_->ImvQueuing(buf->data, buf->length, &length, is_keyframe) 
+            if( motion_file_->ImvQueuing(buf->data, buf->length, &length, is_keyframe)
                     == false ) {
                 RTC_LOG(LS_ERROR) << "Failed to WriteBack in MV queue ";
             };
 
             // queuing motion vector for motion analysis
-            if( mv_shared_buffer_->WriteBack(buf->data, buf->length, &length) 
+            if( mv_shared_buffer_->WriteBack(buf->data, buf->length, &length)
                     == false ) {
                 RTC_LOG(LS_ERROR) << "Faild to queue in MV shared buffer";
-                Set(); // Event Set to wake up 
+                Set(); // Event Set to wake up
             };
         }
         else {
             // queuing video frame for file writing
-            if( motion_file_->FrameQueuing(buf->data, buf->length, &length, is_keyframe) 
+            if( motion_file_->FrameQueuing(buf->data, buf->length, &length, is_keyframe)
                     == false ) {
                 RTC_LOG(LS_ERROR) << "Failed to WriteBack in frame queue ";
             };
@@ -316,7 +316,7 @@ bool RaspiMotion::MotionVectorProcess() {
     uint8_t  buffer[mv_queue_size_];
     size_t   bytes;
 
-    if( mv_shared_buffer_->size() == 0 ) 
+    if( mv_shared_buffer_->size() == 0 )
         Wait(kEventWaitPeriod);    // Waiting for Event or Timeout
 
     if( mv_shared_buffer_->ReadFront(buffer, mv_queue_size_, &bytes ) ) {
@@ -325,14 +325,14 @@ bool RaspiMotion::MotionVectorProcess() {
         motion_.Analyse( buffer, bytes );
         end_milli_timestamp = clock_->TimeInMilliseconds();
 
-        if( (motion_state_ == CLEARED) && 
+        if( (motion_state_ == CLEARED) &&
                 (motion_file_->WriterStatus() == true) ) {
                 motion_file_->StopWriterThread();
 
-                // 
+                //
                 motion_file_->ManagingVideoFolder();
         }
-        else if( (motion_state_ == TRIGGERED) && 
+        else if( (motion_state_ == TRIGGERED) &&
                 (motion_file_->WriterStatus() == false) ) {
                 motion_file_->StartWriterThread();
         }

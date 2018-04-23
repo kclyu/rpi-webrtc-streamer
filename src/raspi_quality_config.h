@@ -64,7 +64,7 @@ public:
     struct Resolution {
         Resolution() : width_(0),height_(0), framerate_(0), bitrate_(0),
             adaptation_(NO_ADAPTATION), adaptation_reason_(ADAPTAION_NONE) {};
-        Resolution(int width, int height) : width_(width), height_(height), 
+        Resolution(int width, int height) : width_(width), height_(height),
             bitrate_(0),
             adaptation_(NO_ADAPTATION), adaptation_reason_(ADAPTAION_NONE) {};
         int width_;
@@ -115,8 +115,8 @@ private:
     bool use_4_3_resolution_;
     bool use_dynamic_resolution_;
     bool use_initial_resolution_;
-    
-    // TODO 
+
+    // TODO
     bool adaptation_up_;
     bool adaptation_down_;
 };

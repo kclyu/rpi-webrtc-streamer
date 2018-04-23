@@ -58,7 +58,7 @@ void dump_handshake_info(struct lws *wsi) {
 const char* get_mimetype(const char *file) {
 	int n = strlen(file);
 
-    // 
+    //
 	if (n < 5)
 		return NULL;
 

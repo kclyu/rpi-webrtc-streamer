@@ -53,7 +53,7 @@ static const char kValueCmdSendTypeBye[] = "bye";
 // App Websocket only Channel
 //
 //////////////////////////////////////////////////////////////////////////////////////////
-AppWsClient::AppWsClient() 
+AppWsClient::AppWsClient()
     : websocket_message_(nullptr),num_chunked_frames_(0)  {
 }
 
@@ -77,9 +77,9 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
     std::string cmd;
     bool parsing_successful;
 
-    // There is an issue where Chrome & Firefox WebSocket sends json messages 
-    // in multiple chunks, so this is the part to solve. 
-    // If JSON parsing fails, it will be kept in chunked_frrames up to 5 times and 
+    // There is an issue where Chrome & Firefox WebSocket sends json messages
+    // in multiple chunks, so this is the part to solve.
+    // If JSON parsing fails, it will be kept in chunked_frrames up to 5 times and
     // try to parse the collected chunked_frames again until the next message succeeds.
     if((parsing_successful = json_reader.parse(message, json_value)) == true){
         rtc::GetStringFromJsonObject(json_value, kKeyCmd, &cmd);
@@ -94,12 +94,12 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
 
         // json_value.clear();
         chunked_frames_.append(message);
-        RTC_LOG(INFO) << "Chunked Frame (" << num_chunked_frames_ << "), Message : " 
+        RTC_LOG(INFO) << "Chunked Frame (" << num_chunked_frames_ << "), Message : "
             << chunked_frames_;
         if (!json_reader.parse(chunked_frames_, json_value)) {
             // parsing failed
             if( num_chunked_frames_++ > kMaxChunkedFrames )  {
-                RTC_LOG(INFO) << "Failed to parse, Dropping Chunked frames: " 
+                RTC_LOG(INFO) << "Failed to parse, Dropping Chunked frames: "
                     << chunked_frames_;
                 num_chunked_frames_ = 0;
                 chunked_frames_.clear();
@@ -120,7 +120,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
 
     rtc::GetStringFromJsonObject(json_value, kKeyCmd, &cmd);
     if( !cmd.empty() ) {    // found cmd id
-        // command register 
+        // command register
         if(cmd.compare(kValueCmdRegister)== 0) {
             int client_id, room_id;
             if( !rtc::GetIntFromJsonObject(json_value, kKeyRegisterRoomId, &room_id) ||
@@ -193,7 +193,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
 void AppWsClient::OnDisconnect(int sockid) {
     RTC_LOG(INFO) << "WebSocket connnection id : " << sockid << " closed";
     app_client_.DisconnectWait(sockid);
-    app_client_.Reset();    
+    app_client_.Reset();
     if ( IsStreamSessionActive() == true ) {
         DeactivateStreamSession();
     };

@@ -94,7 +94,7 @@ bool validate_motion_directory_path(std::string path, std::string default_value)
 // or return false otherwise.
 bool validate_motion_annotate_text_size(int text_size, int default_value) {
     if( text_size <  6 || text_size >= 160 ) {
-        RTC_LOG(LS_ERROR) << "Annotate text size is not valid\"" << text_size 
+        RTC_LOG(LS_ERROR) << "Annotate text size is not valid\"" << text_size
             << "\" text size should be within 6 - 160, using default:"
             << default_value;
         return false;
@@ -121,7 +121,7 @@ bool config_load(const std::string config_filename) {
     // do not load motion config when the motion_detection_enable is false
     if( motion_detection_enable == false ) return true;
 
-    // loading Motion Config 
+    // loading Motion Config
     DEFINE_CONFIG_LOAD_INT(MotionWidth, motion_width );
     DEFINE_CONFIG_LOAD_INT(MotionHeight, motion_height );
     DEFINE_CONFIG_LOAD_INT(MotionFps, motion_fps );

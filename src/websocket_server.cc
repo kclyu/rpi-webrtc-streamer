@@ -93,8 +93,8 @@ void LibWebSocketServer::Log(int level, const char *line) {
     const char *log_line_header="lws: ";
     char line_buffer[512];
     strcpy(line_buffer,line);
-    for(size_t i = strlen(line_buffer); i > 0 ; i--) 
-        if( line_buffer[i] == '\n' || line_buffer[i] == '\r' ) 
+    for(size_t i = strlen(line_buffer); i > 0 ; i--)
+        if( line_buffer[i] == '\n' || line_buffer[i] == '\r' )
             line_buffer[i] = 0x00;
 
 	switch (level) {
@@ -164,9 +164,9 @@ void LibWebSocketServer::LogLevel(DEBUG_LEVEL level,bool log_redirect){
             break;
     }
 
-    if(log_redirect) 
+    if(log_redirect)
         lws_set_log_level(debug_level, this->Log);
-    else 
+    else
         lws_set_log_level(debug_level, nullptr);
 }
 
@@ -176,7 +176,7 @@ bool LibWebSocketServer::Init(int port) {
 
     this->LogLevel(debug_level_);
 
-    // keep LibWebSocketServer instance address 
+    // keep LibWebSocketServer instance address
     // for calling back in the user of protocol
     protocols[0].user = this;
 
@@ -218,7 +218,7 @@ bool LibWebSocketServer::Init(int port) {
 
 bool LibWebSocketServer::RunLoop(int timeout) {
     const int internal_timeout_ = 25;
-    if(timeout == 0) 
+    if(timeout == 0)
         timeout = internal_timeout_;
 	return lws_service(context_, timeout) == 0;
 }
@@ -226,17 +226,17 @@ bool LibWebSocketServer::RunLoop(int timeout) {
 
 //////////////////////////////////////////////////////////////////////
 //
-// FileMapping 
+// FileMapping
 //
 //////////////////////////////////////////////////////////////////////
-void LibWebSocketServer::AddFileMapping(const std::string path, 
-        FileMappingType type, const std::string map) {  
+void LibWebSocketServer::AddFileMapping(const std::string path,
+        FileMappingType type, const std::string map) {
     if( type == MAPPING_DEFAULT ) { // default mapping for resource path
         map_default_resource_ = map;
         return;
     }
 
-    for(std::list<FileMapping>::iterator iter = file_mapping_.begin(); 
+    for(std::list<FileMapping>::iterator iter = file_mapping_.begin();
             iter != file_mapping_.end(); iter++) {
         if( iter->uri_prefix_ == path ) {
             RTC_LOG(LS_ERROR) << "Do not allow same URI path in file mapping";
@@ -250,13 +250,13 @@ bool LibWebSocketServer::GetFileMapping(const std::string path,
         std::string& file_mapping){
 
     // Check mapping list at first whether the request path is matching
-    for(std::list<FileMapping>::iterator iter = file_mapping_.begin(); 
+    for(std::list<FileMapping>::iterator iter = file_mapping_.begin();
             iter != file_mapping_.end(); iter++) {
         if( iter->type_ == MAPPING_DIRECTORY ) {
             // compare only the uri_prefix_ size
-            if( iter->uri_prefix_.compare(0, 
+            if( iter->uri_prefix_.compare(0,
                         iter->uri_prefix_.size(),path) == 0) {
-                RTC_LOG(INFO) << "Found DIR type File Mapping URI in mapping : " << 
+                RTC_LOG(INFO) << "Found DIR type File Mapping URI in mapping : " <<
                     iter->uri_prefix_ << "(" << iter->uri_resource_path_  << ")";
 
                 file_mapping  = iter->uri_resource_path_ + path;
@@ -265,7 +265,7 @@ bool LibWebSocketServer::GetFileMapping(const std::string path,
         }
         else if( iter->type_ == MAPPING_FILE ) {
             if( iter->uri_prefix_ == path ) {
-                RTC_LOG(INFO) << "Found FILE type Mapping URI in mapping : " << 
+                RTC_LOG(INFO) << "Found FILE type Mapping URI in mapping : " <<
                     iter->uri_prefix_ << "(" << iter->uri_resource_path_  << ")";
                 file_mapping = iter->uri_resource_path_;
                 return true;
@@ -286,12 +286,12 @@ bool LibWebSocketServer::GetFileMapping(const std::string path,
 
 //////////////////////////////////////////////////////////////////////
 //
-// HttpHandler 
+// HttpHandler
 //
 //////////////////////////////////////////////////////////////////////
-void LibWebSocketServer::AddHttpHandler(const std::string path, 
-        HttpHandler *handler) {  
-    std::map<std::string,HttpHandler *>::iterator iter 
+void LibWebSocketServer::AddHttpHandler(const std::string path,
+        HttpHandler *handler) {
+    std::map<std::string,HttpHandler *>::iterator iter
         = httphandler_config_.find(path);
     // http handler does not exist, so add it on httphandler_config_
     if( iter == httphandler_config_.end()) {
@@ -300,7 +300,7 @@ void LibWebSocketServer::AddHttpHandler(const std::string path,
 }
 
 HttpHandler *LibWebSocketServer::GetHttpHandler(const std::string path) {
-    for(std::map<std::string,HttpHandler *>::iterator iter 
+    for(std::map<std::string,HttpHandler *>::iterator iter
             = httphandler_config_.begin();
             iter != httphandler_config_.end(); iter++) {
         if( path.compare(0, iter->first.size(), iter->first) == 0)
@@ -311,12 +311,12 @@ HttpHandler *LibWebSocketServer::GetHttpHandler(const std::string path) {
 
 //////////////////////////////////////////////////////////////////////
 //
-// WebSocket Handler 
+// WebSocket Handler
 //
 //////////////////////////////////////////////////////////////////////
-void LibWebSocketServer::AddWebSocketHandler (const std::string path, 
+void LibWebSocketServer::AddWebSocketHandler (const std::string path,
             WebSocketHandlerType handler_type, WebSocketHandler *handler){
-    for(std::list<WSInternalHandlerConfig>::iterator iter 
+    for(std::list<WSInternalHandlerConfig>::iterator iter
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->path_ == path ) {
             RTC_LOG(LS_ERROR) << "Do not allow same URI path in handler config";
@@ -327,7 +327,7 @@ void LibWebSocketServer::AddWebSocketHandler (const std::string path,
 }
 
 WSInternalHandlerConfig *LibWebSocketServer::GetWebsocketHandler(const char *path) {
-    for(std::list<WSInternalHandlerConfig>::iterator iter 
+    for(std::list<WSInternalHandlerConfig>::iterator iter
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->path_ == path ) {
             return &(*iter);
@@ -337,7 +337,7 @@ WSInternalHandlerConfig *LibWebSocketServer::GetWebsocketHandler(const char *pat
 }
 
 bool LibWebSocketServer::IsValidWSPath(const char *path) {
-    for(std::list<WSInternalHandlerConfig>::iterator iter 
+    for(std::list<WSInternalHandlerConfig>::iterator iter
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->path_ == path ) {
             RTC_LOG(INFO) << "Found handler URI in config : " << iter->path_;
@@ -353,11 +353,11 @@ bool LibWebSocketServer::IsValidWSPath(const char *path) {
 //
 //////////////////////////////////////////////////////////////////////
 void LibWebSocketServer::SendMessage(int sockid, const std::string& message){
-    for(std::list<struct WSInternalHandlerConfig>::iterator iter 
+    for(std::list<struct WSInternalHandlerConfig>::iterator iter
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->QueueMessage(sockid, message) == true ) {
             // book us a LWS_CALLBACK_HTTP_WRITEABLE callback
-            lws_callback_on_writable_all_protocol(context_, 
+            lws_callback_on_writable_all_protocol(context_,
                     &protocols[0]);
 
             return;
@@ -365,9 +365,9 @@ void LibWebSocketServer::SendMessage(int sockid, const std::string& message){
     }
 }
 
-void LibWebSocketServer::Close(int sockid, int reason_code, 
+void LibWebSocketServer::Close(int sockid, int reason_code,
         const std::string& message){
-    for(std::list<struct WSInternalHandlerConfig>::iterator iter 
+    for(std::list<struct WSInternalHandlerConfig>::iterator iter
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
 
         iter->Close(sockid, reason_code, message);
@@ -392,7 +392,7 @@ bool WSInternalHandlerConfig::CreateHandlerRuntime(const int sockid, struct lws 
 }
 
 void WSInternalHandlerConfig::OnConnect(const int sockid) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             handler_->OnConnect(sockid);
@@ -403,7 +403,7 @@ void WSInternalHandlerConfig::OnConnect(const int sockid) {
 }
 
 void WSInternalHandlerConfig::OnDisconnect(const int sockid) {
-    for(std::list<struct WSInstanceContainer>::iterator iter 
+    for(std::list<struct WSInstanceContainer>::iterator iter
             = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
 
         if( iter->sockid_ == sockid ) {
@@ -415,9 +415,9 @@ void WSInternalHandlerConfig::OnDisconnect(const int sockid) {
     }
 }
 
-bool WSInternalHandlerConfig::OnMessage(const int sockid, 
+bool WSInternalHandlerConfig::OnMessage(const int sockid,
         const std::string& message) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             return handler_->OnMessage(sockid, message);
@@ -426,9 +426,9 @@ bool WSInternalHandlerConfig::OnMessage(const int sockid,
     return false;
 }
 
-void WSInternalHandlerConfig::OnError(const int sockid, 
+void WSInternalHandlerConfig::OnError(const int sockid,
         const std::string& errmsg) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             handler_->OnError(sockid, errmsg);
@@ -436,9 +436,9 @@ void WSInternalHandlerConfig::OnError(const int sockid,
     }
 }
 
-bool WSInternalHandlerConfig::QueueMessage(const int sockid, 
+bool WSInternalHandlerConfig::QueueMessage(const int sockid,
         const std::string& message) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             iter->pending_message_.push_back(message);
@@ -453,7 +453,7 @@ size_t WSInternalHandlerConfig::Size() {
 }
 
 bool WSInternalHandlerConfig::HasPendingMessage(const int sockid) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             return iter->pending_message_.size() > 0;
@@ -465,7 +465,7 @@ bool WSInternalHandlerConfig::HasPendingMessage(const int sockid) {
 
 bool WSInternalHandlerConfig::DequeueMessage(const int sockid,
         std::string& message) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             if( iter->pending_message_.size() == 0 ) return false;
@@ -477,9 +477,9 @@ bool WSInternalHandlerConfig::DequeueMessage(const int sockid,
     return false;
 }
 
-bool WSInternalHandlerConfig::Close(int sockid, int reason_code, 
+bool WSInternalHandlerConfig::Close(int sockid, int reason_code,
         const std::string& message){
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin(); 
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             RTC_DCHECK( iter->wsi_ != nullptr );
@@ -488,10 +488,10 @@ bool WSInternalHandlerConfig::Close(int sockid, int reason_code,
             if( reason_status  == 0 ) reason_status = LWS_CLOSE_STATUS_NORMAL;
             else reason_status = (lws_close_status )reason_code;
 
-            // TODO(kclyu) Confirmation required. Currently, 
-            // lws_close_reason is considered to operate only 
+            // TODO(kclyu) Confirmation required. Currently,
+            // lws_close_reason is considered to operate only
             // in the receive callback handler in libwebsockets.
-            lws_close_reason (iter->wsi_, reason_status, 
+            lws_close_reason (iter->wsi_, reason_status,
                     (unsigned char *)message.c_str(), message.size());
 
             //
@@ -505,7 +505,7 @@ bool WSInternalHandlerConfig::Close(int sockid, int reason_code,
 
 //////////////////////////////////////////////////////////////////////
 //
-// Http Request 
+// Http Request
 //
 //////////////////////////////////////////////////////////////////////
 static const char *GetRequestTypeString(int type ){
@@ -526,7 +526,7 @@ static const char *GetRequestTypeString(int type ){
 }
 
 void HttpRequest::AddHeader(int header_id, const std::string value ) {
-    std::map<int,std::string>::iterator iter 
+    std::map<int,std::string>::iterator iter
         = header_.find(header_id);
 
     // Do not add ARGS in the header field
@@ -578,12 +578,12 @@ void HttpRequest::Print() {
     RTC_LOG(INFO) << "Request Server: " << server_;
     RTC_LOG(INFO) << "Request Headers(" << header_.size() << "):";
     for(auto t: header_) {
-        RTC_LOG(INFO) << " " << t.first << ":" 
+        RTC_LOG(INFO) << " " << t.first << ":"
               << t.second;
     };
     RTC_LOG(INFO) << "Request Args(" << args_.size() << "):";
     for(auto t: args_) {
-        RTC_LOG(INFO) << " " << t.first << ":" 
+        RTC_LOG(INFO) << " " << t.first << ":"
               << t.second;
     };
     if( type_ == HTTP_POST ) {
@@ -594,11 +594,11 @@ void HttpRequest::Print() {
 
 //////////////////////////////////////////////////////////////////////
 //
-// Http Response 
+// Http Response
 //
 //////////////////////////////////////////////////////////////////////
 void HttpResponse::AddHeader(int header_id, const std::string value ) {
-    std::map<int,std::string>::iterator iter 
+    std::map<int,std::string>::iterator iter
         = header_.find(header_id);
     // header_id  does not exist, so add it on header_
     if( iter == header_.end()) {
@@ -619,7 +619,7 @@ void HttpResponse::Print() {
     RTC_LOG(INFO) << "Response Status : " << status_;
     RTC_LOG(INFO) << "Response Header(" << header_.size() << "):";
     for(auto t: header_) {
-        RTC_LOG(INFO) << " " << t.first << ":" 
+        RTC_LOG(INFO) << " " << t.first << ":"
               << t.second;
     };
     RTC_LOG(INFO) << "Response mine type : " << mime_;

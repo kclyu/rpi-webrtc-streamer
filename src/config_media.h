@@ -82,7 +82,7 @@ namespace config_media {
     CONFIG_DEFINE_H( VideoVFlip, video_vflip, bool);
     CONFIG_DEFINE_H( VideoHFlip, video_hflip, bool);
 
-    // this feature will require CPU usage because all of audio enhancement 
+    // this feature will require CPU usage because all of audio enhancement
     // feature is S/W based
     CONFIG_DEFINE_H( AudioProcessing, audio_processing_enable, bool);
     CONFIG_DEFINE_H( AudioEchoCancel, audio_echo_cancel, bool);

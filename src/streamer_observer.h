@@ -79,11 +79,11 @@ private:
 class StreamerProxy : public SocketServerObserver {
 public:
     static StreamerProxy* GetInstance();
-    bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id, 
-            const std::string& name ); 
-    bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id, 
-            const std::string& name, const std::string& message ); 
-    void ReleaseStreamer(SocketServerObserver *socket_server, int peer_id ); 
+    bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id,
+            const std::string& name );
+    bool ObtainStreamer(SocketServerObserver *socket_server, int peer_id,
+            const std::string& name, const std::string& message );
+    void ReleaseStreamer(SocketServerObserver *socket_server, int peer_id );
     void MessageFromPeer( int peer_id, const std::string& message );
     void MessageSent(int err);
     // SocketServerObserver
@@ -98,7 +98,7 @@ private:
     static StreamerProxy* streamer_proxy_;
     std::unique_ptr <RaspiMotion> raspi_motion_;
     SocketServerObserver *active_socket_observer_;
-    StreamerObserver *streamer_callback_;           // streamer callback 
+    StreamerObserver *streamer_callback_;           // streamer callback
     int active_peer_id_;
     std::string active_peer_name_;
 };

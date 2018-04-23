@@ -57,11 +57,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DEBUG_IMV_FORMAT(format,args...) printf(format, args);
 #define DEBUG_IMV_LOG(msg) printf("%s", msg );
 #define DEBUG_IMV_DO(a) a
-#else 
-#define DEBUG_IMV_FORMAT(format,args...) 
+#else
+#define DEBUG_IMV_FORMAT(format,args...)
 #define DEBUG_IMV_LOG(msg)
-#define DEBUG_IMV_DO(a) 
-#endif  //  DEBUG_IMV 
+#define DEBUG_IMV_DO(a)
+#endif  //  DEBUG_IMV
 
 #define MAX(x, y) (((x) > (y)) ? (x) : (y))
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
@@ -69,7 +69,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Motion Vector Default Parameters
 static const int kMvPixelWidth = 16;
 
-// Bit Operation 
+// Bit Operation
 static const int kMotionBitSetNumber =   31;
 static const int kMotionCutBitThreshold = 2;
 
@@ -79,7 +79,7 @@ static const int kDefaultMotionClearPercent =   10;
 static const int kDefaultMotionPersistentPeriod =   500;    // ms
 static const int kDefaultMotionCoolingDown = 3000;           // ms
 
-RaspiMotionVector::RaspiMotionVector(int x, int y, int framerate, 
+RaspiMotionVector::RaspiMotionVector(int x, int y, int framerate,
         bool use_imv_coordination){
     if( use_imv_coordination ) {
         mvx_  = x + 1; mvy_ = y;
@@ -144,7 +144,7 @@ bool RaspiMotionVector::Analyse(uint8_t *buffer, int len ) {
     uint32_t motion_value;
     int   motion_active;
 
-    magni_avg = magni_value = magni_sum = 0; 
+    magni_avg = magni_value = magni_sum = 0;
     motion_max = motion_sum = 0;
     motion_min = std::numeric_limits<uint32_t>::max();
 
@@ -155,11 +155,11 @@ bool RaspiMotionVector::Analyse(uint8_t *buffer, int len ) {
                     std::sqrt(imv[base_my+mx].mx_*imv[base_my+mx].mx_+
                         imv[base_my+mx].my_*imv[base_my+mx].my_));
             if( magni_value ) {
-                motion_value = candidate_[base_my+mx] 
+                motion_value = candidate_[base_my+mx]
                     = (candidate_[base_my+mx] >> 1) | binary_oper_;
             }
             else  {
-                motion_value = candidate_[base_my+mx]  = 
+                motion_value = candidate_[base_my+mx]  =
                     candidate_[base_my+mx] >> 1;
             }
 
@@ -179,36 +179,36 @@ bool RaspiMotionVector::Analyse(uint8_t *buffer, int len ) {
         for( mx = 0; mx < mvx_ ; mx++ )  {
             motion_value = candidate_[base_my+mx];
             if( BitCount( motion_value) > kMotionCutBitThreshold ) {
-                motion_[base_my+mx]  
+                motion_[base_my+mx]
                     = (uint8_t)std::floor((motion_value -motion_min)/(motion_max-motion_min) * 255);
                 if( motion_[base_my+mx] < 3 ) {
-                    // remove motion point less then 3 
+                    // remove motion point less then 3
                     motion_[base_my+mx] = 0;
                 }
                 else {
                     motion_active += 1;
                 }
             }
-            else 
+            else
                 motion_[base_my+mx] = 0;
         };
     };
-    
-    if( enable_observer_callback_ && imv_observer_ ) 
+
+    if( enable_observer_callback_ && imv_observer_ )
         // Reports the number of active motion point
         imv_observer_->OnActivePoints( mvx_*mvy_,  motion_active );
 
-    DEBUG_IMV_FORMAT("MV motion max: %.1f, avg: %.1f, active point: %d, %d%%\n", 
+    DEBUG_IMV_FORMAT("MV motion max: %.1f, avg: %.1f, active point: %d, %d%%\n",
             motion_max, motion_avg, motion_active,
             (int)motion_active*100/(mvx_*mvy_) );
     DEBUG_IMV_DO(fflush(0));
 
     update_counter_++;
     if( enable_observer_callback_ == false ) {
-        // wait for initial coolingdown period 
-        // At the beginning of video encoding, there are many unstable 
-        // movements of motion vectors, so early IMVs are not used in 
-        // motion detection. 
+        // wait for initial coolingdown period
+        // At the beginning of video encoding, there are many unstable
+        // movements of motion vectors, so early IMVs are not used in
+        // motion detection.
         // Sends a notification to the observer after the IMVs are created reliably.
         if( initial_coolingdown_ < update_counter_ )  {
             enable_observer_callback_ = true;
@@ -219,16 +219,16 @@ bool RaspiMotionVector::Analyse(uint8_t *buffer, int len ) {
         blob_->UpdateBlob( motion_, mvx_*mvy_ );
         if( blob_observer_ ) {
             uint32_t new_blob_active_count = blob_->GetActiveBlobCount();
-            // Report the active number of blob 
+            // Report the active number of blob
             // only when the counter is different from old one.
             if ( enable_observer_callback_ && new_blob_active_count != blob_active_count_ ) {
                 blob_active_count_ = new_blob_active_count;
                 if( new_blob_active_count ) {
-                    // Call Trigger 
+                    // Call Trigger
                     blob_observer_->OnMotionTriggered( new_blob_active_count );
                 }
                 else {
-                    // Call Clear 
+                    // Call Clear
                     blob_observer_->OnMotionCleared( blob_active_updates_);
                     // reset the blob update counters
                     blob_active_updates_ = 0;

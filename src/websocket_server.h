@@ -52,8 +52,8 @@ struct message_buf {
 	size_t len;
 };
 
-#define USERDATA_INITED         1  
-#define USERDATA_UNINITED       0 
+#define USERDATA_INITED         1
+#define USERDATA_UNINITED       0
 
 
 // UserData Struct per session
@@ -78,7 +78,7 @@ struct WSInstanceContainer {
 };
 
 struct WSInternalHandlerConfig : public WebSocketHandler {
-    WSInternalHandlerConfig(std::string path, WebSocketHandlerType handler_type, 
+    WSInternalHandlerConfig(std::string path, WebSocketHandlerType handler_type,
             WebSocketHandler *handler ) :
         path_(path), handler_type_(handler_type), handler_(handler) {}
     virtual ~WSInternalHandlerConfig() {}
@@ -127,14 +127,14 @@ public:
     void LogLevel(DEBUG_LEVEL level);
     void LogLevel(DEBUG_LEVEL level,bool log_redirect);
     static void Log (int level, const char *line);
-    static int  CallbackLibWebsockets(struct lws *wsi, enum lws_callback_reasons reason, 
+    static int  CallbackLibWebsockets(struct lws *wsi, enum lws_callback_reasons reason,
             void *user, void *in, size_t len);
 
     // Add Handler interfaces in LibWebSocket Server
-    void AddFileMapping(const std::string path, 
+    void AddFileMapping(const std::string path,
             FileMappingType type, const std::string map);
     void AddHttpHandler(const std::string path, HttpHandler *handler);
-    void AddWebSocketHandler(const std::string path, 
+    void AddWebSocketHandler(const std::string path,
             WebSocketHandlerType instance_type, WebSocketHandler *handler);
 
     virtual void SendMessage(int sockid, const std::string& message);

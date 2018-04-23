@@ -75,7 +75,7 @@ private:
     // read buffer from client
     std::string buffered_read_;
 
-    // Forced connection, 
+    // Forced connection,
     // release the preempted connection and establish a new attempted connection.
     uint64_t last_reject_time_ms_;
     int connection_reject_count_;

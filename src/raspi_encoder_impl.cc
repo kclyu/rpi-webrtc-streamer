@@ -67,7 +67,7 @@ static const int kHighH264QpThreshold = 37;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Raspi Encoder Impl 
+// Raspi Encoder Impl
 //
 ///////////////////////////////////////////////////////////////////////////////
 RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
@@ -117,7 +117,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     }
 
     framerate_updated = static_cast<int>(codec_settings->maxFramerate);
-    if( config_media::use_dynamic_video_fps == false) 
+    if( config_media::use_dynamic_video_fps == false)
         // using fixed fps when use_dynamic_video_fps is disabled
         framerate_updated = config_media::fixed_video_fps;
 
@@ -136,10 +136,10 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     if (codec_settings->targetBitrate == 0)
         quality_config_.ReportTargetBitrate(codec_settings->startBitrate);
     else
-        quality_config_.ReportTargetBitrate(codec_settings->targetBitrate); 
+        quality_config_.ReportTargetBitrate(codec_settings->targetBitrate);
 
     // Get the instance of MMAL encoder wrapper
-    if( (mmal_encoder_ = getMMALEncoderWrapper() ) == nullptr ) {
+    if( (mmal_encoder_ = MMALWrapper::Instance() ) == nullptr ) {
         RTC_LOG(LS_ERROR) << "Failed to get MMAL encoder wrapper";
         ReportError();
         Release();
@@ -168,20 +168,20 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     // Video Annotation
     mmal_encoder_->SetVideoAnnotate(config_media::video_enable_annotate_text);
     mmal_encoder_->SetVideoAnnotateUserText(config_media::video_annotate_text);
-    mmal_encoder_->SetVideoAnnotateTextSizeRatio( 
+    mmal_encoder_->SetVideoAnnotateTextSizeRatio(
             config_media::video_annotate_text_size_ratio );
 
     // Settings for Quality
 
-    // GetInitialBestMatch should be used only when initializing 
+    // GetInitialBestMatch should be used only when initializing
     // the Encoder, and only when the use_default_resolution flag is on.
     QualityConfig::Resolution initial_res;
     quality_config_.GetInitialBestMatch( initial_res );
 
 
-    RTC_LOG(INFO) << "InitEncode request: " 
+    RTC_LOG(INFO) << "InitEncode request: "
         << initial_res.width_ << " x " << initial_res.height_;
-    if(mmal_encoder_->encoder_initdelay_.InitEncoder(initial_res.width_, 
+    if(mmal_encoder_->encoder_initdelay_.InitEncoder(initial_res.width_,
             initial_res.height_, initial_res.framerate_,
             initial_res.bitrate_) == false ) {
         Release();
@@ -228,21 +228,21 @@ int32_t RaspiEncoderImpl::RegisterEncodeCompleteCallback(
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t RaspiEncoderImpl::SetRateAllocation( 
+int32_t RaspiEncoderImpl::SetRateAllocation(
         const BitrateAllocation& bitrate_allocation, uint32_t framerate) {
     QualityConfig::Resolution resolution;
     uint32_t framerate_updated;
 
     if( config_media::use_dynamic_video_fps == true ) {
         // using dynamic fps, so update fps when required
-        if( framerate > 30 ) 
+        if( framerate > 30 )
             framerate_updated = 30;
-        else 
+        else
             framerate_updated = framerate;
     }
-    else 
+    else
         // using fixed fps when use_dynamic_video_fps is disabled
-        framerate_updated = config_media::fixed_video_fps; 
+        framerate_updated = config_media::fixed_video_fps;
 
     if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -253,14 +253,14 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
         RTC_LOG(INFO) << "Resolution Changing by Bitrate Changing "
             << "To : "  << resolution.width_ << "x" << resolution.height_;
 
-        if(mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution.width_, 
-                    resolution.height_, framerate_updated, 
+        if(mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution.width_,
+                    resolution.height_, framerate_updated,
                     resolution.bitrate_) == false ) {
             RTC_LOG(LS_ERROR) << "Failed to reinit MMAL encoder";
         }
     }
-    else 
-        mmal_encoder_->SetRate( static_cast<uint32_t>(framerate_updated), 
+    else
+        mmal_encoder_->SetRate( static_cast<uint32_t>(framerate_updated),
                 bitrate_allocation.get_sum_kbps() );
     return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -296,10 +296,10 @@ int32_t RaspiEncoderImpl::Encode(
     }
 
     if (force_key_frame) {
-        uint32_t kKeyFrameAllowedInterval = 3000;   
+        uint32_t kKeyFrameAllowedInterval = 3000;
         // function forces a key frame regardless of the |bIDR| argument's value.
         // (If every frame is a key frame we get lag/delays.)
-        if( clock_->TimeInMilliseconds() - last_keyframe_request_ 
+        if( clock_->TimeInMilliseconds() - last_keyframe_request_
                 > kKeyFrameAllowedInterval ){
             mmal_encoder_->SetForceNextKeyFrame();
             last_keyframe_request_ = clock_->TimeInMilliseconds();
@@ -359,18 +359,18 @@ bool RaspiEncoderImpl::DrainThread(void* obj) {
 bool RaspiEncoderImpl::DrainProcess() {
     MMAL_BUFFER_HEADER_T *buf = nullptr;
 
-    //  The GetEncodedFrame function will wait in block state 
+    //  The GetEncodedFrame function will wait in block state
     //  until there is a new buf or timeout.
     buf = mmal_encoder_->GetEncodedFrame();
 
-    // encoded_image_callback must be registered before pass 
-    // the frame to WebRTC native stack. 
-    // If it is timout, buf will have null. 
-    // In addition, only the normal frame is transmitted to the WebRTC native stack, 
+    // encoded_image_callback must be registered before pass
+    // the frame to WebRTC native stack.
+    // If it is timout, buf will have null.
+    // In addition, only the normal frame is transmitted to the WebRTC native stack,
     // and the Motion Vector(CODECSIDEINFO) is not transmitted.
     //
     // TODO: if encoded_size is zero, we need to reset encoder itself
-    if (encoded_image_callback_ && buf && buf->length > 0 && 
+    if (encoded_image_callback_ && buf && buf->length > 0 &&
             !( buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) ) {
         CodecSpecificInfo codec_specific;
         uint32_t fragment_index;
@@ -418,7 +418,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         capture_ntp_time_ms = current_time + delta_ntp_internal_ms_;
         const int kMsToRtpTimestamp = 90;
 
-        encoded_image_._timeStamp = kMsToRtpTimestamp * 
+        encoded_image_._timeStamp = kMsToRtpTimestamp *
             static_cast<uint32_t>(capture_ntp_time_ms-base_internal_ms_);
         encoded_image_.ntp_time_ms_ = capture_ntp_time_ms;
         encoded_image_.capture_time_ms_ = current_time;
@@ -429,20 +429,20 @@ bool RaspiEncoderImpl::DrainProcess() {
         if( encoded_image_._frameType  == kVideoFrameKey ) initial_delay_ ++;
 
 
-        // Each NAL unit is a fragment starting with the four-byte 
-        // start code {0,0,0,1}.  All of this encoded data already in the 
+        // Each NAL unit is a fragment starting with the four-byte
+        // start code {0,0,0,1}.  All of this encoded data already in the
         // encoded_image->_buffer which is filled by MMAL encoder.
         // Fragmentize will count the nal start code in the encoded_image and
         // will mark the the frag_header for fragmentation.
         frag_header.VerifyAndAllocateFragmentationHeader(nalu_indexes.size());
 
         fragment_index = 0;
-        for( std::vector<webrtc::H264::NaluIndex>::const_iterator it 
+        for( std::vector<webrtc::H264::NaluIndex>::const_iterator it
                 =  nalu_indexes.begin();
                 it != nalu_indexes.end(); it++, fragment_index++ ) {
-            frag_header.fragmentationOffset[fragment_index] 
+            frag_header.fragmentationOffset[fragment_index]
                 = nalu_indexes[fragment_index].payload_start_offset;
-            frag_header.fragmentationLength[fragment_index] 
+            frag_header.fragmentationLength[fragment_index]
                 = nalu_indexes[fragment_index].payload_size;
             frag_header.fragmentationPlType[fragment_index] = 0;
             frag_header.fragmentationTimeDiff[fragment_index] = 0;
@@ -454,7 +454,7 @@ bool RaspiEncoderImpl::DrainProcess() {
 
         // Deliver encoded image.
         EncodedImageCallback::Result result =
-            encoded_image_callback_->OnEncodedImage(encoded_image_, 
+            encoded_image_callback_->OnEncodedImage(encoded_image_,
                     &codec_specific, &frag_header);
         if ( result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED){
             RTC_LOG(LS_ERROR) << "Error in passng EncodedImage";

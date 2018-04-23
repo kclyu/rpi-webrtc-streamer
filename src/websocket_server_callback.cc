@@ -39,7 +39,7 @@ static size_t LWS_PRE_SIZE = LWS_PRE;
 
 //////////////////////////////////////////////////////////////////////
 //
-// Macros used in this callback processing 
+// Macros used in this callback processing
 //
 //////////////////////////////////////////////////////////////////////
 #define INTERNAL__GET_WSSINSTANCE  \
@@ -55,7 +55,7 @@ static size_t LWS_PRE_SIZE = LWS_PRE;
         RTC_LOG(LS_ERROR) << "Callback Handler is not found in URI: "  \
             << pss->uri_path; \
         return 0;\
-    }; 
+    };
 
 
 //////////////////////////////////////////////////////////////////////
@@ -87,10 +87,10 @@ static void BuildHttpRequestFromWsi(struct lws *wsi, char *url_path,
 
         lws_hdr_copy(wsi, buf, sizeof(buf), (lws_token_indexes)n);
         buf[sizeof(buf) - 1] = '\0';
-        
-        if ( n ==  WSI_TOKEN_HTTP_URI_ARGS ) 
+
+        if ( n ==  WSI_TOKEN_HTTP_URI_ARGS )
             // add argument parameter
-            http_request->AddArgs(buf);     
+            http_request->AddArgs(buf);
         else if ( n ==  WSI_TOKEN_HTTP_CONTENT_LENGTH ) {
             // Getting contents length
             int int_value;
@@ -101,26 +101,26 @@ static void BuildHttpRequestFromWsi(struct lws *wsi, char *url_path,
             // Getting server name
             http_request->server_ = buf;
         }
-        else 
-            http_request->AddHeader( n, buf );  
+        else
+            http_request->AddHeader( n, buf );
         n++;
     } while (c);
 }
 
 enum SendResult {
-    SUCCESS = 1, 
-    SUCCESS_CONTINUE, 
+    SUCCESS = 1,
+    SUCCESS_CONTINUE,
     ERROR_REUSE_CONNECTION,
     ERROR_DROP_CONNECTION
 };
 
-static SendResult WriteHttpResponseHeader(struct lws *wsi, 
+static SendResult WriteHttpResponseHeader(struct lws *wsi,
         HttpResponse* http_response) {
     RTC_DCHECK(http_response != nullptr ) << "HttpResponse is nullptr";
     RTC_DCHECK(http_response->status_ >= 200 ) << "Status is below 200";
     RTC_DCHECK(http_response->mime_.size() > 0 ) << "Mime type is required";
 
-    unsigned char buffer[MAX_SENDBUFFER_SIZE]; 
+    unsigned char buffer[MAX_SENDBUFFER_SIZE];
     unsigned char *p, *end;
     int n;
 
@@ -149,14 +149,14 @@ static SendResult WriteHttpResponseHeader(struct lws *wsi,
     return SendResult::SUCCESS;
 }
 
-static SendResult WriteHttpResponseBody(struct lws *wsi, 
+static SendResult WriteHttpResponseBody(struct lws *wsi,
         HttpResponse* http_response) {
     RTC_DCHECK(http_response != nullptr );
     RTC_DCHECK(http_response->status_ >= 200 ) << "Status is below 200";
-    RTC_DCHECK(http_response->IsHeaderSent() == true ) 
+    RTC_DCHECK(http_response->IsHeaderSent() == true )
         << "Header must be sent before body write";
 
-    unsigned char buffer[MAX_SENDBUFFER_SIZE]; 
+    unsigned char buffer[MAX_SENDBUFFER_SIZE];
     int buffer_size, write_buffer_size, sent ;
 
     sent = 0;
@@ -177,19 +177,19 @@ static SendResult WriteHttpResponseBody(struct lws *wsi,
             /* he couldn't handle that much */
             buffer_size = write_buffer_size;
 
-        if( (unsigned int)buffer_size > http_response->response_.size() - 
+        if( (unsigned int)buffer_size > http_response->response_.size() -
                 http_response->byte_sent_) {
             strcpy( (char *)(buffer+LWS_PRE_SIZE), http_response->response_.c_str());
-            buffer_size = http_response->response_.size() - 
+            buffer_size = http_response->response_.size() -
                 http_response->byte_sent_;
         }
         else {
-            std::string send_buffer = 
-                http_response->response_.substr(http_response->byte_sent_, 
+            std::string send_buffer =
+                http_response->response_.substr(http_response->byte_sent_,
                     http_response->byte_sent_ + buffer_size);
             strcpy( (char *)(buffer+LWS_PRE_SIZE), send_buffer.c_str() );
         }
-        http_response->byte_sent_ += buffer_size; 
+        http_response->byte_sent_ += buffer_size;
 
         /* sent it all */
         if (buffer_size == 0)
@@ -202,10 +202,10 @@ static SendResult WriteHttpResponseBody(struct lws *wsi,
          * is handled by the library itself if you sent a
          * content-length header
          */
-        write_buffer_size = lws_write(wsi, buffer + LWS_PRE_SIZE, buffer_size, 
+        write_buffer_size = lws_write(wsi, buffer + LWS_PRE_SIZE, buffer_size,
                 LWS_WRITE_HTTP);
         if( write_buffer_size < 0 ) {
-            RTC_LOG(LS_ERROR) << "write failed in the " <<  __FUNCTION__ 
+            RTC_LOG(LS_ERROR) << "write failed in the " <<  __FUNCTION__
                 << ", Trying to drop onnection";
             /* write failed, close conn */
 		    return SendResult::ERROR_DROP_CONNECTION;
@@ -224,7 +224,7 @@ static SendResult WriteHttpResponseBody(struct lws *wsi,
 // Main WebSocket callback for handling file,http,websocket
 //
 //////////////////////////////////////////////////////////////////////
-int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi, 
+int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
         enum lws_callback_reasons reason, void *user, void *in, size_t len)
 {
 	struct per_session_data__libwebsockets *pss =
@@ -235,7 +235,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 
     sockid = lws_get_socket_fd(wsi);
     if((reason_str = to_callbackreason_str(reason, 1)))
-        lwsl_debug("**** %s:: sock(%d),len(%d)\n", 
+        lwsl_debug("**** %s:: sock(%d),len(%d)\n",
                 reason_str, sockid, (int)len );
 
 	switch (reason) {
@@ -243,7 +243,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
     // HTTP Callback Processing
     //
     case LWS_CALLBACK_CLOSED_HTTP:
-        if( pss != nullptr && 
+        if( pss != nullptr &&
                 pss->userdata_inited == USERDATA_INITED) {
             pss->userdata_inited = USERDATA_UNINITED;
             delete pss->http_request;
@@ -276,35 +276,35 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                 lws_return_http_status(wsi, HTTP_STATUS_BAD_REQUEST, NULL);
 
                 /* if we're on HTTP1.1 or 2.0, will keep the idle connection alive */
-                if (lws_http_transaction_completed(wsi)) 
-                    return -1; 
+                if (lws_http_transaction_completed(wsi))
+                    return -1;
             }
 
             //
-            // Processing Get Request 
+            // Processing Get Request
             // URI path does not start from root('/'), so fix it at first
             //
-            const char root_slash = '/'; 
+            const char root_slash = '/';
             buf[0] =  0x00; // reset buf buffer
             if (*((const char *)in) != root_slash)  strcat(buf, "/");
             strncat(buf, (const char *)in, sizeof(buf) - strlen(buf) - 1);
             // keep the uri_path data in the pss
             strcpy(pss->uri_path, buf);
 
-            RTC_LOG(LS_INFO) << "Internal Http Handler for URI: " 
+            RTC_LOG(LS_INFO) << "Internal Http Handler for URI: "
                     << pss->uri_path;
             HttpHandler *handler  = INTERNAL__GET_HTTPHANDLER;
             if(handler != nullptr ){
                 BuildHttpRequestFromWsi( wsi, pss->uri_path, pss->http_request );
                 if(lws_hdr_total_length(wsi, WSI_TOKEN_POST_URI)) {
                     // Post Request type
-                    if( pss->http_request->content_length_ > 0 ) 
+                    if( pss->http_request->content_length_ > 0 )
                         // neeed to read POST DATA
                         return 0;
                     // Get processng
                     handler->DoPost(pss->http_request, pss->http_response);
                 }
-                else 
+                else
                     // Get processng
                     handler->DoGet(pss->http_request, pss->http_response);
 
@@ -325,7 +325,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             }
 
             else {
-                // Doing file handling 
+                // Doing file handling
                 std::string mapping_path;
                 unsigned char header_buffer[512];
                 unsigned char *header_ptr;
@@ -350,16 +350,16 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                             (unsigned char *)
                             "max-age=15768000 ; "
                             "includeSubDomains", 36, &header_ptr,
-                            header_buffer + 
+                            header_buffer +
                             sizeof(header_buffer)))
                     return 1;
                 header_size = (unsigned char *)header_ptr - header_buffer;
-                retvalue = lws_serve_http_file(wsi, 
-                        mapping_path.c_str(), 
-                        mimetype, 
-                        (const char *)header_buffer, 
+                retvalue = lws_serve_http_file(wsi,
+                        mapping_path.c_str(),
+                        mimetype,
+                        (const char *)header_buffer,
                         header_size);
-                if (retvalue < 0 || ((retvalue > 0) && 
+                if (retvalue < 0 || ((retvalue > 0) &&
                             lws_http_transaction_completed(wsi)))
                     RTC_LOG(INFO) << "Fail to send: " << mapping_path.c_str();
                     return -1; /* error or can't reuse connection: close the socket */
@@ -436,7 +436,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
 	case LWS_CALLBACK_FILTER_NETWORK_CONNECTION:
 		break;
 	case LWS_CALLBACK_ESTABLISHED_CLIENT_HTTP:
-		break; 
+		break;
 	case LWS_CALLBACK_CLOSED_CLIENT_HTTP:
 		break;
 	case LWS_CALLBACK_RECEIVE_CLIENT_HTTP:
@@ -454,9 +454,9 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
     // Not Used ...
     //
     case LWS_CALLBACK_WSI_CREATE:
-	case LWS_CALLBACK_WSI_DESTROY:     
-	case LWS_CALLBACK_PROTOCOL_INIT:    
-	case LWS_CALLBACK_PROTOCOL_DESTROY:         
+	case LWS_CALLBACK_WSI_DESTROY:
+	case LWS_CALLBACK_PROTOCOL_INIT:
+	case LWS_CALLBACK_PROTOCOL_DESTROY:
 	case LWS_CALLBACK_SERVER_NEW_CLIENT_INSTANTIATED:
         break;
 
@@ -468,7 +468,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             WSInternalHandlerConfig *handler;
             RTC_LOG(INFO) << "LWS_CALLBACK_ESTABLISHED";
 
-            INTERNAL__GET_WEBSOCKETHANDLER 
+            INTERNAL__GET_WEBSOCKETHANDLER
             handler->CreateHandlerRuntime(sockid, wsi);
             handler->OnConnect(sockid);
         }
@@ -494,7 +494,7 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             WSInternalHandlerConfig *handler;
             std::string message_to_peer;
             int     num_sent,message_length;
-            
+
             INTERNAL__GET_WEBSOCKETHANDLER
 
             if( handler->DequeueMessage(sockid, message_to_peer) ) {
@@ -505,24 +505,24 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                 };
 
                 message_length =  message_to_peer.length();
-                pss->ring_buffer[pss->ring_buffer_index].payload = 
+                pss->ring_buffer[pss->ring_buffer_index].payload =
                     (char *)malloc(LWS_PRE_SIZE + message_length);
-                pss->ring_buffer[pss->ring_buffer_index].len = 
+                pss->ring_buffer[pss->ring_buffer_index].len =
                     message_length;
-                memcpy( pss->ring_buffer[pss->ring_buffer_index].payload + 
-                        LWS_PRE_SIZE, 
+                memcpy( pss->ring_buffer[pss->ring_buffer_index].payload +
+                        LWS_PRE_SIZE,
                         message_to_peer.c_str(), message_length );
 
                 num_sent = lws_write(wsi, (unsigned char *)
                         pss->ring_buffer[pss->ring_buffer_index].payload +
                         LWS_PRE_SIZE, message_length, LWS_WRITE_TEXT);
                 if (num_sent < 0) {
-                    RTC_LOG(LS_ERROR) << "ERROR " << num_sent 
+                    RTC_LOG(LS_ERROR) << "ERROR " << num_sent
                         << " writing to socket for sending meesage to peer";
                     return -1;
                 }
                 if (num_sent < message_length)
-                    RTC_LOG(LS_ERROR) << "ERROR socket partial write " << num_sent 
+                    RTC_LOG(LS_ERROR) << "ERROR socket partial write " << num_sent
                         << " vs " <<  message_length;
 
                 // increse ring_buffer_index for next usage
@@ -564,11 +564,11 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             lws_hdr_copy(wsi, pss->uri_path, sizeof(pss->uri_path), WSI_TOKEN_GET_URI);
 
             // check whether requested uri is in the he handler config
-            if( INTERNAL__GET_WSSINSTANCE ->IsValidWSPath(pss->uri_path) ) 
+            if( INTERNAL__GET_WSSINSTANCE ->IsValidWSPath(pss->uri_path) )
 		        RTC_LOG(INFO) << "URI Path exist " <<  pss->uri_path;
             else {
 		        RTC_LOG(LS_ERROR) << "URI Path does not exist "
-                   << pss->uri_path << ", droping this connection\n", 
+                   << pss->uri_path << ", droping this connection\n",
                 // reject the connection
 		        lws_rx_flow_control(wsi, 0);
                 return 1;

@@ -31,7 +31,7 @@ namespace utils {
 // save the logging messsage to file
 class FileLogger {
 public:
-    explicit FileLogger(const std::string path, 
+    explicit FileLogger(const std::string path,
             const rtc::LoggingSeverity severity, bool disable_buffering);
     bool Init();
     ~FileLogger();
@@ -39,7 +39,7 @@ public:
 private:
     bool DeleteFolderFiles(const rtc::Pathname &folder);
     bool MoveLogFiletoNextShiftFolder();
-    bool MoveLogFiles(const std::string prefix, 
+    bool MoveLogFiles(const std::string prefix,
             const rtc::Pathname &src, const rtc::Pathname &dest);
     bool inited_;
     std::string dir_path_;

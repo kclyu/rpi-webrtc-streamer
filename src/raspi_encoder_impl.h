@@ -86,8 +86,8 @@ private:
     void ReportInit();
     void ReportError();
 
-    // Change the value to enable when the Encode function is called. 
-    // Only when this flag is true will actually pass the Encoded Frame 
+    // Change the value to enable when the Encode function is called.
+    // Only when this flag is true will actually pass the Encoded Frame
     // to the native stack.
     bool start_encoding_;
 

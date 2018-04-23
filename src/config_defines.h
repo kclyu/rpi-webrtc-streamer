@@ -97,19 +97,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ///////////////////////////////////////////////////////////////////////////////////////////
 
 
-// macro for dummping config name and config_var 
+// macro for dummping config name and config_var
 // need to insert the "#define CONFIG_LOAD_DUMP" before including this header file
-#ifdef CONFIG_LOAD_DUMP 
+#ifdef CONFIG_LOAD_DUMP
     #define DUMP_KEY_AND_VALUE(name,conf,loaded_value)  \
         RTC_LOG(INFO) << "Key \"" <<  kConfig ## name << "\", In conf : \""  << conf  \
             << "\", Value (" << config_loaded__ ## name << ") : \"" << loaded_value << "\"";
-    
+
 #else
-    #define DUMP_KEY_AND_VALUE(dkey,conf,dvalue) 
-#endif 
+    #define DUMP_KEY_AND_VALUE(dkey,conf,dvalue)
+#endif
 
 
-// 
+//
 // Macros for loading config
 //
 #define DEFINE_CONFIG_LOAD_BOOL(name,config_var) \

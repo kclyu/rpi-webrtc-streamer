@@ -65,7 +65,7 @@ public:
     enum MOTION_STATE{
         CLEARED = 0,
         TRIGGERED,
-        WAIT_CLEAR, 
+        WAIT_CLEAR,
     };
 
 private:
@@ -87,7 +87,7 @@ private:
     // buffer for motion vector processing
     std::unique_ptr<rtc::BufferQueue> mv_shared_buffer_;
 
-    // motion file 
+    // motion file
     std::unique_ptr<RaspiMotionFile> motion_file_;
 
     // Encoded frame process thread
@@ -98,7 +98,7 @@ private:
     bool motionVectorThreadStarted_;
     std::unique_ptr<rtc::PlatformThread> motionVectorThread_;
 
-    // making buffer queue_capacity based on IntraFrame Period 
+    // making buffer queue_capacity based on IntraFrame Period
     size_t queue_capacity_;
     // Default Frame buffer queue size
     size_t frame_queue_size_;
