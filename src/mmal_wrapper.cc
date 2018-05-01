@@ -380,8 +380,10 @@ void MMALEncoderWrapper::SetVideoAnnotate(bool annotate_enable) {
             =  (ANNOTATE_DATE_TEXT | ANNOTATE_TIME_TEXT | ANNOTATE_BLACK_BACKGROUND );
     }
     else {
-        // disable annotation
+        // disable annotation 
         state_.camera_parameters.enable_annotate  = 0;
+        // clear previous setting value
+        strcpy( state_.camera_parameters.annotate_string, "");
     }
 }
 

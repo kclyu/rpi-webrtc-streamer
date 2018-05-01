@@ -115,8 +115,10 @@ bool RaspiMotion::StartCapture() {
     mmal_encoder_->SetVideoRotation(config_media::video_rotation);
     mmal_encoder_->SetVideoFlip(config_media::video_vflip, config_media::video_hflip);
     mmal_encoder_->SetVideoAnnotate(config_motion::motion_enable_annotate_text);
-    mmal_encoder_->SetVideoAnnotateUserText(config_motion::motion_annotate_text);
-    mmal_encoder_->SetVideoAnnotateTextSize(config_motion::motion_annotate_text_size );
+    if( config_motion::motion_enable_annotate_text == true ){
+        mmal_encoder_->SetVideoAnnotateUserText(config_motion::motion_annotate_text);
+        mmal_encoder_->SetVideoAnnotateTextSize(config_motion::motion_annotate_text_size );
+    };
 
     // clear Annotation text size ratio value
     mmal_encoder_->SetVideoAnnotateTextSizeRatio(0);

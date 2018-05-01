@@ -167,9 +167,11 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
 
     // Video Annotation
     mmal_encoder_->SetVideoAnnotate(config_media::video_enable_annotate_text);
-    mmal_encoder_->SetVideoAnnotateUserText(config_media::video_annotate_text);
-    mmal_encoder_->SetVideoAnnotateTextSizeRatio(
-            config_media::video_annotate_text_size_ratio );
+    if( config_media::video_enable_annotate_text == true ) {
+        mmal_encoder_->SetVideoAnnotateUserText(config_media::video_annotate_text);
+        mmal_encoder_->SetVideoAnnotateTextSizeRatio(
+                config_media::video_annotate_text_size_ratio );
+    };
 
     // Settings for Quality
 

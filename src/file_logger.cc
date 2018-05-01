@@ -98,9 +98,13 @@ bool FileLogger::DeleteFolderFiles(const rtc::Pathname &folder) {
     }
     do {
         std::string filename = it.Name();
-        file.SetPathname(folder.folder(), filename);
-        rtc::Filesystem::DeleteFile(file);
-        // don't care return value
+        // ignore "." and ".." filename
+        if( filename.compare(0, filename.size(), "." ) != 0 &&
+                filename.compare(0, filename.size(), ".." ) != 0  ) {
+            file.SetPathname(folder.folder(), filename);
+            rtc::Filesystem::DeleteFile(file);
+            // don't care return value
+        }
     } while ( it.Next() );
 
     return true;
@@ -170,8 +174,9 @@ bool FileLogger::MoveLogFiletoNextShiftFolder() {
 
         // remove last rotate directory
         if( index == 9 ) {
-            if( rtc::Filesystem::IsFolder(dest_log_dir) == true )
+            if( rtc::Filesystem::IsFolder(dest_log_dir) == true ) {
                 DeleteFolderFiles(dest_log_dir);
+            }
         };
         if( MoveLogFiles(LOGGING_FILENAME, src_log_dir, dest_log_dir ) == false ){
             return false;

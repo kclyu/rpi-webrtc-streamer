@@ -96,11 +96,11 @@ Streamer::Streamer(SocketServerObserver *session, StreamerConfig *config)
 }
 
 Streamer::~Streamer() {
-    RTC_DCHECK(peer_connection_.get() == nullptr);
+    RTC_DCHECK(!peer_connection_);
 }
 
 bool Streamer::connection_active() const {
-    return peer_connection_.get() != nullptr;
+    return peer_connection_ != nullptr;
 }
 
 void Streamer::Close() {
@@ -109,8 +109,8 @@ void Streamer::Close() {
 }
 
 bool Streamer::InitializePeerConnection() {
-    RTC_DCHECK(peer_connection_factory_.get() == nullptr);
-    RTC_DCHECK(peer_connection_.get() == nullptr);
+    RTC_DCHECK(!peer_connection_factory_);
+    RTC_DCHECK(!peer_connection_);
 
     rtc::ThreadManager::Instance()->WrapCurrentThread();
 
@@ -125,9 +125,6 @@ bool Streamer::InitializePeerConnection() {
     signaling_thread_ = rtc::Thread::Create();
     signaling_thread_->SetName("signaling_thread", nullptr);
     RTC_CHECK(signaling_thread_->Start()) << "Failed to start signaling thread";
-
-    rtc::scoped_refptr<webrtc::AudioDeviceModule> adm
-        = webrtc::AudioDeviceModule::Create(webrtc::AudioDeviceModule::kLinuxAlsaAudio);
 
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer = nullptr;
     rtc::scoped_refptr<webrtc::AudioProcessing> audio_processor = nullptr;
@@ -166,7 +163,7 @@ bool Streamer::InitializePeerConnection() {
 }
 
 void Streamer::UpdateMaxBitrate() {
-    RTC_DCHECK(peer_connection_ != nullptr );
+    RTC_DCHECK(peer_connection_);
     auto senders = peer_connection_->GetSenders();
     for (const auto& sender : senders) {
         if( sender->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO &&
@@ -193,10 +190,12 @@ void Streamer::UpdateMaxBitrate() {
 }
 
 bool Streamer::CreatePeerConnection() {
-    RTC_DCHECK(peer_connection_factory_.get() != nullptr);
-    RTC_DCHECK(peer_connection_.get() == nullptr);
+    RTC_DCHECK(peer_connection_factory_);
+    RTC_DCHECK(!peer_connection_);
 
     webrtc::PeerConnectionInterface::RTCConfiguration config;
+    // config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
+    // config.enable_dtls_srtp = dtls;
     webrtc::PeerConnectionInterface::IceServer stun_server;
     webrtc::PeerConnectionInterface::IceServer turn_server;
 
@@ -216,8 +215,8 @@ bool Streamer::CreatePeerConnection() {
 
 void Streamer::DeletePeerConnection() {
     // Reset active stream session
-    peer_connection_ = nullptr;
     active_streams_.clear();
+    peer_connection_ = nullptr;
     peer_connection_factory_ = nullptr;
     peer_id_ = -1;
 }

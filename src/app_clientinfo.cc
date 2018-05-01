@@ -43,6 +43,8 @@ static const uint32_t kMaxClientID     = 99999999;
 static const uint32_t kMaxRoomID = 999999999;
 static const uint64_t kWaitTimeout = 1000;
 
+// TODO(kclyu) clean up unused method
+
 //////////////////////////////////////////////////////////////////////////////////////////
 //
 // AppClientInfo
@@ -139,8 +141,11 @@ bool AppClientInfo::DisconnectWait(int room_id, int client_id)  {
 }
 
 bool AppClientInfo::DisconnectWait(int websocket_id )  {
-    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": Websocket id " << websocket_id ;
-    RTC_DCHECK( websocket_id_ == websocket_id );
+    RTC_LOG(INFO) << __FUNCTION__ << ": Websocket id " << websocket_id ;
+    if( websocket_id_ != websocket_id )  {
+        RTC_LOG(INFO) << "Websocket id does not match.";
+        return false;
+    };
     switch( state_ ) {
         case ClientState::CLIENT_CONNECTED:
             state_ = ClientState::CLIENT_DISCONNECT_WAIT;
