@@ -8,6 +8,11 @@ This repo's objective is providing something like Web Cam server on the most pop
 
 Generally, the components of WebRTC service are classified into Signaling Server and WebRTC client. However, RWS(Rpi-WebRTC-Streamer) is built to operate on one piece of Raspberry PI hardware and includes some of Signaling Server functionality. In other words, the Browser or Client supporting WebRTC directly connects to RWS and receives WebRTC streaming service.
 
+###  Web Front-End
+In order to use WebRTC streaming function in web browser, various things are basically required. To simplify this, Web Front-End implements basic Authentication/Messaging/HTTP and WebRTC Signaling functions using Google's Firebase, and supports WebRTC streaming and other features provided by Rpi-WebRTC-Streamer (RWS) Function.
+
+For Web Front-End, please refer to [RWS Web Front-End Repo](https://github.com/kclyu/rpi-webrtc-streamer-frontend).
+
 ### Streaming camera feed
 To get the camera feed from Raspberry PI, i.e. H.264 video stream, RWS use MMAL(Multi-Media Abstraction Layer) library can be found on [ARM side libraries for interfacing to Raspberry Pi GPU](https://github.com/raspberrypi/userland). it provides lower level API to multi-media components running on Broadcom VideoCore. For  convenience,  this streamer directly integrated  [raspivid](https://github.com/raspberrypi/userland/tree/master/host_applications/linux/apps/raspicam)
 with encoding parameter changing in H.264 stream and passing video frame through WebRTC native code package.
@@ -20,6 +25,8 @@ Please refer to [README_motion document](../master/README_motion.md).
 ### Messenger Notification 
 The motion detection event message can be transmitted to the user through the telegram messenger. It can send motion detection message and detected video clip to Telegram Messenger client so that it can be used as a private security bot.
 For more information, Please refer to [README_TelegramBot document](../master/README_TelegramBot.md).
+
+
 
 
 ## Rpi WebRTC Streamer
