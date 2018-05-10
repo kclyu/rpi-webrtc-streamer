@@ -71,10 +71,10 @@ bool DirectSocketServer::Listen(const rtc::SocketAddress& address) {
     listener_->SignalReadEvent.connect(this, &DirectSocketServer::OnAccept);
     if ((listener_->Bind(address) != SOCKET_ERROR) &&
             (listener_->Listen(5) != SOCKET_ERROR)) {
-        RTC_LOG(INFO) << "Start listening " << address  << ".";
+        RTC_LOG(INFO) << "Start listening " << address.ToString()  << ".";
         return true;
     }
-    RTC_LOG(LS_ERROR) << "Failed to listen " << address  << ".";
+    RTC_LOG(LS_ERROR) << "Failed to listen " << address.ToString()  << ".";
     return false;
 }
 
