@@ -191,7 +191,7 @@ const char* to_callbackreason_str(int callback_reason, int brief) {
         case LWS_CALLBACK_HTTP_DROP_PROTOCOL:
             return "LWS_CALLBACK_HTTP_DROP_PROTOCOL";
         default:
-            return "Non exist Callback Reason ";
+            return "Callback reason does not defined in string reason.";
 
     }
 }

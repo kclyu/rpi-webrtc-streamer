@@ -70,12 +70,9 @@ CONFIG_DEFINE( MotionConfig, motion_config, std::string,  "etc/motion_config.con
 
 CONFIG_DEFINE( DisableLogBuffering, disable_log_buffering, bool, true );
 CONFIG_DEFINE( LibraryDebug, libwebsocket_debug, bool, false );
-CONFIG_DEFINE( RoomIdEnable, room_id_enable, bool, false );
 
 CONFIG_DEFINE( WebRoot, web_root, std::string, INSTALL_DIR "/web-root" );
 CONFIG_DEFINE( RWS_WS_URL,rws_ws_url, std::string, "/rws/ws" );
-CONFIG_DEFINE( AdditionalWSRule, additional_ws_rule, std::string, "");
-CONFIG_DEFINE( RoomId, room_id, std::string, "123456789");
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -181,12 +178,6 @@ bool StreamerConfig::GetRwsWsURL(std::string& ws_url) {
     DEFINE_CONFIG_LOAD_STR_WITH_RETURN(RWS_WS_URL, ws_url);
 }
 
-// AdditionalWSRule
-bool StreamerConfig::GetAdditionalWSRule(std::string& rule) {
-    RTC_DCHECK( config_loaded_ == true );
-    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(AdditionalWSRule, rule);
-}
-
 // DirectSocketEnable
 bool StreamerConfig::GetDirectSocketEnable() {
     RTC_DCHECK( config_loaded_ == true );
@@ -198,18 +189,6 @@ bool StreamerConfig::GetDirectSocketPort(int& port) {
     RTC_DCHECK( config_loaded_ == true );
     DEFINE_CONFIG_LOAD_INT_WITH_RETURN(DirectSocketPort, port,
             validate__portnumber  );
-}
-
-// RoomIdEnable
-bool StreamerConfig::GetRoomIdEnable() {
-    RTC_DCHECK( config_loaded_ == true );
-    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(RoomIdEnable );
-}
-
-// RoomId
-bool StreamerConfig::GetRoomId(std::string& room_id) {
-    RTC_DCHECK( config_loaded_ == true );
-    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(RoomId, room_id);
 }
 
 // StunServer

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2018, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -34,36 +34,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <algorithm>
 
+#include <ctime>
+
+// __RWS_VERSION__ defined in Makefile
+#define WEBSOCKET_SERVER_NAME __RWS_VERSION__
+
 #include "websocket_server_internal.h"
 #include "websocket_handler.h"
 
 #ifndef WEBSOCKET_SERVER_H_
 #define WEBSOCKET_SERVER_H_
 
+
+//////////////////////////////////////////////////////////////////////
+//
+// Internal structure definitions
+//
+//////////////////////////////////////////////////////////////////////
+
 #define  MAX_URI_PATH 128
-#define  MAX_RINGBUFFER_QUEUE 4
-#define  MAX_SENDBUFFER_SIZE  4096
 
-// __RWS_VERSION__ defined in Makefile
-#define WEBSOCKET_SERVER_NAME __RWS_VERSION__
-
-struct message_buf {
-	char *payload;
-	size_t len;
+// per session stroage
+struct per_session_data__libwebsockets {
+    char uri_path_[MAX_URI_PATH];
+    std::time_t last_ping_sent_;
 };
 
-#define USERDATA_INITED         1
-#define USERDATA_UNINITED       0
-
-
-// UserData Struct per session
-struct per_session_data__libwebsockets {
-	int userdata_inited;
-    char uri_path[MAX_URI_PATH];
-	int ring_buffer_index;
-    struct message_buf ring_buffer[MAX_RINGBUFFER_QUEUE];
-    struct HttpRequest *http_request;
-    struct HttpResponse *http_response;
+struct vhd_libwebsocket {
+	struct lws_context *context;
+	struct lws_vhost *vhost;
 };
 
 struct WSInstanceContainer {
@@ -76,6 +75,12 @@ struct WSInstanceContainer {
     std::string drop_message_;
     std::deque<std::string> pending_message_;
 };
+
+//////////////////////////////////////////////////////////////////////
+//
+// LibWebSocket 
+//
+//////////////////////////////////////////////////////////////////////
 
 struct WSInternalHandlerConfig : public WebSocketHandler {
     WSInternalHandlerConfig(std::string path, WebSocketHandlerType handler_type,
@@ -94,9 +99,11 @@ struct WSInternalHandlerConfig : public WebSocketHandler {
     virtual void OnError(const int sockid, const std::string& errmsg);
 
     bool CreateHandlerRuntime(const int sockid, struct lws *wsi);
+    struct lws* GetWsiFromHandlerRuntime(const int sockid);
     bool QueueMessage(const int sockid, const std::string& message);
     bool DequeueMessage(const int sockid, std::string& message);
     size_t Size();
+    size_t QeueueSize(const int sockid);
     bool HasPendingMessage(const int sockid);
     bool Close(int sockid, int reason_code, const std::string& message);
 };
@@ -123,6 +130,8 @@ public:
     ~LibWebSocketServer();
 
     bool Init(int port);
+    bool UpdateHttpMotionMount(const std::string &motion_path);
+    bool UpdateHttpWebMount(const std::string &web_path);
     bool RunLoop(int timeout);
     void LogLevel(DEBUG_LEVEL level);
     void LogLevel(DEBUG_LEVEL level,bool log_redirect);
@@ -131,9 +140,6 @@ public:
             void *user, void *in, size_t len);
 
     // Add Handler interfaces in LibWebSocket Server
-    void AddFileMapping(const std::string path,
-            FileMappingType type, const std::string map);
-    void AddHttpHandler(const std::string path, HttpHandler *handler);
     void AddWebSocketHandler(const std::string path,
             WebSocketHandlerType instance_type, WebSocketHandler *handler);
 
@@ -144,26 +150,17 @@ protected:
     bool IsValidWSPath(const char *path);
     bool GetFileMapping(const std::string path,std::string& file_mapping);
     WSInternalHandlerConfig *GetWebsocketHandler(const char *path);
-    HttpHandler *GetHttpHandler(const std::string path);
 
 private:
-    std::string map_default_resource_;
-    std::list<FileMapping> file_mapping_;
     std::list<WSInternalHandlerConfig> wshandler_config_;
-    std::map<std::string, struct HttpHandler *> httphandler_config_;
 
     struct lws_context_creation_info info_;
     struct lws_context *context_;
-	char *interface_name_;
-	unsigned int ms_, oldms_ ;
-	const char *iface_;
-	char *cert_path_;
-	char *key_path_;
-	char *ca_path_;
-	int uid_, gid_;
-	int use_ssl_;
-	int pp_secs_;
-	int opts_;
+	struct lws_vhost *vhost_;
+    struct lws_http_mount webroot_http_mount_;
+    struct lws_http_mount motion_http_mount_;
+    bool webroot_mount_enabled_;
+    bool motion_mount_enabled_;
     int port_;
     DEBUG_LEVEL debug_level_;
 };

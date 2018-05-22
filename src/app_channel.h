@@ -43,7 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/pathutils.h"
 
 #include "websocket_server.h"
-#include "app_client.h"
 #include "app_ws_client.h"
 #include "config_streamer.h"
 
@@ -59,7 +58,6 @@ public:
 private:
     bool is_inited_;
     AppWsClient ws_client_;
-    AppClient app_client_;
 };
 
 #endif // APP_CHANNEL_H_

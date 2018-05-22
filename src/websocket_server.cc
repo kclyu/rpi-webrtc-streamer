@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2018, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -35,36 +35,51 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "rtc_base/network.h"
+#include "rtc_base/fileutils.h"
 #include "rtc_base/pathutils.h"
 
 #include "websocket_server.h"
-#include "../lib/private-libwebsockets.h"
 
 //////////////////////////////////////////////////////////////////////
 //
 // LibWebSocket struct for initialization
 //
 //////////////////////////////////////////////////////////////////////
+static const char *kProtocolHandlerName = "websocket-http";
+static const char *kMotionMount = "/motion";
+static const char *kHttpMount = "/";
+static const char *DefaultHtml = "index.html";
+
+static const struct lws_protocol_vhost_options bzip2_extension = {
+	nullptr,				/* "next" pvo linked-list */
+	nullptr,				/* "child" pvo linked-list */
+	".bz2",				/* file suffix to match */
+	"application/x-bzip2"		/* mimetype to use */
+};
+
+
 /* list of supported protocols and callbacks */
-struct lws_protocols protocols[] =  {
+static struct lws_protocols protocols[] =  {
     /* first protocol must always be HTTP handler */
-    { "websocket-http",		/* name */
+    { kProtocolHandlerName,		/* name */
         LibWebSocketServer::CallbackLibWebsockets, /* callback */
         sizeof (struct per_session_data__libwebsockets), /* per_session_data_size */
-        0,			/* max frame size / rx buffer */ },
+        4096,			/* max frame size / rx buffer */
+        0, NULL, 0,     /*  id, user, tx_packet_size */
+    },
     { NULL, NULL, 0, 0 } /* terminator */
 };
 
-const struct lws_extension exts[] = {
-    { "permessage-deflate",
-        lws_extension_callback_pm_deflate,
-        "permessage-deflate" },
-    { "deflate-frame",
-        lws_extension_callback_pm_deflate,
-        "deflate_frame" },
-    { NULL, NULL, NULL /* terminator */ }
+static const struct lws_extension extensions[] = {
+	{
+		"permessage-deflate",
+		lws_extension_callback_pm_deflate,
+		"permessage-deflate"
+		 "; client_no_context_takeover"
+		 "; client_max_window_bits"
+	},
+	{ NULL, NULL, NULL /* terminator */ }
 };
-
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -72,30 +87,26 @@ const struct lws_extension exts[] = {
 //
 //////////////////////////////////////////////////////////////////////
 LibWebSocketServer::LibWebSocketServer() {
-    const uint32_t path_buffer_size = 1024;
-    const uint32_t iface_buffer_size = 128;
-
 	memset(&info_, 0x00, sizeof(info_));
-    context_ = nullptr;
-	interface_name_ = new char[iface_buffer_size];
-	ms_  = oldms_ = 0;
-	uid_ =  gid_ = -1;
-	iface_ = nullptr;
-	cert_path_ = new char[path_buffer_size];
-	key_path_ = new char[path_buffer_size];
-	ca_path_ = new char[path_buffer_size];
-
-	use_ssl_ = pp_secs_= opts_ = 0;
+	memset(&webroot_http_mount_, 0x00, sizeof(webroot_http_mount_));
+	memset(&motion_http_mount_, 0x00, sizeof(motion_http_mount_));
     debug_level_ = LibWebSocketServer::DEBUG_LEVEL_NONE;
+
+    webroot_mount_enabled_ = false;
+    motion_mount_enabled_ = false;
+
+    context_ = nullptr;
+    vhost_ = nullptr;
 }
 
 void LibWebSocketServer::Log(int level, const char *line) {
     const char *log_line_header="lws: ";
     char line_buffer[512];
     strcpy(line_buffer,line);
-    for(size_t i = strlen(line_buffer); i > 0 ; i--)
+    for(size_t i = strlen(line_buffer); i > 0 ; i--) {
         if( line_buffer[i] == '\n' || line_buffer[i] == '\r' )
             line_buffer[i] = 0x00;
+    }
 
 	switch (level) {
 	case LLL_ERR:
@@ -114,14 +125,14 @@ void LibWebSocketServer::Log(int level, const char *line) {
 }
 
 LibWebSocketServer::~LibWebSocketServer() {
+    if( webroot_http_mount_.origin )
+        delete webroot_http_mount_.origin;
+    if( motion_http_mount_.origin )
+        delete motion_http_mount_.origin;
+
+    lws_vhost_destroy(vhost_);
 	lws_context_destroy(context_);
-	closelog();
-    file_mapping_.clear();
     wshandler_config_.clear();
-    delete interface_name_ ;
-	delete cert_path_;
-	delete key_path_;
-	delete ca_path_;
 }
 
 
@@ -177,136 +188,95 @@ bool LibWebSocketServer::Init(int port) {
     this->LogLevel(debug_level_);
 
     // keep LibWebSocketServer instance address
-    // for calling back in the user of protocol
-    protocols[0].user = this;
+    // for calling back in the user of context_info
+    info_.user = this;
 
-	info_.iface = iface_;
-	info_.protocols = protocols;
-	info_.ssl_cert_filepath = nullptr;
-	info_.ssl_private_key_filepath = nullptr;
-	info_.ws_ping_pong_interval = pp_secs_;
-
-	info_.gid =  gid_;
-	info_.uid =  uid_;
 	info_.max_http_header_pool = 16;
-	info_.options = opts_ | LWS_SERVER_OPTION_VALIDATE_UTF8;
-	info_.extensions = exts;
-	info_.timeout_secs = 5;
+	info_.options = LWS_SERVER_OPTION_VALIDATE_UTF8 |
+        LWS_SERVER_OPTION_EXPLICIT_VHOSTS;
+    info_.protocols = protocols;
+	info_.extensions = extensions;
+	info_.timeout_secs = 10;
     info_.ws_ping_pong_interval = 1;    // WebSocket Ping/Pong interval
-	info_.ssl_cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:"
-			       "ECDHE-RSA-AES256-GCM-SHA384:"
-			       "DHE-RSA-AES256-GCM-SHA384:"
-			       "ECDHE-RSA-AES256-SHA384:"
-			       "HIGH:!aNULL:!eNULL:!EXPORT:"
-			       "!DES:!MD5:!PSK:!RC4:!HMAC_SHA1:"
-			       "!SHA1:!DHE-RSA-AES128-GCM-SHA256:"
-			       "!DHE-RSA-AES128-SHA256:"
-			       "!AES128-GCM-SHA256:"
-			       "!AES128-SHA256:"
-			       "!DHE-RSA-AES256-SHA256:"
-			       "!AES256-GCM-SHA384:"
-			       "!AES256-SHA256";
+
     info_.server_string = WEBSOCKET_SERVER_NAME;
+    //  whether or not motion mount is enabled,
+    //  http mount will be initialized when webroot mount is enabled.
+    if( webroot_mount_enabled_ == true ) {
+        info_.mounts = &webroot_http_mount_;
+    };
 
 	context_ = lws_create_context(&info_);
 	if (context_ == nullptr) {
-		lwsl_err("libwebsocket init failed\n");
+		lwsl_err("failed to create context failed\n");
+		return false;
+	}
+
+	vhost_ = lws_create_vhost(context_, &info_);
+	if (!vhost_) {
+		lwsl_err("failed to create vhost failed\n");
 		return false;
 	}
     return true;
 }
 
-bool LibWebSocketServer::RunLoop(int timeout) {
-    const int internal_timeout_ = 25;
-    if(timeout == 0)
-        timeout = internal_timeout_;
-	return lws_service(context_, timeout) == 0;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-//
-// FileMapping
-//
-//////////////////////////////////////////////////////////////////////
-void LibWebSocketServer::AddFileMapping(const std::string path,
-        FileMappingType type, const std::string map) {
-    if( type == MAPPING_DEFAULT ) { // default mapping for resource path
-        map_default_resource_ = map;
-        return;
-    }
-
-    for(std::list<FileMapping>::iterator iter = file_mapping_.begin();
-            iter != file_mapping_.end(); iter++) {
-        if( iter->uri_prefix_ == path ) {
-            RTC_LOG(LS_ERROR) << "Do not allow same URI path in file mapping";
-            return;
-        }
-    }
-    file_mapping_.push_back(FileMapping(path,type, map));
-}
-
-bool LibWebSocketServer::GetFileMapping(const std::string path,
-        std::string& file_mapping){
-
-    // Check mapping list at first whether the request path is matching
-    for(std::list<FileMapping>::iterator iter = file_mapping_.begin();
-            iter != file_mapping_.end(); iter++) {
-        if( iter->type_ == MAPPING_DIRECTORY ) {
-            // compare only the uri_prefix_ size
-            if( iter->uri_prefix_.compare(0,
-                        iter->uri_prefix_.size(),path) == 0) {
-                RTC_LOG(INFO) << "Found DIR type File Mapping URI in mapping : " <<
-                    iter->uri_prefix_ << "(" << iter->uri_resource_path_  << ")";
-
-                file_mapping  = iter->uri_resource_path_ + path;
-                return true;
-            }
-        }
-        else if( iter->type_ == MAPPING_FILE ) {
-            if( iter->uri_prefix_ == path ) {
-                RTC_LOG(INFO) << "Found FILE type Mapping URI in mapping : " <<
-                    iter->uri_prefix_ << "(" << iter->uri_resource_path_  << ")";
-                file_mapping = iter->uri_resource_path_;
-                return true;
-            }
-        }
-    }
-
+bool LibWebSocketServer::UpdateHttpMotionMount(const std::string &motion_path){
     rtc::Pathname file_path;
 
-    // checking whether URI does have filename
-    file_path.SetPathname( map_default_resource_ + path);
-    if( file_path.filename().size() == 0 ) {
-        file_path.SetFilename("index.html");
+    // validate the given path is directory
+    file_path.SetFolder( motion_path );
+    if( rtc::Filesystem::IsFolder( file_path ) == false ) {
+        RTC_LOG(LS_ERROR) << "Motion path is not directory : "
+                    << file_path.pathname() ;
+        return false;
     }
-    file_mapping = file_path.pathname();
-    return false;
+    else {
+        motion_http_mount_.mountpoint = kMotionMount;
+        char *buf = new char [motion_path.size() + 1];
+        strcpy( buf, motion_path.c_str());
+        motion_http_mount_.origin = buf;
+
+        motion_http_mount_.def = DefaultHtml;
+        motion_http_mount_.mountpoint_len
+            = strlen(motion_http_mount_.mountpoint);
+        motion_http_mount_.origin_protocol = LWSMPRO_FILE;
+        motion_mount_enabled_ = true;
+    }
+    return true;
 }
 
-//////////////////////////////////////////////////////////////////////
-//
-// HttpHandler
-//
-//////////////////////////////////////////////////////////////////////
-void LibWebSocketServer::AddHttpHandler(const std::string path,
-        HttpHandler *handler) {
-    std::map<std::string,HttpHandler *>::iterator iter
-        = httphandler_config_.find(path);
-    // http handler does not exist, so add it on httphandler_config_
-    if( iter == httphandler_config_.end()) {
-        httphandler_config_[path] = handler;
+bool LibWebSocketServer::UpdateHttpWebMount(const std::string &web_path){
+    rtc::Pathname file_path;
+
+    // validate the given path is directory
+    file_path.SetFolder( web_path );
+    if( rtc::Filesystem::IsFolder( file_path ) == false ) {
+        RTC_LOG(LS_ERROR) << "WebRoot path is not directory : "
+                    << file_path.pathname() ;
+        return false;
     }
+    else {
+        if( motion_mount_enabled_ == true )
+            webroot_http_mount_.mount_next = &motion_http_mount_;
+        webroot_http_mount_.mountpoint = kHttpMount;
+        char *buf =  new char [web_path.size() + 1];
+        strcpy( buf, web_path.c_str());
+        webroot_http_mount_.origin = buf;
+
+        webroot_http_mount_.def = DefaultHtml;
+        webroot_http_mount_.mountpoint_len
+            = strlen(webroot_http_mount_.mountpoint);
+        webroot_http_mount_.origin_protocol = LWSMPRO_FILE;
+        webroot_mount_enabled_ = true;
+    }
+    return true;
 }
 
-HttpHandler *LibWebSocketServer::GetHttpHandler(const std::string path) {
-    for(std::map<std::string,HttpHandler *>::iterator iter
-            = httphandler_config_.begin();
-            iter != httphandler_config_.end(); iter++) {
-        if( path.compare(0, iter->first.size(), iter->first) == 0)
-            return iter->second;
-    }
-    return nullptr;
+bool LibWebSocketServer::RunLoop(int timeout) {
+    const int internal_timeout_ = 25;
+    if( timeout == 0) timeout = internal_timeout_;
+
+	return !lws_service(context_, timeout);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -357,9 +327,9 @@ void LibWebSocketServer::SendMessage(int sockid, const std::string& message){
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->QueueMessage(sockid, message) == true ) {
             // book us a LWS_CALLBACK_HTTP_WRITEABLE callback
-            lws_callback_on_writable_all_protocol(context_,
-                    &protocols[0]);
-
+            // lws_callback_on_writable_all_protocol(context_,
+            //         &protocols[0]);
+            lws_callback_on_writable(iter->GetWsiFromHandlerRuntime(sockid));
             return;
         }
     }
@@ -389,6 +359,18 @@ bool WSInternalHandlerConfig::CreateHandlerRuntime(const int sockid, struct lws 
     }
     handler_runtime_.push_back(WSInstanceContainer(sockid, wsi));
     return true;
+}
+
+struct lws* WSInternalHandlerConfig::GetWsiFromHandlerRuntime(const int sockid) {
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
+            iter != handler_runtime_.end(); iter++) {
+        if( iter->sockid_ == sockid ) {
+            RTC_DCHECK( iter->wsi_ )
+                << "The value of websocket wsi variable must not be null.";
+            return iter->wsi_;
+        }
+    }
+    return nullptr;
 }
 
 void WSInternalHandlerConfig::OnConnect(const int sockid) {
@@ -452,6 +434,16 @@ size_t WSInternalHandlerConfig::Size() {
     return handler_runtime_.size();
 }
 
+size_t WSInternalHandlerConfig::QeueueSize(const int sockid) {
+    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
+            iter != handler_runtime_.end(); iter++) {
+        if( iter->sockid_ == sockid ) {
+            return iter->pending_message_.size();
+        }
+    }
+    return 0;
+}
+
 bool WSInternalHandlerConfig::HasPendingMessage(const int sockid) {
     for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
@@ -468,7 +460,9 @@ bool WSInternalHandlerConfig::DequeueMessage(const int sockid,
     for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
             iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
-            if( iter->pending_message_.size() == 0 ) return false;
+            if( iter->pending_message_.size() == 0 ) {
+                return false;
+            }
             message =  iter->pending_message_.front();
             iter->pending_message_.pop_front();
             return true;
@@ -501,130 +495,6 @@ bool WSInternalHandlerConfig::Close(int sockid, int reason_code,
         }
     }
     return false;
-}
-
-//////////////////////////////////////////////////////////////////////
-//
-// Http Request
-//
-//////////////////////////////////////////////////////////////////////
-static const char *GetRequestTypeString(int type ){
-    switch (type ) {
-        case HTTP_GET:
-            return "HTTP GET";
-        case HTTP_POST:
-            return "HTTP POST";
-        case HTTP_PUT:
-            return "HTTP PUT";
-        case HTTP_DELETE:
-            return "HTTP DELETE";
-        case HTTP_DONTCARE:
-            return "HTTP Don't Care";
-        default:
-            return "HTTP Unknown";
-    }
-}
-
-void HttpRequest::AddHeader(int header_id, const std::string value ) {
-    std::map<int,std::string>::iterator iter
-        = header_.find(header_id);
-
-    // Do not add ARGS in the header field
-    if( header_id == WSI_TOKEN_HTTP_URI_ARGS ) return;
-
-    // header_id  does not exist, so add it on header_
-    if( iter == header_.end()) {
-        header_[header_id] = value;
-        switch ( header_id ) {
-            case WSI_TOKEN_GET_URI:
-                type_ = HTTP_GET;
-                break;
-            case WSI_TOKEN_POST_URI:
-                type_ = HTTP_POST;
-                break;
-            case WSI_TOKEN_PUT_URI:
-                type_ = HTTP_PUT;
-                break;
-            case WSI_TOKEN_DELETE_URI:
-                type_ = HTTP_DELETE;
-                break;
-        }
-    }
-    else {
-        RTC_LOG(LS_ERROR) << "header_id(" << header_id << ") already exist.";
-    }
-}
-
-void HttpRequest::AddArgs(const std::string args_param ) {
-    const std::string delimiter="=";
-    std::string param;
-    size_t  pos;
-    if((pos = args_param.find(delimiter)) != std::string::npos )  {
-        param = args_param.substr(0, pos);
-        args_[param] = args_param.substr(pos+delimiter.size(),std::string::npos );
-    }
-    else {
-        RTC_LOG(LS_ERROR) << "Failed to get argument param from (" << param << ").";
-    }
-}
-
-void HttpRequest::AddData(const std::string data ) {
-    data_.append(data);
-}
-
-void HttpRequest::Print() {
-    RTC_LOG(INFO) << "Request Type : " << GetRequestTypeString(type_);
-    RTC_LOG(INFO) << "Request Content-Length : " << content_length_;
-    RTC_LOG(INFO) << "Request Server: " << server_;
-    RTC_LOG(INFO) << "Request Headers(" << header_.size() << "):";
-    for(auto t: header_) {
-        RTC_LOG(INFO) << " " << t.first << ":"
-              << t.second;
-    };
-    RTC_LOG(INFO) << "Request Args(" << args_.size() << "):";
-    for(auto t: args_) {
-        RTC_LOG(INFO) << " " << t.first << ":"
-              << t.second;
-    };
-    if( type_ == HTTP_POST ) {
-        RTC_LOG(INFO) << "Data size : " << data_.size();
-        RTC_LOG(INFO) << "Data: " << data_;
-    }
-}
-
-//////////////////////////////////////////////////////////////////////
-//
-// Http Response
-//
-//////////////////////////////////////////////////////////////////////
-void HttpResponse::AddHeader(int header_id, const std::string value ) {
-    std::map<int,std::string>::iterator iter
-        = header_.find(header_id);
-    // header_id  does not exist, so add it on header_
-    if( iter == header_.end()) {
-        header_[header_id] = value;
-    };
-    RTC_LOG(LS_ERROR) << "header_id(" << header_id << ") already exist.";
-}
-
-void HttpResponse::SetHeaderSent() {
-    header_sent_ = true;
-}
-
-bool HttpResponse::IsHeaderSent() {
-    return header_sent_;
-}
-
-void HttpResponse::Print() {
-    RTC_LOG(INFO) << "Response Status : " << status_;
-    RTC_LOG(INFO) << "Response Header(" << header_.size() << "):";
-    for(auto t: header_) {
-        RTC_LOG(INFO) << " " << t.first << ":"
-              << t.second;
-    };
-    RTC_LOG(INFO) << "Response mine type : " << mime_;
-    RTC_LOG(INFO) << "Response size : " << response_.size();
-    RTC_LOG(INFO) << "Response: " << response_;
 }
 
 

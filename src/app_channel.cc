@@ -51,7 +51,6 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
     std::string ws_url;
     int port_num;
     std::string web_root;
-    std::string additional_ws_rule;
 
     // LibWebSocket debug log
     if(config.GetLibwebsocketDebugEnable() ) {
@@ -59,35 +58,19 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
         LogLevel(LibWebSocketServer::DEBUG_LEVEL_ALL);
     };
 
+    config.GetWebRootPath(web_root);
+    RTC_LOG(INFO) << "Using File Mapping : " << web_root;
+    UpdateHttpWebMount(web_root);
+
     config.GetWebSocketPort(port_num);
     RTC_LOG(INFO) << "WebSocket port num : " << port_num;
     if( Init(port_num) == false ) return false;
 
-    config.GetWebRootPath(web_root);
-    RTC_LOG(INFO) << "Using File Mapping : " << web_root;
-    AddFileMapping("/", MAPPING_DEFAULT, web_root );
 
     config.GetRwsWsURL(ws_url);
     RTC_LOG(INFO) << "Using RWS WS client url : " << ws_url;
     ws_client_.RegisterWebSocketMessage(this);
     AddWebSocketHandler(ws_url, SINGLE_INSTANCE, &ws_client_);
-
-    // RoomId
-    app_client_.RegisterWebSocketMessage(this);
-    if( config.GetRoomIdEnable() ) {
-        std::string room_id;
-        config.GetRoomId(room_id);
-        app_client_.SetRoomId(room_id);
-    };
-    // AdditionalWSRule
-    config.GetAdditionalWSRule(additional_ws_rule);
-    app_client_.SetAdditionalWSRule(additional_ws_rule);
-
-    RTC_LOG(INFO) << "Using App client url : " << app_client_.GetWebSocketURL();
-    AddWebSocketHandler(app_client_.GetWebSocketURL(), SINGLE_INSTANCE, &app_client_);
-    AddHttpHandler(URL_JOIN_CMD, &app_client_);
-    AddHttpHandler(URL_MESSAGE_CMD, &app_client_);
-    AddHttpHandler(URL_LEAVE_CMD, &app_client_);
 
     is_inited_ = true;
     return true;

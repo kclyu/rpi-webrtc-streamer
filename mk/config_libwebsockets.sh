@@ -11,7 +11,9 @@ RWS_LIBRARY_DIR=../lib
 RPI_ROOTFS_CMAKE=${HOME}/Workspace/rpi_rootfs/PI.cmake
 
 # zip extension will be added before running unzip
-LIBWEBSOCKETS_BASENAME=libwebsockets-2.2-stable
+#LIBWEBSOCKETS_BASENAME=libwebsockets-2.2-stable
+#LIBWEBSOCKET_DIR=${RWS_LIBRARY_DIR}/libwebsockets
+LIBWEBSOCKETS_BASENAME=libwebsockets-master # 3.0
 LIBWEBSOCKET_DIR=${RWS_LIBRARY_DIR}/libwebsockets
 LIBWEBSOCKET_BUILD_DIR=${RWS_LIBRARY_DIR}/libwebsockets/arm_build
 LIBWEBSOCKETS_LIBRARY=${LIBWEBSOCKET_BUILD_DIR}/lib/libwebsockets.a
@@ -40,7 +42,7 @@ then
     then
 	    echo "start building libwebsockets library"
         mkdir -p ${LIBWEBSOCKET_BUILD_DIR}
-        cd ${LIBWEBSOCKET_BUILD_DIR} && cmake -DCMAKE_TOOLCHAIN_FILE=${RPI_ROOTFS_CMAKE} -DCMAKE_BUILD_TYPE=Debug -DLWS_WITH_SSL=OFF  .. -DLWS_WITH_SHARED=OFF -DLWS_WITH_RANGES=OFF && make
+        cd ${LIBWEBSOCKET_BUILD_DIR} && cmake .. -DCMAKE_TOOLCHAIN_FILE=${RPI_ROOTFS_CMAKE} -DCMAKE_BUILD_TYPE=Debug -DLWS_WITH_SSL=OFF -DLWS_WITH_SHARED=OFF -DLWS_WITH_LIBEV=0 && make
     else
 	    echo "libwebsockets.a already exist"
     fi

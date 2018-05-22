@@ -941,7 +941,8 @@ void MMALEncoderWrapper::CheckCameraConfig() {
 ////////////////////////////////////////////////////////////////////////////////////////
 
 MMALEncoderWrapper* MMALWrapper::Instance() {
-  RTC_DEFINE_STATIC_LOCAL(MMALEncoderWrapper, mmal_wrapper, ());
+  static MMALEncoderWrapper& mmal_wrapper = *new MMALEncoderWrapper();
+
   return &mmal_wrapper;
 }
 

@@ -47,7 +47,6 @@ public:
     bool LoadConfig();
     const std::string GetConfigFilename();
 
-
     // Disable Log buffering
     bool GetDisableLogBuffering();
 
@@ -60,16 +59,9 @@ public:
     // RWS WebSocket URL
     bool GetRwsWsURL(std::string& path);
 
-    // Additional WS Rule
-    bool GetAdditionalWSRule(std::string& rule);
-
     // WebSocket Config
     bool GetWebSocketEnable();
     bool GetWebSocketPort(int& port);
-
-    // RoomId Config
-    bool GetRoomIdEnable();
-    bool GetRoomId(std::string& room_id);
 
     // Direct Socket Config
     bool GetDirectSocketEnable();
