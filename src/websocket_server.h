@@ -78,7 +78,7 @@ struct WSInstanceContainer {
 
 //////////////////////////////////////////////////////////////////////
 //
-// LibWebSocket 
+// LibWebSocket
 //
 //////////////////////////////////////////////////////////////////////
 
@@ -129,9 +129,9 @@ public:
     explicit LibWebSocketServer();
     ~LibWebSocketServer();
 
+    bool AddHttpWebMount(bool motion_enabled,
+        const std::string &web_path, const std::string &motion_path);
     bool Init(int port);
-    bool UpdateHttpMotionMount(const std::string &motion_path);
-    bool UpdateHttpWebMount(const std::string &web_path);
     bool RunLoop(int timeout);
     void LogLevel(DEBUG_LEVEL level);
     void LogLevel(DEBUG_LEVEL level,bool log_redirect);
@@ -159,7 +159,6 @@ private:
 	struct lws_vhost *vhost_;
     struct lws_http_mount webroot_http_mount_;
     struct lws_http_mount motion_http_mount_;
-    bool webroot_mount_enabled_;
     bool motion_mount_enabled_;
     int port_;
     DEBUG_LEVEL debug_level_;

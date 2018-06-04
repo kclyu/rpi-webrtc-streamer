@@ -65,7 +65,6 @@ int32_t RaspiDecoderDummy::RegisterDecodeCompleteCallback(
 
 int32_t RaspiDecoderDummy::Decode(const EncodedImage& input_image,
                                 bool /*missing_frames*/,
-                                const RTPFragmentationHeader* /*fragmentation*/,
                                 const CodecSpecificInfo* codec_specific_info,
                                 int64_t render_time_ms) {
   if (!IsInitialized()) {

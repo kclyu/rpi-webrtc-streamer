@@ -80,7 +80,6 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
         lws_protocol_vh_priv_get(lws_get_vhost(wsi),
 				lws_get_protocol(wsi));
     const char *reason_str;
-    const char *mimetype;
     int     sockid;
 
     sockid = lws_get_socket_fd(wsi);
@@ -139,8 +138,6 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
                 (int)len, (int)lws_remaining_packet_payload(wsi),
                 lws_is_first_fragment(wsi), lws_is_final_fragment(wsi),
                 lws_frame_is_binary(wsi), (int)len);
-                // lws_frame_is_binary(wsi), pss->msglen, (int)len,
-                // (int)pss->msglen + (int)len);
 
         if( len <= 0 ) {
             RTC_LOG(INFO) << __FUNCTION__ << "LWS_CALLBACK_RECEIVE"

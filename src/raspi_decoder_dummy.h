@@ -14,37 +14,37 @@
 
 #include <memory>
 
-#include "media/base/codec.h"
-#include "modules/video_coding/include/video_codec_interface.h"
+#include "api/video/video_frame.h"
+#include "api/video_codecs/video_codec.h"
+#include "common_video/include/video_frame.h"
 
 namespace webrtc {
 
 class RaspiDecoderDummy : public RaspiDecoder {
- public:
-  RaspiDecoderDummy();
-  ~RaspiDecoderDummy() override;
+public:
+    RaspiDecoderDummy();
+    ~RaspiDecoderDummy() override;
 
-  int32_t InitDecode(const VideoCodec* codec_settings,
-                     int32_t number_of_cores) override;
-  int32_t Release() override;
+    int32_t InitDecode(const VideoCodec* codec_settings,
+            int32_t number_of_cores) override;
+    int32_t Release() override;
 
-  int32_t RegisterDecodeCompleteCallback(
-      DecodedImageCallback* callback) override;
+    int32_t RegisterDecodeCompleteCallback(
+            DecodedImageCallback* callback) override;
 
-  int32_t Decode(const EncodedImage& input_image,
-                 bool /*missing_frames*/,
-                 const RTPFragmentationHeader* /*fragmentation*/,
-                 const CodecSpecificInfo* codec_specific_info = nullptr,
-                 int64_t render_time_ms = -1) override;
+    int32_t Decode(const EncodedImage& input_image,
+            bool /*missing_frames*/,
+            const CodecSpecificInfo* codec_specific_info = nullptr,
+            int64_t render_time_ms = -1) override;
 
-  const char* ImplementationName() const override;
+    const char* ImplementationName() const override;
 
- private:
-  bool IsInitialized() const;
+private:
+    bool IsInitialized() const;
 
-  VideoCodec decoder_config_;
-  DecodedImageCallback* decoded_image_callback_;
-  bool decoder_initialized_;
+    VideoCodec decoder_config_;
+    DecodedImageCallback* decoded_image_callback_;
+    bool decoder_initialized_;
 };
 
 }  // namespace webrtc

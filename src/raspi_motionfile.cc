@@ -234,7 +234,8 @@ bool RaspiMotionFile::OpenWriterFiles(void) {
 
     // reset file written size
     total_frame_written_size_ = 0;
-    if( (frame_file_ = rtc::File::Create(h264_temp_)).IsOpen() == false  ) {
+    if( (frame_file_ = rtc::File::Create(base_path_ +
+                    "/" + frame_filename )).IsOpen() == false  ) {
         RTC_LOG(LS_ERROR) << "Error in opening video file : " <<  frame_filename;
         return false;
     }
@@ -392,7 +393,7 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
         video_file_path.SetPathname( video_files_folder.pathname(),
                 video_file_list.front().video_file_);
         RTC_LOG(INFO) << "Removing Video File :" << video_file_list.front().video_file_;
-        rtc::File::Remove( video_file_path );
+        rtc::Filesystem::DeleteFile( video_file_path );
         video_file_list.pop_front();
     };
 

@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "websocket_server.h"
 #include "app_channel.h"
 #include "utils.h"
+#include "config_motion.h"
 
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -54,13 +55,16 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
 
     // LibWebSocket debug log
     if(config.GetLibwebsocketDebugEnable() ) {
-        RTC_LOG(INFO) << "Enable Websocket Library debug logging mesage";
+        RTC_LOG(INFO) << "enabling debug logging message of websocket library";
         LogLevel(LibWebSocketServer::DEBUG_LEVEL_ALL);
     };
 
+    // need to initialize the motion mount after WebRoot initialization.
     config.GetWebRootPath(web_root);
-    RTC_LOG(INFO) << "Using File Mapping : " << web_root;
-    UpdateHttpWebMount(web_root);
+    RTC_LOG(INFO) << "Using http file mapping : " << web_root;
+    RTC_LOG(INFO) << "Using motion video mapping : " << config_motion::motion_directory;
+    AddHttpWebMount( config_motion::motion_detection_enable,
+            web_root, config_motion::motion_directory );
 
     config.GetWebSocketPort(port_num);
     RTC_LOG(INFO) << "WebSocket port num : " << port_num;

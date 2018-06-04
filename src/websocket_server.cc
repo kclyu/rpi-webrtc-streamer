@@ -46,15 +46,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////
 static const char *kProtocolHandlerName = "websocket-http";
-static const char *kMotionMount = "/motion";
+static const char *kMotionMount = "/motion/";
 static const char *kHttpMount = "/";
 static const char *DefaultHtml = "index.html";
 
-static const struct lws_protocol_vhost_options bzip2_extension = {
+static const struct lws_protocol_vhost_options h264_extension = {
 	nullptr,				/* "next" pvo linked-list */
 	nullptr,				/* "child" pvo linked-list */
-	".bz2",				/* file suffix to match */
-	"application/x-bzip2"		/* mimetype to use */
+	".h264",				/* file suffix to match */
+	"video/h264"		/* mimetype to use */
 };
 
 
@@ -92,7 +92,6 @@ LibWebSocketServer::LibWebSocketServer() {
 	memset(&motion_http_mount_, 0x00, sizeof(motion_http_mount_));
     debug_level_ = LibWebSocketServer::DEBUG_LEVEL_NONE;
 
-    webroot_mount_enabled_ = false;
     motion_mount_enabled_ = false;
 
     context_ = nullptr;
@@ -200,11 +199,18 @@ bool LibWebSocketServer::Init(int port) {
     info_.ws_ping_pong_interval = 1;    // WebSocket Ping/Pong interval
 
     info_.server_string = WEBSOCKET_SERVER_NAME;
+
     //  whether or not motion mount is enabled,
     //  http mount will be initialized when webroot mount is enabled.
-    if( webroot_mount_enabled_ == true ) {
+    if( motion_mount_enabled_ == true ) {
+        // TODO: The current motion capture directory's motion mount
+        // does not work. Need confirmation later
+        motion_http_mount_.mount_next = &webroot_http_mount_;
+        info_.mounts = &motion_http_mount_;
+    }
+    else  {
         info_.mounts = &webroot_http_mount_;
-    };
+    }
 
 	context_ = lws_create_context(&info_);
 	if (context_ == nullptr) {
@@ -220,55 +226,50 @@ bool LibWebSocketServer::Init(int port) {
     return true;
 }
 
-bool LibWebSocketServer::UpdateHttpMotionMount(const std::string &motion_path){
+bool LibWebSocketServer::AddHttpWebMount(bool motion_enabled,
+        const std::string &web_path, const std::string &motion_path){
     rtc::Pathname file_path;
 
-    // validate the given path is directory
-    file_path.SetFolder( motion_path );
-    if( rtc::Filesystem::IsFolder( file_path ) == false ) {
-        RTC_LOG(LS_ERROR) << "Motion path is not directory : "
-                    << file_path.pathname() ;
-        return false;
-    }
-    else {
+    if( motion_enabled == true) {
+        // validate the given path is directory
+        file_path.SetFolder( motion_path );
+        if( rtc::Filesystem::IsFolder( file_path ) == false ) {
+            RTC_LOG(LS_ERROR) << "Motion path is not directory : "
+                << file_path.pathname() ;
+            return false;
+        }
+
         motion_http_mount_.mountpoint = kMotionMount;
         char *buf = new char [motion_path.size() + 1];
         strcpy( buf, motion_path.c_str());
         motion_http_mount_.origin = buf;
 
         motion_http_mount_.def = DefaultHtml;
-        motion_http_mount_.mountpoint_len
-            = strlen(motion_http_mount_.mountpoint);
+        motion_http_mount_.mountpoint_len = strlen(kMotionMount);
         motion_http_mount_.origin_protocol = LWSMPRO_FILE;
+        // adding h.264 mine type extension
+        motion_http_mount_.extra_mimetypes = &h264_extension;
         motion_mount_enabled_ = true;
     }
-    return true;
-}
-
-bool LibWebSocketServer::UpdateHttpWebMount(const std::string &web_path){
-    rtc::Pathname file_path;
 
     // validate the given path is directory
     file_path.SetFolder( web_path );
     if( rtc::Filesystem::IsFolder( file_path ) == false ) {
         RTC_LOG(LS_ERROR) << "WebRoot path is not directory : "
-                    << file_path.pathname() ;
+            << file_path.pathname() ;
         return false;
     }
-    else {
-        if( motion_mount_enabled_ == true )
-            webroot_http_mount_.mount_next = &motion_http_mount_;
-        webroot_http_mount_.mountpoint = kHttpMount;
-        char *buf =  new char [web_path.size() + 1];
-        strcpy( buf, web_path.c_str());
-        webroot_http_mount_.origin = buf;
 
-        webroot_http_mount_.def = DefaultHtml;
-        webroot_http_mount_.mountpoint_len
-            = strlen(webroot_http_mount_.mountpoint);
-        webroot_http_mount_.origin_protocol = LWSMPRO_FILE;
-        webroot_mount_enabled_ = true;
-    }
+    // webroot mount
+    webroot_http_mount_.mountpoint = kHttpMount;
+    char *buf =  new char [web_path.size() + 1];
+    strcpy( buf, web_path.c_str());
+    webroot_http_mount_.origin = buf;
+
+    webroot_http_mount_.def = DefaultHtml;
+    webroot_http_mount_.mountpoint_len = strlen(kHttpMount);
+    webroot_http_mount_.origin_protocol = LWSMPRO_FILE;
+    webroot_http_mount_.extra_mimetypes = &h264_extension;
     return true;
 }
 
@@ -326,9 +327,6 @@ void LibWebSocketServer::SendMessage(int sockid, const std::string& message){
     for(std::list<struct WSInternalHandlerConfig>::iterator iter
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
         if( iter->QueueMessage(sockid, message) == true ) {
-            // book us a LWS_CALLBACK_HTTP_WRITEABLE callback
-            // lws_callback_on_writable_all_protocol(context_,
-            //         &protocols[0]);
             lws_callback_on_writable(iter->GetWsiFromHandlerRuntime(sockid));
             return;
         }
