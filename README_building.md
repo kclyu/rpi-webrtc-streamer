@@ -120,7 +120,7 @@ If you installed a new library or software on Raspberry PI, please execute it ag
 ```
 cd ~/Workspace/webrtc/src
 mkdir arm_build
-cp ~/Workspace/rpi-webrtc-stremer/misc/webrtc_arm_build_args.gn arm_build #note 3
+cp ~/Workspace/rpi-webrtc-stremer/misc/webrtc_arm_build_args.gn arm_build/args.gn #note 3
 gn gen arm_build
 ninja -C arm_build
 ```
