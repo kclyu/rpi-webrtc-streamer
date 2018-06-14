@@ -4,8 +4,8 @@
 # See "gn args <out_dir> --list" for available build arguments.
 
 is_component_build=false
-is_official_build=true
-#is_debug=true # enable debug
+is_official_build=false
+is_debug=true # enable debug
 enable_iterator_debugging=false
 
 host_toolchain="//build/toolchain/linux:arm"
@@ -26,10 +26,8 @@ arm_use_neon=false
 arm_use_thumb=false
 arm_fpu="vfp"
 arm_optionally_use_neon=false
+arm_tune="arm1176jz-s"
 
-rtc_use_openmax_dl=false
-rtc_build_with_neon=false
-rtc_build_openmax_dl=false
 rtc_build_with_neon=false
 
 # SSL related config
