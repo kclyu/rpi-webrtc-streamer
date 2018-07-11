@@ -43,6 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config_streamer.h"
 #include "config_defines.h"
 
+#include "utils.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Default values
@@ -133,7 +135,7 @@ bool StreamerConfig::LoadConfig()  {
     }
 
     config_file_ = path.pathname();
-    config_dir_basename_ = path.parent_folder();
+    config_dir_basename_ = utils::GetParentFolder(path);
     std::cout << "Using config file base path:" <<
         ((config_dir_basename_.size() == 0)?"CWD":config_dir_basename_) << std::endl;
     config_loaded_ = true;
@@ -292,7 +294,7 @@ bool StreamerConfig::GetLogPath(std::string& log_path) {
     path.SetPathname( log_path );
 
     // trying to check log path is directory
-    if( path.folder().size() == 0 &&  rtc::Filesystem::IsFolder(path) == true )  {
+    if( utils::GetFolder(path).size() == 0 &&  rtc::Filesystem::IsFolder(path) == true )  {
         // log path is current working directory
         std::cerr << "Using message logging log directory in CWD\n";
         std::cerr << "Using CWD log is for only development support feature"

@@ -32,6 +32,7 @@
 #include "rtc_base/logsinks.h"
 
 #include "file_logger.h"
+#include "utils.h"
 
 #define  LOGGING_FILENAME       "rws_log"
 #define  MAX_LOG_FILE_SIZE      10*1024*1024    // 10M bytes;
@@ -101,7 +102,7 @@ bool FileLogger::DeleteFolderFiles(const rtc::Pathname &folder) {
         // ignore "." and ".." filename
         if( filename.compare(0, filename.size(), "." ) != 0 &&
                 filename.compare(0, filename.size(), ".." ) != 0  ) {
-            file.SetPathname(folder.folder(), filename);
+            file.SetPathname(utils::GetFolder(folder), filename);
             rtc::Filesystem::DeleteFile(file);
             // don't care return value
         }
@@ -116,23 +117,6 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
     rtc::DirectoryIterator it;
     rtc::Pathname src_file, dest_file;
 
-#ifdef _0   // TODO remove CreateFolder
-    // check src & dest path is directory
-    if( !rtc::Filesystem::IsFolder(dest)) {
-        if( rtc::Filesystem::CreateFolder( dest ) == false )
-            RTC_LOG(LS_ERROR) << "Failed to create dest directory: "
-                << dest.pathname();
-    }
-    if( !rtc::Filesystem::IsFolder(src)) {
-        if( rtc::Filesystem::CreateFolder( src ) == false ) {
-            RTC_LOG(LS_ERROR) << "Failed to create src directory: "
-                << src.pathname();
-            // source directory is just created, so nothing to move files
-            return true;
-        };
-    }
-#endif
-
     // iterate source directory
     if (!it.Iterate(src)) {
         return false;
@@ -140,8 +124,8 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
     do {
         std::string filename = it.Name();
         if( filename.compare(0, prefix.size(), prefix ) == 0 ) {
-            src_file.SetPathname(src.folder(), filename);
-            dest_file.SetPathname(dest.folder(), filename);
+            src_file.SetPathname(utils::GetFolder(src), filename);
+            dest_file.SetPathname(utils::GetFolder(dest), filename);
             if( rtc::Filesystem::MoveFile(src_file, dest_file) == false )
                 RTC_LOG(LS_ERROR) << "Failed to move file : "
                     << src_file.pathname() << ", to: "

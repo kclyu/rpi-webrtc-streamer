@@ -42,9 +42,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/platform_thread.h"
 
-
 #include "config_motion.h"
 #include "raspi_motionfile.h"
+#include "utils.h"
 
 static const char videoFileExtension[] = ".h264";
 static const char imvFileExtension[] = ".imv";
@@ -367,7 +367,7 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     }
     do {
         std::string filename = it.Name();
-        video_file_path.SetPathname(video_files_folder.folder(), filename);
+        video_file_path.SetPathname(utils::GetFolder(video_files_folder), filename);
         if( !(filename.compare(".") == 0 || filename.compare("..") == 0) ) {
             if( rtc::Filesystem::GetFileSize(video_file_path,&file_size)) {
                 video_file_info.video_file_ = filename;

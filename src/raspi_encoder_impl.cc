@@ -79,7 +79,8 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
       base_internal_ms_(clock_->TimeInMilliseconds()),
       last_keyframe_request_(clock_->TimeInMilliseconds()),
 
-      mode_(kRealtimeVideo), max_payload_size_(0), key_frame_interval_(0),
+      mode_(VideoCodecMode::kRealtimeVideo), max_payload_size_(0),
+      key_frame_interval_(0),
       packetization_mode_(H264PacketizationMode::SingleNalUnit),
       initial_delay_(0) {
 
@@ -411,7 +412,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         encoded_image_._buffer = buf->data;
         encoded_image_._size = buf->alloc_size;
         encoded_image_._completeFrame = true;
-        encoded_image_.timing_.flags = TimingFrameFlags::kInvalid;
+        encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
         encoded_image_._encodedWidth = mmal_encoder_->GetWidth();
         encoded_image_._encodedHeight = mmal_encoder_->GetHeight();
 

@@ -440,7 +440,14 @@ void Streamer::AddStreams() {
             options.highpass_filter = rtc::Optional<bool>(true);
         if( config_media::audio_noise_suppression == true )
             options.noise_suppression = rtc::Optional<bool>(true);
-    };
+    }
+    else {
+        options.echo_cancellation = rtc::Optional<bool>(false);
+        options.auto_gain_control = rtc::Optional<bool>(false);
+        options.highpass_filter = rtc::Optional<bool>(false);
+        options.noise_suppression = rtc::Optional<bool>(false);
+    }
+
     // audio_level_control is removed
     // if( config_media::audio_level_control == true )
     //         options.level_control = rtc::Optional<bool>(true);

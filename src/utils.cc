@@ -28,7 +28,6 @@
 #include "rtc_base/stringutils.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/filerotatingstream.h"
-#include "rtc_base/pathutils.h"
 #include "rtc_base/logsinks.h"
 
 #include "utils.h"
@@ -38,6 +37,8 @@ using rtc::FromString;
 using rtc::sprintfn;
 
 namespace utils {
+
+static const char FOLDER_DELIMS = '/';
 
 // Print verion information for command line option
 void PrintVersionInfo() {
@@ -116,6 +117,25 @@ bool ParseVideoResolution(const std::string resolution,int *width, int *height )
     }
     *height = value;
     return true;
+}
+
+
+std::string GetFolder(rtc::Pathname path) {
+    size_t f = path.pathname().rfind(path.filename());
+    return path.pathname().replace(f, path.filename().length(), "");
+}
+
+
+std::string GetParentFolder(rtc::Pathname path) {
+    std::string::size_type pos = std::string::npos;
+    std::string folder = GetFolder(path);
+    if (folder.size() >= 2) {
+        pos = folder.find_last_of(FOLDER_DELIMS, folder.length() - 2);
+    }
+    if (pos != std::string::npos) {
+        return folder.substr(0, pos + 1);
+    } 
+    return "";  // return empty string
 }
 
 };
