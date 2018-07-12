@@ -98,6 +98,8 @@ bool RaspiMotion::IsActive() const {
 
 bool RaspiMotion::StartCapture() {
     RTC_LOG(INFO) << "Raspi Motion Starting";
+    // media configuration sigleton reference
+    ConfigMedia *config_media = ConfigMediaSingleton::Instance();
 
     // Get the instance of MMAL encoder wrapper
     if( (mmal_encoder_ = webrtc::MMALWrapper::Instance() ) == nullptr ) {
@@ -112,8 +114,9 @@ bool RaspiMotion::StartCapture() {
     mmal_encoder_->SetIntraPeriod(framerate_ * VIDEO_INTRAFRAME_PERIOD);
 
     // Setting Video Rotation and Flip setting
-    mmal_encoder_->SetVideoRotation(config_media::video_rotation);
-    mmal_encoder_->SetVideoFlip(config_media::video_vflip, config_media::video_hflip);
+    mmal_encoder_->SetVideoRotation(config_media->GetVideoRotation());
+    mmal_encoder_->SetVideoFlip(config_media->GetVideoVFlip(), 
+            config_media->GetVideoHFlip());
     mmal_encoder_->SetVideoAnnotate(config_motion::motion_enable_annotate_text);
     if( config_motion::motion_enable_annotate_text == true ){
         mmal_encoder_->SetVideoAnnotateUserText(config_motion::motion_annotate_text);
@@ -124,15 +127,15 @@ bool RaspiMotion::StartCapture() {
     mmal_encoder_->SetVideoAnnotateTextSizeRatio(0);
 
     // Video Image related parameter settings
-    mmal_encoder_->SetVideoSharpness(config_media::video_sharpness);
-    mmal_encoder_->SetVideoContrast(config_media::video_contrast);
-    mmal_encoder_->SetVideoBrightness(config_media::video_brightness);
-    mmal_encoder_->SetVideoSaturation(config_media::video_saturation);
-    mmal_encoder_->SetVideoEV(config_media::video_ev);
-    mmal_encoder_->SetVideoExposureMode(config_media::video_exposure_mode);
-    mmal_encoder_->SetVideoFlickerMode(config_media::video_flicker_mode);
-    mmal_encoder_->SetVideoAwbMode(config_media::video_awb_mode);
-    mmal_encoder_->SetVideoDrcMode(config_media::video_drc_mode);
+    mmal_encoder_->SetVideoSharpness(config_media->GetVideoSharpness());
+    mmal_encoder_->SetVideoContrast(config_media->GetVideoContrast());
+    mmal_encoder_->SetVideoBrightness(config_media->GetVideoBrightness());
+    mmal_encoder_->SetVideoSaturation(config_media->GetVideoSaturation());
+    mmal_encoder_->SetVideoEV(config_media->GetVideoEV());
+    mmal_encoder_->SetVideoExposureMode(config_media->GetVideoExposureMode());
+    mmal_encoder_->SetVideoFlickerMode(config_media->GetVideoFlickerMode());
+    mmal_encoder_->SetVideoAwbMode(config_media->GetVideoAwbMode());
+    mmal_encoder_->SetVideoDrcMode(config_media->GetVideoDrcMode());
 
     RTC_LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_
         << "@" << framerate_ << ", " << bitrate_ << " kbps";

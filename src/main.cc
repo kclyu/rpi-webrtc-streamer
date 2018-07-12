@@ -164,12 +164,14 @@ int main(int argc, char** argv) {
     }
 
     if( streamer_config.GetMediaConfig(config_filename) == true ) {
-        if( config_media::config_load(config_filename) == false ) {
-            RTC_LOG(LS_WARNING) << "Failed to load media option config file:"
-                << config_filename;
-        }
+        // media configuration sigleton reference
+        ConfigMedia *config_media = ConfigMediaSingleton::Instance();
+        RTC_DCHECK( config_media != nullptr );
+        // return value does not have meaning
+        config_media->Load(config_filename);    
         RTC_LOG(INFO) << "Using Media Config file: " << config_filename;
     };
+
     if( streamer_config.GetMotionConfig(config_filename) == true ) {
         if( config_motion::config_load(config_filename) == false ) {
             RTC_LOG(LS_WARNING) << "Failed to load motion option config file:"

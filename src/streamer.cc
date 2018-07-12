@@ -38,15 +38,16 @@
 #include "api/rtpsenderinterface.h"
 #include "api/test/fakeconstraints.h"
 #include "media/base/fakevideocapturer.h"
-#include "raspi_encoder.h"
-#include "raspi_encoder_impl.h"
-#include "raspi_decoder.h"
-#include "raspi_decoder_dummy.h"
 
 #include "streamer.h"
 #include "streamer_observer.h"
 #include "config_streamer.h"
 #include "config_media.h"
+
+#include "raspi_encoder.h"
+#include "raspi_encoder_impl.h"
+#include "raspi_decoder.h"
+#include "raspi_decoder_dummy.h"
 
 
 using webrtc::PeerConnectionInterface;
@@ -178,7 +179,8 @@ void Streamer::UpdateMaxBitrate() {
                  }
                  else {
                      encoding.max_bitrate_bps
-                         = rtc::Optional<int>(config_media::max_bitrate);
+                         = rtc::Optional<int>(
+                                 ConfigMediaSingleton::Instance()->GetMaxBitrate());
                      RTC_LOG(INFO) << "Changing Max Bitrate Bps: "
                          << *encoding.max_bitrate_bps;
                      sender->SetParameters(parameters);
@@ -430,15 +432,18 @@ void Streamer::AddStreams() {
     if (active_streams_.find(kStreamId) != active_streams_.end())
         return;  // Already added.
 
+    // media configuration sigleton reference
+    ConfigMedia *config_media = ConfigMediaSingleton::Instance();
+
     cricket::AudioOptions options;
-    if( config_media::audio_processing_enable == true ) {
-        if( config_media::audio_echo_cancel == true )
+    if( config_media->GetAudioProcessing()  == true ) {
+        if( config_media->GetAudioEchoCancel() == true )
             options.echo_cancellation = rtc::Optional<bool>(true);
-        if( config_media::audio_gain_control == true )
+        if( config_media->GetAudioEchoCancel()  == true )
             options.auto_gain_control = rtc::Optional<bool>(true);
-        if( config_media::audio_highpass_filter == true )
+        if( config_media->GetAudioHighPassFilter() == true )
             options.highpass_filter = rtc::Optional<bool>(true);
-        if( config_media::audio_noise_suppression == true )
+        if( config_media->GetAudioNoiseSuppression() == true )
             options.noise_suppression = rtc::Optional<bool>(true);
     }
     else {

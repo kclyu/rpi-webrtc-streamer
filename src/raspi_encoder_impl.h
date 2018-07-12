@@ -92,6 +92,8 @@ private:
     bool start_encoding_;
 
     MMALEncoderWrapper *mmal_encoder_;
+    // media configuration sigleton reference
+    ConfigMedia *config_media_;
 
     bool has_reported_init_;
     bool has_reported_error_;

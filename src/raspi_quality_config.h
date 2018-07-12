@@ -104,6 +104,9 @@ public:
     bool GetInitialBestMatch(QualityConfig::Resolution& resolution);
 
 private:
+    // media configuration sigleton reference
+    ConfigMedia *config_media_;
+
     std::list<ResolutionConfigEntry> resolution_config_;
     int target_framerate_;
     int target_bitrate_;

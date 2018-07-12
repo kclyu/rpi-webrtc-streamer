@@ -1,0 +1,34 @@
+
+#define MEDIA_CONFIG_ROW_LIST \
+    _CR_I( MaxBitrate, max_bitrate, int, 3500000 ) \
+    _CR_B( Resolution4_3, resolution_4_3_enable, bool, true ) \
+    _CR_I( VideoRotation, video_rotation, int, 0) \
+    _CR_B( VideoVFlip, video_vflip, bool, false ) \
+    _CR_B( VideoHFlip, video_hflip, bool, false ) \
+    _CR_L( VideoResolutionList43, video_resolution_list_4_3, std::string, "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232" ) \
+    _CR_L( VideoResolutionList169, video_resolution_list_16_9, std::string, "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080" ) \
+    _CR_B( VideoDynamicResolution, use_dynamic_video_resolution, bool, true ) \
+    _CR_B( VideoDynamicFps, use_dynamic_video_fps, bool, true)    \
+    _CR( FixedVideoResolution, fixed_video_resolution, std::string, "640x480") \
+    _CR_I( FixedVideoFps, fixed_video_fps, int, 30) \
+    _CR_B( AudioProcessing, audio_processing_enable, bool, false ) \
+    _CR_B( AudioEchoCancel, audio_echo_cancel, bool, true ) \
+    _CR_B( AudioGainControl, audio_gain_control, bool, true ) \
+    _CR_B( AudioHighPassFilter, audio_highpass_filter, bool, true ) \
+    _CR_B( AudioNoiseSuppression, audio_noise_suppression, bool, true ) \
+    _CR_B( AudioLevelControl,  audio_level_control, bool, true ) \
+    _CR_I( VideoSharpness, video_sharpness, int, 0 ) \
+    _CR_I( VideoContrast, video_contrast, int, 0 ) \
+    _CR_I( VideoBrightness, video_brightness, int, 50 ) \
+    _CR_I( VideoSaturation, video_saturation, int, 0 ) \
+    _CR_I( VideoEV, video_ev, int, 0 ) \
+    _CR( VideoExposureMode, video_exposure_mode, std::string, "auto" ) \
+    _CR( VideoFlickerMode, video_flicker_mode, std::string, "auto" ) \
+    _CR( VideoAwbMode, video_awb_mode, std::string, "auto" ) \
+    _CR( VideoDrcMode, video_drc_mode, std::string, "off" ) \
+    _CR_B( VideoStabilisation,  video_stabilisation, bool, false ) \
+    _CR_B( VideoEnableAnnotateText, video_enable_annotate_text, bool, false ) \
+    _CR( VideoAnnotateText, video_annotate_text, std::string,"" )  \
+    _CR_I( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, int, 3 )
+
+

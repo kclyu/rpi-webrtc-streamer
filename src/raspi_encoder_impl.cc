@@ -44,9 +44,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rtc_base/platform_thread.h"
 
+#include "config_media.h"
+
 #include "raspi_encoder.h"
 #include "raspi_encoder_impl.h"
-#include "config_media.h"
 
 
 namespace webrtc {
@@ -71,18 +72,19 @@ static const int kHighH264QpThreshold = 37;
 //
 ///////////////////////////////////////////////////////////////////////////////
 RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
-    : start_encoding_(false), mmal_encoder_(nullptr), has_reported_init_(false),
-      has_reported_error_(false), encoded_image_callback_(nullptr),
-      clock_(Clock::GetRealTimeClock()),
-      delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
-                             clock_->TimeInMilliseconds()),
-      base_internal_ms_(clock_->TimeInMilliseconds()),
-      last_keyframe_request_(clock_->TimeInMilliseconds()),
+    : start_encoding_(false), mmal_encoder_(nullptr), config_media_(nullptr),
+    has_reported_init_(false), has_reported_error_(false), 
+    encoded_image_callback_(nullptr),
+    clock_(Clock::GetRealTimeClock()),
+    delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
+            clock_->TimeInMilliseconds()),
+    base_internal_ms_(clock_->TimeInMilliseconds()),
+    last_keyframe_request_(clock_->TimeInMilliseconds()),
 
-      mode_(VideoCodecMode::kRealtimeVideo), max_payload_size_(0),
-      key_frame_interval_(0),
-      packetization_mode_(H264PacketizationMode::SingleNalUnit),
-      initial_delay_(0) {
+    mode_(VideoCodecMode::kRealtimeVideo), max_payload_size_(0),
+    key_frame_interval_(0),
+    packetization_mode_(H264PacketizationMode::SingleNalUnit),
+    initial_delay_(0) {
 
     RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
     std::string packetization_mode_string;
@@ -90,6 +92,8 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
             &packetization_mode_string) && packetization_mode_string == "1") {
         packetization_mode_ = H264PacketizationMode::NonInterleaved;
     }
+
+    config_media_ = ConfigMediaSingleton::Instance();
 }
 
 RaspiEncoderImpl::~RaspiEncoderImpl() {
@@ -118,9 +122,9 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     }
 
     framerate_updated = static_cast<int>(codec_settings->maxFramerate);
-    if( config_media::use_dynamic_video_fps == false)
+    if( config_media_->GetVideoDynamicFps() == false)
         // using fixed fps when use_dynamic_video_fps is disabled
-        framerate_updated = config_media::fixed_video_fps;
+        framerate_updated = config_media_->GetFixedVideoFps();
 
     if( framerate_updated > 30 ) framerate_updated = 30;
     quality_config_.ReportFrameRate( framerate_updated);
@@ -151,27 +155,29 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     mmal_encoder_->SetInlineMotionVectors(false);
 
     // Setting Video Rotation and Flip setting
-    mmal_encoder_->SetVideoRotation(config_media::video_rotation);
-    mmal_encoder_->SetVideoFlip(config_media::video_vflip, config_media::video_hflip);
+    mmal_encoder_->SetVideoRotation(config_media_->GetVideoRotation());
+    mmal_encoder_->SetVideoFlip(config_media_->GetVideoVFlip(), 
+            config_media_->GetVideoHFlip() );
 
     // Video Image related parameter settings
-    mmal_encoder_->SetVideoSharpness(config_media::video_sharpness);
-    mmal_encoder_->SetVideoContrast(config_media::video_contrast);
-    mmal_encoder_->SetVideoBrightness(config_media::video_brightness);
-    mmal_encoder_->SetVideoSaturation(config_media::video_saturation);
-    mmal_encoder_->SetVideoEV(config_media::video_ev);
-    mmal_encoder_->SetVideoExposureMode(config_media::video_exposure_mode);
-    mmal_encoder_->SetVideoFlickerMode(config_media::video_flicker_mode);
-    mmal_encoder_->SetVideoAwbMode(config_media::video_awb_mode);
-    mmal_encoder_->SetVideoDrcMode(config_media::video_drc_mode);
-    mmal_encoder_->SetVideoVideoStabilisation(config_media::video_stabilisation);
+    mmal_encoder_->SetVideoSharpness(config_media_->GetVideoSharpness());
+    mmal_encoder_->SetVideoContrast(config_media_->GetVideoContrast());
+    mmal_encoder_->SetVideoBrightness(config_media_->GetVideoBrightness());
+    mmal_encoder_->SetVideoSaturation(config_media_->GetVideoSaturation() );
+    mmal_encoder_->SetVideoEV(config_media_->GetVideoEV());
+    mmal_encoder_->SetVideoExposureMode(config_media_->GetVideoExposureMode());
+    mmal_encoder_->SetVideoFlickerMode(config_media_->GetVideoFlickerMode());
+    mmal_encoder_->SetVideoAwbMode(config_media_->GetVideoAwbMode());
+    mmal_encoder_->SetVideoDrcMode(config_media_->GetVideoDrcMode()); 
+    mmal_encoder_->SetVideoVideoStabilisation(config_media_->GetVideoStabilisation());
 
     // Video Annotation
-    mmal_encoder_->SetVideoAnnotate(config_media::video_enable_annotate_text);
-    if( config_media::video_enable_annotate_text == true ) {
-        mmal_encoder_->SetVideoAnnotateUserText(config_media::video_annotate_text);
+    bool video_enable_annotate_text = config_media_->GetVideoEnableAnnotateText();
+    mmal_encoder_->SetVideoAnnotate(video_enable_annotate_text);
+    if( video_enable_annotate_text == true ) {
+        mmal_encoder_->SetVideoAnnotateUserText(config_media_->GetVideoAnnotateText());
         mmal_encoder_->SetVideoAnnotateTextSizeRatio(
-                config_media::video_annotate_text_size_ratio );
+                config_media_->GetVideoAnnotateTextSizeRatio());
     };
 
     // Settings for Quality
@@ -236,7 +242,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     QualityConfig::Resolution resolution;
     uint32_t framerate_updated;
 
-    if( config_media::use_dynamic_video_fps == true ) {
+    if( config_media_->GetVideoDynamicFps() == true ) {
         // using dynamic fps, so update fps when required
         if( framerate > 30 )
             framerate_updated = 30;
@@ -245,7 +251,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     }
     else
         // using fixed fps when use_dynamic_video_fps is disabled
-        framerate_updated = config_media::fixed_video_fps;
+        framerate_updated = config_media_->GetFixedVideoFps();
 
     if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;

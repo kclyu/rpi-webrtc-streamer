@@ -32,8 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
-#include "raspi_quality_config.h"
 #include "config_media.h"
+#include "raspi_quality_config.h"
 
 
 static const int kLowH264QpThreshold = 24;
@@ -66,27 +66,19 @@ QualityConfig::QualityConfig()
     : target_framerate_(0), target_bitrate_(0),
     packet_loss_(3 * 30), rtt_(3 * 30), average_qp_(3 * 30) {
 
-    use_dynamic_resolution_  =  config_media::use_dynamic_video_resolution;
-    use_4_3_resolution_  =  config_media::resolution_4_3_enable;
+    config_media_  = ConfigMediaSingleton::Instance();
+    std::list <ConfigMedia::VideoResolution> resolution_list = 
+        config_media_->GetVideoResolutionList();
 
-    //  TODO Need to check these resolution have same FOV between resolutions
-    if( use_4_3_resolution_ ) {
-        // 4:3 resolution
-        for(std::list<config_media::ResolutionConfig>::iterator iter =
-                config_media::resolution_list_4_3.begin();
-                iter != config_media::resolution_list_4_3.end(); iter++) {
-            resolution_config_.push_back(
+    use_dynamic_resolution_  =  config_media_->GetVideoDynamicResolution();
+    use_4_3_resolution_  =  config_media_->GetResolution4_3();
+
+    // 4:3 resolution
+    for(std::list<ConfigMedia::VideoResolution>::iterator iter =
+            resolution_list.begin(); iter != resolution_list.end(); 
+            iter++) {
+        resolution_config_.push_back(
                 ResolutionConfigEntry(iter->width_,iter->height_,20,kMaxFrameRate));
-        }
-    }
-    else {
-        // 16:9 resolution
-        for(std::list<config_media::ResolutionConfig>::iterator iter =
-                config_media::resolution_list_16_9.begin();
-            iter != config_media::resolution_list_16_9.end(); iter++) {
-            resolution_config_.push_back(
-                    ResolutionConfigEntry(iter->width_,iter->height_,20,kMaxFrameRate));
-        }
     }
 }
 
@@ -179,8 +171,7 @@ bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
     // The initial resolution will be used
     // if the use default resolution flag is on.
     if( use_dynamic_resolution_ == false) {
-        candidate.width_ = config_media::fixed_resolution.width_;
-        candidate.height_ = config_media::fixed_resolution.height_;
+        config_media_->GetFixedVideoResolution(candidate.width_, candidate.height_);
         candidate.framerate_ = kMaxFrameRate;
         candidate.bitrate_ = static_cast<int>(
                 (candidate.width_ * candidate.height_ * kMaxFrameRate *

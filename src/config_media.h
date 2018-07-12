@@ -30,13 +30,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CONFIG_MEDIA_H_
 #define CONFIG_MEDIA_H_
 
+#include <memory>
+
 #include "rtc_base/checks.h"
 
 #include "rtc_base/fileutils.h"
 #include "rtc_base/optionsfile.h"
 #include "rtc_base/pathutils.h"
-
-#include "config_defines.h"
+#include "rtc_base/optionsfile.h"
+#include "rtc_base/criticalsection.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,59 +59,100 @@ int check_optionvalue_drc_mode(const char *str );
 }	// extern "C"
 #endif  // __cplusplus
 
-//
 // The config part for global media config is required.
-//
-namespace config_media {
+class ConfigMedia {
+public:
+    ConfigMedia();
+    ~ConfigMedia();
 
-    struct ResolutionConfig {
-        explicit ResolutionConfig(int width, int height ) :
+    struct VideoResolution {
+        explicit VideoResolution(int width, int height ) :
             width_(width),height_(height) {};
-        virtual ~ResolutionConfig() {};
+        explicit VideoResolution(void) :
+            width_(640),height_(480) {};
+        virtual ~VideoResolution() {};
         int width_;
         int height_;
     };
-    extern struct ResolutionConfig fixed_resolution;
-    extern std::list <ResolutionConfig> resolution_list_4_3;
-    extern std::list <ResolutionConfig> resolution_list_16_9;
 
-    CONFIG_DEFINE_H( MaxBitrate, max_bitrate, int );
-    CONFIG_DEFINE_H( Resolution4_3, resolution_4_3_enable, bool );
-    CONFIG_DEFINE_H( VideoDynamicResolution, use_dynamic_video_resolution, bool);
-    CONFIG_DEFINE_H( VideoDynamicFps, use_dynamic_video_fps, bool);
-    CONFIG_DEFINE_H( VideoRotation, video_rotation, int);
-    CONFIG_DEFINE_H( FixedVideoFps, fixed_video_fps, int);
-    CONFIG_DEFINE_H( VideoVFlip, video_vflip, bool);
-    CONFIG_DEFINE_H( VideoHFlip, video_hflip, bool);
+    bool Load(std::string config_filename);
+    bool Save(void);
+    bool ConfigFromJson(const std::string &config_message, std::string &error);
+    bool ConfigToJson(std::string &config_message);
+    void DumpConfig(void);
+    std::list <VideoResolution> GetVideoResolutionList();
+    bool GetFixedVideoResolution(int &width, int &height);
 
-    // this feature will require CPU usage because all of audio enhancement
-    // feature is S/W based
-    CONFIG_DEFINE_H( AudioProcessing, audio_processing_enable, bool);
-    CONFIG_DEFINE_H( AudioEchoCancel, audio_echo_cancel, bool);
-    CONFIG_DEFINE_H( AudioGainControl, audio_gain_control, bool);
-    CONFIG_DEFINE_H( AudioHighPassFilter, audio_highpass_filter, bool);
-    CONFIG_DEFINE_H( AudioNoiseSuppression, audio_noise_suppression, bool );
-    CONFIG_DEFINE_H( AudioLevelControl,  audio_level_control, bool);
+    // define expasion macros for Getter
+    //      type GetName();
+    #define _CR(name, config_var, config_type, config_default ) \
+        config_type Get ## name(void); 
+    #define _CR_L(name, config_var, config_type, config_default )
+    #define _CR_B _CR
+    #define _CR_I _CR
 
-    CONFIG_DEFINE_H( VideoSharpness, video_sharpness, int );
-    CONFIG_DEFINE_H( VideoContrast, video_contrast, int);
-    CONFIG_DEFINE_H( VideoBrightness, video_brightness, int);
-    CONFIG_DEFINE_H( VideoSaturation, video_saturation, int);
-    CONFIG_DEFINE_H( VideoEV, video_ev, int);
-    CONFIG_DEFINE_H( VideoExposureMode, video_exposure_mode, std::string);
-    CONFIG_DEFINE_H( VideoFlickerMode, video_flicker_mode, std::string);
-    CONFIG_DEFINE_H( VideoAwbMode, video_awb_mode, std::string);
-    CONFIG_DEFINE_H( VideoDrcMode, video_drc_mode, std::string);
-    CONFIG_DEFINE_H( VideoStabilisation, video_stabilisation, bool);
+    #include "def/config_media.def"
+    // define config_media prototype
+    MEDIA_CONFIG_ROW_LIST
 
-    // Annotation Text
-    CONFIG_DEFINE_H( VideoEnableAnnotateText, video_enable_annotate_text, bool);
-    CONFIG_DEFINE_H( VideoAonnotateText, video_annotate_text, std::string);
-    CONFIG_DEFINE_H( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, int);
+    #undef _CR
+    #undef _CR_L
+    #undef _CR_B
+    #undef _CR_I
+    #undef MEDIA_CONFIG_ROW_LIST
 
+    // define expasion macros for Setter
+    // bool type:
+    //      bool SetName(bool);
+    //      bool validate_value__config_var(bool,bool)
+    #define _CR(name, config_var, config_type, config_default ) \
+        config_type config_var; \
+        bool isloaded__ ## config_var; \
+        bool Set ## name(config_type value); \
+        bool validate_value__ ## config_var(config_type value, config_type default_value); 
+    #define _CR_L _CR
+    #define _CR_B _CR
+    #define _CR_I _CR
+
+    #include "def/config_media.def"
+    // define config_media prototype
+    MEDIA_CONFIG_ROW_LIST
+
+    #undef _CR
+    #undef _CR_L
+    #undef _CR_B
+    #undef _CR_I
+    #undef MEDIA_CONFIG_ROW_LIST
+
+private:
+    std::unique_ptr<rtc::OptionsFile> media_optionfile_;
+    rtc::CriticalSection crit_sect_;
+    std::string config_file_;
+    bool config_file_loaded_;
+    struct VideoResolution fixed_resolution_;
+    std::list <VideoResolution> video_resolution_list_4_3_;
+    std::list <VideoResolution> video_resolution_list_16_9_;
+
+    // Additional config value validator
+    bool validate__resolution(int width, int height);
+
+    void LoadConfigWithDefault(void);
     bool config_load(const std::string config_filename);
 
-}   // media config name_space
+};   // ConfigMedia
+
+class ConfigMediaSingleton {
+public:
+    // Singleton, constructor and destructor are private.
+    static ConfigMedia* Instance();
+
+private:
+    ConfigMediaSingleton();
+    ~ConfigMediaSingleton();
+
+    RTC_DISALLOW_COPY_AND_ASSIGN(ConfigMediaSingleton);
+};
+
 
 
 
