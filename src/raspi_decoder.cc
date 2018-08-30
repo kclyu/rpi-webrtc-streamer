@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 #include "common_types.h"
 #include "common_video/h264/h264_bitstream_parser.h"
@@ -48,17 +48,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace webrtc {
 
 std::unique_ptr<RaspiDecoder> RaspiDecoder::Create() {
-  RTC_LOG(LS_INFO) << "Creating H264DecoderDummy.";
-  return rtc::MakeUnique<RaspiDecoderDummy>();
+    RTC_LOG(LS_INFO) << "Creating H264DecoderDummy.";
+    return absl::make_unique<RaspiDecoderDummy>();
 }
 
 bool RaspiDecoder::IsSupported() {
-  return true;
+    return true;
 }
 
 RaspiVideoDecoderFactory* RaspiVideoDecoderFactory::CreateVideoDecoderFactory() {
-  RTC_LOG(LS_INFO) << "Creating RaspiVideoDecoderFactory.";
-  return new RaspiVideoDecoderFactory;
+    RTC_LOG(LS_INFO) << "Creating RaspiVideoDecoderFactory.";
+    return new RaspiVideoDecoderFactory;
 }
 
 

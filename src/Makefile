@@ -92,8 +92,8 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $(TARGET) -Wl,--start-group $(OBJECTS) $(BUILD_LIBS) -Wl,--end-group $(SYSLIBS) 
 
 clean:
-	rm -f *.o  *.o.d *.dwo $(TARGET)
+	rm -f *.o  *.o.d $(TARGET)
 
 rcp: $(TARGET)
-	rsync -v -u -r --stats $(TARGET) *.cc *.h *.dwo pi@10.0.0.11:~/Workspace/client
+	rsync -v -u -r --stats $(TARGET) *.cc *.h pi@10.0.0.11:~/Workspace/client
 

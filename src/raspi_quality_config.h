@@ -34,10 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 
 #include "common_types.h"
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 #include "system_wrappers/include/clock.h"
 #include "modules/video_coding/utility/moving_average.h"
+
+#include "config_media.h"
 
 
 enum Adaptation {

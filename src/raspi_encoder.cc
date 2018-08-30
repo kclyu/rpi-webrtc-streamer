@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 #include "common_types.h"
 #include "common_video/h264/h264_bitstream_parser.h"
@@ -49,40 +49,40 @@ namespace webrtc {
 
 std::unique_ptr<RaspiEncoder> RaspiEncoder::Create(
     const cricket::VideoCodec& codec) {
-  RTC_LOG(LS_INFO) << "Creating H264EncoderImpl.";
-  return rtc::MakeUnique<RaspiEncoderImpl>(codec);
+    RTC_LOG(LS_INFO) << "Creating H264EncoderImpl.";
+    return absl::make_unique<RaspiEncoderImpl>(codec);
 }
 
 bool RaspiEncoder::IsSupported() {
-  return true;
+    return true;
 }
 
 RaspiVideoEncoderFactory* RaspiVideoEncoderFactory::CreateVideoEncoderFactory() {
-  RTC_LOG(LS_INFO) << "Creating RaspiVideoEncoderFactory.";
-  return new RaspiVideoEncoderFactory;
+    RTC_LOG(LS_INFO) << "Creating RaspiVideoEncoderFactory.";
+    return new RaspiVideoEncoderFactory;
 }
 
 // borrowed from src/modules/video_coding/codecs/h264/h264.cc
 static bool IsSameFormat(const webrtc::SdpVideoFormat& format1,
                   const webrtc::SdpVideoFormat& format2) {
-  // If different names (case insensitive), then not same formats.
-  if (!cricket::CodecNamesEq(format1.name, format2.name))
-    return false;
-  // For every format besides H264, comparing names is enough.
-  if (!cricket::CodecNamesEq(format1.name.c_str(), cricket::kH264CodecName))
-    return true;
-  // Compare H264 profiles.
-  const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(format1.parameters);
-  const rtc::Optional<webrtc::H264::ProfileLevelId> other_profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(format2.parameters);
-  // Compare H264 profiles, but not levels.
-  return profile_level_id && other_profile_level_id &&
-         profile_level_id->profile == other_profile_level_id->profile;
+    // If different names (case insensitive), then not same formats.
+    if (!cricket::CodecNamesEq(format1.name, format2.name))
+        return false;
+    // For every format besides H264, comparing names is enough.
+    if (!cricket::CodecNamesEq(format1.name.c_str(), cricket::kH264CodecName))
+        return true;
+    // Compare H264 profiles.
+    const absl::optional<webrtc::H264::ProfileLevelId> profile_level_id =
+        webrtc::H264::ParseSdpProfileLevelId(format1.parameters);
+    const absl::optional<webrtc::H264::ProfileLevelId> other_profile_level_id =
+        webrtc::H264::ParseSdpProfileLevelId(format2.parameters);
+    // Compare H264 profiles, but not levels.
+    return profile_level_id && other_profile_level_id &&
+        profile_level_id->profile == other_profile_level_id->profile;
 }
 
 static SdpVideoFormat CreateH264Format(H264::Profile profile, H264::Level level) {
-    const rtc::Optional<std::string> profile_string =
+    const absl::optional<std::string> profile_string =
         H264::ProfileLevelIdToString(H264::ProfileLevelId(profile, level));
     RTC_CHECK(profile_string);
     return SdpVideoFormat(cricket::kH264CodecName,

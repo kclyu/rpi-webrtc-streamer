@@ -29,7 +29,7 @@
 #include "rtc_base/networkmonitor.h"
 #include "rtc_base/physicalsocketserver.h"
 #include "rtc_base/signalthread.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/ssladapter.h"
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>

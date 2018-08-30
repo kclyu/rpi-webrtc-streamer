@@ -21,22 +21,18 @@
 #include <utility>
 #include <vector>
 
-#include "rtc_base/json.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-#include "api/mediaconstraintsinterface.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "media/engine/webrtcvideodecoderfactory.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "media/engine/webrtcvideocapturerfactory.h"
 #include "modules/audio_device/include/audio_device.h"
-#include "modules/video_capture/video_capture_factory.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/video_capture/video_capture_factory.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/json.h"
+#include "rtc_base/logging.h"
 
-#include "api/audio/audio_mixer.h"
-#include "api/rtpsenderinterface.h"
-#include "api/test/fakeconstraints.h"
 #include "media/base/fakevideocapturer.h"
 
 #include "streamer.h"
@@ -79,8 +75,9 @@ public:
             new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
     }
     virtual void OnSuccess() { RTC_LOG(INFO) << __FUNCTION__; }
-    virtual void OnFailure(const std::string& error) {
-        RTC_LOG(INFO) << __FUNCTION__ << " " << error;
+    virtual void OnFailure(webrtc::RTCError error) {
+        RTC_LOG(INFO) << __FUNCTION__ << " " << ToString(error.type()) << ": "
+            << error.message();
     }
 
 protected:
@@ -179,7 +176,7 @@ void Streamer::UpdateMaxBitrate() {
                  }
                  else {
                      encoding.max_bitrate_bps
-                         = rtc::Optional<int>(
+                         = absl::optional<int>(
                                  ConfigMediaSingleton::Instance()->GetMaxBitrate());
                      RTC_LOG(INFO) << "Changing Max Bitrate Bps: "
                          << *encoding.max_bitrate_bps;
@@ -438,24 +435,24 @@ void Streamer::AddStreams() {
     cricket::AudioOptions options;
     if( config_media->GetAudioProcessing()  == true ) {
         if( config_media->GetAudioEchoCancel() == true )
-            options.echo_cancellation = rtc::Optional<bool>(true);
+            options.echo_cancellation = absl::optional<bool>(true);
         if( config_media->GetAudioEchoCancel()  == true )
-            options.auto_gain_control = rtc::Optional<bool>(true);
+            options.auto_gain_control = absl::optional<bool>(true);
         if( config_media->GetAudioHighPassFilter() == true )
-            options.highpass_filter = rtc::Optional<bool>(true);
+            options.highpass_filter = absl::optional<bool>(true);
         if( config_media->GetAudioNoiseSuppression() == true )
-            options.noise_suppression = rtc::Optional<bool>(true);
+            options.noise_suppression = absl::optional<bool>(true);
     }
     else {
-        options.echo_cancellation = rtc::Optional<bool>(false);
-        options.auto_gain_control = rtc::Optional<bool>(false);
-        options.highpass_filter = rtc::Optional<bool>(false);
-        options.noise_suppression = rtc::Optional<bool>(false);
+        options.echo_cancellation = absl::optional<bool>(false);
+        options.auto_gain_control = absl::optional<bool>(false);
+        options.highpass_filter = absl::optional<bool>(false);
+        options.noise_suppression = absl::optional<bool>(false);
     }
 
     // audio_level_control is removed
     // if( config_media::audio_level_control == true )
-    //         options.level_control = rtc::Optional<bool>(true);
+    //         options.level_control = absl::optional<bool>(true);
 
     RTC_LOG(INFO) << "Audio options: " << options.ToString();
 
@@ -463,10 +460,12 @@ void Streamer::AddStreams() {
         peer_connection_factory_->CreateAudioTrack(
             kAudioLabel, peer_connection_factory_->CreateAudioSource(options)));
 
+    std::unique_ptr<cricket::VideoCapturer> video_device;
+    video_device.reset( new cricket::FakeVideoCapturer(false));
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(
             kVideoLabel,
-            peer_connection_factory_->CreateVideoSource(new cricket::FakeVideoCapturer(false),
+            peer_connection_factory_->CreateVideoSource(move(video_device),
                     nullptr)));
 
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
@@ -499,8 +498,8 @@ void Streamer::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
     SendMessage(writer.write(jmessage));
 }
 
-void Streamer::OnFailure(const std::string& error) {
-    RTC_LOG(LERROR) << error;
+void Streamer::OnFailure(webrtc::RTCError error) {
+    RTC_LOG(LERROR) << ToString(error.type()) << ": " << error.message();
 }
 
 void Streamer::SendMessage(const std::string& json_object) {

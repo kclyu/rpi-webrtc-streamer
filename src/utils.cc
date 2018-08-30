@@ -66,11 +66,11 @@ void PrintLicenseInfo() {
 }
 
 std::string IntToString(int i) {
-    return ToString<int>(i);
+    return ToString(i);
 }
 
 std::string Size_tToString(size_t i) {
-    return ToString<size_t>(i);
+    return ToString(i);
 }
 
 bool StringToInt(const std::string &str,int *value ) {

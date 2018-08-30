@@ -234,7 +234,7 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points){
     uint64_t current_timestamp;
 
     motion_active_average_.AddSample( (int)active_percent );
-    rtc::Optional<int> moving_average = motion_active_average_.GetAverage();
+    absl::optional<int> moving_average = motion_active_average_.GetAverage();
     if( moving_average ){
         current_timestamp = clock_->TimeInMilliseconds();
         if( current_timestamp - last_average_print_timestamp_

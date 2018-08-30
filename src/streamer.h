@@ -77,7 +77,7 @@ protected:
     // CreateSessionDescriptionObserver implementation.
     //
     virtual void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-    virtual void OnFailure(const std::string& error) override;
+    virtual void OnFailure(webrtc::RTCError error) override;
 
     //
     // StreamerSessionObserver implementation.

@@ -32,7 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
-#include "config_media.h"
 #include "raspi_quality_config.h"
 
 
@@ -89,7 +88,7 @@ QualityConfig::~QualityConfig(){
 
 void QualityConfig::ReportQP(int qp){
     average_qp_.AddSample(qp);
-    const rtc::Optional<int> avg_qp = average_qp_.GetAverage();
+    const absl::optional<int> avg_qp = average_qp_.GetAverage();
     if( avg_qp ){
         if (*avg_qp > kHighH264QpThreshold ) {
             adaptation_up_ = true;
@@ -104,7 +103,7 @@ void QualityConfig::ReportChannelParameters(uint32_t packet_loss, uint64_t rtt )
     packet_loss_.AddSample(packet_loss);
     rtt_.AddSample(rtt);
 
-    const rtc::Optional<int> packet_loss_avg = packet_loss_.GetAverage();
+    const absl::optional<int> packet_loss_avg = packet_loss_.GetAverage();
     if( packet_loss_avg ){
         if( *packet_loss_avg > kPacketLossThreshold ) {
             adaptation_down_ = true;
@@ -112,7 +111,7 @@ void QualityConfig::ReportChannelParameters(uint32_t packet_loss, uint64_t rtt )
         }
     }
 
-    const rtc::Optional<int> rtt_avg = rtt_.GetAverage();
+    const absl::optional<int> rtt_avg = rtt_.GetAverage();
     if( rtt_avg ){
         if( *rtt_avg > kRttMaxThreshold ) {
             adaptation_down_ = true;
