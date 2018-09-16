@@ -42,6 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "mmal_wrapper.h"
 #include "raspi_motionvector.h"
 #include "raspi_motionfile.h"
+#include "raspi_httpnoti.h"
 
 
 class RaspiMotion : public MotionBlobObserver, public MotionImvObserver,
@@ -56,6 +57,7 @@ public:
     // Motion Capture will use fixed resolution
     bool StartCapture();
     void StopCapture();
+    void SetHttpNoti(RaspiHttpNoti *http_noti);
 
     // Motion Observers
     virtual void OnMotionTriggered(int active_nums) override ;
@@ -115,6 +117,9 @@ private:
     webrtc::MovingAverage motion_active_average_;
     int motion_active_percent_clear_threshold_;
     int motion_active_percent_trigger_threshold_;
+
+
+    RaspiHttpNoti *http_noti_;
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotion);
 };
 

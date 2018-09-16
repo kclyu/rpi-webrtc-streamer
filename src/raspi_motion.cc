@@ -60,7 +60,7 @@ RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
     width_(width), height_(height), framerate_(framerate), bitrate_(bitrate),
     mmal_encoder_(nullptr),clock_(webrtc::Clock::GetRealTimeClock()),
     motion_(width, height, framerate, false),
-    motion_active_average_(kDefaultMotionAverageSize) {
+    motion_active_average_(kDefaultMotionAverageSize), http_noti_(nullptr) {
 
     queue_capacity_ = framerate * VIDEO_INTRAFRAME_PERIOD +
         (framerate * VIDEO_INTRAFRAME_PERIOD) *0.1f;
@@ -115,7 +115,7 @@ bool RaspiMotion::StartCapture() {
 
     // Setting Video Rotation and Flip setting
     mmal_encoder_->SetVideoRotation(config_media->GetVideoRotation());
-    mmal_encoder_->SetVideoFlip(config_media->GetVideoVFlip(), 
+    mmal_encoder_->SetVideoFlip(config_media->GetVideoVFlip(),
             config_media->GetVideoHFlip());
     mmal_encoder_->SetVideoAnnotate(config_motion::motion_enable_annotate_text);
     if( config_motion::motion_enable_annotate_text == true ){
@@ -227,6 +227,7 @@ void RaspiMotion::OnMotionCleared(int updates) {
     else if( motion_state_ == CLEARED ) {
         RTC_LOG(INFO) << "Invalid Motion state changing CLEARED to WAIT_CLEAR ";
     }
+
 }
 
 void RaspiMotion::OnActivePoints(int total_points, int active_points){
@@ -247,10 +248,16 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points){
         }
         if( motion_state_ == WAIT_CLEAR ) {
             if( *moving_average <  motion_active_percent_clear_threshold_ &&
-                current_timestamp - motion_clear_wait_timestamp_ > motion_clear_wait_period_  )  {
+                current_timestamp - motion_clear_wait_timestamp_ >
+                motion_clear_wait_period_  )  {
                 RTC_LOG(INFO) << "Motion Changing state WAIT_CLEAR to CLEAR ";
-                // motion_file_->StopWriterThread();
                 motion_state_ = CLEARED;
+
+                // Motion Noti message is sent only when MotionState is
+                // changed to Cleared status.
+                if( http_noti_ ) {
+                    http_noti_->SendMotionNoti( motion_file_->VideoFilename());
+                }
             }
         }
     };
@@ -306,6 +313,9 @@ bool RaspiMotion::DrainProcess() {
     return true;
 }
 
+void RaspiMotion::SetHttpNoti(RaspiHttpNoti *http_noti ) {
+    http_noti_ = http_noti;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 //

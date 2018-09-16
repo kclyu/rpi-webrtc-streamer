@@ -339,8 +339,6 @@ static bool VideoFileCompare(const VideoFilePath& a,const VideoFilePath& b) {
 }
 
 bool RaspiMotionFile::ManagingVideoFolder(void) {
-
-
     std::list<struct VideoFilePath>  video_file_list;
     VideoFilePath video_file_info;
     rtc::DirectoryIterator it;
@@ -400,6 +398,14 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     return true;
 }
 
+
+std::string RaspiMotionFile::VideoPathname(void) const {
+    return h264_filename_.pathname();
+}
+
+std::string RaspiMotionFile::VideoFilename(void) const {
+    return h264_filename_.filename();
+}
 
 
 

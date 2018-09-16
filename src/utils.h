@@ -39,6 +39,9 @@ rtc::LoggingSeverity String2LogSeverity(const std::string severity);
 std::string GetFolder(rtc::Pathname path);
 std::string GetParentFolder(rtc::Pathname path);
 
+// Get hardware serial number from /proc/cpu
+bool GetHardwareDeviceId(std::string *deviceid);
+
 };
 
 #endif  // RPI_STREAMER_UTILS_H_

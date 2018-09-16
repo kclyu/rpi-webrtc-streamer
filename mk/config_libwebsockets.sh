@@ -1,6 +1,6 @@
 #!/bin/bash
-export CC=arm-linux-gnueabihf-gcc 
-export CXX=arm-linux-gnueabihf-g++ 
+export CC=arm-linux-gnueabihf-gcc
+export CXX=arm-linux-gnueabihf-g++
 export AR=arm-linux-gnueabihf-ar
 export LD=arm-linux-gnueabihf-ld
 export AS=arm-linux-gnueabihf-as
@@ -13,7 +13,8 @@ RPI_ROOTFS_CMAKE=${HOME}/Workspace/rpi_rootfs/PI.cmake
 # zip extension will be added before running unzip
 #LIBWEBSOCKETS_BASENAME=libwebsockets-2.2-stable
 #LIBWEBSOCKET_DIR=${RWS_LIBRARY_DIR}/libwebsockets
-LIBWEBSOCKETS_BASENAME=libwebsockets-master # 3.0
+#LIBWEBSOCKETS_BASENAME=libwebsockets-master # 3.0
+LIBWEBSOCKETS_BASENAME=libwebsockets-3.0.1
 LIBWEBSOCKET_DIR=${RWS_LIBRARY_DIR}/libwebsockets
 LIBWEBSOCKET_BUILD_DIR=${RWS_LIBRARY_DIR}/libwebsockets/arm_build
 LIBWEBSOCKETS_LIBRARY=${LIBWEBSOCKET_BUILD_DIR}/lib/libwebsockets.a
@@ -34,7 +35,7 @@ then
     if [ ! -d ${LIBWEBSOCKET_DIR} ]
     then
 	    echo "extracting libwebsocket library in lib"
-        cd ${RWS_LIBRARY_DIR} && unzip ${LIBWEBSOCKETS_BASENAME}.zip && mv ${LIBWEBSOCKETS_BASENAME} ${LIBWEBSOCKET_DIR} 
+        cd ${RWS_LIBRARY_DIR} && unzip ${LIBWEBSOCKETS_BASENAME}.zip && mv ${LIBWEBSOCKETS_BASENAME} ${LIBWEBSOCKET_DIR}
     fi
 
     # checking libwebsockets library archive file
@@ -50,4 +51,4 @@ else
 	echo "Zipfile ${RWS_LIBRARY_DIR}/${LIBWEBSOCKETS_BASENAME}.zip not found"
 fi
 exit 0
-	
+

@@ -3,7 +3,7 @@
  *
  * raspi_httpnoti.cc
  *
- * Modified version of src/webrtc/examples/peer/client/peer_connection_client.cc 
+ * Modified version of src/webrtc/examples/peer/client/peer_connection_client.cc
  * in WebRTC source tree. The origianl copyright info below.
  */
 /*
@@ -35,6 +35,7 @@
 #include "rtc_base/httpcommon-inl.h"
 
 #include "raspi_httpnoti.h"
+#include "utils.h"  // GetHardwareDeviceId
 
 // Do not allow buffer sizes larger than the specified max value.
 static const int kMaxBufferSize = 4096;
@@ -42,52 +43,12 @@ static const int kDelaySendActivate = 1000;
 static const int kDelayResendActivate = 3000;
 static const int kDelayResolveIfAddr = 5000;    // 5 seconds
 
-#ifdef LOCAL_DEVICEID
-static const char *kCPUInfoPath = "./cpuinfo";  // testing purpose
-#else
-static const char *kCPUInfoPath = "/proc/cpuinfo";
-#endif // LOCAL_DEVICEID
-static const char *kCPUInfoSeperator = ":";  
-static const char *kCPUInfoDeviceToken = "Serial";  
 
 static const char *kDefaultMotionNotiIP = "localhost";
 static const char *kDefaultMotionNotiPath = "/motion_notification";
 static const int kDefaultMotionNotiPort = 8890;
 static const int kDefaultMotionFileServingPort = 8889;
 
-
-// Get device id from raspberrypi's cpuinfo
-bool GetHardwareDeviceId(std::string *deviceid) {
-    rtc::FileStream stream;
-    int err;
-
-    if (!stream.Open(kCPUInfoPath, "r", &err)) {
-        RTC_LOG(LS_ERROR) << "Could not open CPU info file, err: " << err;
-        return false;
-    }
-
-    std::string line;
-    rtc::StreamResult res;
-    for (;;) {
-        res = stream.ReadLine(&line);
-        if (res != rtc::SR_SUCCESS) {
-            break;
-        }
-        size_t equals_pos = line.find(kCPUInfoSeperator);
-        if (equals_pos == std::string::npos) {
-            continue;
-        }
-        std::string key = rtc::string_trim(std::string(line, 0, equals_pos));
-        std::string value = rtc::string_trim(
-                std::string(line, equals_pos + 1, line.length() - (equals_pos + 1)));
-        if( key.compare(kCPUInfoDeviceToken) == 0 ) {
-            *deviceid = value;
-            return true;
-        };
-    }
-    RTC_LOG(LS_ERROR) << "Error in gettting the Hardware DeviceID from cpuinfo";
-    return false;
-}
 
 rtc::AsyncSocket* RaspiHttpNoti::CreateClientSocket(int family) {
     rtc::Thread* thread = rtc::Thread::Current();
@@ -96,7 +57,7 @@ rtc::AsyncSocket* RaspiHttpNoti::CreateClientSocket(int family) {
 }
 
 RaspiHttpNoti::RaspiHttpNoti()
-    : server_(kDefaultMotionNotiIP), port_(kDefaultMotionNotiPort), 
+    : server_(kDefaultMotionNotiIP), port_(kDefaultMotionNotiPort),
         path_(kDefaultMotionNotiPath), state_(HTTPNOTI_NOT_INITED) {
 }
 
@@ -107,23 +68,25 @@ bool RaspiHttpNoti::IsInited() {
     return (state_ == HTTPNOTI_AVAILABLE || state_ == HTTPNOTI_IN_USE);
 }
 
-bool RaspiHttpNoti::Initialize(const char *url) {
-    if( GetHardwareDeviceId(&deviceid_) == false ) {
+bool RaspiHttpNoti::Initialize(const std::string url) {
+    if( utils::GetHardwareDeviceId(&deviceid_) == false ) {
         RTC_LOG(INFO) << "Failed to get Hardware Serial from '/proc/cpuinfo'";
         return false;
     };
     RTC_LOG(INFO) << "Hardware Serial : " << deviceid_;
 
-    // initialize with URL parameters 
-    if( url )  {
-        rtc::Url<char> server_url(url);
-        if( server_url.valid() == true ) {
-            server_ = server_url.host();
-            port_ = server_url.port();
-            path_ = server_url.path();
-            RTC_LOG(INFO) << "Proxy Noti server : " << server_ 
-                << ", Port: " << port_ << ", Path: " << path_;
-        }
+    // initialize with URL parameters
+    rtc::Url<char> server_url(url);
+    if( server_url.valid() == true ) {
+        server_ = server_url.host();
+        port_ = server_url.port();
+        path_ = server_url.path();
+        RTC_LOG(INFO) << "Proxy Noti server : " << server_
+            << ", Port: " << port_ << ", Path: " << path_;
+    }
+    else {
+        // URL value is invalid
+        return false;
     }
 
     server_address_.SetIP(server_);
@@ -142,19 +105,24 @@ bool RaspiHttpNoti::Initialize(const char *url) {
     return true;
 }
 
-void RaspiHttpNoti::SendMotionNoti(const char *motion_file) {
-    RTC_LOG(INFO) << __FUNCTION__ << " with : " << motion_file;
+void RaspiHttpNoti::SendMotionNoti(const std::string motion_file) {
+    if( IsInited() == false ) {
+        RTC_LOG(INFO) << "HttpNoti is not initialized. state: " << state_
+            << ",Aborting send HttpNoti message";
+        return;
+    }
+    RTC_LOG(INFO) << " with : " << motion_file;
 
-    char motion_file_uri[2048];
-    rtc::sprintfn(motion_file_uri, sizeof(motion_file_uri),
-            "http://%s:%i/motion/%s",local_address_.ipaddr().ToString(), 
-            kDefaultMotionFileServingPort,  motion_file );
+    char motion_file_url[2048];
+    rtc::sprintfn(motion_file_url, sizeof(motion_file_url),
+            "http://%s:%i/motion/%s",local_address_.ipaddr().ToString().c_str(),
+            kDefaultMotionFileServingPort,  motion_file.c_str() );
 
     char json_buffer[2048];
     rtc::sprintfn(json_buffer, sizeof(json_buffer),
             "{\"motion_file\": \"%s\""
             "\"motion_video_uri\" : \"%s\", \"deviceid\":\"%s\"}",
-            motion_file, motion_file_uri, deviceid_);
+            motion_file.c_str(), motion_file_url, deviceid_);
 
     char buffer[2048];
     rtc::sprintfn(buffer, sizeof(buffer),
@@ -166,7 +134,7 @@ void RaspiHttpNoti::SendMotionNoti(const char *motion_file) {
             path_.c_str(), strlen(json_buffer));
     std::string send_data = buffer;
     send_data += json_buffer;
-    // start http noti sending 
+    // start http noti sending
     ActivateSending(send_data);
 }
 
@@ -179,7 +147,7 @@ void RaspiHttpNoti::SendMotionNoti(const char *motion_file) {
 // Resolve server domain name to ip address
 void RaspiHttpNoti::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
     if(resolver_->GetError() != 0) {
-        RTC_LOG(LS_ERROR) << "Failed to resolve server hostname : " 
+        RTC_LOG(LS_ERROR) << "Failed to resolve server hostname : "
             << server_address_.ToString();
         resolver_->Destroy(false);
         resolver_ = nullptr;
@@ -196,13 +164,14 @@ void RaspiHttpNoti::OnIfAddrConnect(rtc::AsyncSocket* socket) {
     RTC_DCHECK(socket->GetState() == rtc::AsyncSocket::CS_CONNECTED );
     RTC_DCHECK(state_ == HTTPNOTI_IFADDR_RESOLVING );
     local_address_ = socket->GetLocalAddress();
-    RTC_LOG(INFO) << "Resolved local ip address : " << local_address_.ipaddr().ToString();
-    // Do close 
+    RTC_LOG(INFO) << "Resolved local ip address : \""
+        << local_address_.ipaddr().ToString() << "\"";
+    // Do close
     socket->Close();
     state_ = HTTPNOTI_AVAILABLE;
 }
 
-// making temporary TCP connenction to get local ip address 
+// making temporary TCP connenction to get local ip address
 void RaspiHttpNoti::DoIfAddrResolveConnect(void) {
     state_ = HTTPNOTI_IFADDR_RESOLVING;
     http_socket_.reset(CreateClientSocket(server_address_.ipaddr().family()));
@@ -223,7 +192,7 @@ void RaspiHttpNoti::DoIfAddrResolveConnect(void) {
 
 void RaspiHttpNoti::OnIfAddrResolveClose(rtc::AsyncSocket* socket, int err) {
     socket->Close();
-    rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, kDelayResolveIfAddr, 
+    rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, kDelayResolveIfAddr,
             this, 0);
 }
 
@@ -239,14 +208,14 @@ void RaspiHttpNoti::ActivateSending(const std::string &noti) {
         rtc::Thread::Current()->Post(RTC_FROM_HERE, this, 0);
         state_ = HTTPNOTI_IN_USE;
     }
-    else if( state_ ==  HTTPNOTI_IN_USE ) 
+    else if( state_ ==  HTTPNOTI_IN_USE )
         noti_message_list_.push_back(noti);
-    else 
+    else
         RTC_LOG(LS_ERROR) << "State is not ready to send Noti message"
             << ", Current State:" << state_;
 }
 
-// 
+//
 void RaspiHttpNoti::DeactivateSending(void) {
     RTC_DCHECK( noti_message_list_.size() == 0 );
     rtc::CritScope cs(&crit_sect_);
@@ -255,7 +224,7 @@ void RaspiHttpNoti::DeactivateSending(void) {
     }
     else if( state_ ==  HTTPNOTI_AVAILABLE )
         RTC_LOG(LS_ERROR) << "Already Noti Available State";
-    else 
+    else
         RTC_LOG(LS_ERROR) << "State is not ready to send Noti message"
             << ", Current State:" << state_;
 }
@@ -278,7 +247,6 @@ void RaspiHttpNoti::OnMessage(rtc::Message* msg) {
 //
 ////////////////////////////////////////////////////////////////////////////////
 void RaspiHttpNoti::DoConnect(void) {
-    RTC_LOG(INFO) << __FUNCTION__ ;
     http_socket_.reset(CreateClientSocket(server_address_.ipaddr().family()));
     state_ = HTTPNOTI_IN_USE;
 
@@ -299,7 +267,6 @@ void RaspiHttpNoti::DoConnect(void) {
 }
 
 void RaspiHttpNoti::Close() {
-    RTC_LOG(INFO) << __FUNCTION__ ;
     http_socket_->Close();
     response_data_.clear();
     if (resolver_ != nullptr) {
@@ -310,35 +277,34 @@ void RaspiHttpNoti::Close() {
 }
 
 void RaspiHttpNoti::OnConnect(rtc::AsyncSocket* socket) {
-    RTC_LOG(INFO) << __FUNCTION__ ;
     std::string noti_message = noti_message_list_.front();
     if( noti_message.length() == 0 ) {
-        RTC_LOG(LS_ERROR) << "Nothing to send, message size zero.";
+        RTC_LOG(LS_ERROR) << "HttpNoti Nothing to send, message queue is empty.";
         Close();    // close http socket
         return;
     }
     size_t sent = socket->Send(noti_message.c_str(), noti_message.length());
     if (sent != noti_message.length()) {
-        RTC_LOG(LS_ERROR) << "Sending failed. size: " << noti_message.length()
+        RTC_LOG(LS_ERROR) << "Failed to send data. mesg size: " << noti_message.length()
             << ", sent : " << sent;
     }
-    RTC_LOG(INFO) << "Sent data : " << noti_message;
+    RTC_LOG(INFO) << "HttpNoti Sent success: " << noti_message;
     noti_message_list_.pop_front();
 }
 
 void RaspiHttpNoti::OnClose(rtc::AsyncSocket* socket, int err) {
-    RTC_LOG(INFO) << __FUNCTION__ << ", Error code: " << err;
-
+    if( err )
+        RTC_LOG(INFO) << "HttpNoti OnClose Error code: " << err;
     socket->Close();
     if( noti_message_list_.size() > 0 ) {
         if (err == ECONNREFUSED) {
             // connection refused, trying to send it again
-            rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 
+            rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE,
                     kDelayResendActivate, this, 0);
         }
         else {
-            // send successful/another network error 
-            rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, 
+            // send successful/another network error
+            rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE,
                     kDelaySendActivate, this, 0);
         }
     }
@@ -416,7 +382,6 @@ bool RaspiHttpNoti::ReadIntoBuffer(rtc::AsyncSocket* socket,
 }
 
 int RaspiHttpNoti::GetResponseStatus(const std::string& response) {
-    RTC_LOG(INFO) << __FUNCTION__ ;
     int status = -1;
     size_t pos = response.find(' ');
     if (pos != std::string::npos)
@@ -425,16 +390,15 @@ int RaspiHttpNoti::GetResponseStatus(const std::string& response) {
 }
 
 void RaspiHttpNoti::OnRead(rtc::AsyncSocket* socket) {
-    RTC_LOG(INFO) << __FUNCTION__ ;
     size_t content_length = 0;
     int status;
     if (ReadIntoBuffer(socket, response_data_, &content_length)) {
         status = GetResponseStatus( response_data_ );
         if( status == 200 )  {
-            RTC_LOG(INFO) << "200 OK";
+            RTC_LOG(INFO) << "HttpNoti Got 200 OK Response";
         }
         else {
-            RTC_LOG(LS_ERROR) << "HTTP ERROR : "  << status;
+            RTC_LOG(LS_ERROR) << "HttpNoti HTTP ERROR : "  << status;
         }
     }
     socket->Close();

@@ -57,12 +57,13 @@ public:
     explicit RaspiHttpNoti();
     ~RaspiHttpNoti();
 
-    bool Initialize(const char *url = nullptr);
+    bool Initialize(const std::string url);
     bool IsInited(void);
 
-    void SendMotionNoti(const char *motion_file);
+    void SendMotionNoti(const std::string motion_file);
 
     void OnMessage(rtc::Message* msg);
+
 protected:
     void ActivateSending(const std::string &noti);
     void DeactivateSending(void);

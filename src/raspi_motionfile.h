@@ -62,6 +62,8 @@ public:
     bool StopWriterThread(void);
 
     bool ManagingVideoFolder(void);
+    std::string VideoPathname(void) const;
+    std::string VideoFilename(void) const;
 
 private:
     static int  kEventWaitPeriod;  // minimal wait period between frame

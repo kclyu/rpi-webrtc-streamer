@@ -40,6 +40,14 @@ namespace utils {
 
 static const char FOLDER_DELIMS = '/';
 
+#ifdef LOCAL_DEVICEID
+static const char *kCPUInfoPath = "./cpuinfo";  // testing purpose
+#else
+static const char *kCPUInfoPath = "/proc/cpuinfo";
+#endif // LOCAL_DEVICEID
+static const char *kCPUInfoSeperator = ":";
+static const char *kCPUInfoDeviceToken = "Serial";
+
 // Print verion information for command line option
 void PrintVersionInfo() {
     std::cout << "RWS Version: " << __RWS_VERSION__ << std::endl;
@@ -125,7 +133,6 @@ std::string GetFolder(rtc::Pathname path) {
     return path.pathname().replace(f, path.filename().length(), "");
 }
 
-
 std::string GetParentFolder(rtc::Pathname path) {
     std::string::size_type pos = std::string::npos;
     std::string folder = GetFolder(path);
@@ -134,8 +141,41 @@ std::string GetParentFolder(rtc::Pathname path) {
     }
     if (pos != std::string::npos) {
         return folder.substr(0, pos + 1);
-    } 
+    }
     return "";  // return empty string
+}
+
+// Get device id from raspberrypi's cpuinfo
+bool GetHardwareDeviceId(std::string *deviceid) {
+    rtc::FileStream stream;
+    int err;
+
+    if (!stream.Open(kCPUInfoPath, "r", &err)) {
+        RTC_LOG(LS_ERROR) << "Could not open CPU info file, err: " << err;
+        return false;
+    }
+
+    std::string line;
+    rtc::StreamResult res;
+    for (;;) {
+        res = stream.ReadLine(&line);
+        if (res != rtc::SR_SUCCESS) {
+            break;
+        }
+        size_t equals_pos = line.find(kCPUInfoSeperator);
+        if (equals_pos == std::string::npos) {
+            continue;
+        }
+        std::string key = rtc::string_trim(std::string(line, 0, equals_pos));
+        std::string value = rtc::string_trim(
+                std::string(line, equals_pos + 1, line.length() - (equals_pos + 1)));
+        if( key.compare(kCPUInfoDeviceToken) == 0 ) {
+            *deviceid = value;
+            return true;
+        };
+    }
+    RTC_LOG(LS_ERROR) << "Error in gettting the Hardware DeviceID from cpuinfo";
+    return false;
 }
 
 };
