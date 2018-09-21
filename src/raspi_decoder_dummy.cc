@@ -17,6 +17,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
 #include "system_wrappers/include/metrics.h"
 
 #include "api/video/i420_buffer.h"
@@ -86,7 +87,7 @@ int32_t RaspiDecoderDummy::Decode(const EncodedImage& input_image,
 
   VideoFrame frame(I420Buffer::Create(decoder_config_.width, decoder_config_.height),
           webrtc::kVideoRotation_0, render_time_ms * rtc::kNumMicrosecsPerMillisec);
-  frame.set_timestamp(input_image._timeStamp);
+  frame.set_timestamp(input_image.Timestamp());
   frame.set_ntp_time_ms(input_image.ntp_time_ms_);
 
   decoded_image_callback_->Decoded(frame);

@@ -42,6 +42,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/profile_level_id.h"
 
+#include "modules/video_coding/utility/simulcast_rate_allocator.h"
+#include "modules/video_coding/utility/simulcast_utility.h"
+
 #include "rtc_base/platform_thread.h"
 
 #include "config_media.h"
@@ -65,6 +68,7 @@ enum H264EncoderImplEvent {
 // QP scaling thresholds.
 static const int kLowH264QpThreshold = 24;
 static const int kHighH264QpThreshold = 37;
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -100,28 +104,36 @@ RaspiEncoderImpl::~RaspiEncoderImpl() {
     Release();
 }
 
-int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
+int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
                                      int32_t number_of_cores,
                                      size_t max_payload_size) {
     RTC_LOG(INFO) << __FUNCTION__;
     int framerate_updated;
 
     ReportInit();
-    if (!codec_settings ||
-            codec_settings->codecType != kVideoCodecH264) {
+    if (!inst || inst->codecType != kVideoCodecH264) {
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-    if (codec_settings->maxFramerate == 0) {
+    if (inst->maxFramerate == 0) {
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-    if (codec_settings->width < 1 || codec_settings->height < 1) {
+    if (inst->width < 1 || inst->height < 1) {
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
 
-    framerate_updated = static_cast<int>(codec_settings->maxFramerate);
+    //
+    // TODO: Need to implement SimulCast related functions
+    //
+    int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
+    if(number_of_streams > 1) {
+        RTC_LOG(LS_ERROR) << "SimulCast streaming is not implemented";
+        return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
+    }
+
+    framerate_updated = static_cast<int>(inst->maxFramerate);
     if( config_media_->GetVideoDynamicFps() == false)
         // using fixed fps when use_dynamic_video_fps is disabled
         framerate_updated = config_media_->GetFixedVideoFps();
@@ -129,19 +141,19 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     if( framerate_updated > 30 ) framerate_updated = 30;
     quality_config_.ReportFrameRate( framerate_updated);
 
-    mode_ = codec_settings->mode;
-    key_frame_interval_ = codec_settings->H264().keyFrameInterval;
+    mode_ = inst->mode;
+    key_frame_interval_ = inst->H264().keyFrameInterval;
     max_payload_size_ = max_payload_size;
 
     // frame dropping is not used...
-    frame_dropping_on_ = codec_settings->H264().frameDroppingOn;
+    frame_dropping_on_ = inst->H264().frameDroppingOn;
 
     // Codec_settings uses kbits/second; encoder uses bits/second.
-    quality_config_.ReportMaxBitrate(codec_settings->maxBitrate);
-    if (codec_settings->targetBitrate == 0)
-        quality_config_.ReportTargetBitrate(codec_settings->startBitrate);
+    quality_config_.ReportMaxBitrate(inst->maxBitrate);
+    if (inst->targetBitrate == 0)
+        quality_config_.ReportTargetBitrate(inst->startBitrate);
     else
-        quality_config_.ReportTargetBitrate(codec_settings->targetBitrate);
+        quality_config_.ReportTargetBitrate(inst->targetBitrate);
 
     // Get the instance of MMAL encoder wrapper
     if( (mmal_encoder_ = MMALWrapper::Instance() ) == nullptr ) {
@@ -305,7 +317,7 @@ int32_t RaspiEncoderImpl::Encode(
     }
 
     if (force_key_frame) {
-        uint32_t kKeyFrameAllowedInterval = 3000;
+        uint32_t kKeyFrameAllowedInterval = 3000;   // 3 secs
         // function forces a key frame regardless of the |bIDR| argument's value.
         // (If every frame is a key frame we get lag/delays.)
         if( clock_->TimeInMilliseconds() - last_keyframe_request_
@@ -352,8 +364,6 @@ int32_t RaspiEncoderImpl::SetChannelParameters( uint32_t packet_loss, int64_t rt
 VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
   return VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
 }
-
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -427,8 +437,8 @@ bool RaspiEncoderImpl::DrainProcess() {
         capture_ntp_time_ms = current_time + delta_ntp_internal_ms_;
         const int kMsToRtpTimestamp = 90;
 
-        encoded_image_._timeStamp = kMsToRtpTimestamp *
-            static_cast<uint32_t>(capture_ntp_time_ms-base_internal_ms_);
+        encoded_image_.SetTimestamp( kMsToRtpTimestamp *
+            static_cast<uint32_t>(capture_ntp_time_ms-base_internal_ms_));
         encoded_image_.ntp_time_ms_ = capture_ntp_time_ms;
         encoded_image_.capture_time_ms_ = current_time;
 
@@ -459,7 +469,9 @@ bool RaspiEncoderImpl::DrainProcess() {
 
         codec_specific.codecType = kVideoCodecH264;
         codec_specific.codecSpecific.H264.packetization_mode = packetization_mode_;
-        codec_specific.codecSpecific.generic.simulcast_idx = 0;
+
+        // SimulCast is not implemented
+        encoded_image_.SetSpatialIndex(0);
 
         // Deliver encoded image.
         EncodedImageCallback::Result result =
