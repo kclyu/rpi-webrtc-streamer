@@ -32,10 +32,12 @@
 #include "rtc_base/stringutils.h"
 
 #include "rtc_base/httpcommon.h"
-#include "rtc_base/httpcommon-inl.h"
 
 #include "raspi_httpnoti.h"
 #include "utils.h"  // GetHardwareDeviceId
+#include "util_url.h"
+
+
 
 // Do not allow buffer sizes larger than the specified max value.
 static const int kMaxBufferSize = 4096;

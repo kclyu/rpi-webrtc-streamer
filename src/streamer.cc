@@ -30,7 +30,7 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/video_capture/video_capture_factory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/json.h"
+#include "rtc_base/strings/json.h"
 #include "rtc_base/logging.h"
 
 #include "media/base/fakevideocapturer.h"

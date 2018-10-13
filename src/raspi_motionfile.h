@@ -31,12 +31,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RASPI_MOTIONFIE_H_
 
 #include <memory>
+#include <ctime>
 
 #include "rtc_base/platform_thread.h"
 
 #include "rtc_base/file.h"
 #include "rtc_base/pathutils.h"
 #include "rtc_base/bufferqueue.h"
+#include "rtc_base/event.h"
 
 class RaspiMotionFile : public rtc::Event {
 public:

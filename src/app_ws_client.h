@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "api/mediastreaminterface.h"
 #include "api/mediaconstraintsinterface.h"
 #include "api/peerconnectioninterface.h"
-#include "rtc_base/json.h"
+#include "rtc_base/strings/json.h"
 
 #include "rtc_base/fileutils.h"
 #include "rtc_base/optionsfile.h"

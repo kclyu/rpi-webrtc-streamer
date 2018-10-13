@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/network.h"
 #include "rtc_base/fileutils.h"
 #include "rtc_base/pathutils.h"
+#include "rtc_base/logging.h"
 
 #include "websocket_server.h"
 
