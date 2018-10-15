@@ -41,14 +41,6 @@ enum WebSocketHandlerType {
     MULTIPLE_INSTANCE,      // allow multiple handler runtime
 };
 
-enum HttpRequestType {
-    HTTP_GET = 1,
-    HTTP_POST,
-    HTTP_DELETE,
-    HTTP_PUT,
-    HTTP_DONTCARE
-};
-
 enum FileMappingType {
     MAPPING_DEFAULT,
     MAPPING_FILE,
@@ -66,44 +58,6 @@ struct FileMapping {
     FileMappingType type_;
     // mapping local resource path for uri_prefix
     const std::string uri_resource_path_;
-};
-
-struct HttpRequest {
-    HttpRequest() : content_length_(-1) {};
-    std::string url_;           // URL
-    int content_length_;
-    std::string server_;          // Server name
-    HttpRequestType type_;      // request type, GET,POST
-    std::string data_;          // request data only available on POST
-    std::map<int,std::string> header_;
-    std::map<std::string,std::string> args_;
-    void AddHeader(int header_id, const std::string value );
-    void AddArgs(const std::string args_param );
-    void AddData(const std::string data );
-    void Print();
-};
-
-// only text data response is allowed
-struct HttpResponse {
-    HttpResponse() : byte_sent_(0), header_sent_(false) {};
-    int byte_sent_;
-    int status_;            // return status value i.e 200, 404
-    std::string mime_;      // mime type of response
-    std::map<int,std::string> header_;
-    std::string response_;  // response body, allow only text data
-    void AddHeader(int header_id, const std::string value );
-    void Print();
-    void SetHeaderSent();
-    bool IsHeaderSent();
-private:
-    bool header_sent_;      // marked as true after sending header.
-};
-
-struct HttpHandler {
-    virtual bool DoGet(HttpRequest* req, HttpResponse* res) = 0;
-    virtual bool DoPost(HttpRequest* req, HttpResponse* res) = 0;
-protected:
-    virtual ~HttpHandler() {}
 };
 
 struct WebSocketHandler {

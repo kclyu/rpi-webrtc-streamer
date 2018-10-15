@@ -45,8 +45,8 @@ class AppClientInfo {
     enum ClientState {
         CLIENT_UNKNOWN = 0,
         CLIENT_DISCONNECTED,
-        CLIENT_CONNECT_WAIT,
-        CLIENT_CONNECTED,
+        CLIENT_REGISTER_WAIT,
+        CLIENT_REGISTERED,
         CLIENT_DISCONNECT_WAIT
     };
 
@@ -54,15 +54,15 @@ public:
     explicit AppClientInfo ();
     ~AppClientInfo(){};
 
-    bool ConnectWait(int room_id, int& client_id);
-    bool Connected(int websocket_id, int room_id, int client_id);
+    bool RegisterWait(int room_id, int& client_id);
+    bool Registered(int websocket_id, int room_id, int client_id);
     bool DisconnectWait(int room_id, int client_id);
     bool DisconnectWait(int websocket_id );
     bool GetWebsocketId(int room_id, int& websocket_id);
     int  GetRoomId();
     int  GetClientId();
-    bool IsConnected(int room_id, int client_id);
-    bool IsConnected(int websocket_id );
+    bool IsRegistered(int room_id, int client_id);
+    bool IsRegistered(int websocket_id );
     void Reset();
 
 private:

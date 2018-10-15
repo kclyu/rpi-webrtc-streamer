@@ -41,11 +41,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "websocket_server.h"
 
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // LibWebSocket struct for initialization
 //
-//////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 static const char *kProtocolHandlerName = "websocket-http";
 static const char *kMotionMount = "/motion/";
 static const char *kHttpMount = "/";
@@ -82,11 +82,11 @@ static const struct lws_extension extensions[] = {
 	{ NULL, NULL, NULL /* terminator */ }
 };
 
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // LibWebSocket Initialization
 //
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 LibWebSocketServer::LibWebSocketServer() {
 	memset(&info_, 0x00, sizeof(info_));
 	memset(&webroot_http_mount_, 0x00, sizeof(webroot_http_mount_));
@@ -281,11 +281,11 @@ bool LibWebSocketServer::RunLoop(int timeout) {
 	return !lws_service(context_, timeout);
 }
 
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // WebSocket Handler
 //
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 void LibWebSocketServer::AddWebSocketHandler (const std::string path,
             WebSocketHandlerType handler_type, WebSocketHandler *handler){
     for(std::list<WSInternalHandlerConfig>::iterator iter
@@ -319,11 +319,11 @@ bool LibWebSocketServer::IsValidWSPath(const char *path) {
     return false;
 }
 
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // SendMessage interface
 //
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 void LibWebSocketServer::SendMessage(int sockid, const std::string& message){
     for(std::list<struct WSInternalHandlerConfig>::iterator iter
             = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
@@ -337,7 +337,8 @@ void LibWebSocketServer::SendMessage(int sockid, const std::string& message){
 void LibWebSocketServer::Close(int sockid, int reason_code,
         const std::string& message){
     for(std::list<struct WSInternalHandlerConfig>::iterator iter
-            = wshandler_config_.begin(); iter != wshandler_config_.end(); iter++) {
+            = wshandler_config_.begin(); iter != wshandler_config_.end();
+            iter++) {
 
         iter->Close(sockid, reason_code, message);
         return;
@@ -345,13 +346,14 @@ void LibWebSocketServer::Close(int sockid, int reason_code,
 }
 
 
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // Websocket Internal Handler Config
 //
-//////////////////////////////////////////////////////////////////////
-bool WSInternalHandlerConfig::CreateHandlerRuntime(const int sockid, struct lws *wsi) {
-    if( handler_type_ ==  SINGLE_INSTANCE ) {
+///////////////////////////////////////////////////////////////////////////////
+bool WSInternalHandlerConfig::CreateHandlerRuntime(const int sockid,
+        struct lws *wsi) {
+    if( handler_type_ ==  MULTIPLE_INSTANCE ) {
         if( handler_runtime_.size() != 0) {
             return false;
         }
@@ -360,9 +362,10 @@ bool WSInternalHandlerConfig::CreateHandlerRuntime(const int sockid, struct lws 
     return true;
 }
 
-struct lws* WSInternalHandlerConfig::GetWsiFromHandlerRuntime(const int sockid) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+struct lws* WSInternalHandlerConfig::GetWsiFromHandlerRuntime(
+        const int sockid) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             RTC_DCHECK( iter->wsi_ )
                 << "The value of websocket wsi variable must not be null.";
@@ -373,8 +376,8 @@ struct lws* WSInternalHandlerConfig::GetWsiFromHandlerRuntime(const int sockid) 
 }
 
 void WSInternalHandlerConfig::OnConnect(const int sockid) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             handler_->OnConnect(sockid);
             return;
@@ -398,8 +401,8 @@ void WSInternalHandlerConfig::OnDisconnect(const int sockid) {
 
 bool WSInternalHandlerConfig::OnMessage(const int sockid,
         const std::string& message) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             return handler_->OnMessage(sockid, message);
         }
@@ -409,8 +412,8 @@ bool WSInternalHandlerConfig::OnMessage(const int sockid,
 
 void WSInternalHandlerConfig::OnError(const int sockid,
         const std::string& errmsg) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             handler_->OnError(sockid, errmsg);
         }
@@ -419,8 +422,8 @@ void WSInternalHandlerConfig::OnError(const int sockid,
 
 bool WSInternalHandlerConfig::QueueMessage(const int sockid,
         const std::string& message) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             iter->pending_message_.push_back(message);
             return true;
@@ -434,8 +437,8 @@ size_t WSInternalHandlerConfig::Size() {
 }
 
 size_t WSInternalHandlerConfig::QeueueSize(const int sockid) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             return iter->pending_message_.size();
         }
@@ -444,8 +447,8 @@ size_t WSInternalHandlerConfig::QeueueSize(const int sockid) {
 }
 
 bool WSInternalHandlerConfig::HasPendingMessage(const int sockid) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             return iter->pending_message_.size() > 0;
         }
@@ -456,8 +459,8 @@ bool WSInternalHandlerConfig::HasPendingMessage(const int sockid) {
 
 bool WSInternalHandlerConfig::DequeueMessage(const int sockid,
         std::string& message) {
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             if( iter->pending_message_.size() == 0 ) {
                 return false;
@@ -472,8 +475,8 @@ bool WSInternalHandlerConfig::DequeueMessage(const int sockid,
 
 bool WSInternalHandlerConfig::Close(int sockid, int reason_code,
         const std::string& message){
-    for(std::list<struct WSInstanceContainer>::iterator iter = handler_runtime_.begin();
-            iter != handler_runtime_.end(); iter++) {
+    for(std::list<struct WSInstanceContainer>::iterator iter
+            = handler_runtime_.begin(); iter != handler_runtime_.end(); iter++) {
         if( iter->sockid_ == sockid ) {
             RTC_DCHECK( iter->wsi_ != nullptr );
             lws_close_status reason_status;

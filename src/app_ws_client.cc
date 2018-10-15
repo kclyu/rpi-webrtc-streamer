@@ -48,11 +48,11 @@ static const char kKeyCmdSendMessage[] = "msg";
 static const char kKeyCmdSendType[] = "type";
 static const char kValueCmdSendTypeBye[] = "bye";
 
-//////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // App Websocket only Channel
 //
-//////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 AppWsClient::AppWsClient()
     : websocket_message_(nullptr),num_chunked_frames_(0)  {
 }
@@ -129,7 +129,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 return true;
             }
             RTC_LOG(INFO) << "Room ID: " << room_id << ", Client ID: " << client_id;
-            if( app_client_.Connected( sockid, room_id, client_id ) == false ) {
+            if( app_client_.Registered( sockid, room_id, client_id ) == false ) {
                 RTC_LOG(LS_ERROR) << "Failed to set room_id/client_id :" << message;
                 // Drop current connection
                 return false;
@@ -169,7 +169,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                     json_msg_type.compare(kValueCmdSendTypeBye) == 0) {
                     // command 'send' message is type: bye
                     // reset the app_clientinfo and deactivate the streaming
-                    if( app_client_.IsConnected( sockid ) == true ) {
+                    if( app_client_.IsRegistered( sockid ) == true ) {
                         app_client_.Reset();
                         if ( IsStreamSessionActive() == true ) {
                             DeactivateStreamSession();
@@ -192,11 +192,13 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
 
 void AppWsClient::OnDisconnect(int sockid) {
     RTC_LOG(INFO) << "WebSocket connnection id : " << sockid << " closed";
-    app_client_.DisconnectWait(sockid);
-    app_client_.Reset();
-    if ( IsStreamSessionActive() == true ) {
-        DeactivateStreamSession();
-    };
+    // Ignore if websocket id is not the registered websocket id.
+    if( app_client_.DisconnectWait(sockid) == true ) {
+        app_client_.Reset();
+        if ( IsStreamSessionActive() == true ) {
+            DeactivateStreamSession();
+        };
+    }
 }
 
 void AppWsClient::OnError(int sockid, const std::string& message) {

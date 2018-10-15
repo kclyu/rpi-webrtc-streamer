@@ -54,7 +54,7 @@ AppClientInfo::AppClientInfo () : clock_(webrtc::Clock::GetRealTimeClock()),
     last_wait_timestamp_(0), state_(ClientState::CLIENT_DISCONNECTED) {
 }
 
-bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
+bool AppClientInfo::RegisterWait (int room_id, int& client_id)  {
     int min, max;
     uint64_t timestamp_diff;
     RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": Roomid " << room_id
@@ -62,7 +62,7 @@ bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
 
     // Validate Client status
     switch( state_ ) {
-        case ClientState::CLIENT_CONNECT_WAIT:
+        case ClientState::CLIENT_REGISTER_WAIT:
             timestamp_diff = clock_->TimeInMilliseconds() - last_wait_timestamp_;
             // checking connect wait timeout
             if( timestamp_diff < kWaitTimeout ) {
@@ -70,7 +70,7 @@ bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
                 return false;
             };
             break;
-        case ClientState::CLIENT_CONNECTED:
+        case ClientState::CLIENT_REGISTERED:
             // Room already occupied by another client
             return false;
         case ClientState::CLIENT_DISCONNECTED:
@@ -79,7 +79,7 @@ bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
             break;
     };
 
-    state_ = CLIENT_CONNECT_WAIT;
+    state_ = CLIENT_REGISTER_WAIT;
 
     // Generate new random client id
     min = kMaxClientID / 10;
@@ -91,14 +91,14 @@ bool AppClientInfo::ConnectWait (int room_id, int& client_id)  {
     return true;
 }
 
-bool AppClientInfo::Connected (int websocket_id, int room_id, int client_id)  {
+bool AppClientInfo::Registered (int websocket_id, int room_id, int client_id)  {
     RTC_LOG(LS_VERBOSE) << __FUNCTION__ << "WS id: " << websocket_id
         << ", Roomid " << room_id << ",Client id: " << client_id;
     RTC_DCHECK( websocket_id >= 0 );
     RTC_DCHECK( room_id >= 0 );
     RTC_DCHECK( client_id >= 0 );
     switch( state_ ) {
-        case ClientState::CLIENT_CONNECTED:
+        case ClientState::CLIENT_REGISTERED:
             // should not be happend
             RTC_DCHECK( room_id_ == room_id && client_id_ == client_id );
             return false;
@@ -108,7 +108,7 @@ bool AppClientInfo::Connected (int websocket_id, int room_id, int client_id)  {
             room_id_ = room_id;
             client_id_  = client_id;
             break;
-        case ClientState::CLIENT_CONNECT_WAIT:
+        case ClientState::CLIENT_REGISTER_WAIT:
         default:
             break;
     }
@@ -121,7 +121,7 @@ bool AppClientInfo::Connected (int websocket_id, int room_id, int client_id)  {
         room_id_ = room_id; client_id_ = client_id;
     }
 
-    state_ = CLIENT_CONNECTED;
+    state_ = CLIENT_REGISTERED;
     return true;
 }
 
@@ -131,7 +131,7 @@ bool AppClientInfo::DisconnectWait(int room_id, int client_id)  {
     RTC_DCHECK( room_id_ == room_id );
     RTC_DCHECK( client_id_ == client_id );
     switch( state_ ) {
-        case ClientState::CLIENT_CONNECTED:
+        case ClientState::CLIENT_REGISTERED:
             state_ = ClientState::CLIENT_DISCONNECT_WAIT;
             return true;
         default:
@@ -147,7 +147,7 @@ bool AppClientInfo::DisconnectWait(int websocket_id )  {
         return false;
     };
     switch( state_ ) {
-        case ClientState::CLIENT_CONNECTED:
+        case ClientState::CLIENT_REGISTERED:
             state_ = ClientState::CLIENT_DISCONNECT_WAIT;
             return true;
         default:
@@ -166,32 +166,32 @@ bool AppClientInfo::GetWebsocketId(int client_id, int& websocket_id)  {
     return false;
 }
 
-bool AppClientInfo::IsConnected (int room_id, int client_id)  {
-    if( (state_ == ClientState::CLIENT_CONNECTED ||
-            state_ == ClientState::CLIENT_CONNECT_WAIT ) &&
+bool AppClientInfo::IsRegistered (int room_id, int client_id)  {
+    if( (state_ == ClientState::CLIENT_REGISTERED ||
+            state_ == ClientState::CLIENT_REGISTER_WAIT ) &&
         room_id == room_id_ && client_id == client_id_ )
         return true;
     return false;
 }
 
 int AppClientInfo::GetRoomId ()  {
-    if( (state_ == ClientState::CLIENT_CONNECTED ||
-            state_ == ClientState::CLIENT_CONNECT_WAIT ) )
+    if( (state_ == ClientState::CLIENT_REGISTERED ||
+            state_ == ClientState::CLIENT_REGISTER_WAIT ) )
         return room_id_;
     return 0;
 }
 
 int AppClientInfo::GetClientId ()  {
-    if( (state_ == ClientState::CLIENT_CONNECTED ||
-            state_ == ClientState::CLIENT_CONNECT_WAIT ) )
+    if( (state_ == ClientState::CLIENT_REGISTERED ||
+            state_ == ClientState::CLIENT_REGISTER_WAIT ) )
         return client_id_;
     return 0;
 }
 
 
-bool AppClientInfo::IsConnected (int websocket_id)  {
-    if( (state_ == ClientState::CLIENT_CONNECTED ||
-            state_ == ClientState::CLIENT_CONNECT_WAIT ) &&
+bool AppClientInfo::IsRegistered (int websocket_id)  {
+    if( (state_ == ClientState::CLIENT_REGISTERED ||
+            state_ == ClientState::CLIENT_REGISTER_WAIT ) &&
         websocket_id == websocket_id_  )
         return true;
     return false;
