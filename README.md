@@ -68,37 +68,3 @@ Please refer to [Rpi-Webrtc-Streamer-deb Repo](https://github.com/kclyu/rpi-webr
 ## Cross Compile on Ubuntu Linux
 
 Please refer to [README_building.md document](../master/README_building.md).
-
-## Known Issues and Bugs
-TBD
-
-## TODO
-TBD
-
-## Version History
-* 2018/01/13 v0.73:
-   - Adding Telegram Bot to convert detected motion video file to MP4 and 
-     sends message to Telegram Messenger client 
-* 2017/11/29 v0.72:
-	- Motion detection using IMV(Inline Motion Vector)
-	- Motion detected part saved as video file
-* 2017/06/09 v0.65:
-	- Adding log file shifting between folders
-    - Prepare first deb package for systemd	
-* 2017/04/28 v0.62 : 
-     - Bandwith base Quality Control is added
-     - Video Resolution ratio 16: 9, 4: 3 config added
-        - 4:3:  320:240 ~ 1296:972
-        - 16:9  384:216 ~ 1408:864 
-* 2017/04/04 v0.60 : 
-     - signaling interface changed from long-poll to websocket (libwebsockets)
-     - RWS main port changed from 8888 to 8889 (because Android Direct socket need 8888 port)
- * 2017/01/10 v0.57 : 
-     - adding initial android direct socket feature
-     - fixing branch-heads/55
-     - removing unused GYP building scripts and files
-     - webrtc build directory changed from 'arm/out/Debug' to 'arm_build'
- * 2016/09/20 v0.56 : Initial Version
-
- 
-
