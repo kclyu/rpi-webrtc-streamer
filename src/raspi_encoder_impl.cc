@@ -77,7 +77,7 @@ static const int kHighH264QpThreshold = 37;
 ///////////////////////////////////////////////////////////////////////////////
 RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
     : start_encoding_(false), mmal_encoder_(nullptr), config_media_(nullptr),
-    has_reported_init_(false), has_reported_error_(false), 
+    has_reported_init_(false), has_reported_error_(false),
     encoded_image_callback_(nullptr),
     clock_(Clock::GetRealTimeClock()),
     delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
@@ -163,37 +163,14 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 
+    // Set media config params
+    mmal_encoder_->SetMediaConfigParams();
+
     // clear InlineMotionVectors enable flag
     mmal_encoder_->SetInlineMotionVectors(false);
 
-    // Setting Video Rotation and Flip setting
-    mmal_encoder_->SetVideoRotation(config_media_->GetVideoRotation());
-    mmal_encoder_->SetVideoFlip(config_media_->GetVideoVFlip(), 
-            config_media_->GetVideoHFlip() );
-
-    // Video Image related parameter settings
-    mmal_encoder_->SetVideoSharpness(config_media_->GetVideoSharpness());
-    mmal_encoder_->SetVideoContrast(config_media_->GetVideoContrast());
-    mmal_encoder_->SetVideoBrightness(config_media_->GetVideoBrightness());
-    mmal_encoder_->SetVideoSaturation(config_media_->GetVideoSaturation() );
-    mmal_encoder_->SetVideoEV(config_media_->GetVideoEV());
-    mmal_encoder_->SetVideoExposureMode(config_media_->GetVideoExposureMode());
-    mmal_encoder_->SetVideoFlickerMode(config_media_->GetVideoFlickerMode());
-    mmal_encoder_->SetVideoAwbMode(config_media_->GetVideoAwbMode());
-    mmal_encoder_->SetVideoDrcMode(config_media_->GetVideoDrcMode()); 
-    mmal_encoder_->SetVideoVideoStabilisation(config_media_->GetVideoStabilisation());
-
-    // Video Annotation
-    bool video_enable_annotate_text = config_media_->GetVideoEnableAnnotateText();
-    mmal_encoder_->SetVideoAnnotate(video_enable_annotate_text);
-    if( video_enable_annotate_text == true ) {
-        mmal_encoder_->SetVideoAnnotateUserText(config_media_->GetVideoAnnotateText());
-        mmal_encoder_->SetVideoAnnotateTextSizeRatio(
-                config_media_->GetVideoAnnotateTextSizeRatio());
-    };
 
     // Settings for Quality
-
     // GetInitialBestMatch should be used only when initializing
     // the Encoder, and only when the use_default_resolution flag is on.
     QualityConfig::Resolution initial_res;

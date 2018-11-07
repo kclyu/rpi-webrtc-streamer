@@ -77,8 +77,10 @@ public:
 
     bool Load(std::string config_filename);
     bool Save(void);
-    bool ConfigFromJson(const std::string &config_message, std::string &error);
+    bool ConfigFromJson(const std::string &config_message,
+            std::string *config_updated, std::string &error);
     bool ConfigToJson(std::string &config_message);
+    void LoadConfigWithDefault(void);
     void DumpConfig(void);
     std::list <VideoResolution> GetVideoResolutionList();
     bool GetFixedVideoResolution(int &width, int &height);
@@ -86,7 +88,7 @@ public:
     // define expasion macros for Getter
     //      type GetName();
     #define _CR(name, config_var, config_type, config_default ) \
-        config_type Get ## name(void); 
+        config_type Get ## name(void);
     #define _CR_L(name, config_var, config_type, config_default )
     #define _CR_B _CR
     #define _CR_I _CR
@@ -109,7 +111,7 @@ public:
         config_type config_var; \
         bool isloaded__ ## config_var; \
         bool Set ## name(config_type value); \
-        bool validate_value__ ## config_var(config_type value, config_type default_value); 
+        bool validate_value__ ## config_var(config_type value, config_type default_value);
     #define _CR_L _CR
     #define _CR_B _CR
     #define _CR_I _CR
@@ -136,7 +138,6 @@ private:
     // Additional config value validator
     bool validate__resolution(int width, int height);
 
-    void LoadConfigWithDefault(void);
     bool config_load(const std::string config_filename);
 
 };   // ConfigMedia

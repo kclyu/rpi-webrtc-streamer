@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "websocket_server.h"
 #include "streamer_observer.h"
 #include "app_clientinfo.h"
+#include "config_media.h"
 
 #ifndef APP_WS_CLIENT_H_
 #define APP_WS_CLIENT_H_
@@ -64,8 +65,16 @@ public:
     void OnError(int sockid, const std::string& message) override;
 
     // StreamerObserver interface
-    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
+    bool SendMessageToPeer(const int peer_id,
+            const std::string &message) override;
 private:
+    void SendDeviceIdResponse(int sockid, bool success,
+            const std::string& deviceid);
+    void SendMediaConfigResponse(int sockid, bool success,
+            const std::string& media_config, const std::string& error_mesg);
+    void SendEvent(int sockid, bool is_event,
+            const std::string& event_mesg);
+
     std::string ws_url_;
     AppClientInfo app_client_;
     WebSocketMessage  *websocket_message_;
@@ -73,6 +82,9 @@ private:
     // WebSocket chunked frames
     std::string chunked_frames_;
     int num_chunked_frames_;
+    std::string deviceid_;
+    bool deviceid_inited_;
+    ConfigMedia *config_media_;
 };
 
 #endif // APP_WS_CLIENT_H_

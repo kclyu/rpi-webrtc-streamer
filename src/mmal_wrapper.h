@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/event.h"
+#include "config_media.h"
 #include "mmal_video.h"
 
 namespace webrtc {
@@ -193,6 +194,9 @@ public:
     void SetVideoDrcMode(const std::string drc_mode);
     void SetVideoVideoStabilisation(bool stab_enable);
 
+    // Set the necessary media config information.
+    void SetMediaConfigParams(void);
+
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
     static void BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
@@ -211,6 +215,7 @@ private:
     MMAL_PORT_T *encoder_output_port_;
     RASPIVID_STATE state_;
 
+    ConfigMedia *config_media_;
     rtc::CriticalSection crit_sect_;
 };
 

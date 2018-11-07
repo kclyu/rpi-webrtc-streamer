@@ -579,9 +579,11 @@ MEDIA_CONFIG_ROW_LIST
 }
 
 bool ConfigMedia::ConfigFromJson(const std::string &config_message,
-        std::string &error) {
+        std::string *config_updated, std::string &error) {
+    Json::StyledWriter json_writer;
     Json::Reader json_reader;
     Json::Value json_value;
+    Json::Value json_updated;
 
     if(json_reader.parse(config_message, json_value) == true){
 
@@ -603,6 +605,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
                         << " config value " << error_value ; \
                     return false; \
                 } \
+                json_updated[#config_var] = config_var; \
             }   \
             else { \
                 /* is not int type */ \
@@ -640,6 +643,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
                         << " config value " << error_value ; \
                     return false; \
                 } \
+                json_updated[#config_var] = config_var; \
             }   \
             else { \
                 /* is not bool type */ \
@@ -674,6 +678,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
                         << " config value " << error_value ; \
                     return false; \
                 } \
+                json_updated[#config_var] = config_var; \
             }   \
             else { \
                 /* is not int type */ \
@@ -710,6 +715,9 @@ MEDIA_CONFIG_ROW_LIST
         error = parse_error_msg + json_reader.getFormatedErrorMessages();
         return false;
     }
+    if( config_updated != nullptr ) {
+        *config_updated = json_writer.write(json_updated);
+    };
     return true;
 }
 

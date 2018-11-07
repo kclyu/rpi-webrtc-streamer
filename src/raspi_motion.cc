@@ -107,35 +107,23 @@ bool RaspiMotion::StartCapture() {
         return false;
     }
 
+    // Set media config params at first.
+    mmal_encoder_->SetMediaConfigParams();
+
+    //
+    // Overriding media config params for Motion Video
+    //
     // Enable InlineMotionVectors
     mmal_encoder_->SetInlineMotionVectors(true);
 
     // Setting Intra Frame period
     mmal_encoder_->SetIntraPeriod(framerate_ * VIDEO_INTRAFRAME_PERIOD);
 
-    // Setting Video Rotation and Flip setting
-    mmal_encoder_->SetVideoRotation(config_media->GetVideoRotation());
-    mmal_encoder_->SetVideoFlip(config_media->GetVideoVFlip(),
-            config_media->GetVideoHFlip());
     mmal_encoder_->SetVideoAnnotate(config_motion::motion_enable_annotate_text);
     if( config_motion::motion_enable_annotate_text == true ){
         mmal_encoder_->SetVideoAnnotateUserText(config_motion::motion_annotate_text);
         mmal_encoder_->SetVideoAnnotateTextSize(config_motion::motion_annotate_text_size );
     };
-
-    // clear Annotation text size ratio value
-    mmal_encoder_->SetVideoAnnotateTextSizeRatio(0);
-
-    // Video Image related parameter settings
-    mmal_encoder_->SetVideoSharpness(config_media->GetVideoSharpness());
-    mmal_encoder_->SetVideoContrast(config_media->GetVideoContrast());
-    mmal_encoder_->SetVideoBrightness(config_media->GetVideoBrightness());
-    mmal_encoder_->SetVideoSaturation(config_media->GetVideoSaturation());
-    mmal_encoder_->SetVideoEV(config_media->GetVideoEV());
-    mmal_encoder_->SetVideoExposureMode(config_media->GetVideoExposureMode());
-    mmal_encoder_->SetVideoFlickerMode(config_media->GetVideoFlickerMode());
-    mmal_encoder_->SetVideoAwbMode(config_media->GetVideoAwbMode());
-    mmal_encoder_->SetVideoDrcMode(config_media->GetVideoDrcMode());
 
     RTC_LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_
         << "@" << framerate_ << ", " << bitrate_ << " kbps";

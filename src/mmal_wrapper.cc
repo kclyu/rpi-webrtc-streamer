@@ -344,6 +344,7 @@ MMALEncoderWrapper::MMALEncoderWrapper()
 
     // reset encoder setting to default state
     default_status(&state_);
+    config_media_ = ConfigMediaSingleton::Instance();
 }
 
 MMALEncoderWrapper::~MMALEncoderWrapper() {
@@ -460,6 +461,34 @@ void MMALEncoderWrapper::SetVideoDrcMode(const std::string drc_mode) {
 
 void MMALEncoderWrapper::SetVideoVideoStabilisation(bool stab_enable) {
     state_.camera_parameters.videoStabilisation  = stab_enable;
+}
+
+void MMALEncoderWrapper::SetMediaConfigParams(){
+    // Setting Video Rotation and Flip setting
+    SetVideoRotation(config_media_->GetVideoRotation());
+    SetVideoFlip(config_media_->GetVideoVFlip(),
+            config_media_->GetVideoHFlip() );
+
+    // Video Image related parameter settings
+    SetVideoSharpness(config_media_->GetVideoSharpness());
+    SetVideoContrast(config_media_->GetVideoContrast());
+    SetVideoBrightness(config_media_->GetVideoBrightness());
+    SetVideoSaturation(config_media_->GetVideoSaturation() );
+    SetVideoEV(config_media_->GetVideoEV());
+    SetVideoExposureMode(config_media_->GetVideoExposureMode());
+    SetVideoFlickerMode(config_media_->GetVideoFlickerMode());
+    SetVideoAwbMode(config_media_->GetVideoAwbMode());
+    SetVideoDrcMode(config_media_->GetVideoDrcMode());
+    SetVideoVideoStabilisation(config_media_->GetVideoStabilisation());
+
+    // Video Annotation
+    bool video_enable_annotate_text = config_media_->GetVideoEnableAnnotateText();
+    SetVideoAnnotate(video_enable_annotate_text);
+    if( video_enable_annotate_text == true ) {
+        SetVideoAnnotateUserText(config_media_->GetVideoAnnotateText());
+        SetVideoAnnotateTextSizeRatio(
+                config_media_->GetVideoAnnotateTextSizeRatio());
+    };
 }
 
 bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
