@@ -36,7 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/platform_thread.h"
 
 #include "rtc_base/file.h"
-#include "rtc_base/pathutils.h"
 #include "rtc_base/bufferqueue.h"
 #include "rtc_base/event.h"
 
@@ -97,8 +96,8 @@ private:
     uint32_t frame_counter_;
     uint32_t imv_counter_;
 
-    rtc::Pathname h264_filename_;
-    rtc::Pathname h264_temp_;
+    std::string h264_filename_;
+    std::string h264_temp_;
 
     uint8_t *frame_writer_buffer_;
 

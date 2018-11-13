@@ -27,12 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <iostream>
-#include <vector>
+#include <memory>
 
 #include "websocket_server.h"
 #include "app_ws_client.h"

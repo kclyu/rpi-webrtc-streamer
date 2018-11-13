@@ -66,7 +66,7 @@ QualityConfig::QualityConfig()
     packet_loss_(3 * 30), rtt_(3 * 30), average_qp_(3 * 30) {
 
     config_media_  = ConfigMediaSingleton::Instance();
-    std::list <ConfigMedia::VideoResolution> resolution_list = 
+    std::list <ConfigMedia::VideoResolution> resolution_list =
         config_media_->GetVideoResolutionList();
 
     use_dynamic_resolution_  =  config_media_->GetVideoDynamicResolution();
@@ -74,7 +74,7 @@ QualityConfig::QualityConfig()
 
     // 4:3 resolution
     for(std::list<ConfigMedia::VideoResolution>::iterator iter =
-            resolution_list.begin(); iter != resolution_list.end(); 
+            resolution_list.begin(); iter != resolution_list.end();
             iter++) {
         resolution_config_.push_back(
                 ResolutionConfigEntry(iter->width_,iter->height_,20,kMaxFrameRate));
@@ -88,7 +88,7 @@ QualityConfig::~QualityConfig(){
 
 void QualityConfig::ReportQP(int qp){
     average_qp_.AddSample(qp);
-    const absl::optional<int> avg_qp = average_qp_.GetAverage();
+    const absl::optional<int> avg_qp = average_qp_.GetAverageRoundedDown();
     if( avg_qp ){
         if (*avg_qp > kHighH264QpThreshold ) {
             adaptation_up_ = true;
@@ -103,7 +103,8 @@ void QualityConfig::ReportChannelParameters(uint32_t packet_loss, uint64_t rtt )
     packet_loss_.AddSample(packet_loss);
     rtt_.AddSample(rtt);
 
-    const absl::optional<int> packet_loss_avg = packet_loss_.GetAverage();
+    const absl::optional<int> packet_loss_avg
+        = packet_loss_.GetAverageRoundedDown();
     if( packet_loss_avg ){
         if( *packet_loss_avg > kPacketLossThreshold ) {
             adaptation_down_ = true;
@@ -111,7 +112,7 @@ void QualityConfig::ReportChannelParameters(uint32_t packet_loss, uint64_t rtt )
         }
     }
 
-    const absl::optional<int> rtt_avg = rtt_.GetAverage();
+    const absl::optional<int> rtt_avg = rtt_.GetAverageRoundedDown();
     if( rtt_avg ){
         if( *rtt_avg > kRttMaxThreshold ) {
             adaptation_down_ = true;

@@ -86,15 +86,15 @@ protected:
 //
 //  flags definition for streamer
 //
-DEFINE_bool(help, false, "Prints this message");
-DEFINE_bool(verbose, false, "Print logging message on stdout");
-DEFINE_string(conf, "etc/webrtc_streamer.conf",
+WEBRTC_DEFINE_bool(help, false, "Prints this message");
+WEBRTC_DEFINE_bool(verbose, false, "Print logging message on stdout");
+WEBRTC_DEFINE_string(conf, "etc/webrtc_streamer.conf", \
            "the main configuration file for webrtc-streamer");
-DEFINE_string(severity, "INFO",
+WEBRTC_DEFINE_string(severity, "INFO", \
            "logging message severity level(VERBOSE,INFO,WARNING,ERROR)");
-DEFINE_string(log, "log", "directory for logging message");
-DEFINE_bool(licenses, false, "print the LICENSE information");
-DEFINE_bool(version, false, "print the Version information");
+WEBRTC_DEFINE_string(log, "log", "directory for logging message");
+WEBRTC_DEFINE_bool(licenses, false, "print the LICENSE information");
+WEBRTC_DEFINE_bool(version, false, "print the Version information");
 
 
 //
@@ -128,6 +128,7 @@ int main(int argc, char** argv) {
         return 0;
     };
 
+    std::cerr  << "config file :" << FLAG_conf << "\n";
     // Load the streamer configuration from file
     StreamerConfig streamer_config(FLAG_conf);
     if( streamer_config.LoadConfig() == false ) {

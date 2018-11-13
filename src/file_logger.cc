@@ -28,7 +28,6 @@
 #include "rtc_base/stringutils.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/filerotatingstream.h"
-#include "rtc_base/pathutils.h"
 #include "rtc_base/logsinks.h"
 
 #include "file_logger.h"
@@ -83,12 +82,11 @@ bool FileLogger::Init() {
     return true;
 }
 
-bool FileLogger::DeleteFolderFiles(const rtc::Pathname &folder) {
+bool FileLogger::DeleteFolderFiles(const std::string &folder) {
     rtc::DirectoryIterator it;
-    rtc::Pathname file;
 
     // check src & dest path is directory
-    if( !rtc::Filesystem::IsFolder(folder)) {
+    if( !utils::IsFolder(folder)) {
         // folder does not exist, MoveFolderFiles will create the required folder
         return true;
     }
@@ -102,8 +100,7 @@ bool FileLogger::DeleteFolderFiles(const rtc::Pathname &folder) {
         // ignore "." and ".." filename
         if( filename.compare(0, filename.size(), "." ) != 0 &&
                 filename.compare(0, filename.size(), ".." ) != 0  ) {
-            file.SetPathname(utils::GetFolder(folder), filename);
-            rtc::Filesystem::DeleteFile(file);
+            rtc::Filesystem::DeleteFile(utils::GetFolder(folder) + filename);
             // don't care return value
         }
     } while ( it.Next() );
@@ -111,11 +108,10 @@ bool FileLogger::DeleteFolderFiles(const rtc::Pathname &folder) {
     return true;
 }
 
-
 bool FileLogger::MoveLogFiles(const std::string prefix,
-            const rtc::Pathname &src, const rtc::Pathname &dest) {
+            const std::string &src, const std::string &dest) {
     rtc::DirectoryIterator it;
-    rtc::Pathname src_file, dest_file;
+    std::string src_file, dest_file;
 
     // iterate source directory
     if (!it.Iterate(src)) {
@@ -124,41 +120,48 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
     do {
         std::string filename = it.Name();
         if( filename.compare(0, prefix.size(), prefix ) == 0 ) {
-            src_file.SetPathname(utils::GetFolder(src), filename);
-            dest_file.SetPathname(utils::GetFolder(dest), filename);
+            src_file =  utils::GetFolder(src) + filename;
+            dest_file =  utils::GetFolder(dest) +  filename;
             if( rtc::Filesystem::MoveFile(src_file, dest_file) == false )
                 RTC_LOG(LS_ERROR) << "Failed to move file : "
-                    << src_file.pathname() << ", to: "
-                    << dest_file.pathname();
+                    << src_file << ", to: " << dest_file;
         };
     } while ( it.Next() );
 
     return true;
 }
 
-bool FileLogger::MoveLogFiletoNextShiftFolder() {
-    char src_dir_postfix[16], dest_dir_postfix[16];
-    rtc::Pathname base_log_path;
-    rtc::Pathname src_log_dir, dest_log_dir;
+static int kDirectoryPrefixSize = 64;
 
-    base_log_path.SetFolder( dir_path_ );
+bool FileLogger::MoveLogFiletoNextShiftFolder() {
+    char src_dir_postfix[kDirectoryPrefixSize];
+    char dest_dir_postfix[kDirectoryPrefixSize];
+
+    std::string base_log_path;
+    std::string src_log_dir, dest_log_dir;
+
+    base_log_path = dir_path_;
+    RTC_LOG(INFO) << __FUNCTION__ << "Base Log Path : " << base_log_path;
     // checking whether the base log directory is exist
-    if( rtc::Filesystem::IsFolder( base_log_path ) == false ) {
+    if( utils::IsFolder( base_log_path ) == false ) {
         RTC_LOG(LS_ERROR) << "Log directory does not exist : "
-                    << base_log_path.pathname() ;
+                    << base_log_path;
         return false;
     };
 
     // move log files to next shift directory
     for(int index = 9; index > 0 ; index -- ) {
-        rtc::sprintfn(dest_dir_postfix,sizeof(dest_dir_postfix),"0%d", index );
-        rtc::sprintfn(src_dir_postfix,sizeof(src_dir_postfix),"0%d", index - 1);
-        dest_log_dir.SetFolder(base_log_path.pathname() + dest_dir_postfix );
-        src_log_dir.SetFolder(base_log_path.pathname() + src_dir_postfix );
+        snprintf(dest_dir_postfix,sizeof(dest_dir_postfix),"0%d", index );
+        snprintf(src_dir_postfix,sizeof(src_dir_postfix),"0%d", index - 1);
+        dest_log_dir = base_log_path + dest_dir_postfix;
+        src_log_dir = base_log_path + src_dir_postfix;
+
+    RTC_LOG(INFO) << __FUNCTION__ << "Dest Log Path : " << dest_log_dir;
+    RTC_LOG(INFO) << __FUNCTION__ << "Src Log Path : " << src_log_dir;
 
         // remove last rotate directory
         if( index == 9 ) {
-            if( rtc::Filesystem::IsFolder(dest_log_dir) == true ) {
+            if( utils::IsFolder(dest_log_dir) == true ) {
                 DeleteFolderFiles(dest_log_dir);
             }
         };
@@ -168,8 +171,8 @@ bool FileLogger::MoveLogFiletoNextShiftFolder() {
     };
 
     // move log file to shit directory
-    src_log_dir.SetFolder(dir_path_);
-    dest_log_dir.SetFolder(dir_path_+"/00");
+    src_log_dir = dir_path_;
+    dest_log_dir = dir_path_+"/00";
     if( MoveLogFiles(LOGGING_FILENAME, src_log_dir, dest_log_dir ) == false ){
         return false;
     }

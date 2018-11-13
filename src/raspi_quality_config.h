@@ -37,7 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "absl/types/optional.h"
 
 #include "system_wrappers/include/clock.h"
-#include "modules/video_coding/utility/moving_average.h"
+#include "rtc_base/numerics/moving_average.h"
+
 
 #include "config_media.h"
 
@@ -113,9 +114,9 @@ private:
     int target_framerate_;
     int target_bitrate_;
     int max_bitrate_;
-    webrtc::MovingAverage packet_loss_;
-    webrtc::MovingAverage rtt_;
-    webrtc::MovingAverage average_qp_;
+    rtc::MovingAverage packet_loss_;
+    rtc::MovingAverage rtt_;
+    rtc::MovingAverage average_qp_;
     Resolution current_res_;
     bool use_4_3_resolution_;
     bool use_dynamic_resolution_;

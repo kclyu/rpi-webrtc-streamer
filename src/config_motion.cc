@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/fileutils.h"
-#include "rtc_base/pathutils.h"
 
 #include "config_motion.h"
 #include "utils.h"
@@ -82,7 +81,7 @@ CONFIG_DEFINE( MotionTotalFileSizeLimit, motion_file_total_size_limit, int, 4000
 // Returns true if the specifiec directory path exists
 // or return false otherwise.
 bool validate_motion_directory_path(std::string path, std::string default_value) {
-    if( !rtc::Filesystem::IsFolder(path)) {
+    if( !utils::IsFolder(path)) {
         RTC_LOG(LS_ERROR) << "Path \"" << path << "\" is not directory. using default:"
             << default_value;
         return false;

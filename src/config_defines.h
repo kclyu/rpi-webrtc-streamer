@@ -33,8 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/optionsfile.h"
 #include "rtc_base/stringencode.h"
+#include "compat/optionsfile.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -95,7 +95,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // macro to load configuration
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
-
 
 // macro for dummping config name and config_var
 // need to insert the "#define CONFIG_LOAD_DUMP" before including this header file

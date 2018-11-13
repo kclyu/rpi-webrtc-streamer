@@ -541,7 +541,7 @@ void ConfigMedia::DumpConfig( void ) {
     for(std::list<VideoResolution>::iterator iter = \
             config_var ## _.begin(); \
             iter != config_var ## _.end(); iter++) { \
-            rtc::sprintfn(res_buffer, sizeof(res_buffer),  \
+            snprintf(res_buffer, sizeof(res_buffer),  \
                     "%dx%d,", iter->width_, iter->height_ ); \
             dump_list += res_buffer; \
     } \
@@ -597,7 +597,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
             if( rtc::GetStringFromJson(object, &config_value) == true ) { \
                 if( Set ## name(config_value) == false ) { \
                     rtc::GetStringFromJson(object, &error_value ); \
-                    rtc::sprintfn(err_msg, sizeof(err_msg), \
+                    snprintf(err_msg, sizeof(err_msg), \
                         "failed to validate %s config value %s", \
                         #config_var, error_value.c_str()); \
                     error = err_msg; \
@@ -610,7 +610,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
             else { \
                 /* is not int type */ \
                 rtc::GetStringFromJson(object, &error_value ); \
-                rtc::sprintfn(err_msg, sizeof(err_msg), \
+                snprintf(err_msg, sizeof(err_msg), \
                     "invalid %s config value %s", \
                     #config_var, error_value.c_str()); \
                 error = err_msg; \
@@ -635,7 +635,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
             if( rtc::GetBoolFromJson(object, &config_value) == true ) { \
                 if( Set ## name(config_value) == false ) { \
                     rtc::GetStringFromJson(object, &error_value ); \
-                    rtc::sprintfn(err_msg, sizeof(err_msg), \
+                    snprintf(err_msg, sizeof(err_msg), \
                         "failed to validate %s config value %s", \
                         #config_var, error_value.c_str()); \
                     error = err_msg; \
@@ -648,7 +648,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
             else { \
                 /* is not bool type */ \
                 rtc::GetStringFromJson(object, &error_value ); \
-                rtc::sprintfn(err_msg, sizeof(err_msg), \
+                snprintf(err_msg, sizeof(err_msg), \
                     "invalid %s config value %s", \
                     #config_var, error_value.c_str()); \
                 error = err_msg; \
@@ -670,7 +670,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
             if( rtc::GetIntFromJson(object, &config_value) == true ) { \
                 if( Set ## name(config_value) == false ) { \
                     rtc::GetStringFromJson(object, &error_value ); \
-                    rtc::sprintfn(err_msg, sizeof(err_msg), \
+                    snprintf(err_msg, sizeof(err_msg), \
                         "failed to validate %s config value %s", \
                         #config_var, error_value.c_str()); \
                     error = err_msg; \
@@ -683,7 +683,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
             else { \
                 /* is not int type */ \
                 rtc::GetStringFromJson(object, &error_value ); \
-                rtc::sprintfn(err_msg, sizeof(err_msg), \
+                snprintf(err_msg, sizeof(err_msg), \
                     "invalid %s config value %s", \
                     #config_var, error_value.c_str()); \
                 error = err_msg; \

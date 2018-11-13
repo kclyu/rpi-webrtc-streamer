@@ -37,7 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/pathutils.h"
 #include "rtc_base/fileutils.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/platform_thread.h"
@@ -228,9 +227,11 @@ bool RaspiMotionFile::OpenWriterFiles(void) {
     RTC_LOG(INFO) << "Video File : " <<  base_path_ + "/" + frame_filename;
 
     // marking h264 video file name and h264 video tempoary file name
-    h264_filename_.SetPathname(base_path_,frame_filename);
+    h264_filename_  = base_path_ + "/" + frame_filename;
     frame_filename.append(".saving");
-    h264_temp_.SetPathname(base_path_,frame_filename);
+    h264_temp_ = base_path_ + "/" + frame_filename;
+    RTC_LOG(INFO) << "H264 Filename : " <<  h264_filename_;
+    RTC_LOG(INFO) << "H264 Temp Filename : " <<  h264_temp_;
 
     // reset file written size
     total_frame_written_size_ = 0;
@@ -342,30 +343,30 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     std::list<struct VideoFilePath>  video_file_list;
     VideoFilePath video_file_info;
     rtc::DirectoryIterator it;
-    rtc::Pathname video_files_folder;
-    rtc::Pathname video_file_path;
+    std::string video_files_folder;
+    std::string video_file_path;
     size_t total_directory_size = 0;
     size_t file_size = 0;
     size_t file_counter = 0;
 
-    video_files_folder.SetPathname(config_motion::motion_directory + "/");
+    video_files_folder = config_motion::motion_directory + "/";
 
     // check video path is folder
-    if( !rtc::Filesystem::IsFolder(video_files_folder)) {
+    if( !utils::IsFolder(video_files_folder)) {
         RTC_LOG(LS_ERROR) << "Motion file path is not folder : "
-            << video_files_folder.pathname();
+            << video_files_folder;
         return false;
     };
 
     // iterate video file directory
     if (!it.Iterate(video_files_folder)) {
-        RTC_LOG(LS_ERROR) << "Could't make DirectoryIterator"
-            << video_files_folder.pathname();
+        RTC_LOG(LS_ERROR) << "Could't make DirectoryIterator : "
+            << video_files_folder;
         return false;
     }
     do {
         std::string filename = it.Name();
-        video_file_path.SetPathname(utils::GetFolder(video_files_folder), filename);
+        video_file_path = utils::GetFolder(video_files_folder) + filename;
         if( !(filename.compare(".") == 0 || filename.compare("..") == 0) ) {
             if( rtc::Filesystem::GetFileSize(video_file_path,&file_size)) {
                 video_file_info.video_file_ = filename;
@@ -380,17 +381,17 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     // sorting the video file list
     video_file_list.sort(VideoFileCompare);
 
-    RTC_LOG(INFO) << "Directory \"" << video_files_folder.pathname()
-        << "\" " <<  file_counter << " files, total size: "
-        << total_directory_size;
+    RTC_LOG(INFO) << "Directory \"" << video_files_folder << "\" "
+        <<  file_counter << " files, total size: " << total_directory_size;
 
     while ( video_file_list.size() > 0 &&
             ((total_directory_size - video_file_list.front().size_)
             > (size_t)config_motion::motion_file_total_size_limit * 1000000) ) {
         total_directory_size -= video_file_list.front().size_;
-        video_file_path.SetPathname( video_files_folder.pathname(),
-                video_file_list.front().video_file_);
-        RTC_LOG(INFO) << "Removing Video File :" << video_file_list.front().video_file_;
+        video_file_path
+            = video_files_folder + video_file_list.front().video_file_;
+        RTC_LOG(INFO) << "Removing Video File :"
+            << video_file_list.front().video_file_;
         rtc::Filesystem::DeleteFile( video_file_path );
         video_file_list.pop_front();
     };
@@ -400,11 +401,11 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
 
 
 std::string RaspiMotionFile::VideoPathname(void) const {
-    return h264_filename_.pathname();
+    return h264_filename_;
 }
 
 std::string RaspiMotionFile::VideoFilename(void) const {
-    return h264_filename_.filename();
+    return h264_filename_;
 }
 
 

@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 
 #include "common_types.h"
 #include "common_video/h264/h264_bitstream_parser.h"
@@ -66,10 +67,10 @@ RaspiVideoEncoderFactory* RaspiVideoEncoderFactory::CreateVideoEncoderFactory() 
 static bool IsSameFormat(const webrtc::SdpVideoFormat& format1,
                   const webrtc::SdpVideoFormat& format2) {
     // If different names (case insensitive), then not same formats.
-    if (!cricket::CodecNamesEq(format1.name, format2.name))
+    if (!absl::EqualsIgnoreCase(format1.name, format2.name))
         return false;
     // For every format besides H264, comparing names is enough.
-    if (!cricket::CodecNamesEq(format1.name.c_str(), cricket::kH264CodecName))
+    if (!absl::EqualsIgnoreCase(format1.name.c_str(), cricket::kH264CodecName))
         return true;
     // Compare H264 profiles.
     const absl::optional<webrtc::H264::ProfileLevelId> profile_level_id =

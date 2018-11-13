@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/platform_thread.h"
 
 #include "rtc_base/bufferqueue.h"
-#include "modules/video_coding/utility/moving_average.h"
+#include "rtc_base/numerics/moving_average.h"
 
 #include "mmal_wrapper.h"
 #include "raspi_motionvector.h"
@@ -57,7 +57,9 @@ public:
     // Motion Capture will use fixed resolution
     bool StartCapture();
     void StopCapture();
+#ifdef __NOTI_ENABLE__
     void SetHttpNoti(RaspiHttpNoti *http_noti);
+#endif  /* __NOTI_ENABLE__ */
 
     // Motion Observers
     virtual void OnMotionTriggered(int active_nums) override ;
@@ -114,12 +116,13 @@ private:
     uint64_t motion_clear_wait_timestamp_;
     uint32_t motion_clear_wait_period_;
 
-    webrtc::MovingAverage motion_active_average_;
+    rtc::MovingAverage motion_active_average_;
     int motion_active_percent_clear_threshold_;
     int motion_active_percent_trigger_threshold_;
 
-
+#ifdef __NOTI_ENABLE__
     RaspiHttpNoti *http_noti_;
+#endif  /* __NOTI_ENABLE__ */
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotion);
 };
 

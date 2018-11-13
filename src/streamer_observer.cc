@@ -215,9 +215,12 @@ void StreamerProxy::ReleaseStreamer(SocketServerObserver *socket_server, int pee
             if( raspi_motion_ &&
                 raspi_motion_->IsActive() == false ) {
                 raspi_motion_.reset(new RaspiMotion());
+                //  TODO
                 // setting HttpNoti callback
+#ifdef __NOTI_ENABLE__
                 if( noti_enable_ )
                     raspi_motion_->SetHttpNoti(http_noti_.get());
+#endif  /* __NOTI_ENABLE__ */
                 raspi_motion_->StartCapture();
             }
         }
@@ -225,6 +228,7 @@ void StreamerProxy::ReleaseStreamer(SocketServerObserver *socket_server, int pee
 }
 
 // TODO:
+#ifdef __NOTI_ENABLE__
 // Temporarily implement the relevant part of the HttpNoti object in the Proxy class.
 // It need to move that http noti part to manage all HttpNoti in the Motion class.
 void StreamerProxy::UpdateNotiConfig(bool noti_enable, const std::string url) {
@@ -253,6 +257,7 @@ void StreamerProxy::UpdateNotiConfig(bool noti_enable, const std::string url) {
     http_noti_.reset();
     raspi_motion_->SetHttpNoti(nullptr);
 }
+#endif  /* __NOTI_ENABLE__ */
 
 void StreamerProxy::MessageFromPeer( int peer_id, const std::string& message ) {
     RTC_LOG(INFO) << __FUNCTION__;

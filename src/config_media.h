@@ -35,10 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 
 #include "rtc_base/fileutils.h"
-#include "rtc_base/optionsfile.h"
-#include "rtc_base/pathutils.h"
-#include "rtc_base/optionsfile.h"
 #include "rtc_base/criticalsection.h"
+#include "compat/optionsfile.h"
 
 #ifdef __cplusplus
 extern "C" {

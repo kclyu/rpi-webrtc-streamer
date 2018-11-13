@@ -37,10 +37,10 @@ public:
     ~FileLogger();
 
 private:
-    bool DeleteFolderFiles(const rtc::Pathname &folder);
+    bool DeleteFolderFiles(const std::string &folder);
     bool MoveLogFiletoNextShiftFolder();
     bool MoveLogFiles(const std::string prefix,
-            const rtc::Pathname &src, const rtc::Pathname &dest);
+            const std::string &src, const std::string &dest);
     bool inited_;
     std::string dir_path_;
     rtc::LoggingSeverity severity_;

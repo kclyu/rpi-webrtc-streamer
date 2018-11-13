@@ -33,7 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 #include "raspi_motion.h"
+#ifdef __NOTI_ENABLE__
 #include "raspi_httpnoti.h"
+#endif  /* __NOTI_ENABLE__ */
 
 struct StreamerObserver {
     virtual void OnPeerConnected(int peer_id, const std::string& name) = 0;
@@ -90,8 +92,11 @@ public:
     // SocketServerObserver
     bool SendMessageToPeer(const int peer_id, const std::string &message) override;
     void RegisterObserver(StreamerObserver* callback) override;
+
+#ifdef __NOTI_ENABLE__
     // http noti config information (URL) and enable/disable noti feature
     void UpdateNotiConfig(bool noti_enable, const std::string url);
+#endif  /* __NOTI_ENABLE__ */
 
 private:
     StreamerProxy() {}
@@ -100,7 +105,9 @@ private:
 
     static StreamerProxy* streamer_proxy_;
     std::unique_ptr <RaspiMotion> raspi_motion_;
+#ifdef __NOTI_ENABLE__
     std::unique_ptr <RaspiHttpNoti> http_noti_;
+#endif  /* __NOTI_ENABLE__ */
     SocketServerObserver *active_socket_observer_;
     StreamerObserver *streamer_callback_;           // streamer callback
     int active_peer_id_;

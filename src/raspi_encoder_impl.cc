@@ -90,7 +90,7 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
     packetization_mode_(H264PacketizationMode::SingleNalUnit),
     initial_delay_(0) {
 
-    RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
+    RTC_CHECK(absl::EqualsIgnoreCase(codec.name, cricket::kH264CodecName));
     std::string packetization_mode_string;
     if (codec.GetParam(cricket::kH264FmtpPacketizationMode,
             &packetization_mode_string) && packetization_mode_string == "1") {
@@ -227,7 +227,7 @@ int32_t RaspiEncoderImpl::RegisterEncodeCompleteCallback(
 }
 
 int32_t RaspiEncoderImpl::SetRateAllocation(
-        const BitrateAllocation& bitrate_allocation, uint32_t framerate) {
+        const VideoBitrateAllocation& bitrate_allocation, uint32_t framerate) {
     QualityConfig::Resolution resolution;
     uint32_t framerate_updated;
 

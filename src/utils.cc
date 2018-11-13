@@ -21,6 +21,9 @@
 #include <memory>
 #include <string>
 #include <iostream>
+#include <fstream>
+
+#include <sys/stat.h>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -31,10 +34,6 @@
 #include "rtc_base/logsinks.h"
 
 #include "utils.h"
-
-using rtc::ToString;
-using rtc::FromString;
-using rtc::sprintfn;
 
 namespace utils {
 
@@ -62,7 +61,7 @@ void PrintVersionInfo() {
 void PrintLicenseInfo() {
     char command_buffer[1024];
     int ret;
-    sprintfn( command_buffer, sizeof(command_buffer),
+    snprintf( command_buffer, sizeof(command_buffer),
         "find %s/LICENSE -type f -printf \"********************\\n\
 ********************   %%f\\n********************\\n\\n\" \
 -exec cat {} \\; | pager",
@@ -74,15 +73,15 @@ void PrintLicenseInfo() {
 }
 
 std::string IntToString(int i) {
-    return ToString(i);
+    return rtc::ToString(i);
 }
 
 std::string Size_tToString(size_t i) {
-    return ToString(i);
+    return rtc::ToString(i);
 }
 
 bool StringToInt(const std::string &str,int *value ) {
-    return FromString<int>(str, value);
+    return rtc::FromString<int>(str, value);
 }
 
 rtc::LoggingSeverity String2LogSeverity(const std::string severity) {
@@ -127,13 +126,17 @@ bool ParseVideoResolution(const std::string resolution,int *width, int *height )
     return true;
 }
 
-
-std::string GetFolder(rtc::Pathname path) {
-    size_t f = path.pathname().rfind(path.filename());
-    return path.pathname().replace(f, path.filename().length(), "");
+bool IsFolder(const std::string& file) {
+    struct stat st;
+    int res = ::stat(file.c_str(), &st);
+    return res == 0 && S_ISDIR(st.st_mode);
 }
 
-std::string GetParentFolder(rtc::Pathname path) {
+std::string GetFolder(std::string path) {
+    return path.substr(0, path.find_last_of(FOLDER_DELIMS));
+}
+
+std::string GetParentFolder(std::string path) {
     std::string::size_type pos = std::string::npos;
     std::string folder = GetFolder(path);
     if (folder.size() >= 2) {
@@ -145,39 +148,33 @@ std::string GetParentFolder(rtc::Pathname path) {
     return "";  // return empty string
 }
 
+
 // Get device id from raspberrypi's cpuinfo
 bool GetHardwareDeviceId(std::string *deviceid) {
-    rtc::FileStream stream;
-    int err;
-
-    if (!stream.Open(kCPUInfoPath, "r", &err)) {
-        RTC_LOG(LS_ERROR) << "Could not open CPU info file, err: " << err;
-        return false;
+    std::ifstream file(kCPUInfoPath);
+    if(file.is_open()) {
+        for (std::string line; std::getline(file, line); ) {
+            size_t equals_pos = line.find(kCPUInfoSeperator);
+            if (equals_pos == std::string::npos) {
+                continue;
+            };
+            std::string key = rtc::string_trim(std::string(line, 0, equals_pos));
+            std::string value = rtc::string_trim(
+                    std::string(line, equals_pos + 1, line.length() - (equals_pos + 1)));
+            if( key.compare(kCPUInfoDeviceToken) == 0 ) {
+                *deviceid = value;
+                return true;
+            };
+        }
     }
-
-    std::string line;
-    rtc::StreamResult res;
-    for (;;) {
-        res = stream.ReadLine(&line);
-        if (res != rtc::SR_SUCCESS) {
-            break;
-        }
-        size_t equals_pos = line.find(kCPUInfoSeperator);
-        if (equals_pos == std::string::npos) {
-            continue;
-        }
-        std::string key = rtc::string_trim(std::string(line, 0, equals_pos));
-        std::string value = rtc::string_trim(
-                std::string(line, equals_pos + 1, line.length() - (equals_pos + 1)));
-        if( key.compare(kCPUInfoDeviceToken) == 0 ) {
-            *deviceid = value;
-            return true;
-        };
+    else {
+        RTC_LOG(LS_ERROR) << "Could not open CPU info file";
+        return false;
     }
     RTC_LOG(LS_ERROR) << "Error in gettting the Hardware DeviceID from cpuinfo";
     return false;
 }
 
-};
+};  // namespace utils
 
 

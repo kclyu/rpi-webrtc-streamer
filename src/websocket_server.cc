@@ -27,17 +27,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <iostream>
 #include <vector>
+#include <list>
 
-#include "rtc_base/network.h"
 #include "rtc_base/fileutils.h"
-#include "rtc_base/pathutils.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/network.h"
 
 #include "websocket_server.h"
 
@@ -229,14 +224,12 @@ bool LibWebSocketServer::Init(int port) {
 
 bool LibWebSocketServer::AddHttpWebMount(bool motion_enabled,
         const std::string &web_path, const std::string &motion_path){
-    rtc::Pathname file_path;
 
     if( motion_enabled == true) {
         // validate the given path is directory
-        file_path.SetFolder( motion_path );
-        if( rtc::Filesystem::IsFolder( file_path ) == false ) {
+        if( rtc::Filesystem::IsFile( motion_path ) == true ) {
             RTC_LOG(LS_ERROR) << "Motion path is not directory : "
-                << file_path.pathname() ;
+                << motion_path;
             return false;
         }
 
@@ -254,10 +247,9 @@ bool LibWebSocketServer::AddHttpWebMount(bool motion_enabled,
     }
 
     // validate the given path is directory
-    file_path.SetFolder( web_path );
-    if( rtc::Filesystem::IsFolder( file_path ) == false ) {
+    if( rtc::Filesystem::IsFile( web_path ) == true ) {
         RTC_LOG(LS_ERROR) << "WebRoot path is not directory : "
-            << file_path.pathname() ;
+            << web_path;
         return false;
     }
 

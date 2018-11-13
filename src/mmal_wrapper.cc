@@ -171,7 +171,11 @@ void FrameQueue::HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer ) {
             }
             else {
                 frame_drop_ ++;
-                RTC_LOG(INFO) << "MMAL Frame Dropped during HandlingMMALFrame : " << frame_drop_;
+                //  TODO: Video Frame Dropping occurs when Video API is not
+                //  stabilized. At this time, it is necessary to reset
+                //  the entire MMAL interface.
+                RTC_LOG(INFO) << "MMAL Frame Dropped during HandlingMMALFrame : "
+                    << frame_drop_;
             }
         }
 

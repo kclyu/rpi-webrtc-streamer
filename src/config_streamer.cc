@@ -113,29 +113,33 @@ StreamerConfig::StreamerConfig(const std::string &config_file)
 
 
 bool StreamerConfig::LoadConfig()  {
-    rtc::Pathname path;
-    path.SetPathname( config_file_ );
+    std::string file_path;
 
     // trying to check flag config_file is regular file
-    if( rtc::Filesystem::IsFile(path) == false)  {
+    if( rtc::Filesystem::IsFile(config_file_) == false)  {
         // there is no config file in command line flag
         // so, trying to load config from installation directory config path
-        path.SetPathname( std::string(INSTALL_DIR)
-                + "/"  + std::string(kDefaultStreamerConfig) );
-        if( rtc::Filesystem::IsFile(path) == false)  {
-            std::cerr << "Failed to find config options:" << path.pathname() << std::endl;
+        file_path =  std::string(INSTALL_DIR) + + "/"  +
+            std::string(kDefaultStreamerConfig);
+
+        if( rtc::Filesystem::IsFile(file_path) == false)  {
+            std::cerr << "Failed to find config options:" << file_path
+                << std::endl;
             return false;
         };
-    };
+    }
+    else {
+        file_path = config_file_;
+    }
 
-    config_.reset(new rtc::OptionsFile(path.pathname()));
+    config_.reset(new rtc::OptionsFile(file_path));
     if( config_->Load() == false ) {
-        std::cerr  << "Failed to load config options:" << path.pathname() << std::endl;
+        std::cerr  << "Failed to load config options:" << file_path << std::endl;
         return false;
     }
 
-    config_file_ = path.pathname();
-    config_dir_basename_ = utils::GetParentFolder(path);
+    config_file_ = file_path;
+    config_dir_basename_ = utils::GetParentFolder(file_path);
     std::cout << "Using config file base path:" <<
         ((config_dir_basename_.size() == 0)?"CWD":config_dir_basename_) << std::endl;
     config_loaded_ = true;
@@ -280,9 +284,11 @@ bool StreamerConfig::GetMotionConfig(std::string& conf) {
     if( config_->GetStringValue(kConfigMotionConfig, &conf ) == true ) {
         conf = config_dir_basename_ + conf;
         config_loaded__MotionConfig = true; // to supporess warning
+        RTC_LOG(LS_ERROR) << "CONFIG :" << conf;
         return true;
     }
     conf = config_dir_basename_ + kDefaultMediaConfig;
+    RTC_LOG(LS_ERROR) << "FALLBACK CONFIG :" << conf;
     return false;
 }
 
@@ -290,11 +296,8 @@ bool StreamerConfig::GetMotionConfig(std::string& conf) {
 // if the log path does not found, it will return false
 bool StreamerConfig::GetLogPath(std::string& log_path) {
     RTC_DCHECK( config_loaded_ == true );
-    rtc::Pathname path;
-    path.SetPathname( log_path );
-
     // trying to check log path is directory
-    if( utils::GetFolder(path).size() == 0 &&  rtc::Filesystem::IsFolder(path) == true )  {
+    if( utils::GetFolder(log_path).size() == 0 &&  utils::IsFolder(log_path) == true )  {
         // log path is current working directory
         std::cerr << "Using message logging log directory in CWD\n";
         std::cerr << "Using CWD log is for only development support feature"
@@ -303,19 +306,19 @@ bool StreamerConfig::GetLogPath(std::string& log_path) {
     }
 
     // trying to check comamand flag log path is directory
-    if( rtc::Filesystem::IsFolder(path) == true )  {
+    if( utils::IsFolder(log_path) == true )  {
         return true;
     }
 
     // checking INSTALL_DIR log path
-    path.SetPathname( std::string(INSTALL_DIR) + "/log" );
-    if( rtc::Filesystem::IsFolder(path) == false )  {
+    std::string new_log_path = std::string(INSTALL_DIR) + "/log";
+    if( utils::IsFolder(new_log_path) == false )  {
         std::cerr << "Failed to find the log directory "
-            << path.pathname() << "\n";
+            << new_log_path << "\n";
         return false;
     }
 
-    log_path = path.pathname();
+    log_path = new_log_path;
     return true;
 }
 

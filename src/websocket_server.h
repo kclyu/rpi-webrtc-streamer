@@ -27,7 +27,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory>
 #include <string>
 #include <list>
 #include <deque>
@@ -44,7 +43,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef WEBSOCKET_SERVER_H_
 #define WEBSOCKET_SERVER_H_
-
 
 //////////////////////////////////////////////////////////////////////
 //

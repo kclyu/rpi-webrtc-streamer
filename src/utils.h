@@ -18,7 +18,6 @@
 #include "rtc_base/fileutils.h"
 #include "rtc_base/filerotatingstream.h"
 #include "rtc_base/logsinks.h"
-#include "rtc_base/pathutils.h"
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(x) (sizeof(x) / sizeof(x[0]))
@@ -35,9 +34,10 @@ bool StringToInt(const std::string &str,int *value );
 bool ParseVideoResolution(const std::string resolution,int *width, int *height );
 rtc::LoggingSeverity String2LogSeverity(const std::string severity);
 
-// Getting folder and parent folder from rtc:Pathname object
-std::string GetFolder(rtc::Pathname path);
-std::string GetParentFolder(rtc::Pathname path);
+// Getting folder and parent folder from std::string path
+std::string GetFolder(std::string path);
+std::string GetParentFolder(std::string path);
+bool IsFolder(const std::string& file);
 
 // Get hardware serial number from /proc/cpu
 bool GetHardwareDeviceId(std::string *deviceid);

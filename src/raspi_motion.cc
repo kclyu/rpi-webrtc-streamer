@@ -60,7 +60,11 @@ RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
     width_(width), height_(height), framerate_(framerate), bitrate_(bitrate),
     mmal_encoder_(nullptr),clock_(webrtc::Clock::GetRealTimeClock()),
     motion_(width, height, framerate, false),
+#ifdef __NOTI_ENABLE__
     motion_active_average_(kDefaultMotionAverageSize), http_noti_(nullptr) {
+#else
+    motion_active_average_(kDefaultMotionAverageSize) {
+#endif  /* __NOTI_ENABLE__ */
 
     queue_capacity_ = framerate * VIDEO_INTRAFRAME_PERIOD +
         (framerate * VIDEO_INTRAFRAME_PERIOD) *0.1f;
@@ -223,7 +227,8 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points){
     uint64_t current_timestamp;
 
     motion_active_average_.AddSample( (int)active_percent );
-    absl::optional<int> moving_average = motion_active_average_.GetAverage();
+    absl::optional<int> moving_average 
+        = motion_active_average_.GetAverageRoundedDown();
     if( moving_average ){
         current_timestamp = clock_->TimeInMilliseconds();
         if( current_timestamp - last_average_print_timestamp_
@@ -240,12 +245,6 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points){
                 motion_clear_wait_period_  )  {
                 RTC_LOG(INFO) << "Motion Changing state WAIT_CLEAR to CLEAR ";
                 motion_state_ = CLEARED;
-
-                // Motion Noti message is sent only when MotionState is
-                // changed to Cleared status.
-                if( http_noti_ ) {
-                    http_noti_->SendMotionNoti( motion_file_->VideoFilename());
-                }
             }
         }
     };
@@ -301,9 +300,11 @@ bool RaspiMotion::DrainProcess() {
     return true;
 }
 
+#ifdef __NOTI_ENABLE__
 void RaspiMotion::SetHttpNoti(RaspiHttpNoti *http_noti ) {
     http_noti_ = http_noti;
 }
+#endif  /* __NOTI_ENABLE__ */
 
 ///////////////////////////////////////////////////////////////////////////////
 //
