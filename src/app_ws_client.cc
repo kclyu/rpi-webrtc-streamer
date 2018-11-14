@@ -144,7 +144,7 @@ AppWsClient::AppWsClient()
     deviceid_inited_ = utils::GetHardwareDeviceId(&deviceid_);
     config_media_ = ConfigMediaSingleton::Instance();
     if( deviceid_inited_ )
-        RTC_LOG(INFO) << "Getting Device ID : " << deviceid_;
+        RTC_LOG(INFO) << "Using Device ID : " << deviceid_;
     else
         RTC_LOG(LS_ERROR) << "Failed to get device id";
 }

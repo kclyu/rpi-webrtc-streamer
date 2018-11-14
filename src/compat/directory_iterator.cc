@@ -16,11 +16,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <iostream>
+
 #include "compat/directory_iterator.h"
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/stringutils.h"
+
+static const char* kDirectoryDelimiter="/";
 
 namespace utils {
 
@@ -58,7 +62,8 @@ bool DirectoryIterator::Iterate(const std::string& dir) {
   if (dirent_ == nullptr)
     return false;
 
-  if (::stat(std::string(directory_ + Name()).c_str(), &stat_) != 0)
+  if (::stat(std::string(ValidateDirectoryPath(directory_)
+                  + Name()).c_str(), &stat_) != 0)
     return false;
   return true;
 }
@@ -70,7 +75,8 @@ bool DirectoryIterator::Next() {
   if (dirent_ == nullptr)
     return false;
 
-  return ::stat(std::string(directory_ + Name()).c_str(), &stat_) == 0;
+  return ::stat(std::string(ValidateDirectoryPath(directory_)
+              + Name()).c_str(), &stat_) == 0;
 }
 
 // returns true if the file currently pointed to is a directory
@@ -82,6 +88,14 @@ bool DirectoryIterator::IsDirectory() const {
 std::string DirectoryIterator::Name() const {
   RTC_DCHECK(dirent_);
   return dirent_->d_name;
+}
+
+// Add a Directory delimiter if it is not at the end of the string
+std::string DirectoryIterator::ValidateDirectoryPath(const std::string& dir) {
+    std::string::size_type pos = dir.rfind(kDirectoryDelimiter);
+    if(pos == (dir.size() - 1))
+        return dir;
+    return dir + kDirectoryDelimiter;
 }
 
 }  // namespace utils

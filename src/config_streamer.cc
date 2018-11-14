@@ -111,7 +111,7 @@ bool StreamerConfig::LoadConfig()  {
     if( utils::IsFile(config_file_) == false)  {
         // there is no config file in command line flag
         // so, trying to load config from installation directory config path
-        file_path =  std::string(INSTALL_DIR) + + "/"  +
+        file_path =  std::string(INSTALL_DIR) + "/"  +
             std::string(kDefaultStreamerConfig);
 
         if( utils::IsFile(file_path) == false)  {
@@ -276,11 +276,10 @@ bool StreamerConfig::GetMotionConfig(std::string& conf) {
     if( config_->GetStringValue(kConfigMotionConfig, &conf ) == true ) {
         conf = config_dir_basename_ + conf;
         config_loaded__MotionConfig = true; // to supporess warning
-        RTC_LOG(LS_ERROR) << "CONFIG :" << conf;
         return true;
     }
     conf = config_dir_basename_ + kDefaultMediaConfig;
-    RTC_LOG(LS_ERROR) << "FALLBACK CONFIG :" << conf;
+    RTC_LOG(LS_ERROR) << "Using Fallback Config :" << conf;
     return false;
 }
 
@@ -288,8 +287,8 @@ bool StreamerConfig::GetMotionConfig(std::string& conf) {
 // if the log path does not found, it will return false
 bool StreamerConfig::GetLogPath(std::string& log_path) {
     RTC_DCHECK( config_loaded_ == true );
-    // trying to check log path is directory
-    if( utils::GetFolder(log_path).size() == 0 &&  utils::IsFolder(log_path) == true )  {
+
+    if( utils::GetFolder(log_path).size() == 0 ){
         // log path is current working directory
         std::cerr << "Using message logging log directory in CWD\n";
         std::cerr << "Using CWD log is for only development support feature"

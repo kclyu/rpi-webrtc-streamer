@@ -42,8 +42,6 @@ namespace utils {
 // allows you to get information about each file.
 
 class DirectoryIterator {
-  friend class Filesystem;
-
  public:
   // Constructor
   DirectoryIterator();
@@ -67,6 +65,7 @@ class DirectoryIterator {
   virtual std::string Name() const;
 
  private:
+  std::string ValidateDirectoryPath(const std::string& dir);
   std::string directory_;
   DIR* dir_;
   struct dirent* dirent_;

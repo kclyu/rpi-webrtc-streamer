@@ -349,10 +349,9 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     size_t file_size = 0;
     size_t file_counter = 0;
 
-    video_files_folder = config_motion::motion_directory + "/";
-
     // check video path is folder
-    if( !utils::IsFolder(video_files_folder)) {
+    if( !utils::GetFolderWithTailingDelimiter(config_motion::motion_directory,
+                video_files_folder)) {
         RTC_LOG(LS_ERROR) << "Motion file path is not folder : "
             << video_files_folder;
         return false;
@@ -366,7 +365,7 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     }
     do {
         std::string filename = it.Name();
-        video_file_path = utils::GetFolder(video_files_folder) + filename;
+        video_file_path = video_files_folder + filename;
         if( !(filename.compare(".") == 0 || filename.compare("..") == 0) ) {
             if( utils::IsFile( video_file_path ) ){
                 file_size = utils::GetFileSize(video_file_path).value_or(0);

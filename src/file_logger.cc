@@ -37,6 +37,8 @@
 #define  MAX_LOG_FILE_SIZE      10*1024*1024    // 10M bytes;
 #define  MAX_LOG_FILE_NUM       10
 
+static const char* kDirectoryDelimiter="/";
+
 namespace utils {
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -57,7 +59,7 @@ bool FileLogger::Init() {
     if( inited_ == true ) return true;  // no more initialization
 
     if( MoveLogFiletoNextShiftFolder() == false ) {
-        RTC_LOG(LS_ERROR) << "Failed to rotate log files at path: " << dir_path_;
+        std::cerr << "Failed to rotate log files at path: " << dir_path_ << "\n";
         return false;
     };
 
@@ -65,7 +67,7 @@ bool FileLogger::Init() {
                 LOGGING_FILENAME, log_max_file_size_, MAX_LOG_FILE_NUM ));
 
     if(!logSink_->Init()) {
-        RTC_LOG(LS_ERROR) << "Failed to open log files at path: " << dir_path_;
+        std::cerr << "Failed to open log files at path: " << dir_path_ << "\n";
         logSink_.reset();
         return false;
     }
@@ -112,19 +114,25 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
             const std::string &src, const std::string &dest) {
     utils::DirectoryIterator it;
     std::string src_file, dest_file;
+    std::string src_dir, dest_dir;
+
+    GetFolderWithTailingDelimiter(src, src_dir);
+    GetFolderWithTailingDelimiter(src, dest_dir);
 
     // iterate source directory
     if (!it.Iterate(src)) {
+        std::cerr << "Failed to make directory iterator: "
+                    << src << "\n";
         return false;
     }
     do {
         std::string filename = it.Name();
         if( filename.compare(0, prefix.size(), prefix ) == 0 ) {
-            src_file =  utils::GetFolder(src) + filename;
-            dest_file =  utils::GetFolder(dest) +  filename;
+            src_file =  src_dir + filename;
+            dest_file =  dest_dir +  filename;
             if( utils::MoveFile(src_file, dest_file) == false )
-                RTC_LOG(LS_ERROR) << "Failed to move file : "
-                    << src_file << ", to: " << dest_file;
+                std::cerr << "Failed to move file : "
+                    << src_file << ", to: " << dest_file << "\n";
         };
     } while ( it.Next() );
 
@@ -141,11 +149,11 @@ bool FileLogger::MoveLogFiletoNextShiftFolder() {
     std::string src_log_dir, dest_log_dir;
 
     base_log_path = dir_path_;
-    RTC_LOG(INFO) << __FUNCTION__ << "Base Log Path : " << base_log_path;
+    std::cout << "Base Log Path : " << base_log_path << "\n";
     // checking whether the base log directory is exist
     if( utils::IsFolder( base_log_path ) == false ) {
-        RTC_LOG(LS_ERROR) << "Log directory does not exist : "
-                    << base_log_path;
+        std::cerr << "Log directory does not exist : "
+                    << base_log_path << "\n";
         return false;
     };
 
@@ -153,11 +161,10 @@ bool FileLogger::MoveLogFiletoNextShiftFolder() {
     for(int index = 9; index > 0 ; index -- ) {
         snprintf(dest_dir_postfix,sizeof(dest_dir_postfix),"0%d", index );
         snprintf(src_dir_postfix,sizeof(src_dir_postfix),"0%d", index - 1);
-        dest_log_dir = base_log_path + dest_dir_postfix;
-        src_log_dir = base_log_path + src_dir_postfix;
-
-    RTC_LOG(INFO) << __FUNCTION__ << "Dest Log Path : " << dest_log_dir;
-    RTC_LOG(INFO) << __FUNCTION__ << "Src Log Path : " << src_log_dir;
+        dest_log_dir = base_log_path + kDirectoryDelimiter
+            + dest_dir_postfix;
+        src_log_dir = base_log_path + kDirectoryDelimiter
+            + src_dir_postfix;
 
         // remove last rotate directory
         if( index == 9 ) {

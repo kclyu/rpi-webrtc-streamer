@@ -41,6 +41,8 @@ bool IsFolder(const std::string& file);
 bool IsFile(const std::string& file);
 bool DeleteFile(const std::string& file);
 bool MoveFile(const std::string& old_file, const std::string& new_file);
+bool GetFolderWithTailingDelimiter(const std::string& path,
+        std::string& path_with_delimiter);
 absl::optional<size_t> GetFileSize(const std::string& file);
 
 // Get hardware serial number from /proc/cpu

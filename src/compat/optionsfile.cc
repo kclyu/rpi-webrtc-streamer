@@ -117,7 +117,7 @@ bool OptionsFile::IsLegalValue(const std::string& value) {
 
 bool OptionsFile::GetStringValue(const std::string& option,
                                  std::string* out_val) const {
-  RTC_LOG(INFO) << "OptionsFile::GetStringValue " << option;
+  RTC_LOG(LS_VERBOSE) << "OptionsFile::GetStringValue " << option;
   if (!IsLegalName(option)) {
     return false;
   }
@@ -126,7 +126,7 @@ bool OptionsFile::GetStringValue(const std::string& option,
     return false;
   }
   *out_val = i->second;
-    RTC_LOG(INFO) << "Value : " << *out_val;
+    RTC_LOG(LS_VERBOSE) << "Value : " << *out_val;
   return true;
 }
 

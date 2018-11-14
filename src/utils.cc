@@ -153,16 +153,43 @@ absl::optional<size_t> GetFileSize(const std::string& file) {
   return st.st_size;
 }
 
+bool GetFolderWithTailingDelimiter(const std::string& path,
+        std::string& path_with_delimiter) {
+    if( IsFolder(path) == true ) {
+        // Make sure that the end of path is a directory delimiter.
+        // If the directory delimiter is not present, it is newly added.
+        std::string::size_type pos = path.rfind(FOLDER_DELIMS);
+        if(pos != path.length() - 1 )
+            path_with_delimiter = path + FOLDER_DELIMS;
+        else
+            path_with_delimiter = path;
+        return true;
+    }
+    else {
+        std::string::size_type pos = path.find_last_of(FOLDER_DELIMS);
+        if (pos != std::string::npos) {
+            // found the delimiter in path
+            path_with_delimiter = path.substr(0, pos + 1);
+            return true;
+        }
+    }
+    return false;
+}
+
 std::string GetFolder(std::string path) {
     return path.substr(0, path.find_last_of(FOLDER_DELIMS));
 }
 
 std::string GetParentFolder(std::string path) {
     std::string::size_type pos = std::string::npos;
-    std::string folder = GetFolder(path);
-    if (folder.size() >= 2) {
-        pos = folder.find_last_of(FOLDER_DELIMS, folder.length() - 2);
+    std::string folder;
+    if( GetFolderWithTailingDelimiter(path, folder) == false ) {
+        RTC_LOG(LS_ERROR)
+            << "Maybe!? Internal path error, path is not directory : " << path;
+        folder = path;
     }
+
+    pos = folder.find_last_of(FOLDER_DELIMS, folder.length() - 2);
     if (pos != std::string::npos) {
         return folder.substr(0, pos + 1);
     }
