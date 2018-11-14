@@ -15,9 +15,7 @@
 #include <assert.h>
 #include <string>
 
-#include "rtc_base/fileutils.h"
-#include "rtc_base/filerotatingstream.h"
-#include "rtc_base/logsinks.h"
+#include "absl/types/optional.h"
 
 #ifndef ARRAYSIZE
 #define ARRAYSIZE(x) (sizeof(x) / sizeof(x[0]))
@@ -37,7 +35,13 @@ rtc::LoggingSeverity String2LogSeverity(const std::string severity);
 // Getting folder and parent folder from std::string path
 std::string GetFolder(std::string path);
 std::string GetParentFolder(std::string path);
+
+// Filesystem access utility helpers
 bool IsFolder(const std::string& file);
+bool IsFile(const std::string& file);
+bool DeleteFile(const std::string& file);
+bool MoveFile(const std::string& old_file, const std::string& new_file);
+absl::optional<size_t> GetFileSize(const std::string& file);
 
 // Get hardware serial number from /proc/cpu
 bool GetHardwareDeviceId(std::string *deviceid);

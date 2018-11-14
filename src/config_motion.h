@@ -30,9 +30,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CONFIG_MOTION_H_
 #define CONFIG_MOTION_H_
 
-#include "rtc_base/checks.h"
-
-
 #include "config_defines.h"
 
 //

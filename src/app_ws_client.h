@@ -37,13 +37,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "api/peerconnectioninterface.h"
 #include "rtc_base/strings/json.h"
 
-#include "rtc_base/fileutils.h"
 #include "compat/optionsfile.h"
 
 #include "websocket_server.h"
 #include "streamer_observer.h"
 #include "app_clientinfo.h"
 #include "config_media.h"
+#include "utils.h"
 
 #ifndef APP_WS_CLIENT_H_
 #define APP_WS_CLIENT_H_

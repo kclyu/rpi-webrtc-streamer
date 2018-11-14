@@ -32,10 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rtc_base/checks.h"
 
-#include "rtc_base/fileutils.h"
-#include "compat/optionsfile.h"
-
 #include "api/peerconnectioninterface.h"
+
+#include "compat/optionsfile.h"
 
 class StreamerConfig  {
 public:

@@ -24,7 +24,6 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-
 #include "rtc_base/stringutils.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/filerotatingstream.h"
@@ -32,6 +31,7 @@
 
 #include "file_logger.h"
 #include "utils.h"
+#include "compat/directory_iterator.h"
 
 #define  LOGGING_FILENAME       "rws_log"
 #define  MAX_LOG_FILE_SIZE      10*1024*1024    // 10M bytes;
@@ -83,7 +83,7 @@ bool FileLogger::Init() {
 }
 
 bool FileLogger::DeleteFolderFiles(const std::string &folder) {
-    rtc::DirectoryIterator it;
+    utils::DirectoryIterator it;
 
     // check src & dest path is directory
     if( !utils::IsFolder(folder)) {
@@ -100,7 +100,7 @@ bool FileLogger::DeleteFolderFiles(const std::string &folder) {
         // ignore "." and ".." filename
         if( filename.compare(0, filename.size(), "." ) != 0 &&
                 filename.compare(0, filename.size(), ".." ) != 0  ) {
-            rtc::Filesystem::DeleteFile(utils::GetFolder(folder) + filename);
+            utils::DeleteFile(utils::GetFolder(folder) + filename);
             // don't care return value
         }
     } while ( it.Next() );
@@ -110,7 +110,7 @@ bool FileLogger::DeleteFolderFiles(const std::string &folder) {
 
 bool FileLogger::MoveLogFiles(const std::string prefix,
             const std::string &src, const std::string &dest) {
-    rtc::DirectoryIterator it;
+    utils::DirectoryIterator it;
     std::string src_file, dest_file;
 
     // iterate source directory
@@ -122,7 +122,7 @@ bool FileLogger::MoveLogFiles(const std::string prefix,
         if( filename.compare(0, prefix.size(), prefix ) == 0 ) {
             src_file =  utils::GetFolder(src) + filename;
             dest_file =  utils::GetFolder(dest) +  filename;
-            if( rtc::Filesystem::MoveFile(src_file, dest_file) == false )
+            if( utils::MoveFile(src_file, dest_file) == false )
                 RTC_LOG(LS_ERROR) << "Failed to move file : "
                     << src_file << ", to: " << dest_file;
         };

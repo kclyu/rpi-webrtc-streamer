@@ -30,11 +30,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <list>
 
-#include "rtc_base/fileutils.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/network.h"
 
 #include "websocket_server.h"
+#include "utils.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -227,7 +227,7 @@ bool LibWebSocketServer::AddHttpWebMount(bool motion_enabled,
 
     if( motion_enabled == true) {
         // validate the given path is directory
-        if( rtc::Filesystem::IsFile( motion_path ) == true ) {
+        if( utils::IsFile( motion_path ) == true ) {
             RTC_LOG(LS_ERROR) << "Motion path is not directory : "
                 << motion_path;
             return false;
@@ -247,7 +247,7 @@ bool LibWebSocketServer::AddHttpWebMount(bool motion_enabled,
     }
 
     // validate the given path is directory
-    if( rtc::Filesystem::IsFile( web_path ) == true ) {
+    if( utils::IsFile( web_path ) == true ) {
         RTC_LOG(LS_ERROR) << "WebRoot path is not directory : "
             << web_path;
         return false;

@@ -33,9 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 
 #include "rtc_base/checks.h"
-
-#include "rtc_base/fileutils.h"
 #include "rtc_base/criticalsection.h"
+
 #include "compat/optionsfile.h"
 
 #ifdef __cplusplus

@@ -37,13 +37,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/fileutils.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/platform_thread.h"
 
 #include "config_motion.h"
 #include "raspi_motionfile.h"
 #include "utils.h"
+#include "compat/directory_iterator.h"
 
 static const char videoFileExtension[] = ".h264";
 static const char imvFileExtension[] = ".imv";
@@ -317,7 +317,7 @@ bool RaspiMotionFile::CloseWriterFiles(void) {
     frame_file_.Close();
 
     // Rename the video temporary file to video file name
-    rtc::Filesystem::MoveFile(h264_temp_, h264_filename_);
+    utils::MoveFile(h264_temp_, h264_filename_);
 
     if( config_motion::motion_save_imv_file  == true ) {
         if( imv_file_.IsOpen() == false ) {
@@ -342,7 +342,7 @@ static bool VideoFileCompare(const VideoFilePath& a,const VideoFilePath& b) {
 bool RaspiMotionFile::ManagingVideoFolder(void) {
     std::list<struct VideoFilePath>  video_file_list;
     VideoFilePath video_file_info;
-    rtc::DirectoryIterator it;
+    utils::DirectoryIterator it;
     std::string video_files_folder;
     std::string video_file_path;
     size_t total_directory_size = 0;
@@ -368,7 +368,8 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
         std::string filename = it.Name();
         video_file_path = utils::GetFolder(video_files_folder) + filename;
         if( !(filename.compare(".") == 0 || filename.compare("..") == 0) ) {
-            if( rtc::Filesystem::GetFileSize(video_file_path,&file_size)) {
+            if( utils::IsFile( video_file_path ) ){
+                file_size = utils::GetFileSize(video_file_path).value_or(0);
                 video_file_info.video_file_ = filename;
                 video_file_info.size_ = file_size;
                 video_file_list.push_back(video_file_info);
@@ -392,7 +393,7 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
             = video_files_folder + video_file_list.front().video_file_;
         RTC_LOG(INFO) << "Removing Video File :"
             << video_file_list.front().video_file_;
-        rtc::Filesystem::DeleteFile( video_file_path );
+        utils::DeleteFile( video_file_path );
         video_file_list.pop_front();
     };
 

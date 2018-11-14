@@ -132,6 +132,27 @@ bool IsFolder(const std::string& file) {
     return res == 0 && S_ISDIR(st.st_mode);
 }
 
+bool IsFile(const std::string& file) {
+  struct stat st;
+  int res = ::stat(file.c_str(), &st);
+  return res == 0 && !S_ISDIR(st.st_mode);
+}
+
+bool DeleteFile(const std::string& file) {
+  return ::unlink(file.c_str()) == 0;
+}
+
+bool MoveFile(const std::string& old_file, const std::string& new_file) {
+  return ::rename(old_file.c_str(), new_file.c_str()) == 0;
+}
+
+absl::optional<size_t> GetFileSize(const std::string& file) {
+  struct stat st;
+  if (::stat(file.c_str(), &st) != 0)
+    return absl::nullopt;
+  return st.st_size;
+}
+
 std::string GetFolder(std::string path) {
     return path.substr(0, path.find_last_of(FOLDER_DELIMS));
 }

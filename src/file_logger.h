@@ -22,8 +22,6 @@
 #include <assert.h>
 #include <string>
 
-#include "rtc_base/fileutils.h"
-#include "rtc_base/filerotatingstream.h"
 #include "rtc_base/logsinks.h"
 
 namespace utils {

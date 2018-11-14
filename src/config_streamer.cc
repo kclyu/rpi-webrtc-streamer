@@ -27,22 +27,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <unistd.h>
-
 #include <iostream>
 #include <memory>
 #include <string>
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/arraysize.h"
-#include "rtc_base/fileutils.h"
 
 #include "config_streamer.h"
 #include "config_defines.h"
-
 #include "utils.h"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,13 +108,13 @@ bool StreamerConfig::LoadConfig()  {
     std::string file_path;
 
     // trying to check flag config_file is regular file
-    if( rtc::Filesystem::IsFile(config_file_) == false)  {
+    if( utils::IsFile(config_file_) == false)  {
         // there is no config file in command line flag
         // so, trying to load config from installation directory config path
         file_path =  std::string(INSTALL_DIR) + + "/"  +
             std::string(kDefaultStreamerConfig);
 
-        if( rtc::Filesystem::IsFile(file_path) == false)  {
+        if( utils::IsFile(file_path) == false)  {
             std::cerr << "Failed to find config options:" << file_path
                 << std::endl;
             return false;
