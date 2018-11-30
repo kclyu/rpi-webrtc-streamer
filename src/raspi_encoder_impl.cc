@@ -333,11 +333,6 @@ void RaspiEncoderImpl::ReportError() {
     has_reported_error_ = true;
 }
 
-int32_t RaspiEncoderImpl::SetChannelParameters( uint32_t packet_loss, int64_t rtt) {
-    quality_config_.ReportChannelParameters(packet_loss, rtt );
-    return WEBRTC_VIDEO_CODEC_OK;
-}
-
 VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
   return VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
 }

@@ -62,8 +62,7 @@ QualityConfig::ResolutionConfigEntry::ResolutionConfigEntry (int width,
 }
 
 QualityConfig::QualityConfig()
-    : target_framerate_(0), target_bitrate_(0),
-    packet_loss_(3 * 30), rtt_(3 * 30), average_qp_(3 * 30) {
+    : target_framerate_(0), target_bitrate_(0), average_qp_(3 * 30) {
 
     config_media_  = ConfigMediaSingleton::Instance();
     std::list <ConfigMedia::VideoResolution> resolution_list =
@@ -99,28 +98,6 @@ void QualityConfig::ReportQP(int qp){
     }
 }
 
-void QualityConfig::ReportChannelParameters(uint32_t packet_loss, uint64_t rtt ){
-    packet_loss_.AddSample(packet_loss);
-    rtt_.AddSample(rtt);
-
-    const absl::optional<int> packet_loss_avg
-        = packet_loss_.GetAverageRoundedDown();
-    if( packet_loss_avg ){
-        if( *packet_loss_avg > kPacketLossThreshold ) {
-            adaptation_down_ = true;
-            return;
-        }
-    }
-
-    const absl::optional<int> rtt_avg = rtt_.GetAverageRoundedDown();
-    if( rtt_avg ){
-        if( *rtt_avg > kRttMaxThreshold ) {
-            adaptation_down_ = true;
-            return;
-        }
-    }
-}
-
 void QualityConfig::ReportFrameRate(int framerate) {
     if( target_framerate_ == framerate ) return;
     RTC_LOG(INFO) << "FrameRate changed from " << target_framerate_ << ", to "
@@ -141,8 +118,6 @@ void QualityConfig::ReportTargetBitrate(int bitrate) {
 }
 
 void QualityConfig::Reset() {
-    packet_loss_.Reset();
-    rtt_.Reset();
     average_qp_.Reset();
 }
 

@@ -72,9 +72,6 @@ public:
 
     VideoEncoder::ScalingSettings GetScalingSettings() const override;
 
-    // Unsupported / Do nothing.
-    int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-
 private:
     bool IsInitialized() const;
 

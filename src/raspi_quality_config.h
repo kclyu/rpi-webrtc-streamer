@@ -91,7 +91,6 @@ public:
 
     void Reset();
     void ReportQP(int qp);
-    void ReportChannelParameters(uint32_t packet_loss, uint64_t rtt );
     void ReportFrameRate(int framerate);
     void ReportTargetBitrate(int bitrate); // kbps
     void ReportMaxBitrate(int bitrate);    // kbps
@@ -114,8 +113,6 @@ private:
     int target_framerate_;
     int target_bitrate_;
     int max_bitrate_;
-    rtc::MovingAverage packet_loss_;
-    rtc::MovingAverage rtt_;
     rtc::MovingAverage average_qp_;
     Resolution current_res_;
     bool use_4_3_resolution_;
