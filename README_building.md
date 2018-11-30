@@ -7,7 +7,7 @@ For more information on tools or source repo, please refer to the linked URL and
 ## 1. Required Tools
 
 ###  1.1. [depot_tools](http://dev.chromium.org/developers/how-tos/depottools)
-	
+
 ```
 mkdir ~/tools
 cd ~/tools
@@ -23,7 +23,7 @@ git clone https://github.com/kclyu/rpi_rootfs
 ```
 
 ### 1.3. 	Custom Compiled GCC for Raspberry PI
-	
+
 *If you are familiar with the process of cross compiling or already using your own cross compile method, ignore the rpi_rootfs and Custom Compiled GCC download. But, The procedure described below is based on rpi_rootfs, so please modify the necessary parts yourself.*
 ```
 mkdir -p ~/Workspace
@@ -32,18 +32,19 @@ cd rpi_rootfs
 mkdir tools
 cd tools
 # (Download Custom Compiled GCC) # note1
-xz -dc ~/Downloads/gcc-linaro-6.4.1-2017.01-x86_64_arm-linux-gnueabihf.tar.xz  | tar xvf -
-ln -sf gcc-linaro-6.4.1-2017.01-x86_64_arm-linux-gnueabihf  arm-linux-gnueabihf
+xz -dc ~/Downloads/gcc-linaro-6.4.1-2018.10-x86_64_arm-linux-gnueabihf.tar.xz  | tar xvf -
+ln -sf gcc-linaro-6.4.1-2018.10-x86_64_arm-linux-gnueabihf  arm-linux-gnueabihf
 cd /opt
 sudo ln -sf ~/Workspace/rpi_rootfs
 export PATH=/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin:$PATH
 ```
-*Note 1: Custom Compiled GCC : Please click  gcc-linaro-6.4.1-2017.01-x86_64_arm-linux-gnueabihf.tar.xz link to download it. Because of the large file size, google drive link is available for download. You may get a warning message that "file size is too large to scan for viruses" and "You can not 'Preview'" during downloading from google drive.*
+*Note 1: Custom Compiled GCC : Please click  gcc-linaro-6.4.1-2018.10-x86_64_arm-linux-gnueabihf.tar.xz link to download it. Because of the large file size, google drive link is available for download. You may get a warning message that "file size is too large to scan for viruses" and "You can not 'Preview'" during downloading from google drive.*
 
 
 |URL|SHAsum|Remarks|
 |----------------|---------------|------------|
-|[gcc-linaro-6.4.1-2017.01-x86_64_arm-linux-gnueabihf.tar.xz](https://drive.google.com/open?id=1s67nRSYZtLkIlRDz-BsDPkBXaTA94tsZ)|1e9aa3bac3d864f514f7fae8b2b4cdf3747e5681|RASPBIAN STRETCH|
+|[gcc-linaro-6.4.1-2018.10-x86_64_arm-linux-gnueabihf.tar.xz](https://drive.google.com/open?id=1s67nRSYZtLkIlRDz-BsDPkBXaTA94tsZ)|2b88b6c619e0b28f6493e1b7971c327574ffdb36|RASPBIAN STRETCH|
+
 
 ## 2. Download Source Repo
 ### 2.1. The directory name specified by source package
@@ -78,9 +79,9 @@ cd ~/Workspace
 git clone https://github.com/kclyu/rpi-webrtc-streamer
 ```
 
-## 3. Installing Prerequisite s/w package 
+## 3. Installing Prerequisite s/w package
 
-### 3.1. Installing Raspberry PI Prerequisite 
+### 3.1. Installing Raspberry PI Prerequisite
 
 ```
 ssh pi@your-raspberry-pi-ipaddress
@@ -129,13 +130,37 @@ ninja -C arm_build
 ### 4.3. Building Rpi-WebRTC-Streamer
 ```
 cd ~/Workspace/rpi-webrtc-streamer/src
-sh ../mk/config_libwebsockets.sh 
+sh ../mk/config_libwebsockets.sh
+make # note 4
+```
+*note 4 : If you get a compile error when you make RWS, please change the WebRTC native code package to the previous commit location using 'Moving to specific commit position of WebRTC native code package' below.*
+
+### 4.4. Moving to specific commit position of WebRTC native code package
+RWS has a commit log with the title 'Source update for WebRTC Cr-Commit Position'. This includes WebRTC's Cr-Commit-Position number and WebRTC commit position hash. (Recently modified)
+If WebRTC commit hash is '4d22a6d8dbb1db1f459338c14f8c6d814c6c9678', WebRTC commit position can be changed by following command.
+
+```
+cd ~/Workspace/webrtc/src
+gclient sync -n -D -r 4d22a6d8dbb1db1f459338c14f8c6d814c6c9678
+gclient sync
+```
+If you have successfully changed the commit position, build the WebRTC native code package again as described below.
+
+```
+cd ~/Workspace/webrtc/src
+gn clean arm_build
+gn gen arm_build
+ninja -C arm_build
+
+# maing RWS again
+cd ~/Workspace/rpi-webrtc-streamer/src
+make clean
 make
 ```
 
 ## 5. RWS setup and testing
 If there were no compilation problems, the `webrtc-streamer` executable would have been created in ~ /Workspace/rpi-webrtc-streamer.
-Copy the webrtc-streamer executable file and 'etc' and 'web-root' directory to raspberry pi. 
+Copy the webrtc-streamer executable file and 'etc' and 'web-root' directory to raspberry pi.
 
 
 ### 5.1. Testing
