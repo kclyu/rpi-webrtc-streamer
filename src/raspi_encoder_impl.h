@@ -68,10 +68,6 @@ public:
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<FrameType>* frame_types) override;
 
-    const char* ImplementationName() const override;
-
-    VideoEncoder::ScalingSettings GetScalingSettings() const override;
-
 private:
     bool IsInitialized() const;
 

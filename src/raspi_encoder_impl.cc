@@ -307,10 +307,6 @@ int32_t RaspiEncoderImpl::Encode(
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-const char* RaspiEncoderImpl::ImplementationName() const {
-    return "RASPIH264";
-}
-
 bool RaspiEncoderImpl::IsInitialized() const {
     return mmal_encoder_ != nullptr;
 }
@@ -331,10 +327,6 @@ void RaspiEncoderImpl::ReportError() {
             kH264EncoderEventError,
             kH264EncoderEventMax);
     has_reported_error_ = true;
-}
-
-VideoEncoder::ScalingSettings RaspiEncoderImpl::GetScalingSettings() const {
-  return VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
 }
 
 
