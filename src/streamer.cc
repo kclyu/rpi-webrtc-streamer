@@ -59,6 +59,8 @@
 #include "raspi_decoder.h"
 #include "raspi_decoder_dummy.h"
 
+#include "utils_state_printer.h"
+
 
 using webrtc::PeerConnectionInterface;
 
@@ -124,6 +126,13 @@ bool Streamer::InitializePeerConnection() {
     RTC_DCHECK(!peer_connection_factory_);
     RTC_DCHECK(!peer_connection_);
 
+    // The first time ice_state/peerconnection_state is initialized with k*New.
+    ice_state_ =
+        webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionNew;
+    peerconnection_state_ =
+        webrtc::PeerConnectionInterface::PeerConnectionState::kNew;
+
+    // Create threads and necessary objects to create the PeerConnectionFactory
     rtc::ThreadManager::Instance()->WrapCurrentThread();
 
     network_thread_ = rtc::Thread::CreateWithSocketServer();
@@ -266,6 +275,42 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
     }
     jmessage[kCandidateSdpName] = sdp;
     SendMessage(writer.write(jmessage));
+}
+
+// PeerConnectionObserver event logging
+void Streamer::OnSignalingChange(
+        webrtc::PeerConnectionInterface::SignalingState new_state) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
+        << " " << utils::PrintSignalingState(new_state);
+}
+
+void Streamer::OnIceConnectionChange(
+        webrtc::PeerConnectionInterface::IceConnectionState new_state){
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
+        << " changed to " << utils::PrintPeerIceConnectionState(new_state);
+    ice_state_ = new_state;
+    if( new_state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionFailed &&
+            peerconnection_state_ ==
+            webrtc::PeerConnectionInterface::PeerConnectionState::kConnected ) {
+        RTC_LOG(LS_ERROR) << __FUNCTION__
+            << "Need to delete PeerConnection";
+        ReportEvent(true /* drop_connection */, "IceConnection Failed");
+        return;
+    };
+
+}
+
+void Streamer::OnIceGatheringChange(
+        webrtc::PeerConnectionInterface::IceGatheringState new_state) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " <<__FUNCTION__
+        << " " << utils::PrintIceGatheringState(new_state);
+}
+
+void Streamer::OnConnectionChange(
+        webrtc::PeerConnectionInterface::PeerConnectionState new_state) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " <<__FUNCTION__
+        << " " << utils::PrintPeerConnectionState(new_state);
+    peerconnection_state_ = new_state;
 }
 
 //
@@ -519,6 +564,12 @@ void Streamer::OnFailure(webrtc::RTCError error) {
 void Streamer::SendMessage(const std::string& json_object) {
     RTC_LOG(INFO) << "Sending Message to Peer: " << json_object.c_str();
     session_->SendMessageToPeer( peer_id_, json_object );
+}
+
+void Streamer::ReportEvent(bool drop_connection,
+        const std::string message) {
+    RTC_LOG(INFO) << "Sending Event Message to Peer: " << message;
+    session_->ReportEvent( peer_id_, drop_connection, message );
 }
 
 

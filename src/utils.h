@@ -17,10 +17,6 @@
 
 #include "absl/types/optional.h"
 
-#ifndef ARRAYSIZE
-#define ARRAYSIZE(x) (sizeof(x) / sizeof(x[0]))
-#endif
-
 namespace utils {
 void PrintLicenseInfo();
 void PrintVersionInfo();

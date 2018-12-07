@@ -48,8 +48,10 @@ protected:
 };
 
 struct SocketServerObserver {
-    virtual bool SendMessageToPeer(const int peer_id, const std::string &message) = 0;
     virtual void RegisterObserver(StreamerObserver* callback) = 0;
+    virtual bool SendMessageToPeer(const int peer_id, const std::string &message) = 0;
+    virtual void ReportEvent(const int peer_id, bool drop_connection,
+            const std::string &message) = 0;
 protected:
     virtual ~SocketServerObserver() {}
 };
@@ -90,8 +92,10 @@ public:
     void MessageFromPeer( int peer_id, const std::string& message );
     void MessageSent(int err);
     // SocketServerObserver
-    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
     void RegisterObserver(StreamerObserver* callback) override;
+    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
+    void ReportEvent(const int peer_id, bool drop_connection,
+            const std::string &message) override;
 
 #ifdef __NOTI_ENABLE__
     // http noti config information (URL) and enable/disable noti feature

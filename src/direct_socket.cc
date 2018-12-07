@@ -47,7 +47,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "streamer_observer.h"
 #include "direct_socket.h"
 
-
+// delay of message to use for stream release
+static const int kStreamReleaseDelay = 1000;
 
 ////////////////////////////////////////////////////////////////////////////////
 // DirectSocketServer
@@ -185,6 +186,30 @@ bool DirectSocketServer::SendMessageToPeer(const int peer_id,
     RTC_LOG(INFO) << "Message OUT to client: \"" << trimmed_message << "\"";
     return (direct_socket_->Send(trimmed_message.data(),
                 trimmed_message.length()) != SOCKET_ERROR);
+}
+
+void DirectSocketServer::ReportEvent(const int peer_id, bool drop_connection,
+            const std::string &message)  {
+    RTC_LOG(INFO) << __FUNCTION__;
+    if( drop_connection == true ) {
+        rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE, kStreamReleaseDelay,
+                this, 3400);
+    }
+    return;
+}
+
+void DirectSocketServer::OnMessage(rtc::Message* msg) {
+    RTC_DCHECK( msg->message_id == 3400);
+
+    //  Internally, there is no reason to keep the session anymore,
+    //  so it terminates the session that is currently being held.
+    RTC_LOG(INFO) << __FUNCTION__ << "Drop Direct Socket Connection.";
+    if ( IsStreamSessionActive() == true ) {
+        // Release the current active stream session
+        OnClose(  direct_socket_.get(), 0);
+        DeactivateStreamSession();
+    };
+    return;
 }
 
 

@@ -473,7 +473,7 @@ bool WSInternalHandlerConfig::Close(int sockid, int reason_code,
             RTC_DCHECK( iter->wsi_ != nullptr );
             lws_close_status reason_status;
 
-            if( reason_status  == 0 ) reason_status = LWS_CLOSE_STATUS_NORMAL;
+            if( reason_code  == 0 ) reason_status = LWS_CLOSE_STATUS_NORMAL;
             else reason_status = (lws_close_status )reason_code;
 
             // TODO(kclyu) Confirmation required. Currently,

@@ -156,6 +156,14 @@ bool StreamerProxy::SendMessageToPeer(const int peer_id, const std::string &mess
     return true;
 }
 
+void StreamerProxy::ReportEvent(const int peer_id, bool drop_connection,
+            const std::string &message)  {
+    RTC_LOG(INFO) << __FUNCTION__;
+    RTC_DCHECK(streamer_callback_ != nullptr);
+    RTC_DCHECK(active_socket_observer_ != nullptr);
+    active_socket_observer_->ReportEvent(peer_id, drop_connection, message);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // StreamerProxy Streamer Observer bridging
 ////////////////////////////////////////////////////////////////////////////////

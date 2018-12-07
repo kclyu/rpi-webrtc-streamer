@@ -49,7 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DIRECTSOCKET_FAKE_NAME_PREFIX       "DS"
 
 class DirectSocketServer : public SocketServerHelper,
-    public sigslot::has_slots<> {
+    public rtc::MessageHandler, public sigslot::has_slots<> {
 public:
     DirectSocketServer();
     ~DirectSocketServer();
@@ -57,14 +57,18 @@ public:
     bool Listen(const rtc::SocketAddress& address);
     void StopListening(void);
 
-    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
     void RegisterObserver(StreamerObserver* callback) override;
+    bool SendMessageToPeer(const int peer_id, const std::string &message) override;
+    void ReportEvent(const int peer_id, bool drop_connection,
+            const std::string &message) override;
 
 private:
     void OnAccept(rtc::AsyncSocket* socket);
     void OnClose(rtc::AsyncSocket* socket, int err);
-
     void OnRead(rtc::AsyncSocket* socket);
+
+    // message handler interface
+    void OnMessage(rtc::Message* msg);
 
     std::unique_ptr<rtc::AsyncSocket> listener_;
     std::unique_ptr<rtc::AsyncSocket> direct_socket_;

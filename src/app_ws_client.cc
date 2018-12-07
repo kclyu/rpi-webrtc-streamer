@@ -134,6 +134,9 @@ static const char kErrUnknownCommandType[] = "Unknown Command Type";
 static const char kErrUnknownRequestType[] = "Unknown Request Type";
 static const char kErrUnknownProtocolMessage[] = "Unknown Protocol Message";
 
+// delay of message to use for stream release
+static const int kStreamReleaseDelay = 1000;
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // App Websocket only Channel
@@ -159,7 +162,6 @@ void AppWsClient::OnConnect(int sockid) {
     chunked_frames_.clear();
     num_chunked_frames_=0;
 }
-
 
 bool AppWsClient::OnMessage(int sockid, const std::string& message) {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << sockid << ")";
@@ -408,7 +410,6 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
     return true;
 }
 
-
 void AppWsClient::OnDisconnect(int sockid) {
     RTC_LOG(INFO) << "WebSocket connnection id : " << sockid << " closed";
     // Ignore if websocket id is not the registered websocket id.
@@ -424,8 +425,10 @@ void AppWsClient::OnError(int sockid, const std::string& message) {
     RTC_LOG(INFO) << __FUNCTION__ << "Called : " << sockid;
 }
 
-bool AppWsClient::SendMessageToPeer(const int peer_id, const std::string &message) {
-    RTC_DCHECK(websocket_message_ != nullptr ) << "WebSocket Server instance is nullptr";
+bool AppWsClient::SendMessageToPeer(const int peer_id,
+        const std::string &message) {
+    RTC_DCHECK(websocket_message_ != nullptr )
+        << "WebSocket Server instance is nullptr";
     int websocket_id;
 
     RTC_LOG(INFO) << __FUNCTION__;
@@ -435,16 +438,60 @@ bool AppWsClient::SendMessageToPeer(const int peer_id, const std::string &messag
 
         json_message[kKeyCmd] = kValueCmdSend;
         json_message[kKeySendMessage] = message;
-        websocket_message_->SendMessage(websocket_id, json_writer.write(json_message));
+        websocket_message_->SendMessage(websocket_id,
+                json_writer.write(json_message));
         return true;
     }
     return false;
 }
 
+void AppWsClient::ReportEvent(const int peer_id, bool drop_connection,
+            const std::string &message)  {
+    RTC_DCHECK(websocket_message_ != nullptr )
+        << "WebSocket Server instance is nullptr";
+    int websocket_id;
+
+    RTC_LOG(INFO) << __FUNCTION__;
+    if( app_client_.GetWebsocketId(peer_id, websocket_id ) == true ) {
+        if( drop_connection == true ) {
+            rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE,
+                    kStreamReleaseDelay, this,
+                    3400, new rtc::TypedMessageData<int>(websocket_id));
+
+            return;
+        }
+        // TODO: need to send message to client
+        RTC_LOG(INFO) << __FUNCTION__ << "Reporting Event : " << message
+            << ", Drop Connection?: " << drop_connection;
+    }
+    return;
+}
+
+void AppWsClient::OnMessage(rtc::Message* msg) {
+    RTC_DCHECK( msg->message_id == 3400);
+    rtc::TypedMessageData<int> *msg_data
+        = static_cast<rtc::TypedMessageData<int> *>(msg->pdata);
+    int websocket_id = msg_data->data();
+
+    //  Internally, there is no reason to keep the session anymore,
+    //  so it terminates the session that is currently being held.
+    RTC_LOG(INFO) << __FUNCTION__ << "Drop WebSocket Connection : "
+        << websocket_id;
+    websocket_message_->Close(websocket_id, 0, "");
+    if( app_client_.DisconnectWait(websocket_id) == true ) {
+        app_client_.Reset();
+        if ( IsStreamSessionActive() == true ) {
+            DeactivateStreamSession();
+        };
+    }
+    return;
+}
+
 void AppWsClient::SendDeviceIdResponse(int sockid, bool success,
         const std::string& deviceid) {
     RTC_LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(websocket_message_ != nullptr ) << "WebSocket Server instance is nullptr";
+    RTC_DCHECK(websocket_message_ != nullptr )
+        << "WebSocket Server instance is nullptr";
     std::string json_resp_mesg;
     Json::StyledWriter json_writer;
     Json::Value json_response;
@@ -471,7 +518,8 @@ void AppWsClient::SendDeviceIdResponse(int sockid, bool success,
 void AppWsClient::SendMediaConfigResponse(int sockid, bool success,
         const std::string& media_config, const std::string& error_mesg) {
     RTC_LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(websocket_message_ != nullptr ) << "WebSocket Server instance is nullptr";
+    RTC_DCHECK(websocket_message_ != nullptr )
+        << "WebSocket Server instance is nullptr";
     std::string json_resp_mesg;
     Json::StyledWriter json_writer;
     Json::Value json_response;
@@ -496,7 +544,8 @@ void AppWsClient::SendMediaConfigResponse(int sockid, bool success,
 void AppWsClient::SendEvent(int sockid, bool is_notice,
             const std::string& event_mesg) {
     RTC_LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(websocket_message_ != nullptr ) << "WebSocket Server instance is nullptr";
+    RTC_DCHECK(websocket_message_ != nullptr )
+        << "WebSocket Server instance is nullptr";
     std::string json_resp_mesg;
     Json::StyledWriter json_writer;
     Json::Value json_response;

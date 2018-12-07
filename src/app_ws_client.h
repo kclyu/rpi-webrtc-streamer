@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "api/mediaconstraintsinterface.h"
 #include "api/peerconnectioninterface.h"
 #include "rtc_base/strings/json.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/messagehandler.h"
 
 #include "compat/optionsfile.h"
 
@@ -48,7 +50,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef APP_WS_CLIENT_H_
 #define APP_WS_CLIENT_H_
 
-class AppWsClient : public WebSocketHandler, public SocketServerHelper {
+class AppWsClient : public rtc::MessageHandler, public WebSocketHandler,
+    public SocketServerHelper {
 public:
     explicit AppWsClient();
     ~AppWsClient();
@@ -65,7 +68,12 @@ public:
     // StreamerObserver interface
     bool SendMessageToPeer(const int peer_id,
             const std::string &message) override;
+    void ReportEvent(const int peer_id, bool drop_connection,
+            const std::string &message) override;
 private:
+    // message handler interface
+    void OnMessage(rtc::Message* msg);
+
     void SendDeviceIdResponse(int sockid, bool success,
             const std::string& deviceid);
     void SendMediaConfigResponse(int sockid, bool success,

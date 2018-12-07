@@ -32,12 +32,6 @@
 #include "streamer_observer.h"
 #include "config_streamer.h"
 
-
-namespace webrtc {
-class VideoCaptureModule;
-}  // namespace webrtc
-
-
 class Streamer
     : public webrtc::PeerConnectionObserver,
       public webrtc::CreateSessionDescriptionObserver,
@@ -61,17 +55,19 @@ protected:
     // PeerConnectionObserver implementation.
     //
     void OnSignalingChange(
-        webrtc::PeerConnectionInterface::SignalingState new_state) override {};
+        webrtc::PeerConnectionInterface::SignalingState new_state) override;
     void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
     void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
     void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
     void OnRenegotiationNeeded() override {}
     void OnIceConnectionChange(
-        webrtc::PeerConnectionInterface::IceConnectionState new_state) override {};
+        webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
     void OnIceGatheringChange(
-        webrtc::PeerConnectionInterface::IceGatheringState new_state) override {};
+        webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
     void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
     void OnIceConnectionReceivingChange(bool receiving) override {}
+    void OnConnectionChange(
+        webrtc::PeerConnectionInterface::PeerConnectionState new_state) override;
 
     //
     // CreateSessionDescriptionObserver implementation.
@@ -90,6 +86,8 @@ protected:
 private:
     // Send a message to the remote peer.
     void SendMessage(const std::string& json_object);
+    // Send a event message to the remote peer.
+    void ReportEvent(bool drop_connection, const std::string message);
 
     // Change the max_bitrate in RtpSender
     void UpdateMaxBitrate();
@@ -107,6 +105,8 @@ private:
 
     SocketServerObserver* session_;
     StreamerConfig *streamer_config_;
+    webrtc::PeerConnectionInterface::IceConnectionState ice_state_;
+    webrtc::PeerConnectionInterface::PeerConnectionState peerconnection_state_;
 };
 
 
