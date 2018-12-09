@@ -62,9 +62,6 @@
 #include "utils_state_printer.h"
 
 
-using webrtc::PeerConnectionInterface;
-
-
 // Names used for SDP label
 static const char kAudioLabel[] = "audio_label";
 static const char kVideoLabel[] = "video_label";
@@ -147,9 +144,6 @@ bool Streamer::InitializePeerConnection() {
     signaling_thread_->SetName("signaling_thread", nullptr);
     RTC_CHECK(signaling_thread_->Start()) << "Failed to start signaling thread";
 
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer = nullptr;
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processor = nullptr;
-
     auto audio_encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
     auto audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
 
@@ -166,7 +160,7 @@ bool Streamer::InitializePeerConnection() {
             nullptr /* adm */,
             audio_encoder_factory, audio_decoder_factory,
             std::move(video_encoder_factory), std::move(video_decoder_factory),
-            audio_mixer, audio_processor );
+            nullptr /* audio_mixer */, nullptr /* audio_processor */ );
     if (!peer_connection_factory_.get()) {
         RTC_LOG(LS_ERROR) << __FUNCTION__
             << "Failed to initialize PeerConnectionFactory";
@@ -178,7 +172,8 @@ bool Streamer::InitializePeerConnection() {
         RTC_LOG(LS_ERROR) << __FUNCTION__ << "CreatePeerConnection failed";
         DeletePeerConnection();
     }
-    AddStreams();
+
+    AddTracks();
 
     return peer_connection_.get() != nullptr;
 }
@@ -216,8 +211,8 @@ bool Streamer::CreatePeerConnection() {
     RTC_DCHECK(!peer_connection_);
 
     webrtc::PeerConnectionInterface::RTCConfiguration config;
-    // config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
-    // config.enable_dtls_srtp = dtls;
+    config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
+    config.enable_dtls_srtp = true;
     webrtc::PeerConnectionInterface::IceServer stun_server;
     webrtc::PeerConnectionInterface::IceServer turn_server;
 
@@ -236,8 +231,6 @@ bool Streamer::CreatePeerConnection() {
 }
 
 void Streamer::DeletePeerConnection() {
-    // Reset active stream session
-    active_streams_.clear();
     peer_connection_ = nullptr;
     peer_connection_factory_ = nullptr;
     peer_id_ = -1;
@@ -248,14 +241,18 @@ void Streamer::DeletePeerConnection() {
 //
 
 // Called when a remote stream is added
-void Streamer::OnAddStream(
-        rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    RTC_LOG(INFO) << __FUNCTION__ << "Remote Stream added!" << stream->id();
+void Streamer::OnAddTrack(
+        rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+        const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
+        streams) {
+    RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id()
+        << ", " << receiver->media_type();
 }
 
-void Streamer::OnRemoveStream(
-        rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-    RTC_LOG(INFO) << __FUNCTION__ << "Remote Stream removed!" << stream->id();
+void Streamer::OnRemoveTrack(
+        rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
+    RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id()
+        << ", " << receiver->media_type();
 }
 
 void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
@@ -289,7 +286,8 @@ void Streamer::OnIceConnectionChange(
     RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
         << " changed to " << utils::PrintPeerIceConnectionState(new_state);
     ice_state_ = new_state;
-    if( new_state == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionFailed &&
+    if( new_state
+            == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionFailed &&
             peerconnection_state_ ==
             webrtc::PeerConnectionInterface::PeerConnectionState::kConnected ) {
         RTC_LOG(LS_ERROR) << __FUNCTION__
@@ -484,9 +482,10 @@ std::unique_ptr<cricket::VideoCapturer> Streamer::OpenVideoCaptureDevice() {
     return capturer;
 }
 
-void Streamer::AddStreams() {
-    if (active_streams_.find(kStreamId) != active_streams_.end())
+void Streamer::AddTracks() {
+    if (!peer_connection_->GetSenders().empty()) {
         return;  // Already added.
+    }
 
     // media configuration sigleton reference
     ConfigMedia *config_media = ConfigMediaSingleton::Instance();
@@ -509,37 +508,36 @@ void Streamer::AddStreams() {
         options.noise_suppression = absl::optional<bool>(false);
     }
 
-    // audio_level_control is removed
-    // if( config_media::audio_level_control == true )
-    //         options.level_control = absl::optional<bool>(true);
-
     RTC_LOG(INFO) << "Audio options: " << options.ToString();
 
     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-        peer_connection_factory_->CreateAudioTrack(
-            kAudioLabel, peer_connection_factory_->CreateAudioSource(options)));
+            peer_connection_factory_->CreateAudioTrack(
+                kAudioLabel, peer_connection_factory_->CreateAudioSource(
+                    options)));
+    {
+        auto result_or_error
+            = peer_connection_->AddTrack(audio_track, {kStreamId});
+        if (!result_or_error.ok()) {
+            RTC_LOG(LS_ERROR) << "Failed to add audio track to PeerConnection: "
+                << result_or_error.error().message();
+        }
+    }
 
     std::unique_ptr<cricket::VideoCapturer> video_device;
     video_device.reset( new cricket::FakeVideoCapturer(false));
-    rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+
+    rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_(
         peer_connection_factory_->CreateVideoTrack(
-            kVideoLabel,
-            peer_connection_factory_->CreateVideoSource(move(video_device),
-                    nullptr)));
-
-    rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-        peer_connection_factory_->CreateLocalMediaStream(kStreamId);
-
-    stream->AddTrack(audio_track);
-    stream->AddTrack(video_track);
-    if (!peer_connection_->AddStream(stream)) {
-        RTC_LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
+            kVideoLabel, peer_connection_factory_->CreateVideoSource(
+                             std::move(video_device), nullptr)));
+    {
+        auto result_or_error
+            = peer_connection_->AddTrack(video_track_, {kStreamId});
+        if (!result_or_error.ok()) {
+            RTC_LOG(LS_ERROR) << "Failed to add video track to PeerConnection: "
+                << result_or_error.error().message();
+        }
     }
-
-    typedef std::pair<std::string,
-            rtc::scoped_refptr<webrtc::MediaStreamInterface> >
-            MediaStreamPair;
-    active_streams_.insert(MediaStreamPair(stream->id(), stream));
 }
 
 

@@ -48,7 +48,7 @@ protected:
     bool InitializePeerConnection();
     bool CreatePeerConnection();
     void DeletePeerConnection();
-    void AddStreams();
+    void AddTracks();
     std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
 
     //
@@ -56,9 +56,14 @@ protected:
     //
     void OnSignalingChange(
         webrtc::PeerConnectionInterface::SignalingState new_state) override;
-    void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-    void OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-    void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
+    void OnAddTrack(
+            rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+            const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
+            streams) override;
+    void OnRemoveTrack(
+            rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
+    void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
+        override {}
     void OnRenegotiationNeeded() override {}
     void OnIceConnectionChange(
         webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
@@ -96,8 +101,6 @@ private:
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
         peer_connection_factory_;
-    std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>>
-        active_streams_;
 
     std::unique_ptr<rtc::Thread> worker_thread_;
     std::unique_ptr<rtc::Thread> network_thread_;
