@@ -65,6 +65,9 @@ CONFIG_DEFINE( MotionConfig, motion_config, std::string,  "etc/motion_config.con
 CONFIG_DEFINE( DisableLogBuffering, disable_log_buffering, bool, true );
 CONFIG_DEFINE( LibraryDebug, libwebsocket_debug, bool, false );
 
+CONFIG_DEFINE( AudioEnable, audio_enable, bool, false );
+CONFIG_DEFINE( VideoEnable, video_enable, bool, true );
+
 CONFIG_DEFINE( WebRoot, web_root, std::string, INSTALL_DIR "/web-root" );
 CONFIG_DEFINE( RWS_WS_URL,rws_ws_url, std::string, "/rws/ws" );
 
@@ -187,6 +190,18 @@ bool StreamerConfig::GetDirectSocketPort(int& port) {
     RTC_DCHECK( config_loaded_ == true );
     DEFINE_CONFIG_LOAD_INT_WITH_RETURN(DirectSocketPort, port,
             validate__portnumber  );
+}
+
+// AudioEnable
+bool StreamerConfig::GetAudioEnable() {
+    RTC_DCHECK( config_loaded_ == true );
+    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(AudioEnable);
+}
+
+// VideoEnable
+bool StreamerConfig::GetVideoEnable() {
+    RTC_DCHECK( config_loaded_ == true );
+    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(VideoEnable);
 }
 
 // StunServer

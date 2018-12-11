@@ -38,6 +38,7 @@
 #include "media/base/device.h"
 #include "media/engine/webrtcvideocapturerfactory.h"
 #include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_device/dummy/audio_device_dummy.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
@@ -154,10 +155,19 @@ bool Streamer::InitializePeerConnection() {
         std::unique_ptr<webrtc::VideoEncoderFactory>
         (webrtc::RaspiVideoEncoderFactory::CreateVideoEncoderFactory());
 
+    //  Audio Device Module
+    adm_ = nullptr; 
+    if(streamer_config_->GetAudioEnable() == false ) {
+        //  The default value of AudioEnable is false. To use audio, 
+        //  you must set audio_enable to true in webrtc_streamer.conf.
+        adm_ = webrtc::AudioDeviceModule::Create(
+                webrtc::AudioDeviceModule::AudioLayer::kDummyAudio);
+    };
+
     peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
             network_thread_.get(), worker_thread_.get(),
             signaling_thread_.get(),
-            nullptr /* adm */,
+            adm_.get() /* adm */,
             audio_encoder_factory, audio_decoder_factory,
             std::move(video_encoder_factory), std::move(video_decoder_factory),
             nullptr /* audio_mixer */, nullptr /* audio_processor */ );
@@ -490,31 +500,31 @@ void Streamer::AddTracks() {
     // media configuration sigleton reference
     ConfigMedia *config_media = ConfigMediaSingleton::Instance();
 
-    cricket::AudioOptions options;
-    if( config_media->GetAudioProcessing()  == true ) {
-        if( config_media->GetAudioEchoCancel() == true )
-            options.echo_cancellation = absl::optional<bool>(true);
-        if( config_media->GetAudioEchoCancel()  == true )
-            options.auto_gain_control = absl::optional<bool>(true);
-        if( config_media->GetAudioHighPassFilter() == true )
-            options.highpass_filter = absl::optional<bool>(true);
-        if( config_media->GetAudioNoiseSuppression() == true )
-            options.noise_suppression = absl::optional<bool>(true);
-    }
-    else {
-        options.echo_cancellation = absl::optional<bool>(false);
-        options.auto_gain_control = absl::optional<bool>(false);
-        options.highpass_filter = absl::optional<bool>(false);
-        options.noise_suppression = absl::optional<bool>(false);
-    }
+    if(streamer_config_->GetAudioEnable() == true ) {
+        cricket::AudioOptions options;
+        if( config_media->GetAudioProcessing()  == true ) {
+            if( config_media->GetAudioEchoCancel() == true )
+                options.echo_cancellation = absl::optional<bool>(true);
+            if( config_media->GetAudioEchoCancel()  == true )
+                options.auto_gain_control = absl::optional<bool>(true);
+            if( config_media->GetAudioHighPassFilter() == true )
+                options.highpass_filter = absl::optional<bool>(true);
+            if( config_media->GetAudioNoiseSuppression() == true )
+                options.noise_suppression = absl::optional<bool>(true);
+        }
+        else {
+            options.echo_cancellation = absl::optional<bool>(false);
+            options.auto_gain_control = absl::optional<bool>(false);
+            options.highpass_filter = absl::optional<bool>(false);
+            options.noise_suppression = absl::optional<bool>(false);
+        }
 
-    RTC_LOG(INFO) << "Audio options: " << options.ToString();
+        RTC_LOG(INFO) << "Audio options: " << options.ToString();
 
-    rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-            peer_connection_factory_->CreateAudioTrack(
-                kAudioLabel, peer_connection_factory_->CreateAudioSource(
-                    options)));
-    {
+        rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+                peer_connection_factory_->CreateAudioTrack(
+                    kAudioLabel, peer_connection_factory_->CreateAudioSource(
+                        options)));
         auto result_or_error
             = peer_connection_->AddTrack(audio_track, {kStreamId});
         if (!result_or_error.ok()) {
@@ -523,16 +533,16 @@ void Streamer::AddTracks() {
         }
     }
 
-    std::unique_ptr<cricket::VideoCapturer> video_device;
-    video_device.reset( new cricket::FakeVideoCapturer(false));
+    if(streamer_config_->GetVideoEnable() == true ) {
+        std::unique_ptr<cricket::VideoCapturer> video_device;
+        video_device.reset( new cricket::FakeVideoCapturer(false));
 
-    rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_(
-        peer_connection_factory_->CreateVideoTrack(
-            kVideoLabel, peer_connection_factory_->CreateVideoSource(
-                             std::move(video_device), nullptr)));
-    {
+        rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
+                peer_connection_factory_->CreateVideoTrack(
+                    kVideoLabel, peer_connection_factory_->CreateVideoSource(
+                        std::move(video_device), nullptr)));
         auto result_or_error
-            = peer_connection_->AddTrack(video_track_, {kStreamId});
+            = peer_connection_->AddTrack(video_track, {kStreamId});
         if (!result_or_error.ok()) {
             RTC_LOG(LS_ERROR) << "Failed to add video track to PeerConnection: "
                 << result_or_error.error().message();

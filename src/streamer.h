@@ -101,6 +101,7 @@ private:
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
         peer_connection_factory_;
+    rtc::scoped_refptr<webrtc::AudioDeviceModule> adm_;
 
     std::unique_ptr<rtc::Thread> worker_thread_;
     std::unique_ptr<rtc::Thread> network_thread_;

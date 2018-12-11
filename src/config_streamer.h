@@ -45,36 +45,24 @@ public:
     bool LoadConfig();
     const std::string GetConfigFilename();
 
-    // Disable Log buffering
     bool GetDisableLogBuffering();
-
-    // LibWebsocket Libbrary debug
     bool GetLibwebsocketDebugEnable();
-
-    // HTTP web-root path
     bool GetWebRootPath(std::string& path);
-
-    // RWS WebSocket URL
     bool GetRwsWsURL(std::string& path);
-
-    // WebSocket Config
     bool GetWebSocketEnable();
     bool GetWebSocketPort(int& port);
 
-    // Direct Socket Config
     bool GetDirectSocketEnable();
     bool GetDirectSocketPort(int& port);
 
     bool GetStunServer(webrtc::PeerConnectionInterface::IceServer &server);
     bool GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server);
 
-    // Media Config
+    bool GetAudioEnable();
+    bool GetVideoEnable();
+
     bool GetMediaConfig(std::string& conf);
-
-    // Motion Config
     bool GetMotionConfig(std::string& conf);
-
-    // Log Path
     bool GetLogPath(std::string& log_dir);
 
 private:
