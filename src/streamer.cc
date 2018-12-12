@@ -156,9 +156,9 @@ bool Streamer::InitializePeerConnection() {
         (webrtc::RaspiVideoEncoderFactory::CreateVideoEncoderFactory());
 
     //  Audio Device Module
-    adm_ = nullptr; 
+    adm_ = nullptr;
     if(streamer_config_->GetAudioEnable() == false ) {
-        //  The default value of AudioEnable is false. To use audio, 
+        //  The default value of AudioEnable is false. To use audio,
         //  you must set audio_enable to true in webrtc_streamer.conf.
         adm_ = webrtc::AudioDeviceModule::Create(
                 webrtc::AudioDeviceModule::AudioLayer::kDummyAudio);
@@ -241,6 +241,11 @@ bool Streamer::CreatePeerConnection() {
 }
 
 void Streamer::DeletePeerConnection() {
+    // worker_thread_ = nullptr;
+    // network_thread_ = nullptr;
+    // signaling_thread_ = nullptr;
+    adm_ = nullptr;
+
     peer_connection_ = nullptr;
     peer_connection_factory_ = nullptr;
     peer_id_ = -1;
@@ -249,20 +254,20 @@ void Streamer::DeletePeerConnection() {
 //
 // PeerConnectionObserver implementation.
 //
-
-// Called when a remote stream is added
 void Streamer::OnAddTrack(
         rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
         const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
         streams) {
     RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id()
         << ", " << receiver->media_type();
+    // receiver->track().release();
 }
 
 void Streamer::OnRemoveTrack(
         rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
     RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id()
         << ", " << receiver->media_type();
+    // receiver->track().release();
 }
 
 void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
@@ -335,15 +340,10 @@ void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
         return;
     }
 
-    // Trying to receive audio, but not video for RWS.
-    // RWS does not supports video receving
-    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions offer_options;
-    offer_options.offer_to_receive_video = 0;   // do not receive video
-    offer_options.offer_to_receive_audio = 1;   // receive audio
-
     if (InitializePeerConnection()) {
         peer_id_ = peer_id;
-        peer_connection_->CreateOffer(this, offer_options);
+        peer_connection_->CreateOffer(
+                this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
     } else {
         RTC_LOG(LS_ERROR) << "Failed to initialize PeerConnection";
     }
@@ -382,11 +382,20 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         RTC_LOG(WARNING) << "Received unknown message. " << message;
         return;
     }
-    std::string sdp;
-    std::string json_object;
 
-    rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName, &sdp);
-    if (!sdp.empty()) {
+    std::string type_str;
+    std::string json_object;
+    rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName,
+            &type_str);
+    if (!type_str.empty()) {
+        absl::optional<webrtc::SdpType> type_maybe =
+            webrtc::SdpTypeFromString(type_str);
+        if (!type_maybe) {
+            RTC_LOG(LS_ERROR) << "Unknown SDP type: " << type_str;
+            return;
+        }
+        webrtc::SdpType type = *type_maybe;
+
         std::string sdp;
         if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
                                           &sdp)) {
@@ -394,32 +403,24 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
             RTC_LOG(WARNING) << ":" << message << ":";
             return;
         }
-        std::string type;
-        rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName, &type);
 
         webrtc::SdpParseError error;
-        webrtc::SessionDescriptionInterface* session_description(
-            webrtc::CreateSessionDescription(type, sdp, &error));
+        std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
+            webrtc::CreateSessionDescription(type, sdp, &error);
         if (!session_description) {
             RTC_LOG(WARNING) << "Can't parse received session description message. "
                          << "SdpParseError was: " << error.description;
             return;
         }
+
         RTC_LOG(INFO) << " Received session description : \"" << message << "\"";
         peer_connection_->SetRemoteDescription(
-            DummySetSessionDescriptionObserver::Create(), session_description);
+                DummySetSessionDescriptionObserver::Create(),
+                session_description.release());
 
-        // Trying to receive audio, but not video for RWS.
-        // RWS does not supports video receving
-        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions offer_options;
-        offer_options.offer_to_receive_video = 0;
-        offer_options.offer_to_receive_audio = 1;
-
-        // TODO(kclyu) invalid sdp negotiation makes session_description
-        // null, need to figure it out how to fix it.
-        if (session_description->type() ==
-                webrtc::SessionDescriptionInterface::kOffer) {
-            peer_connection_->CreateAnswer(this, offer_options);
+        if (type == webrtc::SdpType::kOffer) {
+            peer_connection_->CreateAnswer(
+                    this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
         }
 
         // Update the max bitrate on RTPSender if there is no SDP negotiation
@@ -442,7 +443,7 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
 
         webrtc::SdpParseError error;
         std::unique_ptr<webrtc::IceCandidateInterface> candidate(
-            webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, &error));
+                webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, &error));
         if (!candidate.get()) {
             RTC_LOG(WARNING) << "Can't parse received candidate message. "
                          << "SdpParseError was: " << error.description;
@@ -519,7 +520,7 @@ void Streamer::AddTracks() {
             options.noise_suppression = absl::optional<bool>(false);
         }
 
-        RTC_LOG(INFO) << "Audio options: " << options.ToString();
+        RTC_LOG(INFO) << "Media Config Audio options: " << options.ToString();
 
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
                 peer_connection_factory_->CreateAudioTrack(
@@ -560,7 +561,8 @@ void Streamer::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
 
     Json::StyledWriter writer;
     Json::Value jmessage;
-    jmessage[kSessionDescriptionTypeName] = desc->type();
+    jmessage[kSessionDescriptionTypeName] =
+        webrtc::SdpTypeToString(desc->GetType());
     jmessage[kSessionDescriptionSdpName] = sdp;
     SendMessage(writer.write(jmessage));
 }
