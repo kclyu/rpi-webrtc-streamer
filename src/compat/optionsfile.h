@@ -25,7 +25,7 @@ class OptionsFile {
   ~OptionsFile();
 
   // Loads the file from disk, overwriting the in-memory values.
-  bool Load();
+  bool Load(bool verbose=false);
   // Saves the contents in memory, overwriting the on-disk values.
   bool Save();
 

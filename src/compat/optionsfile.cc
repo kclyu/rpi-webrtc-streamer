@@ -18,6 +18,8 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/stringencode.h"
 
+const static size_t kConfigLineMinLength=4;
+
 namespace rtc {
 
 OptionsFile::OptionsFile(const std::string& path) : path_(path) {
@@ -25,7 +27,7 @@ OptionsFile::OptionsFile(const std::string& path) : path_(path) {
 
 OptionsFile::~OptionsFile() = default;
 
-bool OptionsFile::Load() {
+bool OptionsFile::Load(bool verbose) {
     options_.clear();
     // Open file.
     std::ifstream file(path_);
@@ -35,17 +37,42 @@ bool OptionsFile::Load() {
         return true;
     }
 
-    for (std::string line; std::getline(file, line); ) {
+    size_t line_number=1;
+    for (std::string line; std::getline(file, line); line_number++ ) {
+        // ignore the comment
+        size_t endpos = line.find_first_of("#");
+        if( std::string::npos != endpos ) {
+            line = line.substr( 0, endpos );
+        }
+        if( line.length() < kConfigLineMinLength ) {
+            if( verbose ) {
+                std::cout  << __FUNCTION__ << "Ignored #" << line_number 
+                    << ", comment line or too small  : " << line << "\n";
+            }
+            continue;  // empty or comment
+        };
+
         size_t equals_pos = line.find('=');
         if (equals_pos == std::string::npos) {
-            // We do not consider this an error. Instead we ignore the line and
-            // keep going.
-            std::cerr  << __FUNCTION__ << "Ignoring malformed line in " << line << "\n";
+            // Ignore entire line  and keep going
+            if( verbose ) {
+                std::cout  << __FUNCTION__ << "Ignored #" << line_number 
+                    << "line : " << line << "\n";
+            }
             continue;
         }
 
-        std::string key(line, 0, equals_pos);
-        std::string value(line, equals_pos + 1, line.length() - (equals_pos + 1));
+        // trim key/value
+        std::string key = rtc::string_trim(std::string(line, 0, equals_pos));
+        std::string value = rtc::string_trim(
+            std::string(line, equals_pos + 1, line.length() - (equals_pos + 1)));
+
+        if( verbose ) {
+            std::cout  << __FUNCTION__ << "Valid line #" << line_number 
+                << "  Key :\"" << key 
+                << "\", : Value :\"" << value 
+                << "\"\n";
+        }
         options_[key] = value;
     }
     return true;
