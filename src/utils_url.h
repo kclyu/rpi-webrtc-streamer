@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef URL_URILS_H_
-#define URL_URILS_H_
+#ifndef UTILS_URL_H_
+#define UTILS_URL_H_
 
 #include <map>
 #include <memory>
@@ -124,4 +124,4 @@ class Url {
 
 }  // namespace rtc
 
-#endif  // URL_URILS_H_
+#endif  // UTILS_URL_H_

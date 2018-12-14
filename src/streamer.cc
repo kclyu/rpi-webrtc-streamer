@@ -30,8 +30,6 @@
 #include "api/audio_options.h"
 #include "api/create_peerconnection_factory.h"
 #include "api/rtpsenderinterface.h"
-#include "api/video_codecs/builtin_video_decoder_factory.h"
-#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
@@ -222,17 +220,15 @@ bool Streamer::CreatePeerConnection() {
 
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
-    config.enable_dtls_srtp = true;
-    webrtc::PeerConnectionInterface::IceServer stun_server;
-    webrtc::PeerConnectionInterface::IceServer turn_server;
+    config.enable_dtls_srtp =
+            streamer_config_->GetSrtpEnable(); // get Dtls config
 
-    if(streamer_config_->GetStunServer(stun_server) == true ) {
-        config.servers.push_back(stun_server);
-    }
-
-    if(streamer_config_->GetTurnServer(turn_server) == true ) {
-        config.servers.push_back(turn_server);
-    }
+    streamer_config_->GetIceTransportsType(config);
+    streamer_config_->GetIceBundlePolicy(config);
+    streamer_config_->GetIceRtcpMuxPolicy(config);
+    
+    streamer_config_->GetIceServers(config);
+    utils::PrintIceServers(config);
 
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(
             config, nullptr, nullptr, this);

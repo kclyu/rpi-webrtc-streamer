@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef UTILS_STATE_PRINTER_H_
-#define UTILS_STATE_PRINTER_H_
+#ifndef UTILS_ICESERVERS_H_
+#define UTILS_ICESERVERS_H_
 
 #pragma once
 
@@ -40,28 +40,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace utils {
 
-std::string PrintSignalingState(
-        const webrtc::PeerConnectionInterface::SignalingState state);
+typedef webrtc::PeerConnectionInterface::IceTransportsType TransportsType;
+typedef webrtc::PeerConnectionInterface::BundlePolicy BundlePolicy;
+typedef webrtc::PeerConnectionInterface::RtcpMuxPolicy MuxPolicy;
+typedef webrtc::PeerConnectionInterface::TlsCertPolicy CertPolicy;
 
-std::string PrintIceGatheringState(
-        const webrtc::PeerConnectionInterface::IceGatheringState state);
+TransportsType ConfigToIceTransportsType(const std::string type);
+BundlePolicy ConfigToIceBundlePolicy(const std::string bundle_policy);
+MuxPolicy ConfigToIceRtcpMuxPolicy(const std::string mux_policy);
 
-std::string PrintPeerConnectionState(
-        const webrtc::PeerConnectionInterface::PeerConnectionState state);
+// for ice servers
+std::vector<std::string> ConfigToIceUrls(const std::string urls);
+CertPolicy ConfigToIceTlsCertPolicy(const std::string policy);
+std::vector<std::string> ConfigToVector(const std::string configs);
 
-std::string PrintPeerIceConnectionState(
-        const webrtc::PeerConnectionInterface::IceConnectionState state);
+void PrintIceServers(const
+        webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
 
-// It is not a printer for state, but an Ice related enum printer.
-std::string PrintIceTransportsType(
-        const webrtc::PeerConnectionInterface::IceTransportsType type);
-std::string PrintBundlePolicy(
-        const webrtc::PeerConnectionInterface::BundlePolicy type);
-std::string PrintRtcpMuxPolicy(
-        const webrtc::PeerConnectionInterface::RtcpMuxPolicy type);
-std::string PrintTlsCertPolicy(
-        const webrtc::PeerConnectionInterface::TlsCertPolicy type);
 };
 
-#endif  // UTILS_STATE_PRINTER_H_
+#endif  // UTILS_ICESERVERS_H_
 

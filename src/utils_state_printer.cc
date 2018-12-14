@@ -110,6 +110,63 @@ switch(state) {
 }
 
 
+// It is not a printer for state, but an Ice related enum printer.
+//
+std::string PrintIceTransportsType(
+        const webrtc::PeerConnectionInterface::IceTransportsType type) {
+switch(type) {
+    case webrtc::PeerConnectionInterface::IceTransportsType::kNone:
+        return "None";
+    case webrtc::PeerConnectionInterface::IceTransportsType::kRelay:
+        return "Relay";
+    case webrtc::PeerConnectionInterface::IceTransportsType::kNoHost:
+        return "NoHost";
+    case webrtc::PeerConnectionInterface::IceTransportsType::kAll:
+        return "All";
+    default:
+        return "Unknown";
+};
+}
+
+
+std::string PrintBundlePolicy(
+        const webrtc::PeerConnectionInterface::BundlePolicy type) {
+switch(type) {
+    case webrtc::PeerConnectionInterface::BundlePolicy::kBundlePolicyBalanced:
+        return "Balanced";
+    case webrtc::PeerConnectionInterface::BundlePolicy::kBundlePolicyMaxBundle:
+        return "MaxBundle";
+    case webrtc::PeerConnectionInterface::BundlePolicy::kBundlePolicyMaxCompat:
+        return "MaxCompat";
+    default:
+        return "Unknown";
+};
+}
+
+std::string PrintRtcpMuxPolicy(
+        const webrtc::PeerConnectionInterface::RtcpMuxPolicy type) {
+switch(type) {
+    case webrtc::PeerConnectionInterface::RtcpMuxPolicy::kRtcpMuxPolicyNegotiate:
+        return "Negotiate";
+    case webrtc::PeerConnectionInterface::RtcpMuxPolicy::kRtcpMuxPolicyRequire:
+        return "Require";
+    default:
+        return "Unknown";
+};
+}
+
+std::string PrintTlsCertPolicy(
+        const webrtc::PeerConnectionInterface::TlsCertPolicy type) {
+switch(type) {
+    case webrtc::PeerConnectionInterface::TlsCertPolicy::kTlsCertPolicySecure:
+        return "TlsCertPolicySecure";
+    case webrtc::PeerConnectionInterface::TlsCertPolicy::kTlsCertPolicyInsecureNoCheck:
+        return "TlsCertPolicyInsecureNoCheck";
+    default:
+        return "Unknown";
+};
+}
+
 };  // utils namespace
 
 

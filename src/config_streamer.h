@@ -31,10 +31,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RPI_STREAMER_CONFIG_
 
 #include "rtc_base/checks.h"
-
 #include "api/peerconnectioninterface.h"
 
 #include "compat/optionsfile.h"
+#include "utils_iceservers.h"
 
 class StreamerConfig  {
 public:
@@ -42,7 +42,7 @@ public:
     ~StreamerConfig();
 
     // Load Config
-    bool LoadConfig();
+    bool LoadConfig(bool verbose=false);
     const std::string GetConfigFilename();
 
     bool GetDisableLogBuffering();
@@ -55,11 +55,18 @@ public:
     bool GetDirectSocketEnable();
     bool GetDirectSocketPort(int& port);
 
-    bool GetStunServer(webrtc::PeerConnectionInterface::IceServer &server);
-    bool GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server);
-
+    bool GetSrtpEnable();
     bool GetAudioEnable();
     bool GetVideoEnable();
+
+    bool GetIceTransportsType(
+            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+    bool GetIceBundlePolicy(
+            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+    bool GetIceRtcpMuxPolicy(
+            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+    bool GetIceServers(
+            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
 
     bool GetMediaConfig(std::string& conf);
     bool GetMotionConfig(std::string& conf);
@@ -67,6 +74,7 @@ public:
 
 private:
     bool config_loaded_;
+    bool verbose_;
     std::unique_ptr<rtc::OptionsFile> config_;
     std::string config_file_;
     std::string config_dir_basename_;

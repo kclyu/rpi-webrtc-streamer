@@ -42,12 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Default values
 //
 ////////////////////////////////////////////////////////////////////////////////
-
 static const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
-static const char kServerListDelimiter=',';
-static const char kStunPrefix[] = "stun:";
-static const char kTurnPrefix[] = "turn:";
-static const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -67,6 +62,7 @@ CONFIG_DEFINE( LibraryDebug, libwebsocket_debug, bool, false );
 
 CONFIG_DEFINE( AudioEnable, audio_enable, bool, false );
 CONFIG_DEFINE( VideoEnable, video_enable, bool, true );
+CONFIG_DEFINE( SrtpEnable, srtp_enable, bool, true );
 
 CONFIG_DEFINE( WebRoot, web_root, std::string, INSTALL_DIR "/web-root" );
 CONFIG_DEFINE( RWS_WS_URL,rws_ws_url, std::string, "/rws/ws" );
@@ -76,12 +72,21 @@ CONFIG_DEFINE( RWS_WS_URL,rws_ws_url, std::string, "/rws/ws" );
 // Config Key
 //
 ////////////////////////////////////////////////////////////////////////////////
+// Ice Servers configuration keys
+static const char kConfigIceTransportsType[] = "ice_transports_type";
+static const char kConfigIceBundlePolicy[] = "bundle_policy";
+static const char kConfigIceRtcpMuxPolicy[] = "rtcp_mux_policy";
 
-// STUN and TURN config
-static const char kConfigStunServer[] = "stun_server";
-static const char kConfigTurnServer[] = "turn_server";
-static const char kConfigTurnUsername[] = "turn_username";
-static const char kConfigTurnCredential[] = "turn_credential";
+static const char kConfigIceServerUrls[] = "ice_server_urls";
+static const char kConfigIceServerUsername[] = "ice_server_username";
+static const char kConfigIceServerPassword[] = "ice_server_password";
+static const char kConfigIceServerHostname[] = "ice_server_hostname";
+static const char kConfigIceServerTlsCertPolicy[] = "ice_server_tls_cert_policy";
+static const char kConfigIceServerTlsAlpnProtocols[]  \
+            = "ice_server_tls_alpn_protocols";
+static const char kConfigIceServerTlsEllipticCurves[]  \
+            = "ice_server_tls_elliptic_curves";
+static const int kMaxIceServers = 10;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -90,7 +95,8 @@ static const char kConfigTurnCredential[] = "turn_credential";
 ////////////////////////////////////////////////////////////////////////////////
 static bool validate__portnumber(int &port_number, int default_value ) {
     if ((port_number < 1) || (port_number > 65535)) {
-            RTC_LOG(LS_ERROR) << "Error in port value," << port_number << " is not a valid port";
+            RTC_LOG(LS_ERROR) << "Error in port value,"
+                << port_number << " is not a valid port";
             RTC_LOG(LS_ERROR) << "Resetting to default value";
             port_number = default_value;
             return false;
@@ -104,11 +110,12 @@ static bool validate__portnumber(int &port_number, int default_value ) {
 //
 ////////////////////////////////////////////////////////////////////////////////
 StreamerConfig::StreamerConfig(const std::string &config_file)
-    : config_loaded_(false), config_file_(config_file) {}
+    : config_loaded_(false), config_file_(config_file), verbose_(false) {}
 
 
-bool StreamerConfig::LoadConfig()  {
+bool StreamerConfig::LoadConfig(bool verbose)  {
     std::string file_path;
+    verbose_ = verbose;
 
     // trying to check flag config_file is regular file
     if( utils::IsFile(config_file_) == false)  {
@@ -128,7 +135,7 @@ bool StreamerConfig::LoadConfig()  {
     }
 
     config_.reset(new rtc::OptionsFile(file_path));
-    if( config_->Load() == false ) {
+    if( config_->Load(verbose) == false ) {
         std::cerr  << "Failed to load config options:" << file_path << std::endl;
         return false;
     }
@@ -192,6 +199,12 @@ bool StreamerConfig::GetDirectSocketPort(int& port) {
             validate__portnumber  );
 }
 
+// SrtpEnable
+bool StreamerConfig::GetSrtpEnable() {
+    RTC_DCHECK( config_loaded_ == true );
+    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(SrtpEnable);
+}
+
 // AudioEnable
 bool StreamerConfig::GetAudioEnable() {
     RTC_DCHECK( config_loaded_ == true );
@@ -204,73 +217,111 @@ bool StreamerConfig::GetVideoEnable() {
     DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(VideoEnable);
 }
 
-// StunServer
-bool StreamerConfig::GetStunServer(webrtc::PeerConnectionInterface::IceServer &server){
+// Get IceTransportsType
+bool StreamerConfig::GetIceTransportsType(
+    webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
     RTC_DCHECK( config_loaded_ == true );
-    std::string server_list;
-    std::string username, credential;
-
-    if( config_->GetStringValue(kConfigStunServer, &server_list ) == false ) {
-        // server list does not in the config file
-        // default stun server is kDefaultStunServer
-        server.urls.push_back( kDefaultStunServer );
+    std::string config_value;
+    if( config_->GetStringValue(kConfigIceTransportsType,
+                &config_value ) == true ) {
+        rtc_config.type = utils::ConfigToIceTransportsType(config_value);
         return true;
     }
-
-    std::stringstream ss(server_list);
-    std::string token;
-    int count=0;
-
-    while( getline(ss, token, kServerListDelimiter) ) {
-        // only compare "stun:" prefix
-        if( token.compare(0, 5 /* kStunPrefix len */, kStunPrefix) == 0 )  {
-            count++;
-            server.urls.push_back(token);
-        }
-        else {
-            RTC_LOG(LS_ERROR) << "Ignored stun server url : " << token;
-        }
-    }
-
-    return (count?true:false);
+    return false;
 }
 
-
-// TurnServer
-bool StreamerConfig::GetTurnServer(webrtc::PeerConnectionInterface::IceServer &server){
+// Get IceBundlePolicy
+bool StreamerConfig::GetIceBundlePolicy(
+    webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
     RTC_DCHECK( config_loaded_ == true );
-    std::string server_list;
-    std::string username, credential;
+    std::string config_value;
+    if( config_->GetStringValue(kConfigIceBundlePolicy,
+                &config_value ) == true ) {
+        rtc_config.bundle_policy = utils::ConfigToIceBundlePolicy(config_value);
+        return true;
+    }
+    return false;
+}
 
-    if( config_->GetStringValue(kConfigTurnServer, &server_list ) == false ) {
-        // there is no default turn server
-        return false;
+// Get IceRtcpMuxPolicy
+bool StreamerConfig::GetIceRtcpMuxPolicy(
+        webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
+    RTC_DCHECK( config_loaded_ == true );
+    std::string config_value;
+    if( config_->GetStringValue(kConfigIceRtcpMuxPolicy,
+                &config_value ) == true ) {
+        rtc_config.rtcp_mux_policy = utils::ConfigToIceRtcpMuxPolicy(config_value);
+        return true;
+    }
+    return false;
+}
+/*
+static const char kConfigIceServerUrls[] = "ice_server_urls";
+static const char kConfigIceServerUsername[] = "ice_server_username";
+static const char kConfigIceServerPassword[] = "ice_server_password";
+static const char kConfigIceServerHostname[] = "ice_server_hostname";
+static const char kConfigIceServerTlsCertPolicy[] = "ice_server_tls_cert_policy";
+static const char kConfigIceServerTlsAlpnProtocols[]  \
+            = "ice_server_tls_alpn_protocols";
+static const char kConfigIceServerTlsEllipticCurves[]  \
+            = "ice_server_tls_elliptic_curves";
+static const int kMaxIceServers = 10;
+*/
+
+// IceServers
+bool StreamerConfig::GetIceServers(
+        webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
+    RTC_DCHECK( config_loaded_ == true );
+    char config_key_buffer[512];
+    std::string config_value;
+    bool gen_config_exist = false;
+
+#define LOAD_CONF_KEY(key,index) \
+    snprintf( config_key_buffer, sizeof(config_key_buffer), "%s_%d", key, index); \
+    if( config_->GetStringValue(config_key_buffer, &config_value ) == true ) \
+        gen_config_exist = true; \
+    else gen_config_exist = false;
+
+    for(int config_index=0; config_index < kMaxIceServers; config_index++ ){
+        LOAD_CONF_KEY(kConfigIceServerUrls, config_index);
+        if( gen_config_exist ) {
+            webrtc::PeerConnectionInterface::IceServer ice_server;
+            // ice servers
+            ice_server.urls = utils::ConfigToIceUrls(config_value);
+
+            // username
+            LOAD_CONF_KEY(kConfigIceServerUsername, config_index);
+            if( gen_config_exist ) ice_server.username = config_value;
+            // password
+            LOAD_CONF_KEY(kConfigIceServerPassword, config_index);
+            if( gen_config_exist ) ice_server.password = config_value;
+            // hostname
+            LOAD_CONF_KEY(kConfigIceServerHostname, config_index);
+            if( gen_config_exist ) ice_server.hostname = config_value;
+            // Cert Policy
+            LOAD_CONF_KEY(kConfigIceServerTlsCertPolicy, config_index);
+            if( gen_config_exist )
+                ice_server.tls_cert_policy
+                    = utils::ConfigToIceTlsCertPolicy(config_value);
+            // Alpn Protocols
+            LOAD_CONF_KEY(kConfigIceServerTlsAlpnProtocols, config_index);
+            if( gen_config_exist ){
+                ice_server.tls_alpn_protocols
+                    = utils::ConfigToVector(config_value);
+            }
+            // TlsEllipticCurves
+            LOAD_CONF_KEY(kConfigIceServerTlsEllipticCurves, config_index);
+            if( gen_config_exist ){
+                ice_server.tls_elliptic_curves
+                    = utils::ConfigToVector(config_value);
+            }
+
+            // Add new ice server information
+            rtc_config.servers.push_back(ice_server);
+        }
     }
 
-    if( config_->GetStringValue(kConfigTurnUsername, &username ) == true ) {
-        server.username = username;
-        if( config_->GetStringValue(kConfigTurnCredential, &credential ) == true ) {
-            server.password = credential;
-        };
-    };
-
-    std::stringstream ss(server_list);
-    std::string token;
-    int count=0;
-
-    while( getline(ss, token, kServerListDelimiter) ) {
-        // only compare "turn:" prefix
-        if( token.compare(0, 5 /* kTurnPrefix len*/, kTurnPrefix) == 0 )  {
-            count++;
-            server.urls.push_back(token);
-            RTC_LOG(LS_ERROR) << "Adding Turn server url : " << token;
-        }
-        else {
-            RTC_LOG(LS_ERROR) << "Ignored Turn server url : " << token;
-        }
-    }
-
-    return (count?true:false);
+    return (bool)rtc_config.servers.size();
 }
 
 bool StreamerConfig::GetMediaConfig(std::string& conf) {
