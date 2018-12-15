@@ -150,20 +150,28 @@ void PrintIceServers(const
                 }
             }
 
-            RTC_LOG(INFO) << "-- username : " << server.username;
-            RTC_LOG(INFO) << "-- password : " << server.password;
-            RTC_LOG(INFO) << "-- hostname : " << server.hostname;
+            if( !server.username.empty())
+                RTC_LOG(INFO) << "-- username : " << server.username;
+            if( !server.password.empty())
+                RTC_LOG(INFO) << "-- password : " << server.password;
+            if( !server.password.empty())
+                RTC_LOG(INFO) << "-- hostname : " << server.hostname;
+            if( !server.password.empty())
             RTC_LOG(INFO) << "-- Tls Cert Policy : "
                 << utils::PrintTlsCertPolicy(server.tls_cert_policy);
-            RTC_LOG(INFO) << "-- Tls Alpn Protocols : "
-                << server.tls_alpn_protocols.size();
-            for (const std::string& protocols : server.tls_alpn_protocols) {
-                RTC_LOG(INFO) << "--- Alpn Protocols : "  <<  protocols;
-            }
-            RTC_LOG(INFO) << "-- Tls Elliptic Curves : "
-                << server.tls_elliptic_curves.size();
-            for (const std::string& curves : server.tls_elliptic_curves) {
-                RTC_LOG(INFO) << "--- Curves : "  <<  curves;
+            if( server.tls_alpn_protocols.size() ) {
+                RTC_LOG(INFO) << "-- Tls Alpn Protocols : "
+                    << server.tls_alpn_protocols.size();
+                for (const std::string& protocols : server.tls_alpn_protocols) {
+                    RTC_LOG(INFO) << "--- Alpn Protocols : "  <<  protocols;
+                }
+            };
+            if(server.tls_elliptic_curves.size()) {
+                RTC_LOG(INFO) << "-- Tls Elliptic Curves : "
+                    << server.tls_elliptic_curves.size();
+                for (const std::string& curves : server.tls_elliptic_curves) {
+                    RTC_LOG(INFO) << "--- Curves : "  <<  curves;
+                }
             }
         }
         else {
