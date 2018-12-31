@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "absl/strings/match.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "media/base/mediaconstants.h"
 #include "system_wrappers/include/metrics.h"
@@ -150,10 +151,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
 
     // Codec_settings uses kbits/second; encoder uses bits/second.
     quality_config_.ReportMaxBitrate(inst->maxBitrate);
-    if (inst->targetBitrate == 0)
-        quality_config_.ReportTargetBitrate(inst->startBitrate);
-    else
-        quality_config_.ReportTargetBitrate(inst->targetBitrate);
+    quality_config_.ReportTargetBitrate(inst->startBitrate);
 
     // Get the instance of MMAL encoder wrapper
     if( (mmal_encoder_ = MMALWrapper::Instance() ) == nullptr ) {
@@ -359,7 +357,8 @@ bool RaspiEncoderImpl::DrainProcess() {
         uint32_t fragment_index;
         // int qp;
 
-        // If the native stack is not ready to receive encoded frame, frame will be dropped.
+        // If the native stack is not ready to receive encoded frame, 
+        // h.264 encoded frame will be dropped.
         if( start_encoding_ == false ) {
             if( buf ) mmal_encoder_->ReleaseFrame(buf);
             return true;
@@ -390,7 +389,6 @@ bool RaspiEncoderImpl::DrainProcess() {
 
         encoded_image_._length = buf->length;
         encoded_image_._buffer = buf->data;
-        encoded_image_._size = buf->alloc_size;
         encoded_image_._completeFrame = true;
         encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
         encoded_image_._encodedWidth = mmal_encoder_->GetWidth();

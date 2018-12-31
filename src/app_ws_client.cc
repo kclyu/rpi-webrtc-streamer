@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Extended JSON message keyword for request/response
 //
-// Event Message format
+// - Event Message format
 //
 // The event message is a one-way message that is sent to the client
 // when there is an error or other problem in the message
