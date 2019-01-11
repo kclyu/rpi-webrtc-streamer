@@ -49,7 +49,6 @@ protected:
     bool CreatePeerConnection();
     void DeletePeerConnection();
     void AddTracks();
-    std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
 
     //
     // PeerConnectionObserver implementation.
