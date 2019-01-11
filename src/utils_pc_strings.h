@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef UTILS_ICESERVERS_H_
-#define UTILS_ICESERVERS_H_
+#ifndef UTILS_PC_STRINGS_H_
+#define UTILS_PC_STRINGS_H_
 
 #pragma once
 
@@ -37,27 +37,33 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
+#include "utils_pc_config.h"
 
 namespace utils {
 
-typedef webrtc::PeerConnectionInterface::IceTransportsType TransportsType;
-typedef webrtc::PeerConnectionInterface::BundlePolicy BundlePolicy;
-typedef webrtc::PeerConnectionInterface::RtcpMuxPolicy MuxPolicy;
-typedef webrtc::PeerConnectionInterface::TlsCertPolicy CertPolicy;
+std::string SignalingStateToString(
+        const webrtc::PeerConnectionInterface::SignalingState state);
 
-TransportsType ConfigToIceTransportsType(const std::string type);
-BundlePolicy ConfigToIceBundlePolicy(const std::string bundle_policy);
-MuxPolicy ConfigToIceRtcpMuxPolicy(const std::string mux_policy);
+std::string IceGatheringStateToString(
+        const webrtc::PeerConnectionInterface::IceGatheringState state);
 
-// for ice servers
-std::vector<std::string> ConfigToIceUrls(const std::string urls);
-CertPolicy ConfigToIceTlsCertPolicy(const std::string policy);
-std::vector<std::string> ConfigToVector(const std::string configs);
+std::string PeerConnectionStateToString(
+        const webrtc::PeerConnectionInterface::PeerConnectionState state);
 
-void PrintIceServers(const
-        webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+std::string PeerIceConnectionStateToString(
+        const webrtc::PeerConnectionInterface::IceConnectionState state);
 
-};
+// It is not a printer for state, but an Ice related enum printer.
+std::string IceTransportsTypeToString(
+        const TransportsType type, bool default_value=false);
+std::string BundlePolicyToString(
+        const BundlePolicy type, bool default_value=false);
+std::string RtcpMuxPolicyToString(
+        const MuxPolicy type, bool default_value=false);
+std::string TlsCertPolicyToString(
+        const CertPolicy type, bool default_value=false);
 
-#endif  // UTILS_ICESERVERS_H_
+};  // utils namespace
+
+#endif  // UTILS_PC_STRINGS_H_
 

@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "streamer_observer.h"
 #include "app_clientinfo.h"
 #include "config_media.h"
+#include "config_streamer.h"
 #include "utils.h"
 
 #ifndef APP_WS_CLIENT_H_
@@ -53,11 +54,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class AppWsClient : public rtc::MessageHandler, public WebSocketHandler,
     public SocketServerHelper {
 public:
+
+    enum EventType {
+        EventNotice,
+        EventError
+    };
+
     explicit AppWsClient();
     ~AppWsClient();
 
     // register WebSocket Server for SendMessage
     void RegisterWebSocketMessage(WebSocketMessage *server_instance);
+    void RegisterConfigStreamer(StreamerConfig *streamer_config);
 
     // WebSocket Handler
     void OnConnect(int sockid) override;
@@ -74,11 +82,13 @@ private:
     // message handler interface
     void OnMessage(rtc::Message* msg);
 
-    void SendDeviceIdResponse(int sockid, bool success,
+    void SendResponseDeviceId(int sockid, bool success,
             const std::string& deviceid);
-    void SendMediaConfigResponse(int sockid, bool success,
-            const std::string& media_config, const std::string& error_mesg);
-    void SendEvent(int sockid, bool is_event,
+    void SendResponse(int sockid, bool success,
+            const std::string& type,
+            const std::string& data,
+            const std::string& error_mesg);
+    void SendEvent(int sockid, EventType is_event,
             const std::string& event_mesg);
 
     std::string ws_url_;
@@ -91,6 +101,7 @@ private:
     std::string deviceid_;
     bool deviceid_inited_;
     ConfigMedia *config_media_;
+    StreamerConfig *streamer_config_;
 };
 
 #endif // APP_WS_CLIENT_H_

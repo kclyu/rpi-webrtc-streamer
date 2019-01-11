@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "api/peerconnectioninterface.h"
 
 #include "compat/optionsfile.h"
-#include "utils_iceservers.h"
+#include "utils_pc_config.h"
 
 class StreamerConfig  {
 public:
@@ -59,24 +59,25 @@ public:
     bool GetAudioEnable();
     bool GetVideoEnable();
 
-    bool GetIceTransportsType(
+    void GetIceTransportsType(
             webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
-    bool GetIceBundlePolicy(
+    void GetIceBundlePolicy(
             webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
-    bool GetIceRtcpMuxPolicy(
+    void GetIceRtcpMuxPolicy(
             webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
     bool GetIceServers(
             webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+    bool GetRTCConfig(std::string& json_rtcconfig);
 
-    bool GetMediaConfig(std::string& conf);
-    bool GetMotionConfig(std::string& conf);
+    bool GetMediaConfigFilePath(std::string& conf);
+    bool GetMotionConfigFilePath(std::string& conf);
     bool GetLogPath(std::string& log_dir);
 
 private:
     bool config_loaded_;
+    std::string config_file_;
     bool verbose_;
     std::unique_ptr<rtc::OptionsFile> config_;
-    std::string config_file_;
     std::string config_dir_basename_;
 };
 

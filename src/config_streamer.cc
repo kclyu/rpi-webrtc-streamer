@@ -32,10 +32,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/json.h"
 
 #include "config_streamer.h"
 #include "config_defines.h"
 #include "utils.h"
+#include "utils_pc_strings.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -136,14 +138,16 @@ bool StreamerConfig::LoadConfig(bool verbose)  {
 
     config_.reset(new rtc::OptionsFile(file_path));
     if( config_->Load(verbose) == false ) {
-        std::cerr  << "Failed to load config options:" << file_path << std::endl;
+        std::cerr  << "Failed to load config options:"
+            << file_path << std::endl;
         return false;
     }
 
     config_file_ = file_path;
     config_dir_basename_ = utils::GetParentFolder(file_path);
     std::cout << "Using config file base path:" <<
-        ((config_dir_basename_.size() == 0)?"CWD":config_dir_basename_) << std::endl;
+        ((config_dir_basename_.size() == 0)?"CWD":config_dir_basename_)
+        << std::endl;
     config_loaded_ = true;
     return true;
 }
@@ -218,55 +222,38 @@ bool StreamerConfig::GetVideoEnable() {
 }
 
 // Get IceTransportsType
-bool StreamerConfig::GetIceTransportsType(
+void StreamerConfig::GetIceTransportsType(
     webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
     RTC_DCHECK( config_loaded_ == true );
     std::string config_value;
     if( config_->GetStringValue(kConfigIceTransportsType,
                 &config_value ) == true ) {
         rtc_config.type = utils::ConfigToIceTransportsType(config_value);
-        return true;
     }
-    return false;
 }
 
 // Get IceBundlePolicy
-bool StreamerConfig::GetIceBundlePolicy(
+void StreamerConfig::GetIceBundlePolicy(
     webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
     RTC_DCHECK( config_loaded_ == true );
     std::string config_value;
     if( config_->GetStringValue(kConfigIceBundlePolicy,
                 &config_value ) == true ) {
         rtc_config.bundle_policy = utils::ConfigToIceBundlePolicy(config_value);
-        return true;
     }
-    return false;
+    // BundlePolicy does not exist in config, always it will return true
 }
 
 // Get IceRtcpMuxPolicy
-bool StreamerConfig::GetIceRtcpMuxPolicy(
+void StreamerConfig::GetIceRtcpMuxPolicy(
         webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
     RTC_DCHECK( config_loaded_ == true );
     std::string config_value;
     if( config_->GetStringValue(kConfigIceRtcpMuxPolicy,
                 &config_value ) == true ) {
         rtc_config.rtcp_mux_policy = utils::ConfigToIceRtcpMuxPolicy(config_value);
-        return true;
     }
-    return false;
 }
-/*
-static const char kConfigIceServerUrls[] = "ice_server_urls";
-static const char kConfigIceServerUsername[] = "ice_server_username";
-static const char kConfigIceServerPassword[] = "ice_server_password";
-static const char kConfigIceServerHostname[] = "ice_server_hostname";
-static const char kConfigIceServerTlsCertPolicy[] = "ice_server_tls_cert_policy";
-static const char kConfigIceServerTlsAlpnProtocols[]  \
-            = "ice_server_tls_alpn_protocols";
-static const char kConfigIceServerTlsEllipticCurves[]  \
-            = "ice_server_tls_elliptic_curves";
-static const int kMaxIceServers = 10;
-*/
 
 // IceServers
 bool StreamerConfig::GetIceServers(
@@ -324,7 +311,57 @@ bool StreamerConfig::GetIceServers(
     return (bool)rtc_config.servers.size();
 }
 
-bool StreamerConfig::GetMediaConfig(std::string& conf) {
+// JSON RTCConfig
+bool StreamerConfig::GetRTCConfig(std::string& json_rtcconfig)  {
+    webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
+
+    GetIceTransportsType(rtc_config);
+    GetIceRtcpMuxPolicy(rtc_config);
+    GetIceBundlePolicy(rtc_config);
+    if( GetIceServers(rtc_config) == false ) {
+        RTC_LOG(LS_ERROR) << "Internal Errror, failed to load ICE servers";
+        return false;
+    };
+
+    Json::Value jsonPCConfig;
+    Json::StyledWriter json_writer;
+
+    for (const webrtc::PeerConnectionInterface::IceServer& server :
+            rtc_config.servers) {
+        if (!server.urls.empty()) {
+            Json::Value ice_server;
+            Json::Value json_urls = rtc::StringVectorToJsonArray(server.urls);
+            ice_server["urls"] = json_urls;
+            if( !server.username.empty())
+                ice_server["username"] = server.username;
+            if( !server.password.empty())
+                ice_server["credentials"] = server.password;
+            jsonPCConfig["iceServers"].append(ice_server);
+        }
+    }
+
+    // BundlePolicy
+    std::string data
+        = utils::BundlePolicyToString(rtc_config.bundle_policy, true);
+    if(!data.compare(utils::kDefaultBundlePolicy))
+        jsonPCConfig["bundlePolicy"] = data;
+
+    // IceTransportType
+    data = utils::IceTransportsTypeToString(rtc_config.type,true);
+    if(!data.compare(utils::kDefaultIceTransportsType) )
+        jsonPCConfig["iceTransportPolicy"] = data;
+
+    // RtcpMuxPolicy
+    data = utils::RtcpMuxPolicyToString(rtc_config.rtcp_mux_policy, true);
+    if(!data.compare(utils::kDefaultRtcpMuxPolicy) )
+        jsonPCConfig["rtcpMuxPolicy "] = data;
+
+    json_rtcconfig = json_writer.write(jsonPCConfig);
+    return true;
+}
+
+
+bool StreamerConfig::GetMediaConfigFilePath(std::string& conf) {
     RTC_DCHECK( config_loaded_ == true );
     // default media config value is "etc/media_config.conf"
     if( config_->GetStringValue(kConfigMediaConfig, &conf ) == true ) {
@@ -336,7 +373,7 @@ bool StreamerConfig::GetMediaConfig(std::string& conf) {
     return false;
 }
 
-bool StreamerConfig::GetMotionConfig(std::string& conf) {
+bool StreamerConfig::GetMotionConfigFilePath(std::string& conf) {
     RTC_DCHECK( config_loaded_ == true );
     // default media config value is "etc/motion_config.conf"
     if( config_->GetStringValue(kConfigMotionConfig, &conf ) == true ) {

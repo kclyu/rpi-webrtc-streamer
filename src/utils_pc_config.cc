@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include "rtc_base/logging.h"
 
-#include "utils_iceservers.h"
-#include "utils_state_printer.h"
+#include "utils_pc_config.h"
+#include "utils_pc_strings.h"
 
 static const char kConfigDelimiter=',';
 static const char kStunPrefix[] = "stun:";
@@ -59,8 +59,8 @@ TransportsType ConfigToIceTransportsType(const std::string type) {
 BundlePolicy ConfigToIceBundlePolicy(const std::string bundle_policy){
     std::map<std::string, BundlePolicy> keyword_map;
     keyword_map["balanced"] = BundlePolicy::kBundlePolicyBalanced;
-    keyword_map["maxbundle"] = BundlePolicy::kBundlePolicyMaxBundle;
-    keyword_map["maxcompat"] = BundlePolicy::kBundlePolicyMaxCompat;
+    keyword_map["max-bundle"] = BundlePolicy::kBundlePolicyMaxBundle;
+    keyword_map["max-compat"] = BundlePolicy::kBundlePolicyMaxCompat;
     if(keyword_map.find(bundle_policy) != keyword_map.end())
         return keyword_map[bundle_policy];
     else {
@@ -124,15 +124,14 @@ std::vector<std::string> ConfigToVector(const std::string configs) {
     return config_list;
 }
 
-void PrintIceServers(const
-        webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
+void PrintIceServers(const RTCConfiguration &rtc_config){
     RTC_LOG(INFO) << "RTC Configuration for ICE and ICE servers";
     RTC_LOG(INFO) << "- TransportsType : "
-        << utils::PrintIceTransportsType(rtc_config.type);
+        << utils::IceTransportsTypeToString(rtc_config.type);
     RTC_LOG(INFO) << "- BundlePolicy : "
-        << utils::PrintBundlePolicy(rtc_config.bundle_policy);
-    RTC_LOG(INFO) << "- PrintRtcpMuxPolicy : "
-        << utils::PrintRtcpMuxPolicy(rtc_config.rtcp_mux_policy);
+        << utils::BundlePolicyToString(rtc_config.bundle_policy);
+    RTC_LOG(INFO) << "- RtcpMuxPolicy : "
+        << utils::RtcpMuxPolicyToString(rtc_config.rtcp_mux_policy);
     RTC_LOG(INFO) << "- ICE server(s) : "  << rtc_config.servers.size();
 
     int server_index = 0;
@@ -154,11 +153,11 @@ void PrintIceServers(const
                 RTC_LOG(INFO) << "-- username : " << server.username;
             if( !server.password.empty())
                 RTC_LOG(INFO) << "-- password : " << server.password;
-            if( !server.password.empty())
+            if( !server.hostname.empty())
                 RTC_LOG(INFO) << "-- hostname : " << server.hostname;
             if( !server.password.empty())
             RTC_LOG(INFO) << "-- Tls Cert Policy : "
-                << utils::PrintTlsCertPolicy(server.tls_cert_policy);
+                << utils::TlsCertPolicyToString(server.tls_cert_policy);
             if( server.tls_alpn_protocols.size() ) {
                 RTC_LOG(INFO) << "-- Tls Alpn Protocols : "
                     << server.tls_alpn_protocols.size();

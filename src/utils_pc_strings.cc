@@ -27,11 +27,16 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "utils_state_printer.h"
+#include "utils_pc_strings.h"
+
 
 namespace utils {
+    
+const char kDefaultIceTransportsType[]="all";
+const char kDefaultBundlePolicy[]="balanced";
+const char kDefaultRtcpMuxPolicy[]="require";
 
-std::string PrintSignalingState(
+std::string SignalingStateToString(
         const webrtc::PeerConnectionInterface::SignalingState state) {
 switch(state) {
     case webrtc::PeerConnectionInterface::SignalingState::kStable:
@@ -51,7 +56,7 @@ switch(state) {
 };
 }
 
-std::string PrintIceGatheringState(
+std::string IceGatheringStateToString(
         const webrtc::PeerConnectionInterface::IceGatheringState state) {
 switch(state) {
     case webrtc::PeerConnectionInterface::IceGatheringState::kIceGatheringNew:
@@ -65,7 +70,7 @@ switch(state) {
 };
 }
 
-std::string PrintPeerConnectionState(
+std::string PeerConnectionStateToString(
         const webrtc::PeerConnectionInterface::PeerConnectionState state) {
 switch(state) {
     case webrtc::PeerConnectionInterface::PeerConnectionState::kNew:
@@ -85,7 +90,7 @@ switch(state) {
 };
 }
 
-std::string PrintPeerIceConnectionState(
+std::string PeerIceConnectionStateToString(
         const webrtc::PeerConnectionInterface::IceConnectionState state) {
 switch(state) {
     case webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionNew:
@@ -109,54 +114,57 @@ switch(state) {
 };
 }
 
-
 // It is not a printer for state, but an Ice related enum printer.
 //
-std::string PrintIceTransportsType(
-        const webrtc::PeerConnectionInterface::IceTransportsType type) {
+std::string IceTransportsTypeToString(
+        const TransportsType type, bool default_value) {
 switch(type) {
     case webrtc::PeerConnectionInterface::IceTransportsType::kNone:
-        return "None";
+        return "none";
     case webrtc::PeerConnectionInterface::IceTransportsType::kRelay:
-        return "Relay";
+        return "relay";
     case webrtc::PeerConnectionInterface::IceTransportsType::kNoHost:
-        return "NoHost";
+        return "nohost";
     case webrtc::PeerConnectionInterface::IceTransportsType::kAll:
-        return "All";
+        return "all";
     default:
-        return "Unknown";
+        if(default_value == false) return "Unknown";
+        else return kDefaultIceTransportsType;
 };
 }
 
 
-std::string PrintBundlePolicy(
-        const webrtc::PeerConnectionInterface::BundlePolicy type) {
+
+std::string BundlePolicyToString(
+        const BundlePolicy type, bool default_value) {
 switch(type) {
     case webrtc::PeerConnectionInterface::BundlePolicy::kBundlePolicyBalanced:
-        return "Balanced";
+        return "balanced";
     case webrtc::PeerConnectionInterface::BundlePolicy::kBundlePolicyMaxBundle:
-        return "MaxBundle";
+        return "max-bundle";
     case webrtc::PeerConnectionInterface::BundlePolicy::kBundlePolicyMaxCompat:
-        return "MaxCompat";
+        return "max-compat";
     default:
-        return "Unknown";
+        if(default_value == false) return "Unknown";
+        else return kDefaultBundlePolicy;
 };
 }
 
-std::string PrintRtcpMuxPolicy(
-        const webrtc::PeerConnectionInterface::RtcpMuxPolicy type) {
+std::string RtcpMuxPolicyToString(
+        const MuxPolicy type, bool default_value) {
 switch(type) {
     case webrtc::PeerConnectionInterface::RtcpMuxPolicy::kRtcpMuxPolicyNegotiate:
-        return "Negotiate";
+        return "negotiate";
     case webrtc::PeerConnectionInterface::RtcpMuxPolicy::kRtcpMuxPolicyRequire:
-        return "Require";
+        return "require";
     default:
-        return "Unknown";
+        if(default_value == false) return "Unknown";
+        else return kDefaultRtcpMuxPolicy;
 };
 }
 
-std::string PrintTlsCertPolicy(
-        const webrtc::PeerConnectionInterface::TlsCertPolicy type) {
+std::string TlsCertPolicyToString(
+        const CertPolicy type, bool default_value) {
 switch(type) {
     case webrtc::PeerConnectionInterface::TlsCertPolicy::kTlsCertPolicySecure:
         return "TlsCertPolicySecure";

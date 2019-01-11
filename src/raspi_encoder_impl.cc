@@ -357,7 +357,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         uint32_t fragment_index;
         // int qp;
 
-        // If the native stack is not ready to receive encoded frame, 
+        // If the native stack is not ready to receive encoded frame,
         // h.264 encoded frame will be dropped.
         if( start_encoding_ == false ) {
             if( buf ) mmal_encoder_->ReleaseFrame(buf);

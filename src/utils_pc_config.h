@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef UTILS_STATE_PRINTER_H_
-#define UTILS_STATE_PRINTER_H_
+#ifndef UTILS_PC_CONFIG_H_
+#define UTILS_PC_CONFIG_H_
 
 #pragma once
 
@@ -40,28 +40,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace utils {
 
-std::string PrintSignalingState(
-        const webrtc::PeerConnectionInterface::SignalingState state);
+typedef webrtc::PeerConnectionInterface::RTCConfiguration RTCConfiguration;
+typedef webrtc::PeerConnectionInterface::IceTransportsType TransportsType;
+typedef webrtc::PeerConnectionInterface::BundlePolicy BundlePolicy;
+typedef webrtc::PeerConnectionInterface::RtcpMuxPolicy MuxPolicy;
+typedef webrtc::PeerConnectionInterface::TlsCertPolicy CertPolicy;
+typedef webrtc::PeerConnectionInterface::IceServer IceServer;
+typedef webrtc::PeerConnectionInterface::IceServers IceServers;
 
-std::string PrintIceGatheringState(
-        const webrtc::PeerConnectionInterface::IceGatheringState state);
+extern const char kDefaultIceTransportsType[];
+extern const char kDefaultBundlePolicy[];
+extern const char kDefaultRtcpMuxPolicy[];
 
-std::string PrintPeerConnectionState(
-        const webrtc::PeerConnectionInterface::PeerConnectionState state);
+TransportsType ConfigToIceTransportsType(const std::string type);
+BundlePolicy ConfigToIceBundlePolicy(const std::string bundle_policy);
+MuxPolicy ConfigToIceRtcpMuxPolicy(const std::string mux_policy);
 
-std::string PrintPeerIceConnectionState(
-        const webrtc::PeerConnectionInterface::IceConnectionState state);
+// for ice servers
+std::vector<std::string> ConfigToIceUrls(const std::string urls);
+CertPolicy ConfigToIceTlsCertPolicy(const std::string policy);
+std::vector<std::string> ConfigToVector(const std::string configs);
 
-// It is not a printer for state, but an Ice related enum printer.
-std::string PrintIceTransportsType(
-        const webrtc::PeerConnectionInterface::IceTransportsType type);
-std::string PrintBundlePolicy(
-        const webrtc::PeerConnectionInterface::BundlePolicy type);
-std::string PrintRtcpMuxPolicy(
-        const webrtc::PeerConnectionInterface::RtcpMuxPolicy type);
-std::string PrintTlsCertPolicy(
-        const webrtc::PeerConnectionInterface::TlsCertPolicy type);
+void PrintIceServers(const RTCConfiguration &rtc_config);
+
 };
 
-#endif  // UTILS_STATE_PRINTER_H_
+#endif  // UTILS_PC_CONFIG_H_
 

@@ -74,6 +74,7 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
     config.GetRwsWsURL(ws_url);
     RTC_LOG(INFO) << "Using RWS WS client url : " << ws_url;
     ws_client_.RegisterWebSocketMessage(this);
+    ws_client_.RegisterConfigStreamer(&config);
     AddWebSocketHandler(ws_url, SINGLE_INSTANCE, &ws_client_);
 
     is_inited_ = true;

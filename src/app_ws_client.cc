@@ -58,7 +58,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // { cmd : response, type: deviceid, data: { ... }, result: 'SUCCESS/FAILED',
 //          error: '...' }
 //
-// 2. Query/Set media config
+// 2. query RTCPeerConnnection config
+//
+// { cmd : request, type: rtcconfig }
+// { cmd : response, type: rtcconfig, data: { ... }, result: 'SUCCESS/FAILED',
+//          error: '...' }
+//
+//
+// 3. Query/Set media config
 //
 // { cmd : request, type: config, deviceid: deviceid, data : { ... }  }
 // { cmd : response, type: config, data : { ... }, result: 'SUCCESS/FAILED',
@@ -89,8 +96,10 @@ static const char kValueCmdEvent[] = "event";
 
 static const char kKeyCmdType[] = "type";
 static const char kValueTyepDeviceId[] = "deviceid";
-// media config version
 static const char kValueTyepMcVersion[] = "mcversion";
+
+static const char kValueTypeRTCConfig[] = "rtcconfig";
+// media config version
 static const char kValueTypeConfig[] = "config";
 static const char kValueTypeError[] = "error";
 static const char kValueTypeNotice[] = "notice";
@@ -133,6 +142,7 @@ static const char kErrMessageEmpy[] = "No json message in cmd send";
 static const char kErrUnknownCommandType[] = "Unknown Command Type";
 static const char kErrUnknownRequestType[] = "Unknown Request Type";
 static const char kErrUnknownProtocolMessage[] = "Unknown Protocol Message";
+static const char kErrRTCConfig[] = "Failed to get RTC Configuration";
 
 // delay of message to use for stream release
 static const int kStreamReleaseDelay = 1000;
@@ -146,6 +156,7 @@ AppWsClient::AppWsClient()
     : websocket_message_(nullptr),num_chunked_frames_(0) {
     deviceid_inited_ = utils::GetHardwareDeviceId(&deviceid_);
     config_media_ = ConfigMediaSingleton::Instance();
+    streamer_config_ = nullptr;
     if( deviceid_inited_ )
         RTC_LOG(INFO) << "Using Device ID : " << deviceid_;
     else
@@ -154,6 +165,10 @@ AppWsClient::AppWsClient()
 
 void AppWsClient::RegisterWebSocketMessage(WebSocketMessage *server_instance) {
     websocket_message_ = server_instance;
+}
+
+void AppWsClient::RegisterConfigStreamer(StreamerConfig *streamer_config) {
+    streamer_config_ = streamer_config;
 }
 
 void AppWsClient::OnConnect(int sockid) {
@@ -221,17 +236,16 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             if( !rtc::GetIntFromJsonObject(json_value, kKeyRegisterRoomId, &room_id) ||
                 !rtc::GetIntFromJsonObject(json_value, kKeyRegisterClientId, &client_id)) {
                 RTC_LOG(LS_ERROR) << "Not found clientid/roomid :" << message;
-                SendEvent(sockid, false, kErrClientOrRoomIdNotFound);
+                SendEvent(sockid, EventError, kErrClientOrRoomIdNotFound);
                 return true;
             }
             RTC_LOG(INFO) << "Room ID: " << room_id << ", Client ID: " << client_id;
             if( app_client_.Registered( sockid, room_id, client_id ) == false ) {
                 RTC_LOG(LS_ERROR) << "Failed to set room_id/client_id :" << message;
-                // TODO: When sending an event message instead of connection close,
-                // need to add error handling when receiving event messages
-                // from client javascript.
-                // SendEvent(sockid, true, kNotiSessionAlreadyOccupied);
-                return false;
+                SendEvent(sockid, EventNotice, kNotiSessionAlreadyOccupied);
+                // In RWS, the connection is maintained, but in a client that
+                // receives an error event, the connection must be disconnected.
+                return true;
             };
 
             if ( IsStreamSessionActive() == false ) {
@@ -239,14 +253,17 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                         == true ) {
                     RTC_LOG(INFO) << "New WebSocket Name: " << client_id;
                 };
+                return true;
             }
             else  {
-                RTC_LOG(LS_ERROR) << "stream session already used by another user"
+                RTC_LOG(LS_ERROR) <<
+                    "Internal Error, The connection is terminated"
+                    " and the internal variables are reset : "
                     << message;
             }
             RTC_LOG(INFO) << "Internal Error" << client_id;
-            SendEvent(sockid, false, kErrInternalError);
-            return true;
+            SendEvent(sockid, EventError, kErrInternalError);
+            return false;   // closing connection
         }
         // command send
         else if(cmd.compare(kValueCmdSend) == 0) {
@@ -260,8 +277,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 if (!json_reader.parse(msg, json_msg_value)) {
                     RTC_LOG(WARNING) << "Failed to parse send message string. "
                         << msg;
-                    SendEvent(sockid, false, kErrInvalidJsonMessage);
-                    return false;
+                    SendEvent(sockid, EventError, kErrInvalidJsonMessage);
+                    return false; // closing connection
                 }
 
                 rtc::GetStringFromJsonObject(json_msg_value, kKeySendType,
@@ -283,7 +300,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 MessageFromPeer(msg);
                 return true;
             }
-            SendEvent(sockid, false, kErrMessageEmpy);
+            SendEvent(sockid, EventError, kErrMessageEmpy);
             RTC_LOG(LS_ERROR) << "Failed to pass received message :" << message;
         }
         // command request
@@ -291,10 +308,49 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             //  cmd : request, ...
             std::string cmd_type;
             rtc::GetStringFromJsonObject(json_value, kKeyCmdType, &cmd_type);
+            //
+            // Device ID request
+            //
             if( cmd_type.compare(kValueTyepDeviceId)  == 0 ){
-                SendDeviceIdResponse(sockid, deviceid_inited_, deviceid_);
+                SendResponseDeviceId(sockid, deviceid_inited_, deviceid_);
                 return true;
             }
+            //
+            // RTC Config request
+            //
+            else if( cmd_type.compare(kValueTypeRTCConfig)  == 0 ){
+                // { cmd : response, type: rtcconfig, data: { ... }, result: 'SUCCESS/FAILED',
+                //          error: '...' }
+                std::string deviceid;
+                std::string json_rtcconfig;
+                std::string json_error;
+                std::string updated_config;
+
+                //
+                // Verify that the deviceid key exists
+                //
+                if( rtc::GetStringFromJsonObject(json_value, kKeyDeviceId,
+                            &deviceid ) == false ) {
+                    SendResponse(sockid, false, kValueTypeConfig,
+                            "", kErrDeviceIdMissing );
+                    return true;
+                };
+
+                if( streamer_config_->GetRTCConfig(json_rtcconfig) == true ){
+                    RTC_LOG(INFO) << "JSON RTC Config : " << json_rtcconfig;
+                    SendResponse(sockid, true,
+                        kValueTypeRTCConfig, json_rtcconfig, "");
+                }
+                else  {
+                    RTC_LOG(INFO) << "Failed to get JSON RTC Config";
+                    SendResponse(sockid, false, kValueTypeRTCConfig,
+                            "", kErrRTCConfig );
+                }
+                return true;
+            }
+            //
+            // Config request
+            //
             else if( cmd_type.compare(kValueTypeConfig)  == 0 ){
                 // { cmd : request, type: config, deviceid: deviceid,
                 //      data : { ... }  }
@@ -308,16 +364,16 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 //
                 if( rtc::GetStringFromJsonObject(json_value, kKeyDeviceId,
                             &deviceid ) == false ) {
-                    SendMediaConfigResponse(sockid,
-                            false, "", kErrDeviceIdMissing );
+                    SendResponse(sockid,
+                            false, kValueTypeConfig, "", kErrDeviceIdMissing );
                     return true;
                 }
                 else if( rtc::GetStringFromJsonObject(json_value, kKeyData,
                             &data ) == false ) {
                     // data key is not found;
                     RTC_LOG(LS_ERROR) << "Failed to get data key";
-                    SendMediaConfigResponse(sockid,
-                            false, "", kErrDataKeyMissing );
+                    SendResponse(sockid, false, kValueTypeConfig,
+                            "", kErrDataKeyMissing );
                     return true;
                 }
 
@@ -329,7 +385,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                     std::string media_config;
 
                     config_media_->ConfigToJson(media_config);
-                    SendMediaConfigResponse(sockid, true, media_config, "");
+                    SendResponse(sockid, true,
+                            kValueTypeConfig, media_config, "");
                     return true;
                 }
                 //
@@ -338,7 +395,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 else if( data.compare( kValueDataSave ) == 0 ) {
                     if(config_media_->Save() == false){
                         RTC_LOG(LS_ERROR) << "Failed to save media config";
-                        SendMediaConfigResponse(sockid, false, "{}", "");
+                        SendResponse(sockid, false, kValueTypeConfig, "{}", "");
                         return true;
                     }
                     else {
@@ -346,7 +403,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                         // and sends the entire media_config to the client.
                         std::string media_config;
                         config_media_->ConfigToJson(media_config);
-                        SendMediaConfigResponse(sockid, true, media_config, "");
+                        SendResponse(sockid, true, kValueTypeConfig,
+                                media_config, "");
                         return true;
                     }
                 }
@@ -360,7 +418,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                     // sends the entire media_config to the client.
                     std::string media_config;
                     config_media_->ConfigToJson(media_config);
-                    SendMediaConfigResponse(sockid, true, media_config, "");
+                    SendResponse(sockid, true, kValueTypeConfig,
+                            media_config, "");
                     return true;
                 }
                 //
@@ -374,16 +433,16 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                             RTC_LOG(INFO) << "ReinitEncoderInternal Success";
                             // restart capture
                             webrtc::MMALWrapper::Instance()->StartCapture();
-                            SendMediaConfigResponse(sockid, true, "", "");
+                            SendResponse(sockid, true, kValueTypeConfig, "", "");
                         }
                         else {
                             RTC_LOG(LS_ERROR) << "Failed to ReinitEncoderInternal";
-                            SendMediaConfigResponse(sockid, false, "", "");
+                            SendResponse(sockid, false, kValueTypeConfig, "", "");
                         }
                     }
                     else {
                         // do not neeed to init the entire video encoding
-                        SendMediaConfigResponse(sockid, true, "", "");
+                        SendResponse(sockid, true, kValueTypeConfig, "", "");
                     }
                     return true;
                 }
@@ -391,22 +450,22 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 if(config_media_->ConfigFromJson(data, &updated_config,
                             json_error) == false){
                     RTC_LOG(LS_ERROR) << "Failed to parse config data";
-                    SendMediaConfigResponse(sockid, false, "", json_error);
+                    SendResponse(sockid, false, kValueTypeConfig, "", json_error);
                 }
                 else {
                     RTC_LOG(INFO) << "Media Config : " << updated_config;
-                    SendMediaConfigResponse(sockid, true, updated_config, "");
+                    SendResponse(sockid, true, kValueTypeConfig, updated_config, "");
                 }
                 return true;
             }
             RTC_LOG(LS_ERROR) << "Unknown Request command type: " << cmd_type;
-            SendEvent(sockid, false, kErrUnknownRequestType);
+            SendEvent(sockid, EventError, kErrUnknownRequestType);
         }
-        SendEvent(sockid, false, kErrUnknownCommandType);
+        SendEvent(sockid, EventError, kErrUnknownCommandType);
         return true;
     };
     RTC_LOG(LS_ERROR) << "Received unknown protocol message. " << message;
-    SendEvent(sockid, false, kErrUnknownProtocolMessage);
+    SendEvent(sockid, EventError, kErrUnknownProtocolMessage);
     return true;
 }
 
@@ -452,6 +511,7 @@ void AppWsClient::ReportEvent(const int peer_id, bool drop_connection,
     int websocket_id;
 
     RTC_LOG(INFO) << __FUNCTION__;
+
     if( app_client_.GetWebsocketId(peer_id, websocket_id ) == true ) {
         if( drop_connection == true ) {
             rtc::Thread::Current()->PostDelayed(RTC_FROM_HERE,
@@ -460,10 +520,10 @@ void AppWsClient::ReportEvent(const int peer_id, bool drop_connection,
 
             return;
         }
-        // TODO: need to send message to client
         RTC_LOG(INFO) << __FUNCTION__ << "Reporting Event : " << message
             << ", Drop Connection?: " << drop_connection;
     }
+
     return;
 }
 
@@ -487,7 +547,7 @@ void AppWsClient::OnMessage(rtc::Message* msg) {
     return;
 }
 
-void AppWsClient::SendDeviceIdResponse(int sockid, bool success,
+void AppWsClient::SendResponseDeviceId(int sockid, bool success,
         const std::string& deviceid) {
     RTC_LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(websocket_message_ != nullptr )
@@ -515,8 +575,9 @@ void AppWsClient::SendDeviceIdResponse(int sockid, bool success,
     RTC_LOG(INFO) << "Device ID JSON response: " << json_resp_mesg;
 }
 
-void AppWsClient::SendMediaConfigResponse(int sockid, bool success,
-        const std::string& media_config, const std::string& error_mesg) {
+void AppWsClient::SendResponse(int sockid, bool success,
+        const std::string& type, const std::string& data,
+        const std::string& error_mesg) {
     RTC_LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(websocket_message_ != nullptr )
         << "WebSocket Server instance is nullptr";
@@ -526,7 +587,7 @@ void AppWsClient::SendMediaConfigResponse(int sockid, bool success,
 
     json_response[kKeyCmd] = kValueCmdResponse;
     json_response[kKeyCmdType] = kValueTypeConfig;
-    json_response[kKeyData] = media_config;
+    json_response[kKeyData] = data;
     json_response[kKeyRequestError] = error_mesg;
     if(  success == true )  {
         json_response[kKeyRequestResult] = kValueResultSuccess;
@@ -541,7 +602,7 @@ void AppWsClient::SendMediaConfigResponse(int sockid, bool success,
     RTC_LOG(INFO) << "Media Config JSON response : " << json_resp_mesg;
 }
 
-void AppWsClient::SendEvent(int sockid, bool is_notice,
+void AppWsClient::SendEvent(int sockid, EventType type,
             const std::string& event_mesg) {
     RTC_LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(websocket_message_ != nullptr )
@@ -552,12 +613,14 @@ void AppWsClient::SendEvent(int sockid, bool is_notice,
 
     json_response[kKeyCmd] = kValueCmdEvent;
     json_response[kKeyEventMesg] = event_mesg;
-    if(  is_notice == true )  {
-        json_response[kKeyCmdType] = kValueTypeNotice;
-    }
-    else {
+    if( type == EventError ){
         json_response[kKeyCmdType] = kValueTypeError;
     }
+    else {
+        // type == EventNotice
+        json_response[kKeyCmdType] = kValueTypeNotice;
+    }
+
     json_resp_mesg =  json_writer.write(json_response);
     websocket_message_->SendMessage(sockid, json_resp_mesg );
     RTC_LOG(INFO) << "Event Message to Client: " << json_resp_mesg;

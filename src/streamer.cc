@@ -58,7 +58,7 @@
 #include "raspi_decoder.h"
 #include "raspi_decoder_dummy.h"
 
-#include "utils_state_printer.h"
+#include "utils_pc_strings.h"
 
 
 // Names used for SDP label
@@ -226,7 +226,7 @@ bool Streamer::CreatePeerConnection() {
     streamer_config_->GetIceTransportsType(config);
     streamer_config_->GetIceBundlePolicy(config);
     streamer_config_->GetIceRtcpMuxPolicy(config);
-    
+
     streamer_config_->GetIceServers(config);
     utils::PrintIceServers(config);
 
@@ -237,11 +237,7 @@ bool Streamer::CreatePeerConnection() {
 }
 
 void Streamer::DeletePeerConnection() {
-    // worker_thread_ = nullptr;
-    // network_thread_ = nullptr;
-    // signaling_thread_ = nullptr;
     adm_ = nullptr;
-
     peer_connection_ = nullptr;
     peer_connection_factory_ = nullptr;
     peer_id_ = -1;
@@ -289,13 +285,13 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 void Streamer::OnSignalingChange(
         webrtc::PeerConnectionInterface::SignalingState new_state) {
     RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
-        << " " << utils::PrintSignalingState(new_state);
+        << " " << utils::SignalingStateToString(new_state);
 }
 
 void Streamer::OnIceConnectionChange(
         webrtc::PeerConnectionInterface::IceConnectionState new_state){
     RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
-        << " changed to " << utils::PrintPeerIceConnectionState(new_state);
+        << " changed to " << utils::PeerIceConnectionStateToString(new_state);
     ice_state_ = new_state;
     if( new_state
             == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionFailed &&
@@ -312,13 +308,13 @@ void Streamer::OnIceConnectionChange(
 void Streamer::OnIceGatheringChange(
         webrtc::PeerConnectionInterface::IceGatheringState new_state) {
     RTC_LOG(INFO) << "PeerConnectionObserver " <<__FUNCTION__
-        << " " << utils::PrintIceGatheringState(new_state);
+        << " " << utils::IceGatheringStateToString(new_state);
 }
 
 void Streamer::OnConnectionChange(
         webrtc::PeerConnectionInterface::PeerConnectionState new_state) {
     RTC_LOG(INFO) << "PeerConnectionObserver " <<__FUNCTION__
-        << " " << utils::PrintPeerConnectionState(new_state);
+        << " " << utils::PeerConnectionStateToString(new_state);
     peerconnection_state_ = new_state;
 }
 
