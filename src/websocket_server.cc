@@ -46,8 +46,16 @@ static const char *kMotionMount = "/motion/";
 static const char *kHttpMount = "/";
 static const char *DefaultHtml = "index.html";
 
-static const struct lws_protocol_vhost_options h264_extension = {
+
+static const struct lws_protocol_vhost_options mjs_extension = {
 	nullptr,				/* "next" pvo linked-list */
+	nullptr,				/* "child" pvo linked-list */
+	".mjs",				/* file suffix to match */
+	"text/javascript"		/* mimetype to use */
+};
+
+static const struct lws_protocol_vhost_options h264_extension = {
+	&mjs_extension,				/* "next" pvo linked-list */
 	nullptr,				/* "child" pvo linked-list */
 	".h264",				/* file suffix to match */
 	"video/h264"		/* mimetype to use */
@@ -199,8 +207,6 @@ bool LibWebSocketServer::Init(int port) {
     //  whether or not motion mount is enabled,
     //  http mount will be initialized when webroot mount is enabled.
     if( motion_mount_enabled_ == true ) {
-        // TODO: The current motion capture directory's motion mount
-        // does not work. Need confirmation later
         motion_http_mount_.mount_next = &webroot_http_mount_;
         info_.mounts = &motion_http_mount_;
     }

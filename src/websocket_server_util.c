@@ -55,34 +55,6 @@ void dump_handshake_info(struct lws *wsi) {
     } while (c);
 }
 
-const char* get_mimetype(const char *file) {
-	int n = strlen(file);
-
-    //
-	if (n < 5)
-		return NULL;
-
-	if (!strcmp(&file[n - 4], ".ico"))
-		return "image/x-icon";
-
-	if (!strcmp(&file[n - 4], ".png"))
-		return "image/png";
-
-	if (!strcmp(&file[n - 5], ".html"))
-		return "text/html";
-
-	if (!strcmp(&file[n - 4], ".css"))
-		return "text/css";
-
-	if (!strcmp(&file[n - 3], ".js"))
-		return "text/javascript";
-
-	if (!strcmp(&file[n - 5], ".json"))
-		return "application/json";
-
-	return NULL;
-}
-
 const char* to_callbackreason_str(int callback_reason, int brief) {
     switch( callback_reason ) {
         case LWS_CALLBACK_ESTABLISHED:

@@ -45,9 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern "C" {
 #endif // __cplusplus
 
-
 void dump_handshake_info(struct lws *wsi);
-const char* get_mimetype(const char *file);
 const char* to_callbackreason_str(int callback_reason, int brief);
 const char* to_httpstatus_str(int status);
 
