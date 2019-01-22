@@ -1,0 +1,362 @@
+/*
+ *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
+ *
+ *  Use of this source code is governed by a BSD-style license
+ *  that can be found in the LICENSE file in the root of the source
+ *  tree.
+ */
+.hidden {
+  display: none;
+}
+
+.highlight {
+  background-color: #eee;
+  font-size: 1.2em;
+  margin: 0 0 30px 0;
+  padding: 0.2em 1.5em;
+}
+.warning {
+  color: red;
+  font-weight: 400;
+}
+
+div#errorMsg p {
+  color: #F00;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+}
+
+a {
+color: #6fa8dc;
+font-weight: 300;
+text-decoration: none;
+}
+
+a:hover {
+color: #3d85c6;
+text-decoration: underline;
+}
+
+a#viewSource {
+display: block;
+margin: 1.3em 0 0 0;
+border-top: 1px solid #999;
+padding: 1em 0 0 0;
+}
+
+div#links a {
+display: block;
+line-height: 1.3em;
+margin: 0 0 1.5em 0;
+}
+
+div.outputSelector {
+margin: -1.3em 0 2em 0;
+}
+
+@media screen and (min-width: 1000px) {
+/* hack! to detect non-touch devices */
+  div#links a {
+		line-height: 0.8em;
+  }
+}
+
+h1 a {
+font-weight: 300;
+margin: 0 10px 0 0;
+white-space: nowrap;
+}
+
+audio {
+max-width: 100%;
+}
+
+body {
+font-family: 'Roboto', sans-serif;
+margin: 0;
+padding: 1em;
+word-break: break-word;
+}
+
+button {
+background-color: #d84a38;
+border: none;
+border-radius: 2px;
+color: white;
+font-family: 'Roboto', sans-serif;
+font-size: 0.8em;
+margin: 0 0 1em 0;
+padding: 0.5em 0.7em 0.6em 0.7em;
+}
+
+button:active {
+background-color: #cf402f;
+}
+
+button:hover {
+background-color: #cf402f;
+}
+
+button[disabled] {
+color: #ccc;
+}
+
+button[disabled]:hover {
+background-color: #d84a38;
+}
+
+canvas {
+  background-color: #ccc;
+  max-width: 100%;
+  width: 100%;
+}
+
+code {
+font-family: 'Roboto', sans-serif;
+font-weight: 400;
+}
+
+div#container {
+margin: 0 auto 0 auto;
+max-width: 40em;
+padding: 1em 1.5em 1.3em 1.5em;
+}
+
+div#links {
+	padding: 0.5em 0 0 0;
+}
+
+h1 {
+border-bottom: 1px solid #ccc;
+font-family: 'Roboto', sans-serif;
+font-weight: 500;
+margin: 0 0 0.8em 0;
+padding: 0 0 0.2em 0;
+}
+
+h2 {
+color: #444;
+font-size: 1em;
+font-weight: 500;
+line-height: 1.2em;
+margin: 0 0 0.8em 0;
+}
+
+h3 {
+border-top: 1px solid #eee;
+color: #666;
+font-weight: 500;
+margin: 20px 0 10px 0;
+padding: 10px 0 0 0;
+white-space: nowrap;
+}
+
+html {
+/* avoid annoying page width change
+when moving from the home page */
+overflow-y: scroll;
+}
+
+img {
+border: none;
+max-width: 100%;
+}
+
+input[type=radio] {
+position: relative;
+top: -1px;
+}
+
+p {
+color: #444;
+font-weight: 300;
+line-height: 1.6em;
+}
+
+p#data {
+border-top: 1px dotted #666;
+font-family: Courier New, monospace;
+line-height: 1.3em;
+max-height: 1000px;
+overflow-y: auto;
+padding: 1em 0 0 0;
+}
+
+p.borderBelow {
+border-bottom: 1px solid #aaa;
+padding: 0 0 20px 0;
+}
+
+section p:last-of-type {
+margin: 0;
+}
+
+section {
+  border-bottom: 1px solid #eee;
+  margin: 0 0 30px 0;
+  padding: 0 0 20px 0;
+}
+
+section:last-of-type {
+  border-bottom: none;
+  padding: 0 0 1em 0;
+}
+
+select {
+  margin: 0 1em 1em 0;
+  position: relative;
+  top: -1px;
+}
+
+h1 span {
+  white-space: nowrap;
+}
+
+strong {
+  font-weight: 500;
+}
+
+textarea {
+  font-family: 'Roboto', sans-serif;
+}
+
+video {
+  background: #222;
+  margin: 0 0 20px 0;
+  width: 100%;
+}
+
+@media screen and (max-width: 650px) {
+  .highlight {
+    font-size: 1em;
+    margin: 0 0 20px 0;
+    padding: 0.2em 1em;
+  }
+  h1 {
+    font-size: 24px;
+  }
+}
+
+@media screen and (max-width: 550px) {
+  button:active {
+    background-color: darkRed;
+  }
+  h1 {
+    font-size: 22px;
+  }
+}
+
+@media screen and (max-width: 450px) {
+  h1 {
+    font-size: 20px;
+  }
+}
+
+a#viewSource {
+    display: block;
+    margin: 1.3em 0 0 0;
+    border-top: 1px solid #999;
+    padding: 1em 0 0 0;
+}
+
+button#showConfig {
+  background-color: #e7e7e7; 
+  border: none;
+  color: black;
+  font-size: 15px;
+  float: right;
+}
+
+
+.configdetails {
+    display: block;
+    margin: 0.3em 0 0 0;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+    line-height: 1.3em;
+    margin: 0 0 0.3em 0;
+    border: 1px solid #cce0ff;
+    box-shadow: 2px 2px #f2f2f2;
+}
+
+.configitem {
+  display: inline-block;
+  border-style: none;
+  font-size: 15px;
+  margin: 0;
+  padding: 5px 5px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.configButtonsDiv {
+    margin: 0 0 0 0;
+    padding: 0.5em 0.5em 0.5em 0.5em;
+    margin: 0 0 1em 0;
+    border: none;
+}
+
+.configButton {
+  background-color: #b3c6ff;
+  border: none;
+  color: black;
+  font-size: 15px;
+  margin: 0 1em 1em 0;
+  float: right;
+}
+
+.configButton:hover {
+  background-color: #668cff;
+}
+
+.configButton:active {
+  background-color: #1a53ff;
+}
+
+
+/*
+ * Snarbar 
+ */
+#snackBar {
+  visibility: hidden;
+  min-width: 250px;
+  margin-left: -125px;
+  background-color: #333;
+  color: #fff;
+  text-align: center;
+  border-radius: 5px;
+  padding: 16px;
+  position: fixed;
+  z-index: 1;
+  left: 50%;
+  bottom: 30px;
+  font-size: 17px;
+}
+
+#snackBar.show {
+  visibility: visible;
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@-webkit-keyframes fadein {
+  from {bottom: 0; opacity: 0;} 
+  to {bottom: 30px; opacity: 1;}
+}
+
+@keyframes fadein {
+  from {bottom: 0; opacity: 0;}
+  to {bottom: 30px; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+  from {bottom: 30px; opacity: 1;} 
+  to {bottom: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+  from {bottom: 30px; opacity: 1;}
+  to {bottom: 0; opacity: 0;}
+}
