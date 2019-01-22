@@ -8,7 +8,7 @@ LIBWEBSOCKETS_ROOT=$(HOME)/Workspace/rpi-webrtc-streamer/lib/libwebsockets
 # CC FLAGS
 #LWS_C_FLAGS=-Wall -Werror -fvisibility=hidden -pthread
 LWS_C_FLAGS=-Wall -fvisibility=hidden -pthread
-LWS_INCLUDES=-I$(LIBWEBSOCKETS_ROOT)/arm_build
+LWS_INCLUDES=-I$(LIBWEBSOCKETS_ROOT)/arm_build -I$(LIBWEBSOCKETS_ROOT)
 
 # LD FLAGS
 LWS_LIBS=$(LIBWEBSOCKETS_ROOT)/arm_build/lib/libwebsockets.a

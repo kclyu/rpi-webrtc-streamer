@@ -10,11 +10,7 @@ export RANLIB=arm-linux-gnueabihf-ranlib
 RWS_LIBRARY_DIR=../lib
 RPI_ROOTFS_CMAKE=${HOME}/Workspace/rpi_rootfs/PI.cmake
 
-# zip extension will be added before running unzip
-#LIBWEBSOCKETS_BASENAME=libwebsockets-2.2-stable
-#LIBWEBSOCKET_DIR=${RWS_LIBRARY_DIR}/libwebsockets
-#LIBWEBSOCKETS_BASENAME=libwebsockets-master # 3.0
-LIBWEBSOCKETS_BASENAME=libwebsockets-3.0.1
+LIBWEBSOCKETS_BASENAME=libwebsockets-3.1.0
 LIBWEBSOCKET_DIR=${RWS_LIBRARY_DIR}/libwebsockets
 LIBWEBSOCKET_BUILD_DIR=${RWS_LIBRARY_DIR}/libwebsockets/arm_build
 LIBWEBSOCKETS_LIBRARY=${LIBWEBSOCKET_BUILD_DIR}/lib/libwebsockets.a
