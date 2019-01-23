@@ -52,8 +52,6 @@ constructor (ws_path) {
     else
         this.websocket_url_ = "wss://" + location.host + websocket_url_path;
 
-    //  TESTING
-    this.websocket_url_ = 'ws://10.0.0.11:8889/rws/ws';
     console.log("RWS connection URL : " + this.websocket_url_);
 }
 
