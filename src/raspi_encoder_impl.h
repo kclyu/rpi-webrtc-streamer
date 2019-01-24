@@ -37,7 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/messagequeue.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
 
 #include "mmal_wrapper.h"
 #include "raspi_quality_config.h"
@@ -68,6 +67,7 @@ public:
                    const CodecSpecificInfo* codec_specific_info,
                    const std::vector<FrameType>* frame_types) override;
 
+    VideoEncoder::EncoderInfo GetEncoderInfo() const override;
 private:
     bool IsInitialized() const;
 

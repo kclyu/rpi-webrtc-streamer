@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "api/video_codecs/video_encoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
 
 namespace webrtc {
 
@@ -69,7 +68,6 @@ public:
 
  private:
     std::vector<SdpVideoFormat> supported_formats_;
-    const std::unique_ptr<cricket::WebRtcVideoEncoderFactory> internal_encoder_factory_;
 };
 
 }  // namespace webrtc

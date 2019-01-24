@@ -70,6 +70,9 @@ enum H264EncoderImplEvent {
 static const int kLowH264QpThreshold = 24;
 static const int kHighH264QpThreshold = 37;
 
+static const ColorSpace mmal_color_space( ColorSpace::PrimaryID::kSMPTE170M,
+        ColorSpace::TransferID::kSMPTE170M, ColorSpace::MatrixID::kSMPTE170M,
+        ColorSpace::RangeID::kLimited );
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -127,7 +130,6 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
 
     //
     // TODO: Need to implement SimulCast related functions
-    //
     int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
     if(number_of_streams > 1) {
         RTC_LOG(LS_ERROR) << "SimulCast streaming is not implemented";
@@ -327,6 +329,17 @@ void RaspiEncoderImpl::ReportError() {
     has_reported_error_ = true;
 }
 
+VideoEncoder::EncoderInfo RaspiEncoderImpl::GetEncoderInfo() const {
+    EncoderInfo info;
+    info.supports_native_handle = false;
+    info.implementation_name = "RaspiEncoder";
+    info.scaling_settings =
+        VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
+    info.is_hardware_accelerated = true;
+    info.has_internal_source = true;
+    return info;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -338,6 +351,8 @@ bool RaspiEncoderImpl::DrainThread(void* obj) {
 }
 
 bool RaspiEncoderImpl::DrainProcess() {
+
+
     MMAL_BUFFER_HEADER_T *buf = nullptr;
 
     //  The GetEncodedFrame function will wait in block state
@@ -377,8 +392,8 @@ bool RaspiEncoderImpl::DrainProcess() {
         // };
 
         // Search the NAL unit in the stream
-        const std::vector<webrtc::H264::NaluIndex> nalu_indexes=
-            webrtc::H264::FindNaluIndices(buf->data, buf->length);
+        const std::vector<H264::NaluIndex> nalu_indexes=
+            H264::FindNaluIndices(buf->data, buf->length);
 
         if ( nalu_indexes.empty() ) {
             // could not find the nal unit in the buffer, so do nothing.
@@ -387,12 +402,13 @@ bool RaspiEncoderImpl::DrainProcess() {
             return true;
         };
 
-        encoded_image_._length = buf->length;
-        encoded_image_._buffer = buf->data;
+        encoded_image_.set_size(buf->length);
+        encoded_image_.set_buffer(buf->data, FRAME_BUFFER_SIZE);
         encoded_image_._completeFrame = true;
         encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
         encoded_image_._encodedWidth = mmal_encoder_->GetWidth();
         encoded_image_._encodedHeight = mmal_encoder_->GetHeight();
+        encoded_image_.SetColorSpace(&mmal_color_space);
 
         int64_t capture_ntp_time_ms;
         int64_t current_time = clock_->TimeInMilliseconds();
@@ -418,7 +434,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         frag_header.VerifyAndAllocateFragmentationHeader(nalu_indexes.size());
 
         fragment_index = 0;
-        for( std::vector<webrtc::H264::NaluIndex>::const_iterator it
+        for( std::vector<H264::NaluIndex>::const_iterator it
                 =  nalu_indexes.begin();
                 it != nalu_indexes.end(); it++, fragment_index++ ) {
             frag_header.fragmentationOffset[fragment_index]

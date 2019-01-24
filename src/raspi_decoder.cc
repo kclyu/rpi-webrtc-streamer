@@ -71,12 +71,12 @@ RaspiVideoDecoderFactory::RaspiVideoDecoderFactory() {
     RTC_LOG(INFO) << "Raspi H.264 Video decoder factory.";
 }
 
-std::unique_ptr<webrtc::VideoDecoder> RaspiVideoDecoderFactory::CreateVideoDecoder(
-        const webrtc::SdpVideoFormat& format) {
+std::unique_ptr<VideoDecoder> RaspiVideoDecoderFactory::CreateVideoDecoder(
+        const SdpVideoFormat& format) {
     const cricket::VideoCodec codec(format);
 
     // Try creating external decoder.
-    std::unique_ptr<webrtc::VideoDecoder> video_decoder;
+    std::unique_ptr<VideoDecoder> video_decoder;
 
     RTC_LOG(INFO) << "Raspi " << format.name << " video decoder created";
     video_decoder = RaspiDecoder::Create();
