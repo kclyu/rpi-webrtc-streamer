@@ -60,6 +60,7 @@ const Constants = {
     ERROR_INVALID_DEVICEID: 'Internal Error, Invalid Device ID',
     ERROR_FAILED_DEVICEID: 'Failed to get Device ID',
     ERROR_FAILED_CONFIG_MEDIA: 'Failed to get Config Media',
+    ERROR_FAILED_ZOOM_COMMAND: 'Failed to send Zoom command',
 
 };
 

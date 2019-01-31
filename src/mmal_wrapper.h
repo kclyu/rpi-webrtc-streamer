@@ -169,6 +169,12 @@ public:
 
     bool SetRate(int framerate, int bitrate);
 
+    bool IsDigitalZoomActive();
+    bool IncreaseDigitalZoom(double cx, double cy );
+    bool DecreaseDigitalZoom();
+    bool ResetDigitalZoom();
+    bool MoveDigitalZoom(double cx, double cy );
+
     // When there is a KeyFrame request, it requests the MMAL to generate a key frame.
     // MMAL generates a key frame, and then operates as it is currently set.
     bool SetForceNextKeyFrame();

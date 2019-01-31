@@ -266,10 +266,10 @@ button#showConfig {
   background-color: #e7e7e7; 
   border: none;
   color: black;
-  font-size: 15px;
+  font-size: 0.7em;
+  display: none;
   float: right;
 }
-
 
 .configdetails {
     display: block;
@@ -284,7 +284,7 @@ button#showConfig {
 .configitem {
   display: inline-block;
   border-style: none;
-  font-size: 15px;
+  font-size: 0.7em;
   margin: 0;
   padding: 5px 5px;
   text-align: center;
@@ -302,7 +302,7 @@ button#showConfig {
   background-color: #b3c6ff;
   border: none;
   color: black;
-  font-size: 15px;
+  font-size: 0.7em;
   margin: 0 1em 1em 0;
   float: right;
 }
@@ -332,7 +332,7 @@ button#showConfig {
   z-index: 1;
   left: 50%;
   bottom: 30px;
-  font-size: 17px;
+  font-size: 0.7em;
 }
 
 #snackBar.show {

@@ -468,6 +468,9 @@ void MMALEncoderWrapper::SetVideoVideoStabilisation(bool stab_enable) {
 }
 
 void MMALEncoderWrapper::SetMediaConfigParams(){
+    // reset encoder setting to default state
+    default_status(&state_);
+
     // Setting Video Rotation and Flip setting
     SetVideoRotation(config_media_->GetVideoRotation());
     SetVideoFlip(config_media_->GetVideoVFlip(),
@@ -742,6 +745,33 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height,
 
     RTC_LOG(LS_ERROR) << "Not Reached";
     return false;
+}
+
+bool MMALEncoderWrapper::IsDigitalZoomActive() {
+    if( state_.camera_parameters.roi.w == 1.0 &&
+            state_.camera_parameters.roi.h == 1.0 )
+        return true; // using 1.0/1.0 width/height
+    return false;
+}
+
+bool MMALEncoderWrapper::IncreaseDigitalZoom(double cx, double cy ) {
+    return raspicamcontrol_zoom_with_coordination(state_.camera_component, ZOOM_IN,
+            cx, cy, &(state_.camera_parameters).roi);
+}
+
+bool MMALEncoderWrapper::DecreaseDigitalZoom(){
+    return raspicamcontrol_zoom_with_coordination(state_.camera_component, ZOOM_OUT,
+            0.0, 0.0, &(state_.camera_parameters).roi);
+}
+
+bool MMALEncoderWrapper::ResetDigitalZoom(){
+    return raspicamcontrol_zoom_with_coordination(state_.camera_component, ZOOM_RESET,
+            0.0, 0.0, &(state_.camera_parameters).roi);
+}
+
+bool MMALEncoderWrapper::MoveDigitalZoom(double cx, double cy ) {
+    return raspicamcontrol_zoom_with_coordination(state_.camera_component, ZOOM_MOVE,
+            cx, cy, &(state_.camera_parameters).roi);
 }
 
 void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port,

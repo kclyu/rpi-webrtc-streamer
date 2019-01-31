@@ -60,20 +60,33 @@ constructor () {
         this.config_media_ = new ConfigMedia();
         this.config_media_inited_ = false;
         this.config_media_.hookConfigElement();
+
+        this.remoteVideo_.addEventListener('mousedown',
+                this.handleVideoDragMouseStart.bind(this), false);
+        this.remoteVideo_.addEventListener('mouseup',
+                this.handleVideoDragEnd.bind(this), false);
+        // this.remoteVideo_.addEventListener('touchmove',
+        //         this.handleVideoTouchMove.bind(this), false);
+        this.remoteVideo_.addEventListener('touchstart',
+                this.handleVideoDragTouchStart.bind(this), false);
+        this.remoteVideo_.addEventListener('touchend',
+                this.handleVideoDragEnd.bind(this), false);
+
+        document.onkeydown = this.handleVideoZoomReset.bind(this);
+
         this._showConfigButton
             = document.getElementById(Constants.ELEMENT_SHOW_CONFIG);
-        console.log('Show Config Buffon : ', this._showConfigButton);
 
         this._applyButton
             = document.getElementById(Constants.ELEMENT_CONFIG_APPLY);
-        this._resetButton 
+        this._resetButton
             = document.getElementById(Constants.ELEMENT_CONFIG_RESET);
-        this._media_config_section 
+        this._media_config_section
             = document.getElementById(Constants.ELEMENT_CONFIG_SECTION);
         if( this._applyButton )
             this._applyButton.onclick = this.applyConfig.bind(this);
         if( this._resetButton )
-            this._resetButton.onclick 
+            this._resetButton.onclick
                 = this.config_media_.resetToDefault.bind(this.config_media_);
 
         // initial button enable/disable values
@@ -130,9 +143,9 @@ connect() {
                 this.peerconnection_client_ = new PeerConnectionClient(result);
 
             // providiing peerconnectionclient public method
-            this.peerconnection_client_.sendSignalingMessage = 
+            this.peerconnection_client_.sendSignalingMessage =
                 this.websocket_channel_.send.bind(this.websocket_channel_);
-            this.peerconnection_client_.onRemoteVideoAdded = 
+            this.peerconnection_client_.onRemoteVideoAdded =
                 this.hookVideoElement.bind(this);
 
             // disable connect button
@@ -158,8 +171,8 @@ disconnect () {
 }
 
 applyConfig () {
-    if( this.config_media_ === undefined || 
-            this.config_media_ === null ) { 
+    if( this.config_media_ === undefined ||
+            this.config_media_ === null ) {
         console.error('Internal error Config Media instance is null');
         return;
     };
@@ -178,7 +191,7 @@ applyConfig () {
 
 messageHandler_ (message) {
     // console.log('Received message : ' + JSON.stringify(message));
-    // send type command 
+    // send type command
     if( message['cmd'] === 'send' ) {
         try {
             let JsonMsg = JSON.parse(message['msg']);
@@ -186,12 +199,12 @@ messageHandler_ (message) {
                 .receivedSignalingMessage( JsonMsg );
         }
         catch(error){
-            console.error('Parsing error in send command : ' 
+            console.error('Parsing error in send command : '
                     + error.toString());
         }
     }
     else if( message['cmd'] === 'event' ) {
-        console.log('Event message from WSS: ', 
+        console.log('Event message from WSS: ',
                 JSON.stringify(message));
         if( message['type'] === 'error' )
             alert(JSON.stringify(message));
@@ -202,6 +215,97 @@ hookVideoElement (streams) {
     if ( this.remoteVideo_.srcObject !== streams[0]) {
         this.remoteVideo_.srcObject = streams[0];
         console.log('PeerConnection received remote stream');
+    }
+
+}
+
+handleVideoZoomReset (event) {
+    if (event.key === "Escape") {
+        if( this.isSignalingChannelValid() === false ) {
+            return;
+        };
+        console.log('Doing Zoom Resetting');
+        this.sendZoomCommand( 0.0, 0.0, 'reset');
+    }
+}
+
+handleVideoDragMouseStart (event) {
+    // only accept left mouse button
+    if( event.which !== 1) {
+        this.start_dragX_ = null;
+        this.start_dragY_ = null;
+        this.start_timeStamp_ = null;
+        return;
+    }
+    this.start_dragX_ = event.clientX;
+    this.start_dragY_ = event.clientY;
+    this.start_timeStamp_ = event.timeStamp;
+}
+
+handleVideoDragTouchStart (event) {
+    // only accept left mouse button
+    if( event.type !== 'touchstart') {
+        this.start_dragX_ = null;
+        this.start_dragY_ = null;
+        this.start_timeStamp_ = null;
+        return;
+    }
+    if( event.changedTouches.length < 1) {
+        console.error('changedTouches length is ', event.changedTouches.length );
+        return
+    }
+
+    this.start_dragX_ = event.changedTouches[0].clientX;
+    this.start_dragY_ = event.changedTouches[0].clientY;
+    this.start_timeStamp_ = event.timeStamp;
+}
+
+handleVideoDragEnd (event) {
+    let clientX, clientY, timeStamp;
+    if( event.type && event.type === 'touchend') {
+        if( event.changedTouches.length < 1) {
+            console.error('changedTouches length is ', event.changedTouches.length );
+            return
+        }
+        clientX = event.changedTouches[0].clientX;
+        clientY = event.changedTouches[0].clientY;
+        timeStamp = event.timeStamp;
+    }
+    else {
+        // only accept left mouse button
+        if( event.which !== 1) return;
+        if( this.start_dragX === null || this.start_dragY === null ) return;
+        clientX = event.clientX;
+        clientY = event.clientY;
+        timeStamp = event.timeStamp;
+    }
+
+    let dragX = this.start_dragX_ - clientX;
+    let dragY = this.start_dragY_ - clientY;
+    let timeDiff = timeStamp - this.start_timeStamp_;
+
+    // get the position inside the video element
+    let rect = event.target.getBoundingClientRect();
+    let x = clientX - rect.left; // x position within the element.
+    let y = clientY - rect.top;  // y position within the element.
+    let cx =  (x/rect.width).toFixed(3); // relative center x/y
+    let cy =  (y/rect.height).toFixed(3);
+    let dx =  (dragX/rect.width).toFixed(3);    // relative drag X/Y
+    let dy =  (dragY/rect.height).toFixed(3);
+
+    if( parseFloat(timeDiff) < parseFloat(200) ) {
+        // regard this as button click
+        this.sendZoomCommand( cx, cy, 'in');
+        return;
+    }
+    else if( parseFloat(timeDiff) > parseFloat(2000) ) {
+        // regard this as reset (x,y coordination is meaningless)
+        this.sendZoomCommand( cx, cy, 'reset');
+        return
+    }
+    else {
+        // regard this as move
+        this.sendZoomCommand( dx, dy, 'move');
     }
 }
 
@@ -221,11 +325,11 @@ toggleButton (state) {
             this._connectButton.disabled = true;
             this._disconnectButton.disabled = false;
             if( this._showConfigButton ) {
-                // most of Button text changed by onclick handler 
+                // most of Button text changed by onclick handler
                 // in HTML source.
                 // This will forcely change the show button value
                 // with default settings after connection established.
-                this._showConfigButton.innerText 
+                this._showConfigButton.innerText
                     = Constants.ELEMENT_SHOW_BUTTON_TEXT;
                 this._showConfigButton.disabled = false;
                 this._showConfigButton.style.display = 'block';
@@ -245,7 +349,7 @@ toggleButton (state) {
 }
 
 isSignalingChannelValid () {
-    if( this.websocket_channel_ && this.websocket_channel_.isConnected() ) 
+    if( this.websocket_channel_ && this.websocket_channel_.isConnected() )
         return true;
     return false;
 }
@@ -261,6 +365,27 @@ async sendRegister () {
     if( this.websocket_channel_.send(register_message,false) === false ) {
         console.error('Failed to send register message: ' + register_message);
         return new Error(Constants.ERROR_SENDING_REGISTER);
+    }
+    return true;
+}
+
+async sendZoomCommand (cx, cy, action) {
+    // Sending zoom command vis websocket message command
+    if( parseFloat(cx) > 1.0 || parseFloat(cy) > 1.0 ){
+        console.error('Center x/y value error: ' + cx + ',' + cy );
+        return;
+    }
+    let cmd = { cmd: 'message', type: 'zoom' };
+    let zoom = {};
+    zoom['x'] = cx;
+    zoom['y'] = cy;
+    zoom['command'] = action;   // in/out/reset
+    cmd['data'] = JSON.stringify(zoom);
+
+    let cmd_message = JSON.stringify(cmd);
+    if( this.websocket_channel_.send(cmd_message,false) === false ) {
+        console.error('Failed to send register message: ' + cmd_message);
+        return new Error(Constants.ERROR_FAILED_ZOOM_COMMAND);
     }
     return true;
 }

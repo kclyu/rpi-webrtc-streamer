@@ -177,6 +177,10 @@ typedef struct
     float digital_gain;        // Digital gain
 } RASPICAM_CAMERA_PARAMETERS;
 
+typedef enum
+{
+   ZOOM_IN, ZOOM_OUT, ZOOM_RESET, ZOOM_MOVE
+} ZOOM_COMMAND_T;
 
 void raspicamcontrol_check_configuration(int min_gpu_mem);
 int raspicamcontrol_get_mem_gpu(void);
@@ -211,6 +215,9 @@ int raspicamcontrol_set_colourFX(MMAL_COMPONENT_T *camera, const MMAL_PARAM_COLO
 int raspicamcontrol_set_rotation(MMAL_COMPONENT_T *camera, int rotation);
 int raspicamcontrol_set_flips(MMAL_COMPONENT_T *camera, int hflip, int vflip);
 int raspicamcontrol_set_ROI(MMAL_COMPONENT_T *camera, PARAM_FLOAT_RECT_T rect);
+int raspicamcontrol_zoom_in_zoom_out(MMAL_COMPONENT_T *camera, ZOOM_COMMAND_T zoom_command, PARAM_FLOAT_RECT_T *roi);
+int raspicamcontrol_zoom_with_coordination(MMAL_COMPONENT_T *camera,
+        ZOOM_COMMAND_T zoom_command, double cx,  double cy, PARAM_FLOAT_RECT_T *roi);
 int raspicamcontrol_set_shutter_speed(MMAL_COMPONENT_T *camera, int speed_ms);
 int raspicamcontrol_set_DRC(MMAL_COMPONENT_T *camera, MMAL_PARAMETER_DRC_STRENGTH_T strength);
 int raspicamcontrol_set_stats_pass(MMAL_COMPONENT_T *camera, int stats_pass);

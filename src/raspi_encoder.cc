@@ -64,8 +64,8 @@ RaspiVideoEncoderFactory* RaspiVideoEncoderFactory::CreateVideoEncoderFactory() 
 }
 
 // borrowed from src/modules/video_coding/codecs/h264/h264.cc
-static bool IsSameFormat(const webrtc::SdpVideoFormat& format1,
-                  const webrtc::SdpVideoFormat& format2) {
+static bool IsSameFormat(const SdpVideoFormat& format1,
+                  const SdpVideoFormat& format2) {
     // If different names (case insensitive), then not same formats.
     if (!absl::EqualsIgnoreCase(format1.name, format2.name))
         return false;
@@ -73,10 +73,10 @@ static bool IsSameFormat(const webrtc::SdpVideoFormat& format1,
     if (!absl::EqualsIgnoreCase(format1.name.c_str(), cricket::kH264CodecName))
         return true;
     // Compare H264 profiles.
-    const absl::optional<webrtc::H264::ProfileLevelId> profile_level_id =
-        webrtc::H264::ParseSdpProfileLevelId(format1.parameters);
-    const absl::optional<webrtc::H264::ProfileLevelId> other_profile_level_id =
-        webrtc::H264::ParseSdpProfileLevelId(format2.parameters);
+    const absl::optional<H264::ProfileLevelId> profile_level_id =
+        H264::ParseSdpProfileLevelId(format1.parameters);
+    const absl::optional<H264::ProfileLevelId> other_profile_level_id =
+        H264::ParseSdpProfileLevelId(format2.parameters);
     // Compare H264 profiles, but not levels.
     return profile_level_id && other_profile_level_id &&
         profile_level_id->profile == other_profile_level_id->profile;
@@ -107,10 +107,10 @@ RaspiVideoEncoderFactory::RaspiVideoEncoderFactory() {
     supported_formats_ = SupportedH264Codecs();
 }
 
-webrtc::VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncoder(
-        const webrtc::SdpVideoFormat& format) const {
+VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncoder(
+        const SdpVideoFormat& format) const {
 
-    for (const webrtc::SdpVideoFormat& supported_format : supported_formats_) {
+    for (const SdpVideoFormat& supported_format : supported_formats_) {
         if (IsSameFormat(format, supported_format)) {
             RTC_LOG(INFO) << "Codec " << format.name
                 << " found in RaspiVideoEncoderFactory supported format";
@@ -130,14 +130,14 @@ webrtc::VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncod
     return info;
 }
 
-std::unique_ptr<webrtc::VideoEncoder> RaspiVideoEncoderFactory::CreateVideoEncoder(
-        const webrtc::SdpVideoFormat& format) {
+std::unique_ptr<VideoEncoder> RaspiVideoEncoderFactory::CreateVideoEncoder(
+        const SdpVideoFormat& format) {
     const cricket::VideoCodec codec(format);
 
     // Try creating external encoder.
-    std::unique_ptr<webrtc::VideoEncoder> video_encoder;
+    std::unique_ptr<VideoEncoder> video_encoder;
 
-    for (const webrtc::SdpVideoFormat& supported_format : supported_formats_) {
+    for (const SdpVideoFormat& supported_format : supported_formats_) {
         if (IsSameFormat(format, supported_format)) {
             RTC_LOG(INFO) << "Raspi " << format.name << " video encoder created";
             video_encoder = RaspiEncoder::Create(codec);
@@ -150,7 +150,5 @@ std::unique_ptr<webrtc::VideoEncoder> RaspiVideoEncoderFactory::CreateVideoEncod
 RaspiVideoEncoderFactory::~RaspiVideoEncoderFactory() {
     RTC_LOG(INFO) << "Raspi Video encoder factory destroy";
 }
-
-
 
 }  // namespace webrtc

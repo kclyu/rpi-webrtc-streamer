@@ -86,7 +86,7 @@ int32_t RaspiDecoderDummy::Decode(const EncodedImage& input_image,
     }
 
     VideoFrame frame(I420Buffer::Create(decoder_config_.width, decoder_config_.height),
-            webrtc::kVideoRotation_0, render_time_ms * rtc::kNumMicrosecsPerMillisec);
+            kVideoRotation_0, render_time_ms * rtc::kNumMicrosecsPerMillisec);
     frame.set_timestamp(input_image.Timestamp());
     frame.set_ntp_time_ms(input_image.ntp_time_ms_);
 

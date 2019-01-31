@@ -279,8 +279,11 @@ int32_t RaspiEncoderImpl::Encode(
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
 
-    // When enabled, the drain process transfers the encoded frame to the native stack.
-    if( start_encoding_  == false ) start_encoding_ = true;
+    if( start_encoding_  == false )  {
+        // The Encode function is called upon a KeyFrame request.
+        // When enabled, the drain process transfers the encoded frame to the native stack.
+        start_encoding_ = true;
+    }
 
     bool force_key_frame = false;
     if (frame_types != nullptr) {

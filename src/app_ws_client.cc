@@ -70,7 +70,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // { cmd : request, type: config, deviceid: deviceid, data : { ... }  }
 // { cmd : response, type: config, data : { ... }, result: 'SUCCESS/FAILED',
 //          error: '...' }
-//
 //      data:
 //          Json format : media config
 //          'save' : save updated media config
@@ -79,30 +78,46 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //              (applied immediately if rtc session is started.)
 //          'reset-to-default' : reset all media configuration to default
 //
+// - Message format
+//
+// Similar to the send used for signaling. but, forwarding messages
+// that are not used for signaling purposes. There is no response from the
+// message received, and the error is forwarded to the event.
+//
+// { cmd: message, type: "zoom", data: { x: value, y: value, command: command_type } }
+//      value: double type
+//      command: in/out/reset
+//
 
 // message keywords
 static const char kKeyCmd[] = "cmd";
-static const char kValueCmdRegister[] = "register";
-static const char kValueCmdSend[] = "send";
 
+// notice/error event
+static const char kValueCmdEvent[] = "event";
+static const char kValueTypeError[] = "error";
+static const char kValueTypeNotice[] = "notice";
+
+// register
+static const char kValueCmdRegister[] = "register";
 static const char kKeyRegisterRoomId[] = "roomid";
 static const char kKeyRegisterClientId[] = "clientid";
+
+// send
+static const char kValueCmdSend[] = "send";
 static const char kKeySendMessage[] = "msg";
 static const char kKeySendType[] = "type";
 static const char kValueCmdSendTypeBye[] = "bye";
+
+// request/response
 static const char kValueCmdRequest[] = "request";
 static const char kValueCmdResponse[] = "response";
-static const char kValueCmdEvent[] = "event";
 
 static const char kKeyCmdType[] = "type";
 static const char kValueTyepDeviceId[] = "deviceid";
 static const char kValueTyepMcVersion[] = "mcversion";
 
 static const char kValueTypeRTCConfig[] = "rtcconfig";
-// media config version
 static const char kValueTypeConfig[] = "config";
-static const char kValueTypeError[] = "error";
-static const char kValueTypeNotice[] = "notice";
 
 static const char kKeyEventMesg[] = "mesg";
 
@@ -118,6 +133,22 @@ static const char kKeyRequestResult[] = "result";
 static const char kValueResultSuccess[] = "SUCCESS";
 static const char kValueResultFailed[] = "FAILED";
 static const char kKeyRequestError[] = "error";
+
+// { cmd: message, type: "zoom", data: { x: value, y: value, command: command_type } }
+//      value: double type
+//      command: in/out/reset
+//
+// request/response
+
+static const char kValueCmdMessage[] = "message";
+static const char kKeyDataCommand[] = "command";
+static const char kValueTypeZoom[] = "zoom";
+static const char kValueDataX[] = "x";
+static const char kValueDataY[] = "y";
+static const char kValueCommandZoomIn[] = "in";
+static const char kValueCommandZoomOut[] = "out";
+static const char kValueCommandZoomReset[] = "reset";
+static const char kValueCommandZoomMove[] = "move";
 
 //
 //  Media Config Version
@@ -269,6 +300,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
         else if(cmd.compare(kValueCmdSend) == 0) {
             std::string msg;
             rtc::GetStringFromJsonObject(json_value, kKeySendMessage, &msg);
+
             if( !msg.empty() ) {
                 Json::Value json_msg_value;
                 std::string json_msg_type;
@@ -303,6 +335,61 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             SendEvent(sockid, EventError, kErrMessageEmpy);
             RTC_LOG(LS_ERROR) << "Failed to pass received message :" << message;
         }
+
+        // command message
+        else if(cmd.compare(kValueCmdMessage) == 0) {
+            //  cmd : message ...
+            std::string cmd_type;
+            rtc::GetStringFromJsonObject(json_value, kKeyCmdType, &cmd_type);
+            if( cmd_type.compare(kValueTypeZoom)  == 0 ){
+                std::string data;
+                rtc::GetStringFromJsonObject(json_value, kKeyData, &data);
+                if( !data.empty() ) {
+                    Json::Value json_data_value;
+                    // trying to parse msg value to check whether it is json type msg
+                    if (!json_reader.parse(data, json_data_value)) {
+                        RTC_LOG(LS_ERROR) << "Failed to parse data message: "
+                            << data;
+                        return true;
+                    }
+
+                    double cx = 0, cy = 0;
+                    std::string command;
+                    rtc::GetStringFromJsonObject(json_data_value, kKeyDataCommand,
+                            &command);
+                    if(command.empty()) {
+                        RTC_LOG(LS_ERROR) << "Failed to get zoom command: "
+                            << message;
+                        return true;
+                    }
+                    if(rtc::GetDoubleFromJsonObject(json_data_value, kValueDataX, &cx) == false ||
+                            rtc::GetDoubleFromJsonObject(json_data_value, kValueDataY,&cy) == false ) {
+                        RTC_LOG(LS_ERROR) << "Failed to get cx/cy position : "
+                            << message;
+                        return true;
+                    }
+                    RTC_LOG(INFO) << "Zoom Command Type " << command
+                        << ", Position " << cx << ", " << cy;
+                    if( command.compare( kValueCommandZoomIn) == 0 ) {
+                        webrtc::MMALWrapper::Instance()->IncreaseDigitalZoom(cx, cy);
+                    }
+                    else if( command.compare( kValueCommandZoomOut) == 0 ) {
+                        webrtc::MMALWrapper::Instance()->DecreaseDigitalZoom();
+                    }
+                    else if( command.compare( kValueCommandZoomReset) == 0 ) {
+                        webrtc::MMALWrapper::Instance()->ResetDigitalZoom();
+                    }
+                    else if( command.compare( kValueCommandZoomMove) == 0 ) {
+                        webrtc::MMALWrapper::Instance()->MoveDigitalZoom(cx, cy);
+                    }
+                }
+                else {
+                    RTC_LOG(LS_ERROR) << "Failed to get data key in message :" << message;
+                }
+            }
+            return true;
+        }
+
         // command request
         else if(cmd.compare(kValueCmdRequest) == 0) {
             //  cmd : request, ...
@@ -337,8 +424,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 };
 
                 if( streamer_config_->GetRTCConfig(json_rtcconfig) == true ){
-                    RTC_LOG(INFO) << "JSON RTC Config : " << json_rtcconfig;
-                    SendResponse(sockid, true,
+                    RTC_LOG(INFO) << "JSON RTC Config : "
+                        << json_rtcconfig; SendResponse(sockid, true,
                         kValueTypeRTCConfig, json_rtcconfig, "");
                 }
                 else  {
@@ -351,6 +438,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             //
             // Config request
             //
+
             else if( cmd_type.compare(kValueTypeConfig)  == 0 ){
                 // { cmd : request, type: config, deviceid: deviceid,
                 //      data : { ... }  }
