@@ -98,11 +98,8 @@ MMAL_STATUS_T reset_camera_component(RASPIVID_STATE *state)
     }
 #endif	/* __NOT_REQUIRED_IN_RESET__ */
 
-    //
-    mmal_video_set_camera_settings(camera);
-
     // Enable the camera, and tell it its control callback function
-    status = mmal_port_enable(camera->control, camera_control_callback);
+    status = mmal_port_enable(camera->control, default_camera_control_callback);
 
     if (status != MMAL_SUCCESS)
     {

@@ -37,48 +37,146 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "mmal_video.h"
 
-
-// static variable for holding camera settings
-static MMAL_PARAMETER_CAMERA_SETTINGS_T camera_settings;
-static uint16_t camera_setting_updated = 0;
-
-void mmal_video_copy_camera_settings( MMAL_PARAMETER_CAMERA_SETTINGS_T *settings )
+void check_camera_model(int cam_num)
 {
-    camera_setting_updated = MMAL_TRUE;
-    memcpy( &camera_settings, settings, sizeof(MMAL_PARAMETER_CAMERA_SETTINGS_T));
+    MMAL_COMPONENT_T *camera_info;
+    MMAL_STATUS_T status;
+
+    // Try to get the camera name
+    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA_INFO, &camera_info);
+    if (status == MMAL_SUCCESS)
+    {
+        MMAL_PARAMETER_CAMERA_INFO_T param;
+        param.hdr.id = MMAL_PARAMETER_CAMERA_INFO;
+        param.hdr.size = sizeof(param)-4;  // Deliberately undersize to check firmware version
+        status = mmal_port_parameter_get(camera_info->control, &param.hdr);
+
+        if (status != MMAL_SUCCESS)
+        {
+            // Running on newer firmware
+            param.hdr.size = sizeof(param);
+            status = mmal_port_parameter_get(camera_info->control, &param.hdr);
+            if (status == MMAL_SUCCESS && param.num_cameras > (unsigned int)cam_num)
+            {
+                if (!strncmp(param.cameras[cam_num].camera_name, "toshh2c", 7))
+                {
+                    fprintf(stderr, "The driver for the TC358743 HDMI to CSI2 chip you are using is NOT supported.\n");
+                    fprintf(stderr, "They were written for a demo purposes only, and are in the firmware on an as-is\n");
+                    fprintf(stderr, "basis and therefore requests for support or changes will not be acted on.\n\n");
+                }
+            }
+        }
+
+        mmal_component_destroy(camera_info);
+    }
 }
 
-void mmal_video_print_camera_settings( void )
+MMAL_STATUS_T check_installed_camera( void )
 {
-    DLOG_FORMAT("Exposure now %u, analog gain %u/%u, digital gain %u/%u",
-                camera_settings.exposure,
-                camera_settings.analog_gain.num, camera_settings.analog_gain.den,
-                camera_settings.digital_gain.num, camera_settings.digital_gain.den);
-    DLOG_FORMAT("AWB R=%u/%u, B=%u/%u",
-                camera_settings.awb_red_gain.num, camera_settings.awb_red_gain.den,
-                camera_settings.awb_blue_gain.num, camera_settings.awb_blue_gain.den
-               );
+    MMAL_COMPONENT_T *camera_info;
+    MMAL_STATUS_T status;
+
+    // Try to get the camera name
+    status = mmal_component_create(MMAL_COMPONENT_DEFAULT_CAMERA_INFO, &camera_info);
+    if (status == MMAL_SUCCESS)
+    {
+        MMAL_PARAMETER_CAMERA_INFO_T param;
+        param.hdr.id = MMAL_PARAMETER_CAMERA_INFO;
+        param.hdr.size = sizeof(param);
+        status = mmal_port_parameter_get(camera_info->control, &param.hdr);
+        if (status != MMAL_SUCCESS){
+            return status;
+        }
+
+        if( param.num_cameras == 0 ) {
+            return MMAL_ENXIO;
+        };
+
+        for( uint32_t i = 0; i < param.num_cameras; i++ ) {
+            printf("Cameras installed : %d\n", param.num_cameras);
+            printf("Camera device name  : %s\n", param.cameras[i].camera_name);
+        };
+
+        mmal_component_destroy(camera_info);
+        return MMAL_SUCCESS;
+    }
+    return status;
 }
 
-
-/*****************************************************************************/
-int mmal_video_set_camera_settings(MMAL_COMPONENT_T *camera )
+/**
+ * Convert a MMAL status return value to a simple boolean of success
+ * ALso displays a fault if code is not success
+ *
+ * @param status The error code to convert
+ * @return 0 if status is success, 1 otherwise
+ */
+int mmal_status_to_int(MMAL_STATUS_T status)
 {
-    MMAL_PARAMETER_CAMERA_SETTINGS_T setting;
-    memcpy(&setting, &camera_settings, sizeof( camera_settings));
-    setting.hdr.id = MMAL_PARAMETER_CAMERA_SETTINGS;
-    setting.hdr.size = sizeof(setting);
+    if (status == MMAL_SUCCESS)
+        return 0;
+    else
+    {
+        switch (status)
+        {
+        case MMAL_ENOMEM :
+            vcos_log_error("Out of memory");
+            break;
+        case MMAL_ENOSPC :
+            vcos_log_error("Out of resources (other than memory)");
+            break;
+        case MMAL_EINVAL:
+            vcos_log_error("Argument is invalid");
+            break;
+        case MMAL_ENOSYS :
+            vcos_log_error("Function not implemented");
+            break;
+        case MMAL_ENOENT :
+            vcos_log_error("No such file or directory");
+            break;
+        case MMAL_ENXIO :
+            vcos_log_error("No such device or address");
+            break;
+        case MMAL_EIO :
+            vcos_log_error("I/O error");
+            break;
+        case MMAL_ESPIPE :
+            vcos_log_error("Illegal seek");
+            break;
+        case MMAL_ECORRUPT :
+            vcos_log_error("Data is corrupt \attention FIXME: not POSIX");
+            break;
+        case MMAL_ENOTREADY :
+            vcos_log_error("Component is not ready \attention FIXME: not POSIX");
+            break;
+        case MMAL_ECONFIG :
+            vcos_log_error("Component is not configured \attention FIXME: not POSIX");
+            break;
+        case MMAL_EISCONN :
+            vcos_log_error("Port is already connected ");
+            break;
+        case MMAL_ENOTCONN :
+            vcos_log_error("Port is disconnected");
+            break;
+        case MMAL_EAGAIN :
+            vcos_log_error("Resource temporarily unavailable. Try again later");
+            break;
+        case MMAL_EFAULT :
+            vcos_log_error("Bad address");
+            break;
+        default :
+            vcos_log_error("Unknown status error");
+            break;
+        }
 
-    if (!camera) return 1;
-    if( camera_setting_updated == 0 ) return 1;
-
-    DLOG("Resetting camera setting with previous one");
-    mmal_video_print_camera_settings();
-
-    return mmal_status_to_int(mmal_port_parameter_set(camera->control, &setting.hdr));
+        return 1;
+    }
 }
 
-/*****************************************************************************/
+/*****************************************************************************
+ *
+ * Helper functions to print component/format/port/buffer to console
+ *
+ ****************************************************************************/
 static void dump_mmal_format(MMAL_ES_FORMAT_T *format)
 {
     const char *name_type;
@@ -133,7 +231,6 @@ static void dump_mmal_format(MMAL_ES_FORMAT_T *format)
 }
 
 
-/*****************************************************************************/
 static void dump_mmal_port(MMAL_PORT_T *port)
 {
     MMAL_ES_FORMAT_T *format;
@@ -150,7 +247,6 @@ static void dump_mmal_port(MMAL_PORT_T *port)
     }
 }
 
-/*****************************************************************************/
 void dump_component(char *prefix, MMAL_COMPONENT_T *component)
 {
     MMAL_PORT_T *port_ptr=NULL;

@@ -48,9 +48,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "raspicamcontrol.h"
 #include "raspicli.h"
 
-// #define __USE_CAMERA_GAIN__
-// ANALOG_GAIN and DIGITAL_GAIN
-
 /// Structure to cross reference exposure strings against the MMAL parameter equivalent
 static XREF_T  exposure_map[] =
 {
@@ -294,75 +291,6 @@ void raspicamcontrol_dump_parameters(const RASPICAM_CAMERA_PARAMETERS *params)
 }
 
 /**
- * Convert a MMAL status return value to a simple boolean of success
- * ALso displays a fault if code is not success
- *
- * @param status The error code to convert
- * @return 0 if status is success, 1 otherwise
- */
-int mmal_status_to_int(MMAL_STATUS_T status)
-{
-    if (status == MMAL_SUCCESS)
-        return 0;
-    else
-    {
-        switch (status)
-        {
-        case MMAL_ENOMEM :
-            vcos_log_error("Out of memory");
-            break;
-        case MMAL_ENOSPC :
-            vcos_log_error("Out of resources (other than memory)");
-            break;
-        case MMAL_EINVAL:
-            vcos_log_error("Argument is invalid");
-            break;
-        case MMAL_ENOSYS :
-            vcos_log_error("Function not implemented");
-            break;
-        case MMAL_ENOENT :
-            vcos_log_error("No such file or directory");
-            break;
-        case MMAL_ENXIO :
-            vcos_log_error("No such device or address");
-            break;
-        case MMAL_EIO :
-            vcos_log_error("I/O error");
-            break;
-        case MMAL_ESPIPE :
-            vcos_log_error("Illegal seek");
-            break;
-        case MMAL_ECORRUPT :
-            vcos_log_error("Data is corrupt \attention FIXME: not POSIX");
-            break;
-        case MMAL_ENOTREADY :
-            vcos_log_error("Component is not ready \attention FIXME: not POSIX");
-            break;
-        case MMAL_ECONFIG :
-            vcos_log_error("Component is not configured \attention FIXME: not POSIX");
-            break;
-        case MMAL_EISCONN :
-            vcos_log_error("Port is already connected ");
-            break;
-        case MMAL_ENOTCONN :
-            vcos_log_error("Port is disconnected");
-            break;
-        case MMAL_EAGAIN :
-            vcos_log_error("Resource temporarily unavailable. Try again later");
-            break;
-        case MMAL_EFAULT :
-            vcos_log_error("Bad address");
-            break;
-        default :
-            vcos_log_error("Unknown status error");
-            break;
-        }
-
-        return 1;
-    }
-}
-
-/**
  * Give the supplied parameter block a set of default values
  * @params Pointer to parameter block
  */
@@ -469,12 +397,12 @@ int raspicamcontrol_set_all_parameters(MMAL_COMPONENT_T *camera, const RASPICAM_
     result += raspicamcontrol_set_DRC(camera, params->drc_level);
     result += raspicamcontrol_set_stats_pass(camera, params->stats_pass);
     result += raspicamcontrol_set_annotate(camera, params->enable_annotate, params->annotate_string,
-                                           params->annotate_text_size,
-                                           params->annotate_text_colour,
-                                           params->annotate_bg_colour);
-#ifdef  __USE_CAMERA_GAIN__
-    result += raspicamcontrol_set_gains(camera, params->analog_gain, params->digital_gain);
-#endif  /* __USE_CAMERA_GAIN__ */
+            params->annotate_text_size,
+            params->annotate_text_colour,
+            params->annotate_bg_colour,
+            params->annotate_justify,
+            params->annotate_x,
+            params->annotate_y);
 
     return result;
 }
@@ -1098,7 +1026,8 @@ int raspicamcontrol_set_stats_pass(MMAL_COMPONENT_T *camera, int stats_pass)
  * @return 0 if successful, non-zero if any parameters out of range
  */
 int raspicamcontrol_set_annotate(MMAL_COMPONENT_T *camera, const int settings, const char *string,
-                                 const int text_size, const int text_colour, const int bg_colour)
+        const int text_size, const int text_colour, const int bg_colour,
+        const unsigned int justify, const unsigned int x, const unsigned int y)
 {
     MMAL_PARAMETER_CAMERA_ANNOTATE_V3_T annotate =
     {{MMAL_PARAMETER_ANNOTATE, sizeof(MMAL_PARAMETER_CAMERA_ANNOTATE_V3_T)}};
@@ -1207,7 +1136,6 @@ int raspicamcontrol_set_stereo_mode(MMAL_PORT_T *port, MMAL_PARAMETER_STEREOSCOP
     return mmal_status_to_int(mmal_port_parameter_set(port, &stereo.hdr));
 }
 
-#ifdef  __USE_CAMERA_GAIN__
 int raspicamcontrol_set_gains(MMAL_COMPONENT_T *camera, float analog, float digital)
 {
     MMAL_RATIONAL_T rational = {0,65536};
@@ -1225,7 +1153,6 @@ int raspicamcontrol_set_gains(MMAL_COMPONENT_T *camera, float analog, float digi
     status = mmal_port_parameter_set_rational(camera->control, MMAL_PARAMETER_DIGITAL_GAIN, rational);
     return mmal_status_to_int(status);
 }
-#endif  /* __USE_CAMERA_GAIN__ */
 
 /**
  * Asked GPU how much memory it has allocated
@@ -1276,6 +1203,46 @@ void raspicamcontrol_check_configuration(int min_gpu_mem)
         vcos_log_error("Camera is not detected. Please check carefully the camera module is installed correctly\n");
     else
         vcos_log_error("Failed to run camera app. Please check for firmware updates\n");
+}
+
+/** Default camera callback function
+ * Handles the --settings
+ * @param port
+ * @param Callback data
+ */
+void default_camera_control_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer)
+{
+    fprintf(stderr, "Camera control callback  cmd=0x%08x", buffer->cmd);
+
+    if (buffer->cmd == MMAL_EVENT_PARAMETER_CHANGED)
+    {
+        MMAL_EVENT_PARAMETER_CHANGED_T *param = (MMAL_EVENT_PARAMETER_CHANGED_T *)buffer->data;
+        switch (param->hdr.id)
+        {
+            case MMAL_PARAMETER_CAMERA_SETTINGS:
+                {
+                    MMAL_PARAMETER_CAMERA_SETTINGS_T *settings = (MMAL_PARAMETER_CAMERA_SETTINGS_T*)param;
+                    vcos_log_error("Exposure now %u, analog gain %u/%u, digital gain %u/%u",
+                            settings->exposure,
+                            settings->analog_gain.num, settings->analog_gain.den,
+                            settings->digital_gain.num, settings->digital_gain.den);
+                    vcos_log_error("AWB R=%u/%u, B=%u/%u",
+                            settings->awb_red_gain.num, settings->awb_red_gain.den,
+                            settings->awb_blue_gain.num, settings->awb_blue_gain.den);
+                }
+                break;
+        }
+    }
+    else if (buffer->cmd == MMAL_EVENT_ERROR)
+    {
+        vcos_log_error("No data received from sensor. Check all connections, including the Sunny one on the camera board");
+    }
+    else
+    {
+        vcos_log_error("Received unexpected camera control callback event, 0x%08x", buffer->cmd);
+    }
+
+    mmal_buffer_header_release(buffer);
 }
 
 /******************************************************************************

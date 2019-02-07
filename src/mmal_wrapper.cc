@@ -415,11 +415,11 @@ void MMALEncoderWrapper::SetVideoAnnotateTextSizeRatio(const int text_size_ratio
 }
 
 void MMALEncoderWrapper::SetInlineMotionVectors(bool motion_enable) {
-    state_.bInlineMotionVector = motion_enable;
+    state_.inlineMotionVectors = motion_enable;
 }
 
 void MMALEncoderWrapper::SetIntraPeriod(int frame_period) {
-    state_.intraPeriod = frame_period;
+    state_.intraperiod = frame_period;
 }
 
 
