@@ -38,9 +38,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/timeutils.h"
-#include "rtc_base/stringutils.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/time_utils.h"
+#include "rtc_base/string_utils.h"
+#include "rtc_base/string_encode.h"
 
 #include "utils.h"
 

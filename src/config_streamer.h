@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RPI_STREAMER_CONFIG_
 
 #include "rtc_base/checks.h"
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 
 #include "compat/optionsfile.h"
 #include "utils_pc_config.h"

@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/string_utils.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/task_queue.h"
 
 #include "mmal_wrapper.h"
@@ -177,6 +177,11 @@ void FrameQueue::HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer ) {
                 RTC_LOG(INFO) << "MMAL Frame Dropped during HandlingMMALFrame : "
                     << frame_drop_;
             }
+        }
+        else {
+            char buffer_log[256];
+            dump_buffer_flag(buffer_log, 256, buffer->flags );
+            RTC_LOG(INFO) << "***** MMAL Frame : " << buffer_log;
         }
 
         // frame count statistics
@@ -371,7 +376,6 @@ bool MMALEncoderWrapper::IsInited() {
 
 void MMALEncoderWrapper::SetVideoRotation(int rotation) {
     state_.camera_parameters.rotation = rotation;
-    state_.camera_parameters.drc_level = MMAL_PARAMETER_DRC_STRENGTH_HIGH;
 }
 
 void MMALEncoderWrapper::SetVideoFlip(bool vflip, bool hflip) {
@@ -421,7 +425,6 @@ void MMALEncoderWrapper::SetInlineMotionVectors(bool motion_enable) {
 void MMALEncoderWrapper::SetIntraPeriod(int frame_period) {
     state_.intraperiod = frame_period;
 }
-
 
 void MMALEncoderWrapper::SetVideoSharpness(const int sharpness ) {
     state_.camera_parameters.sharpness  = sharpness;

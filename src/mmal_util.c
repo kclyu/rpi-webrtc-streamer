@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "mmal_video.h"
 
+// Original fucntion defined in the RaspiVid.c
 void check_camera_model(int cam_num)
 {
     MMAL_COMPONENT_T *camera_info;
@@ -217,6 +218,7 @@ static void dump_mmal_format(MMAL_ES_FORMAT_T *format)
                     format->es->video.width, format->es->video.height,
                     format->es->video.crop.x, format->es->video.crop.y,
                     format->es->video.crop.width, format->es->video.crop.height);
+        DLOG_FORMAT("      color_space : %4.4s",  format->es->video.color_space );
         DLOG_FORMAT("      pixel aspect ratio: %i/%i, frame rate: %i/%i",
                     format->es->video.par.num, format->es->video.par.den,
                     format->es->video.frame_rate.num, format->es->video.frame_rate.den);

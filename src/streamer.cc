@@ -30,23 +30,22 @@
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/audio_options.h"
 #include "api/create_peerconnection_factory.h"
-#include "api/rtpsenderinterface.h"
+#include "api/rtp_sender_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
-#include "media/base/device.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/dummy/audio_device_dummy.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
-#include "p2p/base/portallocator.h"
+#include "p2p/base/port_allocator.h"
+#include "pc/video_track_source.h"
+#include "test/vcm_capturer.h"
 
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/json.h"
 #include "rtc_base/logging.h"
-
-#include "media/base/fakevideocapturer.h"
 
 #include "streamer.h"
 #include "streamer_observer.h"
@@ -57,9 +56,10 @@
 #include "raspi_encoder_impl.h"
 #include "raspi_decoder.h"
 #include "raspi_decoder_dummy.h"
-
 #include "utils_pc_strings.h"
 
+#include "pc/test/fake_video_track_source.h"
+// #include "pc/test/fake_periodic_video_track_source.h"
 
 // Names used for SDP label
 static const char kAudioLabel[] = "audio_label";
@@ -252,14 +252,14 @@ void Streamer::OnAddTrack(
         streams) {
     RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id()
         << ", " << receiver->media_type();
-    // receiver->track().release();
+    receiver->track().release();
 }
 
 void Streamer::OnRemoveTrack(
         rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
     RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id()
         << ", " << receiver->media_type();
-    // receiver->track().release();
+    receiver->track().release();
 }
 
 void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
@@ -496,15 +496,15 @@ void Streamer::AddTracks() {
     }
 
     if(streamer_config_->GetVideoEnable() == true ) {
-        std::unique_ptr<cricket::VideoCapturer> video_device;
-        video_device.reset( new cricket::FakeVideoCapturer(false));
+        video_track_sources_.clear();
+        video_track_sources_.emplace_back(
+                webrtc::FakeVideoTrackSource::Create(false));
+        rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_(
+                peer_connection_factory_->CreateVideoTrack(kVideoLabel,
+                    video_track_sources_.back()));
 
-        rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-                peer_connection_factory_->CreateVideoTrack(
-                    kVideoLabel, peer_connection_factory_->CreateVideoSource(
-                        std::move(video_device), nullptr)));
         auto result_or_error
-            = peer_connection_->AddTrack(video_track, {kStreamId});
+            = peer_connection_->AddTrack(video_track_, {kStreamId});
         if (!result_or_error.ok()) {
             RTC_LOG(LS_ERROR) << "Failed to add video track to PeerConnection: "
                 << result_or_error.error().message();

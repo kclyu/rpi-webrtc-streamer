@@ -22,7 +22,7 @@
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 
 static const char* kDirectoryDelimiter="/";
 

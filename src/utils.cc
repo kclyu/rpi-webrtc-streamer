@@ -28,10 +28,10 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
-#include "rtc_base/stringutils.h"
-#include "rtc_base/stringencode.h"
-#include "rtc_base/filerotatingstream.h"
-#include "rtc_base/logsinks.h"
+#include "rtc_base/string_utils.h"
+#include "rtc_base/string_encode.h"
+#include "rtc_base/file_rotating_stream.h"
+#include "rtc_base/log_sinks.h"
 
 #include "utils.h"
 

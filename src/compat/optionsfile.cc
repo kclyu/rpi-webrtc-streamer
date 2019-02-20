@@ -16,7 +16,7 @@
 
 #include "rtc_base/stream.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 
 const static size_t kConfigLineMinLength=4;
 

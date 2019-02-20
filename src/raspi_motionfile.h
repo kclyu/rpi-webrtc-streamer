@@ -35,9 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "rtc_base/platform_thread.h"
 
-#include "rtc_base/file.h"
-#include "rtc_base/bufferqueue.h"
+#include "rtc_base/buffer_queue.h"
 #include "rtc_base/event.h"
+#include "compat/file.h"
 
 class RaspiMotionFile : public rtc::Event {
 public:

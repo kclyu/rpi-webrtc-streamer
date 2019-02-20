@@ -26,9 +26,10 @@
 #include <set>
 #include <string>
 
-#include "api/mediastreaminterface.h"
-#include "api/mediaconstraintsinterface.h"
-#include "api/peerconnectioninterface.h"
+#include "api/media_stream_interface.h"
+#include "api/peer_connection_interface.h"
+#include "pc/video_track_source.h"
+
 #include "streamer_observer.h"
 #include "config_streamer.h"
 
@@ -105,6 +106,9 @@ private:
     std::unique_ptr<rtc::Thread> worker_thread_;
     std::unique_ptr<rtc::Thread> network_thread_;
     std::unique_ptr<rtc::Thread> signaling_thread_;
+
+    std::vector<rtc::scoped_refptr<webrtc::VideoTrackSource>>
+        video_track_sources_;
 
     SocketServerObserver* session_;
     StreamerConfig *streamer_config_;

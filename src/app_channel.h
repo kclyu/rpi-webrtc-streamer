@@ -33,9 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <deque>
 
 
-#include "api/mediastreaminterface.h"
-#include "api/mediaconstraintsinterface.h"
-#include "api/peerconnectioninterface.h"
+#include "api/media_stream_interface.h"
+#include "api/peer_connection_interface.h"
 
 #include "websocket_server.h"
 #include "app_ws_client.h"

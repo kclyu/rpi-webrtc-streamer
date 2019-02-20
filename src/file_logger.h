@@ -22,7 +22,7 @@
 #include <assert.h>
 #include <string>
 
-#include "rtc_base/logsinks.h"
+#include "rtc_base/log_sinks.h"
 
 namespace utils {
 

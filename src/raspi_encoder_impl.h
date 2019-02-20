@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "system_wrappers/include/clock.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/messagequeue.h"
+#include "rtc_base/message_queue.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 
 #include "mmal_wrapper.h"

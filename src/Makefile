@@ -6,9 +6,9 @@ include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk
 
 #
-# fakevideocapturer.cc has been added and we need to compile this file
+# including compat as source directory
 #
-VPATH = .:$(WEBRTC_ROOT)/src/media/base:./compat
+VPATH = .:./compat
 
 RWS_INSTALL_DIR=\"/opt/rws\"
 RWS_VERSION=\"$(shell git describe --abbrev=32 --dirty --always --tags)\"
@@ -27,10 +27,7 @@ INCLUDES += $(LWS_INCLUDES) $(WEBRTC_DEFINES) $(WEBRTC_FLAGS_INCLUDES) $(H264BIT
 INCLUDES += -I$(WEBRTC_ROOT)/src/third_party/abseil-cpp/
 
 # for Raspbian Strech
-#BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS)
-# for Raspbian jessie
-BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS) /opt/rpi_rootfs/tools/arm-linux-gnueabihf/arm-linux-gnueabihf/libc/lib/libstdc++.a
-
+BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS)
 SYSLIBS += $(LWS_SYS_LIBS) $(WEBRTC_SYSLIBS)
 LDFLAGS += $(WEBRTC_LDFLAGS) $(MMAL_LDFLAGS)
 
@@ -66,9 +63,10 @@ SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc 
 	mmal_wrapper.cc utils.cc streamer_observer.cc streamer.cc main.cc \
 	raspi_quality_config.cc file_logger.cc app_ws_client.cc \
 	raspi_motion.cc raspi_motionvector.cc raspi_motionblob.cc raspi_motionfile.cc \
-	config_media.cc  config_streamer.cc  config_motion.cc fakevideocapturer_notaskqueue.cc \
+	config_media.cc  config_streamer.cc  config_motion.cc \
 	utils_pc_config.cc utils_pc_strings.cc \
-	fake_frame_source.cc optionsfile.cc directory_iterator.cc
+	optionsfile.cc directory_iterator.cc file.cc file_posix.cc
+
 
 SOURCES.C = websocket_server_util.c mmal_video.c mmal_video_reset.c mmal_util.c raspicli.c \
 	raspicamcontrol.c raspipreview.c

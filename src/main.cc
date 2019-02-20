@@ -25,12 +25,12 @@
 #include <vector>
 
 #include "rtc_base/network.h"
-#include "rtc_base/nethelpers.h"
-#include "rtc_base/networkmonitor.h"
-#include "rtc_base/physicalsocketserver.h"
-#include "rtc_base/signalthread.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/network_monitor.h"
+#include "rtc_base/physical_socket_server.h"
+#include "rtc_base/signal_thread.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/ssladapter.h"
+#include "rtc_base/ssl_adapter.h"
 #if defined(WEBRTC_POSIX)
 #include <sys/types.h>
 #include <net/if.h>

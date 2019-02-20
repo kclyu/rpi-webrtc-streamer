@@ -32,12 +32,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <deque>
 
-#include "api/mediastreaminterface.h"
-#include "api/mediaconstraintsinterface.h"
-#include "api/peerconnectioninterface.h"
+#include "api/media_stream_interface.h"
+#include "api/peer_connection_interface.h"
 #include "rtc_base/strings/json.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/messagehandler.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/message_handler.h"
 
 #include "compat/optionsfile.h"
 

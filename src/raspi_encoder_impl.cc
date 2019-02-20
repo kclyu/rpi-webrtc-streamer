@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/logging.h"
 #include "absl/strings/match.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "system_wrappers/include/metrics.h"
 
 #include "common_types.h"
@@ -411,7 +411,8 @@ bool RaspiEncoderImpl::DrainProcess() {
         encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
         encoded_image_._encodedWidth = mmal_encoder_->GetWidth();
         encoded_image_._encodedHeight = mmal_encoder_->GetHeight();
-        encoded_image_.SetColorSpace(&mmal_color_space);
+        // TODO m73
+        // encoded_image_.SetColorSpace(&mmal_color_space);
 
         int64_t capture_ntp_time_ms;
         int64_t current_time = clock_->TimeInMilliseconds();

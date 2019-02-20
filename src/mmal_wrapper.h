@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define __MMAL_WRAPPER_H__
 
 #include "system_wrappers/include/clock.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/event.h"
 #include "config_media.h"

@@ -161,7 +161,7 @@ void default_status(RASPIVID_STATE *state)
     state->inlineMotionVectors = 0;  // Inline Motion Vectors parameters
     state->cameraNum = 0;
     state->sensor_mode = 0;
-    state->addSPSTiming = MMAL_FALSE;
+    state->addSPSTiming = MMAL_TRUE;    // enable as default value
     state->slices = 1;
 
     // Setup preview window defaults
