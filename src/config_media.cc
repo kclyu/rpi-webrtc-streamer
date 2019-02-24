@@ -308,12 +308,12 @@ bool ConfigMedia::GetFixedVideoResolution(int &width, int &height){
 // Getter Method definition
 //
 
-#define _CR(name, config_var, config_type, default_value) \
+#define _CR(name, config_var, config_remote_access, config_type, default_value) \
     config_type ConfigMedia::Get ## name(void) { \
         rtc::CritScope cs(&crit_sect_);  \
         return config_var; }
 // ignore CR_L type
-#define _CR_L(name, config_var, config_type, default_value)
+#define _CR_L(name, config_var, config_remote_access, config_type, default_value)
 #define _CR_B _CR
 #define _CR_I _CR
 
@@ -331,7 +331,7 @@ MEDIA_CONFIG_ROW_LIST
 //
 // Setter Method definition
 //
-#define _CR(name, config_var, config_type, default_value) \
+#define _CR(name, config_var, config_remote_access, config_type, default_value) \
     bool ConfigMedia::Set ## name(config_type value) { \
         rtc::CritScope cs(&crit_sect_);  \
         if( validate_value__ ## config_var (value,default_value) == false ) \
@@ -341,7 +341,7 @@ MEDIA_CONFIG_ROW_LIST
             isloaded__ ## config_var = true; \
         return true; }
 #define _CR_L _CR
-#define _CR_B(name, config_var, config_type, default_value) \
+#define _CR_B(name, config_var, config_remote_access, config_type, default_value) \
     bool ConfigMedia::Set ## name(config_type value) { \
         rtc::CritScope cs(&crit_sect_);  \
         config_var = value; \
@@ -367,11 +367,11 @@ MEDIA_CONFIG_ROW_LIST
 //
 ////////////////////////////////////////////////////////////////////////////////
 void ConfigMedia::LoadConfigWithDefault( void ) {
-#define _CR(name, config_var, config_type, default_value) \
+#define _CR(name, config_var, config_remote_access, config_type, default_value) \
     config_var = default_value; \
     isloaded__ ## config_var = false;
 
-#define _CR_L(name, config_var, config_type, default_value) \
+#define _CR_L(name, config_var, config_remote_access, config_type, default_value) \
     config_var = default_value; \
     isloaded__ ## config_var = false;  \
     validate_value__ ## config_var (default_value,default_value);
@@ -401,7 +401,7 @@ bool ConfigMedia::Load(const std::string config_filename) {
     config_file_loaded_ = true;
     config_file_ = config_filename;
 
-#define _CR(name, config_var, config_type, default_value) \
+#define _CR(name, config_var, config_remote_access, config_type, default_value) \
     { \
     std::string config_value; \
     if( media_optionfile_->GetStringValue(#config_var, &config_value ) == true){ \
@@ -418,7 +418,7 @@ bool ConfigMedia::Load(const std::string config_filename) {
 
 #define _CR_L _CR
 
-#define _CR_B(name, config_var, config_type, default_value) \
+#define _CR_B(name, config_var, config_remote_access, config_type, default_value) \
     { \
     std::string config_value; \
     if( media_optionfile_->GetStringValue(#config_var, &config_value ) == true){ \
@@ -431,7 +431,7 @@ bool ConfigMedia::Load(const std::string config_filename) {
     }; \
     }
 
-#define _CR_I(name, config_var, config_type, default_value) \
+#define _CR_I(name, config_var, config_remote_access, config_type, default_value) \
     { \
     int config_value; \
     if( media_optionfile_->GetIntValue(#config_var, &config_value ) == true){ \
@@ -461,7 +461,7 @@ MEDIA_CONFIG_ROW_LIST
 
 bool ConfigMedia::Save( void ) {
 
-#define _CR(name, config_var, config_type, default_value) \
+#define _CR(name, config_var, config_remote_access, config_type, default_value) \
     { \
     if( isloaded__ ## config_var == true ) { \
         if(media_optionfile_->SetStringValue(#config_var, config_var ) == true){ \
@@ -473,7 +473,7 @@ bool ConfigMedia::Save( void ) {
 
 #define _CR_L _CR
 
-#define _CR_B(name, config_var, config_type, default_value) \
+#define _CR_B(name, config_var, config_remote_access, config_type, default_value) \
     { \
     if( isloaded__ ## config_var == true ) { \
         if( config_var == true ) { \
@@ -491,7 +491,7 @@ bool ConfigMedia::Save( void ) {
     }; \
     }
 
-#define _CR_I(name, config_var, config_type, default_value) \
+#define _CR_I(name, config_var, config_remote_access, config_type, default_value) \
     { \
     if( isloaded__ ## config_var == true ) { \
         if(media_optionfile_->SetIntValue(#config_var, config_var ) == true){ \
@@ -524,7 +524,7 @@ void ConfigMedia::DumpConfig( void ) {
         << " Filename : " << config_file_;
     RTC_LOG(INFO) << "Config Rows : ";
 
-#define _CR(name, config_var, config_type, default_value) \
+#define _CR(name, config_var, config_remote_access, config_type, default_value) \
     { \
     const char *loaded_str = (isloaded__ ##config_var)?"*":" ";  \
     RTC_LOG(INFO) << "Config: " << loaded_str << "\"" << #config_var \
@@ -533,7 +533,7 @@ void ConfigMedia::DumpConfig( void ) {
         << ", default: " << default_value << ")"; \
     }
 
-#define _CR_L(name, config_var, config_type, default_value) \
+#define _CR_L(name, config_var, config_remote_access, config_type, default_value) \
     { \
     char res_buffer[64]; \
     std::string dump_list; \
@@ -555,7 +555,7 @@ void ConfigMedia::DumpConfig( void ) {
         << "\" list: " << dump_list; \
     }
 
-#define _CR_B(name, config_var, config_type, default_value) \
+#define _CR_B(name, config_var, config_remote_access, config_type, default_value) \
     { \
     const char *loaded_str = (isloaded__ ##config_var)?"*":" ";  \
     const char *bool_str = (config_var)?"true":"false";  \
@@ -587,13 +587,14 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
 
     if(json_reader.parse(config_message, json_value) == true){
 
-#define _CR(name, config_var, config_type, default_value) \
+#define _CR(name, config_var, config_remote_access, config_type, default_value) \
     {  \
         config_type config_value; \
         char err_msg[256]; \
         Json::Value object;  \
         std::string error_value; \
-        if( rtc::GetValueFromJsonObject(json_value, #config_var, &object) == true ){ \
+        if( config_remote_access == true && \
+                rtc::GetValueFromJsonObject(json_value, #config_var, &object) == true ){ \
             if( rtc::GetStringFromJson(object, &config_value) == true ) { \
                 if( Set ## name(config_value) == false ) { \
                     rtc::GetStringFromJson(object, &error_value ); \
@@ -625,13 +626,14 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
 #define _CR_L _CR
 
 
-#define _CR_B(name, config_var, config_type, default_value) \
+#define _CR_B(name, config_var, config_remote_access, config_type, default_value) \
     {  \
         config_type config_value; \
         char err_msg[256]; \
         Json::Value object;  \
         std::string error_value; \
-        if( rtc::GetValueFromJsonObject(json_value, #config_var, &object) == true ){ \
+        if( config_remote_access == true && \
+                rtc::GetValueFromJsonObject(json_value, #config_var, &object) == true ){ \
             if( rtc::GetBoolFromJson(object, &config_value) == true ) { \
                 if( Set ## name(config_value) == false ) { \
                     rtc::GetStringFromJson(object, &error_value ); \
@@ -660,13 +662,14 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
         }   \
     }
 
-#define _CR_I(name, config_var, config_type, default_value) \
+#define _CR_I(name, config_var, config_remote_access, config_type, default_value) \
     {  \
         config_type config_value; \
         char err_msg[256]; \
         Json::Value object;  \
         std::string error_value; \
-        if( rtc::GetValueFromJsonObject(json_value, #config_var, &object) == true ){ \
+        if( config_remote_access == true && \
+                rtc::GetValueFromJsonObject(json_value, #config_var, &object) == true ){ \
             if( rtc::GetIntFromJson(object, &config_value) == true ) { \
                 if( Set ## name(config_value) == false ) { \
                     rtc::GetStringFromJson(object, &error_value ); \
@@ -725,8 +728,10 @@ bool ConfigMedia::ConfigToJson(std::string &config_message) {
     Json::StyledWriter json_writer;
     Json::Value json_config;
 
-#define _CR(name, config_var, config_type, default_value) \
-    json_config[#config_var] = config_var;
+    // generate json key when the remote config access is true
+#define _CR(name, config_var, config_remote_access, config_type, default_value) \
+    if( config_remote_access == true ) json_config[#config_var] = config_var;
+
 #define _CR_L _CR
 #define _CR_B _CR
 #define _CR_I _CR

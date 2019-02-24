@@ -1,34 +1,54 @@
 
+// Configuration Record Macro
+//
+// CR   : String
+// CR_I : Integer Type
+// CR_B : Boolean Type
+// CR_L : List Type ( string but need speical list parsing function )
+//
+// Configuration Rearod Argument
+//
+// Argument Index:
+//   0 :  confiugration item name
+//   1 :  string to be used as config name in config file
+//   2 :  whether the json message can be modified from remote.
+//   3 :  define cpp type of configuration value
+//   4 :  default value
+//
+
 #define MEDIA_CONFIG_ROW_LIST \
-    _CR_I( MaxBitrate, max_bitrate, int, 3500000 ) \
-    _CR_B( Resolution4_3, resolution_4_3_enable, bool, true ) \
-    _CR_I( VideoRotation, video_rotation, int, 0) \
-    _CR_B( VideoVFlip, video_vflip, bool, false ) \
-    _CR_B( VideoHFlip, video_hflip, bool, false ) \
-    _CR_L( VideoResolutionList43, video_resolution_list_4_3, std::string, "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232" ) \
-    _CR_L( VideoResolutionList169, video_resolution_list_16_9, std::string, "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080" ) \
-    _CR_B( VideoDynamicResolution, use_dynamic_video_resolution, bool, true ) \
-    _CR_B( VideoDynamicFps, use_dynamic_video_fps, bool, true)    \
-    _CR( FixedVideoResolution, fixed_video_resolution, std::string, "640x480") \
-    _CR_I( FixedVideoFps, fixed_video_fps, int, 30) \
-    _CR_B( AudioProcessing, audio_processing_enable, bool, false ) \
-    _CR_B( AudioEchoCancel, audio_echo_cancel, bool, true ) \
-    _CR_B( AudioGainControl, audio_gain_control, bool, true ) \
-    _CR_B( AudioHighPassFilter, audio_highpass_filter, bool, true ) \
-    _CR_B( AudioNoiseSuppression, audio_noise_suppression, bool, true ) \
-    _CR_B( AudioLevelControl,  audio_level_control, bool, true ) \
-    _CR_I( VideoSharpness, video_sharpness, int, 0 ) \
-    _CR_I( VideoContrast, video_contrast, int, 0 ) \
-    _CR_I( VideoBrightness, video_brightness, int, 50 ) \
-    _CR_I( VideoSaturation, video_saturation, int, 0 ) \
-    _CR_I( VideoEV, video_ev, int, 0 ) \
-    _CR( VideoExposureMode, video_exposure_mode, std::string, "auto" ) \
-    _CR( VideoFlickerMode, video_flicker_mode, std::string, "auto" ) \
-    _CR( VideoAwbMode, video_awb_mode, std::string, "auto" ) \
-    _CR( VideoDrcMode, video_drc_mode, std::string, "off" ) \
-    _CR_B( VideoStabilisation,  video_stabilisation, bool, false ) \
-    _CR_B( VideoEnableAnnotateText, video_enable_annotate_text, bool, false ) \
-    _CR( VideoAnnotateText, video_annotate_text, std::string,"" )  \
-    _CR_I( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, int, 3 )
+    _CR_I( MaxBitrate,              max_bitrate,                false, int, 3500000 ) \
+    _CR_B( Resolution4_3,           resolution_4_3_enable,      false, bool, true ) \
+    _CR_I( VideoRotation,           video_rotation,             true, int, 0) \
+    _CR_B( VideoVFlip,              video_vflip,                true, bool, false ) \
+    _CR_B( VideoHFlip,              video_hflip,                true, bool, false ) \
+    _CR_L( VideoResolutionList43,   video_resolution_list_4_3,  false, std::string, \
+            "320x240,400x300,512x384,640x480,1024x768,1152x864,1296x972,1640x1232" ) \
+    _CR_L( VideoResolutionList169,  video_resolution_list_16_9, false, std::string, \
+            "384x216,512x288,640x360,768x432,896x504,1024x576,1152x648,1280x720,1408x864,1920x1080" ) \
+    _CR_B( VideoDynamicResolution,  use_dynamic_video_resolution, false, bool, true ) \
+    _CR_B( VideoDynamicFps,         use_dynamic_video_fps,      false, bool, true)    \
+    _CR( FixedVideoResolution,      fixed_video_resolution,     false, std::string, \
+            "640x480") \
+    _CR_I( FixedVideoFps,           fixed_video_fps,            false, int, 30) \
+    _CR_B( AudioProcessing,         audio_processing_enable,    true, bool, false ) \
+    _CR_B( AudioEchoCancel,         audio_echo_cancel,          true, bool, true ) \
+    _CR_B( AudioGainControl,        audio_gain_control,         true, bool, true ) \
+    _CR_B( AudioHighPassFilter,     audio_highpass_filter,      true, bool, true ) \
+    _CR_B( AudioNoiseSuppression,   audio_noise_suppression,    true, bool, true ) \
+    _CR_B( AudioLevelControl,       audio_level_control,        true, bool, true ) \
+    _CR_I( VideoSharpness,          video_sharpness,            true, int, 0 ) \
+    _CR_I( VideoContrast,           video_contrast,             true, int, 0 ) \
+    _CR_I( VideoBrightness,         video_brightness,           true, int, 50 ) \
+    _CR_I( VideoSaturation,         video_saturation,           true, int, 0 ) \
+    _CR_I( VideoEV,                 video_ev,                   true, int, 0 ) \
+    _CR( VideoExposureMode,         video_exposure_mode,        true, std::string, "auto" ) \
+    _CR( VideoFlickerMode,          video_flicker_mode,         true, std::string, "auto" ) \
+    _CR( VideoAwbMode,              video_awb_mode,             true, std::string, "auto" ) \
+    _CR( VideoDrcMode,              video_drc_mode,             true, std::string, "off" ) \
+    _CR_B( VideoStabilisation,      video_stabilisation,        false, bool, false ) \
+    _CR_B( VideoEnableAnnotateText, video_enable_annotate_text, true, bool, false ) \
+    _CR( VideoAnnotateText,         video_annotate_text,        true, std::string,"" )  \
+    _CR_I( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, true, int, 3 )
 
 

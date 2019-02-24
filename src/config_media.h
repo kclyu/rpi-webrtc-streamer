@@ -84,9 +84,9 @@ public:
 
     // define expasion macros for Getter
     //      type GetName();
-    #define _CR(name, config_var, config_type, config_default ) \
+    #define _CR(name, config_var, config_remote_access, config_type, config_default ) \
         config_type Get ## name(void);
-    #define _CR_L(name, config_var, config_type, config_default )
+    #define _CR_L(name, config_var, config_remote_access, config_type, config_default )
     #define _CR_B _CR
     #define _CR_I _CR
 
@@ -104,7 +104,7 @@ public:
     // bool type:
     //      bool SetName(bool);
     //      bool validate_value__config_var(bool,bool)
-    #define _CR(name, config_var, config_type, config_default ) \
+    #define _CR(name, config_var, config_remote_access, config_type, config_default ) \
         config_type config_var; \
         bool isloaded__ ## config_var; \
         bool Set ## name(config_type value); \
