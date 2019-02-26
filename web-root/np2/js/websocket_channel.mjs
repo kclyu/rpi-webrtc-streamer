@@ -41,7 +41,7 @@ constructor (ws_path) {
     // window.onbeforeunload = this.doSignalingDisconnnect.bind(this);
 
     if( !window.WebSocket ){
-        return new Error('WebSocket is not supported in this platform');
+        return new Error('WebSocket is not supported on this platform');
     }
 
     const websocket_url_path = this.ws_path || Constants.URL_PATH;

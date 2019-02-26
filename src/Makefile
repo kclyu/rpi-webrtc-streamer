@@ -49,6 +49,10 @@ CCFLAGS += -D__RWS_VERSION__=$(RWS_VERSION) \
 #$(info LDFLAGS is "$(LDFLAGS)")
 #$(info BUILD_LIBS is "$(BUILD_LIBS)")
 
+#
+# Raspberry PI testing host
+RPI_HOST_URL=pi@10.0.0.11:~/Workspace/client
+
 
 # TARGET
 #
@@ -95,5 +99,9 @@ clean:
 	rm -f *.o  *.o.d $(TARGET)
 
 rcp: $(TARGET)
-	rsync -v -u -r --stats $(TARGET) *.cc *.h compat pi@10.0.0.11:~/Workspace/client
+	rsync -v -u -r --stats $(TARGET) *.cc *.h compat $(RPI_HOST_URL)
+
+rcp_full: $(TARGET)
+	rsync -v -u -r --stats $(TARGET) ../LICENSE ../tools ../etc ../etc/template ../web-root ../scripts $(RPI_HOST_URL)
+
 

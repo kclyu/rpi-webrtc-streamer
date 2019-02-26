@@ -46,6 +46,7 @@ constructor(pc_options) {
     this.pc_.oniceconnectionstatechange =
         this.onIceConnectionStateChanged_.bind(this);
     this.pc_.onnegotiationeeded = () => console.log('Negotiation needed');
+
     console.log('Created RTCPeerConnnection with config: ' + JSON.stringify(this.pc_options_));
     window.dispatchEvent(new CustomEvent('pccreated', {
         detail: {
@@ -61,6 +62,22 @@ constructor(pc_options) {
     // the PeerConnectionClient object.
     this.sendSignalingMessage = null;
     this.onRemoteVideoAdded = null;
+    this.onPeerConnectionError = null;
+}
+
+async getUserMedia() {
+    console.log('Requesting local stream');
+    try {
+        this.localStreams_ = await navigator.mediaDevices.getUserMedia({audio: true, video: false});
+        console.log('Received local stream', this.localStreams_);
+        this.localStreams_.getTracks().forEach( track => {
+                    this.pc_.addTrack( track, this.localStreams_);
+                });
+        console.log('Adding Local Stream to peer connection');
+    } catch (error) {
+        console.log(`getUserMedia() error: ${error}`);
+        throw new Error(`navigator.MediaDevices.getUserMedia error: ${error.message}, ${error.name}`);
+    }
 }
 
 onIceCandidate_ (event) {
@@ -120,6 +137,11 @@ getPeerConnectionStats (callback) {
 }
 
 close() {
+    if ( this.localStreams_) {
+        this.localStreams_.getTracks().forEach(track => track.stop());
+        this.localStreams_ = null;
+    }
+
     if (!this.pc_) {
         return;
     }

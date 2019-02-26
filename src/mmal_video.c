@@ -136,8 +136,10 @@ void default_status(RASPIVID_STATE *state)
     state->encoding = MMAL_ENCODING_H264;
     state->bitrate = 17000000; 			// This is a decent default bitrate for 1080p
     state->framerate = VIDEO_FRAME_RATE_NUM;
-    // RWS OLD state->intraperiod = VIDEO_FRAME_RATE_NUM * VIDEO_INTRAFRAME_PERIOD;
-    state->intraperiod = -1;    // Not Set
+    // RWS OLD
+    // state->intraperiod = -1;    // RaspiVid Not Set
+    state->intraperiod = VIDEO_FRAME_RATE_NUM * VIDEO_INTRAFRAME_PERIOD;
+
     state->quantisationParameter = 0;   // Quantisation Disabled
     state->immutableInput = 1;
     // RWS OLD state->profile = MMAL_VIDEO_PROFILE_H264_MAIN;

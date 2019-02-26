@@ -147,10 +147,19 @@ connect() {
                 this.websocket_channel_.send.bind(this.websocket_channel_);
             this.peerconnection_client_.onRemoteVideoAdded =
                 this.hookVideoElement.bind(this);
+            this.peerconnection_client_.onPeerConnectionError =
+                this.handlePeerConnectionError.bind(this);
 
             // disable connect button
             this.toggleButton(ButtonState.disableConnect);
         });
+    })
+    .then(() => {
+        console.log('Location Protocol: ' + location.protocol);
+        if( location.protocol === "https:") {
+            console.log('Trying to get UserMedia');
+            return this.peerconnection_client_.getUserMedia();
+        }
     })
     .then(() => {
         return this.sendRegister().then(() => {
@@ -217,6 +226,10 @@ hookVideoElement (streams) {
         console.log('PeerConnection received remote stream');
     }
 
+}
+
+handlePeerConnectionError( error_msg ) {
+    console.log(`PeerConnction Error  : ${error_msg}`);
 }
 
 handleVideoZoomReset (event) {
