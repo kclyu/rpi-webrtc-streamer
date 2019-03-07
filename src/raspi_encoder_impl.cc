@@ -369,7 +369,7 @@ bool RaspiEncoderImpl::DrainProcess() {
     // and the Motion Vector(CODECSIDEINFO) is not transmitted.
     //
     // TODO: if encoded_size is zero, we need to reset encoder itself
-    if (encoded_image_callback_ && buf && buf->length > 0 &&
+    if ( start_encoding_ && encoded_image_callback_ && buf && buf->length > 0 &&
             !( buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) ) {
         CodecSpecificInfo codec_specific;
         uint32_t fragment_index;
@@ -405,8 +405,8 @@ bool RaspiEncoderImpl::DrainProcess() {
             return true;
         };
 
-        encoded_image_.set_size(buf->length);
         encoded_image_.set_buffer(buf->data, FRAME_BUFFER_SIZE);
+        encoded_image_.set_size(buf->length);
         encoded_image_._completeFrame = true;
         encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
         encoded_image_._encodedWidth = mmal_encoder_->GetWidth();

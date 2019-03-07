@@ -155,12 +155,17 @@ bool Streamer::InitializePeerConnection() {
 
     //  Audio Device Module
     adm_ = nullptr;
+    // TODO: Tempoary Disable audio_enable config parameter.
+    // Current WebRTC native stack have problem with setting callback of
+    // dummy audio
+    /****
     if(streamer_config_->GetAudioEnable() == false ) {
         //  The default value of AudioEnable is false. To use audio,
         //  you must set audio_enable to true in webrtc_streamer.conf.
         adm_ = webrtc::AudioDeviceModule::Create(
                 webrtc::AudioDeviceModule::AudioLayer::kDummyAudio);
     };
+    *****/
 
     peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
             network_thread_.get(), worker_thread_.get(),
@@ -227,7 +232,7 @@ bool Streamer::CreatePeerConnection() {
     streamer_config_->GetIceBundlePolicy(config);
     streamer_config_->GetIceRtcpMuxPolicy(config);
 
-    streamer_config_->GetIceServers(config);
+    streamer_config_->GetIceServers(config, true /* internal_config */ );
     utils::PrintIceServers(config);
 
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(

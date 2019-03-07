@@ -80,6 +80,7 @@ static const char kConfigIceBundlePolicy[] = "bundle_policy";
 static const char kConfigIceRtcpMuxPolicy[] = "rtcp_mux_policy";
 
 static const char kConfigIceServerUrls[] = "ice_server_urls";
+static const char kConfigIceServerInternalUrls[] = "ice_server_internal_urls";
 static const char kConfigIceServerUsername[] = "ice_server_username";
 static const char kConfigIceServerPassword[] = "ice_server_password";
 static const char kConfigIceServerHostname[] = "ice_server_hostname";
@@ -257,7 +258,8 @@ void StreamerConfig::GetIceRtcpMuxPolicy(
 
 // IceServers
 bool StreamerConfig::GetIceServers(
-        webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config){
+        webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config,
+        bool internal_config ){
     RTC_DCHECK( config_loaded_ == true );
     char config_key_buffer[512];
     std::string config_value;
@@ -273,8 +275,16 @@ bool StreamerConfig::GetIceServers(
         LOAD_CONF_KEY(kConfigIceServerUrls, config_index);
         if( gen_config_exist ) {
             webrtc::PeerConnectionInterface::IceServer ice_server;
+
             // ice servers
             ice_server.urls = utils::ConfigToIceUrls(config_value);
+            LOAD_CONF_KEY(kConfigIceServerInternalUrls, config_index);
+            if( internal_config ) {
+                if( gen_config_exist ) {
+                    // replace ice server url with internal config url
+                    ice_server.urls = utils::ConfigToIceUrls(config_value);
+                }
+            }
 
             // username
             LOAD_CONF_KEY(kConfigIceServerUsername, config_index);
@@ -318,7 +328,7 @@ bool StreamerConfig::GetRTCConfig(std::string& json_rtcconfig)  {
     GetIceTransportsType(rtc_config);
     GetIceRtcpMuxPolicy(rtc_config);
     GetIceBundlePolicy(rtc_config);
-    if( GetIceServers(rtc_config) == false ) {
+    if( GetIceServers(rtc_config, false /* internal_config */ ) == false ) {
         RTC_LOG(LS_ERROR) << "Internal Errror, failed to load ICE servers";
         return false;
     };
@@ -335,7 +345,7 @@ bool StreamerConfig::GetRTCConfig(std::string& json_rtcconfig)  {
             if( !server.username.empty())
                 ice_server["username"] = server.username;
             if( !server.password.empty())
-                ice_server["credentials"] = server.password;
+                ice_server["credential"] = server.password;
             jsonPCConfig["iceServers"].append(ice_server);
         }
     }

@@ -66,7 +66,8 @@ public:
     void GetIceRtcpMuxPolicy(
             webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
     bool GetIceServers(
-            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config,
+            bool internal_config );
     bool GetRTCConfig(std::string& json_rtcconfig);
 
     bool GetMediaConfigFilePath(std::string& conf);

@@ -53,7 +53,6 @@ CCFLAGS += -D__RWS_VERSION__=$(RWS_VERSION) \
 # Raspberry PI testing host
 RPI_HOST_URL=pi@10.0.0.11:~/Workspace/client
 
-
 # TARGET
 #
 TARGET = ../webrtc-streamer
@@ -91,7 +90,6 @@ all: $(TARGET)
 .cc.o : $(OBJECTS.CC)
 	$(CXX)  -I. $(CFLAGS) $(CCFLAGS) $(MMAL_CFLAGS) $(INCLUDES)  -c $< -o $@
 
-
 $(TARGET): $(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $(TARGET) -Wl,--start-group $(OBJECTS) $(BUILD_LIBS) -Wl,--end-group $(SYSLIBS)
 
@@ -104,4 +102,6 @@ rcp: $(TARGET)
 rcp_full: $(TARGET)
 	rsync -v -u -r --stats $(TARGET) ../LICENSE ../tools ../etc ../etc/template ../web-root ../scripts $(RPI_HOST_URL)
 
+web: $(TARGET)
+	rsync -v -u -r --stats ../web-root  $(RPI_HOST_URL)
 
