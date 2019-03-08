@@ -3,9 +3,18 @@
 #   is_debug = false
 # See "gn args <out_dir> --list" for available build arguments.
 
+#
+# The following two flags are used for debugging.
+#
+#is_official_build=false
+#is_debug=true
+
+# For package building,  we need to chage is_official_build to true and is_debug to false. 
+#
+is_official_build=true
+is_debug=false
+
 is_component_build=false
-is_official_build=false
-is_debug=true # enable debug
 enable_iterator_debugging=false
 
 host_toolchain="//build/toolchain/linux:arm"
@@ -30,21 +39,16 @@ arm_tune="arm1176jz-s"
 
 rtc_build_with_neon=false
 
-# SSL related config
-#rtc_build_ssl=true   # disable rtc ssl package, and force to compile OpenSSL
-#rtc_ssl_root="/opt/rpi_rootfs/usr/include/openssl"
-
 #
 #
 use_ozone=true
 is_desktop_linux=false
 
 #
-#
 use_custom_libcxx=false
 is_chrome_branded=true
 rtc_use_h264=false
-rtc_initialize_ffmpeg=false
+rtc_libvpx_build_vp9=false
 rtc_include_tests=false
 rtc_include_pulse_audio=false
 rtc_enable_protobuf=false

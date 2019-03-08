@@ -3,20 +3,15 @@
 #   is_debug = false
 # See "gn args <out_dir> --list" for available build arguments.
 
-is_component_build=false
 #is_official_build=true
 #is_debug=false # Relese Version
+is_component_build=false
+enable_iterator_debugging=false
 
 host_toolchain="//build/toolchain/linux:x64"
 target_os="linux"
 is_clang=false
 use_sysroot=false
-
-# SSL related config
-#rtc_build_ssl=true   # disable rtc ssl package, and force to compile OpenSSL
-#rtc_ssl_root="/home/kclyu/Workspace/rpi_rootfs/usr/include/openssl"
-
-
 
 #
 #
@@ -28,7 +23,7 @@ is_desktop_linux=false
 is_chrome_branded=true
 rtc_use_h264=true
 use_openh264=true
-rtc_initialize_ffmpeg=false
+rtc_libvpx_build_vp9=false  # do not build VP9
 rtc_include_tests=false
 rtc_include_pulse_audio=false
 rtc_enable_protobuf=false
