@@ -80,7 +80,7 @@ static const ColorSpace mmal_color_space( ColorSpace::PrimaryID::kSMPTE170M,
 //
 ///////////////////////////////////////////////////////////////////////////////
 RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
-    : start_encoding_(false), mmal_encoder_(nullptr), config_media_(nullptr),
+    : sending_enable_(false), mmal_encoder_(nullptr), config_media_(nullptr),
     has_reported_init_(false), has_reported_error_(false),
     encoded_image_callback_(nullptr),
     clock_(Clock::GetRealTimeClock()),
@@ -127,6 +127,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
+    codec_ = *inst;
 
     //
     // TODO: Need to implement SimulCast related functions
@@ -169,7 +170,6 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
     // clear InlineMotionVectors enable flag
     mmal_encoder_->SetInlineMotionVectors(false);
 
-
     // Settings for Quality
     // GetInitialBestMatch should be used only when initializing
     // the Encoder, and only when the use_default_resolution flag is on.
@@ -200,12 +200,15 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
         drainStarted_ = true;
     }
 
-    return WEBRTC_VIDEO_CODEC_OK;
+    SimulcastRateAllocator init_allocator(codec_);
+    VideoBitrateAllocation allocation = init_allocator.GetAllocation(
+            codec_.startBitrate * 1000, codec_.maxFramerate);
+    return SetRateAllocation(allocation, codec_.maxFramerate);
+
+    // return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int32_t RaspiEncoderImpl::Release() {
-    RTC_LOG(INFO) << "RaspiEncoder Release request: ";
-
     if (drainThread_) {
         drainStarted_ = false;
         drainThread_->Stop();
@@ -230,6 +233,21 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
         const VideoBitrateAllocation& bitrate_allocation, uint32_t framerate) {
     QualityConfig::Resolution resolution;
     uint32_t framerate_updated;
+    int target_bitrate = bitrate_allocation.get_sum_kbps();
+
+    if( target_bitrate == 0 ) {
+        // 'target_bitrate == 0' means that stop sending encoded frames
+        sending_enable_  = false;
+        RTC_LOG(INFO) << "Required bitrate is 0, Stopping encoded frame sending";
+        return WEBRTC_VIDEO_CODEC_OK;
+    }
+    if( target_bitrate > 0 ) {
+        if( sending_enable_ == false ) {
+            // changing enable flag to true
+            sending_enable_  = true;
+            RTC_LOG(INFO) << "Start to send encoded frame.";
+        }
+    }
 
     if( config_media_->GetVideoDynamicFps() == true ) {
         // using dynamic fps, so update fps when required
@@ -246,7 +264,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
 
     quality_config_.ReportFrameRate(static_cast<int>(framerate_updated) );
-    quality_config_.ReportTargetBitrate( bitrate_allocation.get_sum_kbps());
+    quality_config_.ReportTargetBitrate( target_bitrate );
     if( quality_config_.GetBestMatch( resolution) ) {
         RTC_LOG(INFO) << "Resolution Changing by Bitrate Changing "
             << "To : "  << resolution.width_ << "x" << resolution.height_;
@@ -259,7 +277,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
     }
     else
         mmal_encoder_->SetRate( static_cast<uint32_t>(framerate_updated),
-                bitrate_allocation.get_sum_kbps() );
+                target_bitrate );
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -267,6 +285,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
 int32_t RaspiEncoderImpl::Encode(
     const VideoFrame& frame, const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
+
 
     if (!IsInitialized()) {
         ReportError();
@@ -277,12 +296,6 @@ int32_t RaspiEncoderImpl::Encode(
                         << "has not been set with RegisterEncodeCompleteCallback()";
         ReportError();
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-    }
-
-    if( start_encoding_  == false )  {
-        // The Encode function is called upon a KeyFrame request.
-        // When enabled, the drain process transfers the encoded frame to the native stack.
-        start_encoding_ = true;
     }
 
     bool force_key_frame = false;
@@ -304,6 +317,7 @@ int32_t RaspiEncoderImpl::Encode(
                 > kKeyFrameAllowedInterval ){
             mmal_encoder_->SetForceNextKeyFrame();
             last_keyframe_request_ = clock_->TimeInMilliseconds();
+            RTC_LOG(INFO) << "KeyFrame requested.";
         }
     }
     // No more thing to do
@@ -354,8 +368,6 @@ bool RaspiEncoderImpl::DrainThread(void* obj) {
 }
 
 bool RaspiEncoderImpl::DrainProcess() {
-
-
     MMAL_BUFFER_HEADER_T *buf = nullptr;
 
     //  The GetEncodedFrame function will wait in block state
@@ -369,15 +381,15 @@ bool RaspiEncoderImpl::DrainProcess() {
     // and the Motion Vector(CODECSIDEINFO) is not transmitted.
     //
     // TODO: if encoded_size is zero, we need to reset encoder itself
-    if ( start_encoding_ && encoded_image_callback_ && buf && buf->length > 0 &&
+    if ( sending_enable_ && encoded_image_callback_ && buf && buf->length > 0 &&
             !( buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) ) {
         CodecSpecificInfo codec_specific;
         uint32_t fragment_index;
-        // int qp;
+        int qp;
 
         // If the native stack is not ready to receive encoded frame,
         // h.264 encoded frame will be dropped.
-        if( start_encoding_ == false ) {
+        if( sending_enable_ == false ) {
             if( buf ) mmal_encoder_->ReleaseFrame(buf);
             return true;
         }
@@ -387,12 +399,10 @@ bool RaspiEncoderImpl::DrainProcess() {
         memset( &frag_header, 0x00, sizeof(frag_header));
 
         // Parsing h264 frame
-        // currently, RWS do not use QP based quality scale of WebRTC native package
-        //
-        // h264_bitstream_parser_.ParseBitstream(buf->data, buf->length);
-        // if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
-        //    encoded_image_.qp_ = qp;
-        // };
+        h264_bitstream_parser_.ParseBitstream(buf->data, buf->length);
+        if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
+            encoded_image_.qp_ = qp;
+        };
 
         // Search the NAL unit in the stream
         const std::vector<H264::NaluIndex> nalu_indexes=
@@ -405,7 +415,10 @@ bool RaspiEncoderImpl::DrainProcess() {
             return true;
         };
 
-        encoded_image_.set_buffer(buf->data, FRAME_BUFFER_SIZE);
+        RTC_DCHECK_GT( buf->alloc_size, buf->length )
+            << "Internal Error, Frame Queue Bufer size invalid";
+
+        encoded_image_.set_buffer(buf->data, buf->alloc_size);
         encoded_image_.set_size(buf->length);
         encoded_image_._completeFrame = true;
         encoded_image_.timing_.flags = VideoSendTiming::kInvalid;

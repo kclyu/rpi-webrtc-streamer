@@ -34,6 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "system_wrappers/include/clock.h"
+#include "common_video/h264/h264_bitstream_parser.h"
+
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/message_queue.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -51,7 +53,7 @@ public:
     ~RaspiEncoderImpl() override;
 
     // number_of_cores, max_payload_size will be ignored.
-    int32_t InitEncode(const VideoCodec* codec_settings,
+    int32_t InitEncode(const VideoCodec* inst,
                        int32_t number_of_cores,
                        size_t max_payload_size) override;
     int32_t Release() override;
@@ -82,7 +84,7 @@ private:
     // Change the value to enable when the Encode function is called.
     // Only when this flag is true will actually pass the Encoded Frame
     // to the native stack.
-    bool start_encoding_;
+    bool sending_enable_;
 
     MMALEncoderWrapper *mmal_encoder_;
     // media configuration sigleton reference
@@ -99,7 +101,7 @@ private:
     EncodedImage encoded_image_;
 
     // H264 bitstream parser, used to extract QP from encoded bitstreams.
-    // webrtc::H264BitstreamParser h264_bitstream_parser_;
+    webrtc::H264BitstreamParser h264_bitstream_parser_;
 
     Clock* const clock_;
     const int64_t delta_ntp_internal_ms_;
@@ -117,6 +119,7 @@ private:
     // Quality Config
     QualityConfig quality_config_;
     int initial_delay_;
+    VideoCodec codec_;
 };
 
 }  // namespace webrtc
