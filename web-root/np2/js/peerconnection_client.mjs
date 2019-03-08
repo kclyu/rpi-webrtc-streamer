@@ -93,7 +93,8 @@ onIceCandidate_ (event) {
         };
         console.log('Sending IceCandidate : ' + JSON.stringify(message));
         if( this.sendSignalingMessage )
-            this.sendSignalingMessage( JSON.stringify(message));
+            // this.sendSignalingMessage( JSON.stringify(message));
+            this.sendSignalingMessage(message);
     } else {
         console.log('End of candidates.');
     }

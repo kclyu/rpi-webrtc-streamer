@@ -387,12 +387,40 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
     if (!type_str.empty()) {
         absl::optional<webrtc::SdpType> type_maybe =
             webrtc::SdpTypeFromString(type_str);
+        //  SdpTypeFromString will only care about kOffer/PrAnswer/kAnswer
         if (!type_maybe) {
-            RTC_LOG(LS_ERROR) << "Unknown SDP type: " << type_str;
+            // candidate message from peer
+            std::string candidate_mid;
+            int candidate_mlineindex = 0;
+            std::string candidate_message;
+
+            if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName,
+                        &candidate_mid) ||
+                    !rtc::GetIntFromJsonObject(jmessage,
+                        kCandidateSdpMlineIndexName, &candidate_mlineindex) ||
+                    !rtc::GetStringFromJsonObject(jmessage,
+                        kCandidateSdpName, &candidate_message)) {
+                RTC_LOG(LS_ERROR) << "Can't parse received message." << jmessage;
+                return;
+            }
+
+            webrtc::SdpParseError error;
+            std::unique_ptr<webrtc::IceCandidateInterface> candidate(
+                    webrtc::CreateIceCandidate(candidate_mid, candidate_mlineindex,
+                        candidate_message, &error));
+            if (!candidate.get()) {
+                RTC_LOG(WARNING) << "Can't parse received candidate message. "
+                    << "SdpParseError was: " << error.description;
+                return;
+            }
+            if (!peer_connection_->AddIceCandidate(candidate.get())) {
+                RTC_LOG(WARNING) << "Failed to apply the received candidate";
+                return;
+            }
+            RTC_LOG(INFO) << " Received candidate :" << message;
             return;
         }
         webrtc::SdpType type = *type_maybe;
-
         std::string sdp;
         if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
                                           &sdp)) {
@@ -424,35 +452,8 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         // of max bitrate between client.
         UpdateMaxBitrate();
         return;
-    } else {
-        std::string sdp_mid;
-        int sdp_mlineindex = 0;
-        std::string sdp;
-
-        if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName,
-                                          &sdp_mid) ||
-                !rtc::GetIntFromJsonObject(jmessage, kCandidateSdpMlineIndexName,
-                                           &sdp_mlineindex) ||
-                !rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName, &sdp)) {
-            RTC_LOG(WARNING) << "Can't parse received message.";
-            return;
-        }
-
-        webrtc::SdpParseError error;
-        std::unique_ptr<webrtc::IceCandidateInterface> candidate(
-                webrtc::CreateIceCandidate(sdp_mid, sdp_mlineindex, sdp, &error));
-        if (!candidate.get()) {
-            RTC_LOG(WARNING) << "Can't parse received candidate message. "
-                         << "SdpParseError was: " << error.description;
-            return;
-        }
-        if (!peer_connection_->AddIceCandidate(candidate.get())) {
-            RTC_LOG(WARNING) << "Failed to apply the received candidate";
-            return;
-        }
-        RTC_LOG(INFO) << " Received candidate :" << message;
-        return;
     }
+    RTC_LOG(LS_ERROR) <<  "Message type is unknown : " << jmessage;
 }
 
 void Streamer::OnMessageSent(int err) {
