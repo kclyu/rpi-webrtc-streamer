@@ -93,8 +93,9 @@ static SdpVideoFormat CreateH264Format(H264::Profile profile, H264::Level level)
 }
 
 static std::vector<SdpVideoFormat> SupportedH264Codecs() {
-    return {CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1),
-        CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1)};
+    return {
+        CreateH264Format(H264::kProfileBaseline, H264::kLevel4),
+        CreateH264Format(H264::kProfileMain, H264::kLevel4_1) };
 }
 
 ///////////////////////////////////////////////////////////////////////////////

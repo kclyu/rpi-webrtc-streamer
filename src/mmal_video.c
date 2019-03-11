@@ -143,8 +143,8 @@ void default_status(RASPIVID_STATE *state)
     state->quantisationParameter = 0;   // Quantisation Disabled
     state->immutableInput = 1;
     // RWS OLD state->profile = MMAL_VIDEO_PROFILE_H264_MAIN;
-    state->profile = MMAL_VIDEO_PROFILE_H264_HIGH;
-    state->level = MMAL_VIDEO_LEVEL_H264_4;
+    state->profile = MMAL_VIDEO_PROFILE_H264_MAIN;
+    state->level = MMAL_VIDEO_LEVEL_H264_41;
     state->bCapturing = 0;      // Capture start or stop
     // RaspiVid Default
     // state->bInlineHeaders = 0;

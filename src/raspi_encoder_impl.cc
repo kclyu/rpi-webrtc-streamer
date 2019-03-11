@@ -350,8 +350,9 @@ VideoEncoder::EncoderInfo RaspiEncoderImpl::GetEncoderInfo() const {
     EncoderInfo info;
     info.supports_native_handle = false;
     info.implementation_name = "RaspiEncoder";
-    info.scaling_settings =
-        VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
+    // info.scaling_settings =
+    //     VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
+    info.has_trusted_rate_controller = true;
     info.is_hardware_accelerated = true;
     info.has_internal_source = true;
     return info;
