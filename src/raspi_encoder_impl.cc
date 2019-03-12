@@ -153,7 +153,6 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
     frame_dropping_on_ = inst->H264().frameDroppingOn;
 
     // Codec_settings uses kbits/second; encoder uses bits/second.
-    quality_config_.ReportMaxBitrate(inst->maxBitrate);
     quality_config_.ReportTargetBitrate(inst->startBitrate);
 
     // Get the instance of MMAL encoder wrapper
@@ -265,12 +264,12 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
 
     quality_config_.ReportFrameRate(static_cast<int>(framerate_updated) );
     quality_config_.ReportTargetBitrate( target_bitrate );
-    if( quality_config_.GetBestMatch( resolution) ) {
+    if( quality_config_.GetBestMatch( resolution) == true ) {
         RTC_LOG(INFO) << "Resolution Changing by Bitrate Changing "
             << "To : "  << resolution.width_ << "x" << resolution.height_;
 
         if(mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution.width_,
-                    resolution.height_, framerate_updated,
+                    resolution.height_, resolution.framerate_,
                     resolution.bitrate_) == false ) {
             RTC_LOG(LS_ERROR) << "Failed to reinit MMAL encoder";
         }
@@ -476,6 +475,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         if ( result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED){
             RTC_LOG(LS_ERROR) << "Error in passng EncodedImage";
         }
+        quality_config_.ReportFrame( buf->length );
     }
 
     if( buf ) mmal_encoder_->ReleaseFrame(buf);

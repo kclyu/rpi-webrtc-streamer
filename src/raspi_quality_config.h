@@ -42,22 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config_media.h"
 
-
-enum Adaptation {
-    NO_ADAPTATION = 0,
-    ADAPTAION_UP,
-    ADAPTAION_DOWN,
-};
-
-enum AdaptationReason {
-    ADAPTAION_NONE = 0,
-    ADAPTAION_BITRATE,
-    ADAPTAION_QP,
-    ADAPTAION_PACKETLOSS,
-    ADAPTAION_RTT,
-};
-
-// TODO: Need to implement the QP/loss/rtt based Quality Control logic.
 // Currently, Only BWE-based QoS functions are implemented.
 class QualityConfig {
 public:
@@ -65,17 +49,13 @@ public:
     ~QualityConfig();
 
     struct Resolution {
-        Resolution() : width_(0),height_(0), framerate_(0), bitrate_(0),
-            adaptation_(NO_ADAPTATION), adaptation_reason_(ADAPTAION_NONE) {};
+        Resolution() : width_(0), height_(0), framerate_(0), bitrate_(0) {};
         Resolution(int width, int height) : width_(width), height_(height),
-            bitrate_(0),
-            adaptation_(NO_ADAPTATION), adaptation_reason_(ADAPTAION_NONE) {};
+            bitrate_(0) {};
         int width_;
         int height_;
         int framerate_;
         int bitrate_;
-        Adaptation adaptation_;
-        AdaptationReason adaptation_reason_;
     };
 
     struct ResolutionConfigEntry {
@@ -89,17 +69,9 @@ public:
         int min_bandwidth_;
     };
 
-    void Reset();
-    void ReportQP(int qp);
+    void ReportFrame(int frame_size);
     void ReportFrameRate(int framerate);
     void ReportTargetBitrate(int bitrate); // kbps
-    void ReportMaxBitrate(int bitrate);    // kbps
-
-    bool IsAdaptationRequired();
-
-    // Getter for Encoder Config
-    int  GetFrameRate();
-    int  GetBitrate();
 
     bool GetBestMatch(int target_bitrate, QualityConfig::Resolution& resolution);
     bool GetBestMatch(QualityConfig::Resolution& resolution);
@@ -112,16 +84,10 @@ private:
     std::list<ResolutionConfigEntry> resolution_config_;
     int target_framerate_;
     int target_bitrate_;
-    int max_bitrate_;
-    rtc::MovingAverage average_qp_;
+    rtc::MovingAverage average_mf_; /* average motion factor */
     Resolution current_res_;
-    bool use_4_3_resolution_;
     bool use_dynamic_resolution_;
     bool use_initial_resolution_;
-
-    // TODO
-    bool adaptation_up_;
-    bool adaptation_down_;
 };
 
 #endif  // RPI_QUALITY_CONFIG_
