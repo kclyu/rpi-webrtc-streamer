@@ -94,10 +94,10 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $(TARGET) -Wl,--start-group $(OBJECTS) $(BUILD_LIBS) -Wl,--end-group $(SYSLIBS)
 
 clean:
-	rm -f *.o  *.o.d $(TARGET)
+	rm -f *.o  *.o.d  *.dwo $(TARGET)
 
 rcp: $(TARGET)
-	rsync -v -u -r --stats $(TARGET) *.cc *.h compat $(RPI_HOST_URL)
+	rsync -v -u -r --stats $(TARGET) *.cc *.h *.dwo compat $(RPI_HOST_URL)
 
 rcp_full: $(TARGET)
 	rsync -v -u -r --stats $(TARGET) ../LICENSE ../tools ../etc ../etc/template ../web-root ../scripts $(RPI_HOST_URL)

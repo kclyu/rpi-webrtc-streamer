@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "system_wrappers/include/clock.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/task_queue.h"
 #include "rtc_base/event.h"
 #include "config_media.h"
 #include "mmal_video.h"

@@ -215,13 +215,13 @@ static const int kDelayTaskInterval = 100;
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-class EncoderDelayedInit::DelayInitTask : public rtc::QueuedTask {
+class EncoderDelayedInit::DelayInitTask : public webrtc::QueuedTask {
 public:
     explicit DelayInitTask(EncoderDelayedInit* encoder_delay_init_)
         : encoder_delay_init_(encoder_delay_init_) {
         RTC_LOG(LS_INFO) << "Created EncoderDelayedInit Task, Scheduling on queue...";
-        rtc::TaskQueue::Current()->PostDelayedTask(
-                std::unique_ptr<rtc::QueuedTask>(this), kDelayInitialDurationMs );
+        webrtc::TaskQueueBase::Current()->PostDelayedTask(
+                std::unique_ptr<webrtc::QueuedTask>(this), kDelayInitialDurationMs );
     }
     void Stop() {
         RTC_LOG(LS_INFO) << "Stopping DelayInitTask task.";
@@ -236,8 +236,8 @@ private:
 
         // RTC_LOG(INFO) << "EncoderDelayedInit Status " << encoder_delay_init_->status_;
         encoder_delay_init_->UpdateStatus();
-        rtc::TaskQueue::Current()->PostDelayedTask(
-                std::unique_ptr<rtc::QueuedTask>(this), kDelayTaskInterval);
+        webrtc::TaskQueueBase::Current()->PostDelayedTask(
+                std::unique_ptr<webrtc::QueuedTask>(this), kDelayTaskInterval);
         return false;  // Retain the task in order to reuse it.
     }
 
@@ -935,7 +935,7 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
         }
 
         if( state_.framerate != framerate ) {   // frame rate
-            RTC_LOG(INFO) << "MMAL frame encoding framerate changed : "  << framerate << " fps";
+            RTC_LOG(INFO) << "framerate changed : "  << framerate << " fps";
             MMAL_PARAMETER_FRAME_RATE_T param;
             param.hdr.id = MMAL_PARAMETER_FRAME_RATE;
             param.hdr.size = sizeof(param);
