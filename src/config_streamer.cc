@@ -58,6 +58,7 @@ CONFIG_DEFINE( DirectSocketPort, direct_socket_port, int, 8888 );
 CONFIG_DEFINE( DirectSocketEnable, direct_socket_enable, bool, false );
 CONFIG_DEFINE( MediaConfig, media_config, std::string, "etc/media_config.conf");
 CONFIG_DEFINE( MotionConfig, motion_config, std::string,  "etc/motion_config.conf");
+CONFIG_DEFINE( FieldTrials, fieldtrials, std::string,  "");
 
 CONFIG_DEFINE( DisableLogBuffering, disable_log_buffering, bool, true );
 CONFIG_DEFINE( LibraryDebug, libwebsocket_debug, bool, false );
@@ -67,7 +68,7 @@ CONFIG_DEFINE( VideoEnable, video_enable, bool, true );
 CONFIG_DEFINE( SrtpEnable, srtp_enable, bool, true );
 
 CONFIG_DEFINE( WebRoot, web_root, std::string, INSTALL_DIR "/web-root" );
-CONFIG_DEFINE( RWS_WS_URL,rws_ws_url, std::string, "/rws/ws" );
+CONFIG_DEFINE( RWS_WS_URL, rws_ws_url, std::string, "/rws/ws" );
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -190,6 +191,7 @@ bool StreamerConfig::GetRwsWsURL(std::string& ws_url) {
     RTC_DCHECK( config_loaded_ == true );
     DEFINE_CONFIG_LOAD_STR_WITH_RETURN(RWS_WS_URL, ws_url);
 }
+
 
 // DirectSocketEnable
 bool StreamerConfig::GetDirectSocketEnable() {
@@ -394,6 +396,12 @@ bool StreamerConfig::GetMotionConfigFilePath(std::string& conf) {
     conf = config_dir_basename_ + kDefaultMediaConfig;
     RTC_LOG(LS_ERROR) << "Using Fallback Config :" << conf;
     return false;
+}
+
+// FieldTrials string for WebRTC native code package
+bool StreamerConfig::GetFieldTrials(std::string& fieldtrials) {
+    RTC_DCHECK( config_loaded_ == true );
+    DEFINE_CONFIG_LOAD_STR_WITH_RETURN( FieldTrials, fieldtrials);
 }
 
 // Just validate the log path,

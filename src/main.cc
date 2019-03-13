@@ -17,28 +17,14 @@
  */
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <iostream>
-#include <vector>
 
-#include "rtc_base/network.h"
-#include "rtc_base/net_helpers.h"
-#include "rtc_base/network_monitor.h"
-#include "rtc_base/physical_socket_server.h"
-#include "rtc_base/signal_thread.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/ssl_adapter.h"
-#if defined(WEBRTC_POSIX)
-#include <sys/types.h>
-#include <net/if.h>
-#include "rtc_base/ifaddrs_converter.h"
-#endif  // defined(WEBRTC_POSIX)
-
-
+#include "api/scoped_refptr.h"
 #include "rtc_base/flags.h"
+#include "rtc_base/physical_socket_server.h"
+#include "rtc_base/ssl_adapter.h"
+#include "system_wrappers/include/field_trial.h"
+#include "test/field_trial.h"
 
 #include "websocket_server.h"
 #include "app_channel.h"
@@ -95,7 +81,13 @@ WEBRTC_DEFINE_string(severity, "INFO", \
 WEBRTC_DEFINE_string(log, "log", "directory for logging message");
 WEBRTC_DEFINE_bool(licenses, false, "print the LICENSE information");
 WEBRTC_DEFINE_bool(version, false, "print the Version information");
-
+WEBRTC_DEFINE_string(fieldtrials,
+    "",
+    "Field trials control experimental features. This flag specifies the field "
+    "trials in effect. E.g. running with "
+    "--fieldtrials=WebRTC-FooFeature/Enabled/ "
+    "will assign the group Enabled to field trial WebRTC-FooFeature. Multiple "
+    "trials are separated by \"/\"");
 
 //
 // Main
@@ -137,26 +129,43 @@ int main(int argc, char** argv) {
         return -1;
     };
 
-    // Getting the log directory path
-    // The priorities are as follows.
-    //      1. Use command line flag when path of command line flag exists
-    //      2. If not, use the INSTALL_DIR + log path
-    baselog_dir = FLAG_log;
-    if( streamer_config.GetLogPath(baselog_dir) == false ) {
-        std::cerr << "Failed to get log directory : "
-            << baselog_dir << "\n";
-        return -1;
-    };
+    // The command line FieldTrials string has more priority than
+    // the FieldTrials specified in the config file.
+    // If FieldTrials is not specified on the command line,
+    // use it if there is FieldTrials in the config file.
+    webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_fieldtrials);
+    if( strlen(FLAG_fieldtrials) != 0 ) {   // length 0 is default value
+        std::cerr  << "Using FieldTrials : " << FLAG_fieldtrials << "\n";
+        webrtc::field_trial::InitFieldTrialsFromString(FLAG_fieldtrials);
+    }
+    else {
+        std::string fieldtrials;
+        if( streamer_config.GetFieldTrials(fieldtrials) == true ) {
+            std::cerr  << "Using FieldTrials(config) :" << fieldtrials << "\n";
+            webrtc::field_trial::InitFieldTrialsFromString(fieldtrials.c_str());
+        }
+    }
 
     rtc::LoggingSeverity severity = utils::String2LogSeverity(FLAG_severity);
-    utils::FileLogger file_logger(baselog_dir, severity,
-            streamer_config.GetDisableLogBuffering());
     if( FLAG_verbose )  {
         // changing severity to INFO level
         severity = utils::String2LogSeverity("INFO");
         rtc::LogMessage::LogToDebug(severity);
     }
     else {
+        // Getting the log directory path
+        // The priorities are as follows.
+        //      1. Use command line flag when path of command line flag exists
+        //      2. If not, use the INSTALL_DIR + log path
+        baselog_dir = FLAG_log;
+        if( streamer_config.GetLogPath(baselog_dir) == false ) {
+            std::cerr << "Failed to get log directory : "
+                << baselog_dir << "\n";
+            return -1;
+        };
+
+        utils::FileLogger file_logger(baselog_dir, severity,
+                streamer_config.GetDisableLogBuffering());
         // file logging will be enabled only when verbose flag is disabled.
         if( !file_logger.Init() ) {
             std::cerr << "Failed to init file message logger\n" ;

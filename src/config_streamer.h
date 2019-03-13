@@ -51,6 +51,7 @@ public:
     bool GetRwsWsURL(std::string& path);
     bool GetWebSocketEnable();
     bool GetWebSocketPort(int& port);
+    bool GetFieldTrials(std::string& fieldtrials);
 
     bool GetDirectSocketEnable();
     bool GetDirectSocketPort(int& port);

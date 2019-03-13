@@ -175,7 +175,6 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
     QualityConfig::Resolution initial_res;
     quality_config_.GetInitialBestMatch( initial_res );
 
-
     RTC_LOG(INFO) << "InitEncode request: "
         << initial_res.width_ << " x " << initial_res.height_;
     if(mmal_encoder_->encoder_initdelay_.InitEncoder(initial_res.width_,
@@ -203,8 +202,6 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
     VideoBitrateAllocation allocation = init_allocator.GetAllocation(
             codec_.startBitrate * 1000, codec_.maxFramerate);
     return SetRateAllocation(allocation, codec_.maxFramerate);
-
-    // return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int32_t RaspiEncoderImpl::Release() {
