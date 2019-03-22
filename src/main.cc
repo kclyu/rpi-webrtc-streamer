@@ -39,6 +39,7 @@
 #include "utils.h"
 #include "file_logger.h"
 #include "mmal_wrapper.h"
+#include "mdns_publish.h"
 
 
 //
@@ -46,8 +47,10 @@
 class StreamingSocketServer : public rtc::PhysicalSocketServer {
 public:
     explicit StreamingSocketServer()
-        : websocket_(nullptr)  {}
-    virtual ~StreamingSocketServer() {}
+        : mdns_publish_enable_(false), websocket_(nullptr) {}
+    virtual ~StreamingSocketServer() {
+        if( mdns_publish_enable_ == true ) mdns_destroy_clientinfo();
+    }
 
     // TODO: Quit feature implementation using message queue is required.
     void SetMessageQueue(rtc::MessageQueue* queue) override {
@@ -59,11 +62,19 @@ public:
     virtual bool Wait(int cms, bool process_io) {
         if( websocket_ )
             websocket_->RunLoop(0); // Run Websocket loop once per call
+        if( mdns_publish_enable_ ) {
+            if( mdns_run_loop(0) ) {
+                RTC_LOG(LS_ERROR)  << "mDNS: Failed to run mdns publish event loop";
+                mdns_publish_enable_ = false;
+            }
+        }
         return rtc::PhysicalSocketServer::Wait(0/*cms == -1 ? 1 : cms*/,
                 process_io);
     }
+    void set_mdns_publish_enable(bool enable) { mdns_publish_enable_ = enable;}
 
 protected:
+    bool mdns_publish_enable_;
     rtc::MessageQueue* message_queue_;
     std::unique_ptr<rtc::AsyncSocket> listener_;
     LibWebSocketServer *websocket_;
@@ -224,8 +235,26 @@ int main(int argc, char** argv) {
         app_channel->AppInitialize(streamer_config);
 
         socket_server.set_websocket_server(app_channel.get());
+
+        // mDNS publish initialization
+        // mDNS only publishes the WebSocket information used by RWS.
+        int websocket_port;
+        std::string websocket_url_path;
+        std::string deviceid;
+        streamer_config.GetWebSocketPort(websocket_port);
+        streamer_config.GetRwsWsURL(websocket_url_path);
+        utils::GetHardwareDeviceId(&deviceid);
+        if( mdns_init_clientinfo(websocket_port, websocket_url_path.c_str(),
+                    deviceid.c_str()) == MDNS_FAILED) {
+            RTC_LOG(LS_ERROR) << "mDNS: Failed to initialize mdns client info";
+        }
+        else {
+            // enabling mDNS publish event loop
+            socket_server.set_mdns_publish_enable(true);
+        }
     };
 
+    // starting streamer
     rtc::scoped_refptr<Streamer> streamer(
         new rtc::RefCountedObject<Streamer>(StreamerProxy::GetInstance(),
         &streamer_config));

@@ -4,6 +4,7 @@
 include ../mk/cross_arm_build.mk
 include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk
+include ../mk/libavahi_arm.mk
 
 #
 # including compat as source directory
@@ -27,7 +28,7 @@ INCLUDES += $(LWS_INCLUDES) $(WEBRTC_DEFINES) $(WEBRTC_FLAGS_INCLUDES) $(H264BIT
 INCLUDES += -I$(WEBRTC_ROOT)/src/third_party/abseil-cpp/
 
 # for Raspbian Strech
-BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS)
+BUILD_LIBS += $(WEBRTC_BUILD_LIBS) $(LWS_LIBS) $(AVAHI_LIBS)
 SYSLIBS += $(LWS_SYS_LIBS) $(WEBRTC_SYSLIBS)
 LDFLAGS += $(WEBRTC_LDFLAGS) $(MMAL_LDFLAGS)
 
@@ -72,7 +73,7 @@ SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc 
 
 
 SOURCES.C = websocket_server_util.c mmal_video.c mmal_video_reset.c mmal_util.c raspicli.c \
-	raspicamcontrol.c raspipreview.c
+	raspicamcontrol.c raspipreview.c mdns_publish.c
 
 OBJECTS.CC = $(SOURCES.CC:.cc=.o)
 OBJECTS.CPP = $(SOURCES.CPP:.cpp=.o)
