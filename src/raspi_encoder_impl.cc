@@ -280,7 +280,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
 
 int32_t RaspiEncoderImpl::Encode(
     const VideoFrame& frame, const CodecSpecificInfo* codec_specific_info,
-    const std::vector<FrameType>* frame_types) {
+    const std::vector<VideoFrameType>* frame_types) {
 
 
     if (!IsInitialized()) {
@@ -294,18 +294,21 @@ int32_t RaspiEncoderImpl::Encode(
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
 
-    bool force_key_frame = false;
+    bool send_key_frame = false;
     if (frame_types != nullptr) {
         // We only support a single stream.
         RTC_DCHECK_EQ(frame_types->size(), static_cast<size_t>(1));
         // Skip frame?
-        if ((*frame_types)[0] == kEmptyFrame) {
+        if ((*frame_types)[0] == VideoFrameType::kEmptyFrame) {
             return WEBRTC_VIDEO_CODEC_OK;
         } // Force key frame?
-        force_key_frame = (*frame_types)[0] == kVideoFrameKey;
+
+        if ((*frame_types)[0] == VideoFrameType::kVideoFrameKey && sending_enable_ ){
+            send_key_frame = true;
+        }
     }
 
-    if (force_key_frame) {
+    if (send_key_frame) {
         uint32_t kKeyFrameAllowedInterval = 3000;   // 3 secs
         // function forces a key frame regardless of the |bIDR| argument's value.
         // (If every frame is a key frame we get lag/delays.)
@@ -436,8 +439,8 @@ bool RaspiEncoderImpl::DrainProcess() {
 
         encoded_image_._frameType =
             (buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
-            ? kVideoFrameKey: kVideoFrameDelta;
-        if( encoded_image_._frameType  == kVideoFrameKey ) initial_delay_ ++;
+            ? VideoFrameType::kVideoFrameKey: VideoFrameType::kVideoFrameDelta;
+        if( encoded_image_._frameType  == VideoFrameType::kVideoFrameKey ) initial_delay_ ++;
 
 
         // Each NAL unit is a fragment starting with the four-byte
