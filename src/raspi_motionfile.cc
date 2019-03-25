@@ -47,16 +47,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static const char videoFileExtension[] = ".h264";
 static const char imvFileExtension[] = ".imv";
-static const size_t DefaultVideoFrameBufferSize=65535*2;
+static const size_t DefaultVideoFrameBufferSize=65536*2;
 
 int  RaspiMotionFile::kEventWaitPeriod = 20;    // minimal wait ms period between frame
 
 RaspiMotionFile::RaspiMotionFile(const std::string base_path,const std::string prefix,
             int queue_capacity, int frame_queue_size, int motion_queue_size)
     :   Event(false,false),
-    base_path_(base_path), prefix_(prefix) {
+    base_path_(base_path), prefix_(prefix), clock_(webrtc::Clock::GetRealTimeClock()){
 
-    writerThreadStarted_ = false;
+    writer_active_ = false;
 
     frame_queue_.reset( new rtc::BufferQueue(queue_capacity, frame_queue_size ));
     imv_queue_.reset( new rtc::BufferQueue(queue_capacity, motion_queue_size ));
@@ -79,50 +79,34 @@ RaspiMotionFile::~RaspiMotionFile() {
 ///////////////////////////////////////////////////////////////////////////////
 bool RaspiMotionFile::FrameQueuing(const void* data, size_t bytes,
         size_t* bytes_written, bool is_keyframe) {
-    rtc::CritScope cs(&crit_sect_);
-    size_t queue_length = frame_queue_->size();
-
-    if( writerThreadStarted_ == false && queue_length == 0
-            && is_keyframe == false) {
-        // reject the frame when the first queuing frame is not keyframe
-        // if writerThread is not enabled
-        return true;
+    if( is_keyframe == true && writer_active_ == false ) {
+        // reset both of frame_queue and imv_queue
+        frame_queue_->Clear();
+        imv_queue_->Clear();
     }
 
-    if( writerThreadStarted_ == true )
+    // queueing frame
+    if( frame_queue_->WriteBack(data, bytes, bytes_written) == false ) {
+        RTC_LOG(LS_ERROR) << "Frame Buffer Queue Full";
+        return false;
+    }
+
+    if( writer_active_ == true )
         Set(); // Event Set to wake up
-    return  frame_queue_->WriteBack(data, bytes, bytes_written);
+    return  true;
 }
 
 bool RaspiMotionFile::ImvQueuing(const void* data, size_t bytes,
         size_t* bytes_written, bool is_keyframe) {
-    rtc::CritScope cs(&crit_sect_);
-    size_t queue_length = imv_queue_->size();
 
-    if( writerThreadStarted_ == false && queue_length == 0
-            && is_keyframe == false) {
-        // reject the frame when the first queuing frame is not keyframe
-        // if writerThread is not enabled
-        return true;
+    // queueing frame
+    if( imv_queue_->WriteBack(data, bytes, bytes_written) == false ) {
+        RTC_LOG(LS_ERROR) << "IMV Buffer Queue Full";
+        return false;
     }
-
-    return imv_queue_->WriteBack(data, bytes, bytes_written);
+    return true;
 }
 
-void RaspiMotionFile::QueueClear(void) {
-    rtc::CritScope cs(&crit_sect_);
-    // Reset the frame and motion vector queue
-    frame_queue_->Clear();
-    imv_queue_->Clear();
-}
-
-size_t RaspiMotionFile::FrameQueueSize(void) const {
-    return frame_queue_->size();
-}
-
-size_t RaspiMotionFile::ImvQueueSize(void) const {
-    return imv_queue_->size();
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -134,7 +118,7 @@ bool RaspiMotionFile::WriterThread(void* obj) {
 }
 
 bool RaspiMotionFile::WriterProcess() {
-    RTC_DCHECK( writerThreadStarted_ == true )
+    RTC_DCHECK( writer_active_ == true )
         << "Unknown Internal Error, Thread activated without flag enabled";
 
     if( frame_queue_->size() == 0 && imv_queue_->size() == 0 ) {
@@ -154,14 +138,11 @@ bool RaspiMotionFile::WriterProcess() {
             imv_queue_->Clear();
         }
     }
-
     return true;
 }
 
-bool RaspiMotionFile::StartWriterThread() {
-    rtc::CritScope cs(&crit_sect_);
-
-    if ( writerThreadStarted_ == false ) {
+bool RaspiMotionFile::StartWriter() {
+    if ( writer_active_ == false ) {
         // start motion file writer thread ;
         if( OpenWriterFiles()  == false ) {
             return false;
@@ -171,7 +152,7 @@ bool RaspiMotionFile::StartWriterThread() {
                     RaspiMotionFile::WriterThread, this, "MotionWriter"));
         writerThread_->Start();
         writerThread_->SetPriority(rtc::kHighPriority);
-        writerThreadStarted_ = true;
+        writer_active_ = true;
         RTC_LOG(LS_VERBOSE) << "Motion File Writer thread initialized.";
         return true;
     }
@@ -179,11 +160,9 @@ bool RaspiMotionFile::StartWriterThread() {
     return false;
 }
 
-bool RaspiMotionFile::StopWriterThread() {
-    rtc::CritScope cs(&crit_sect_);
-
-    if ( writerThreadStarted_ == true) {
-        writerThreadStarted_ = false;
+bool RaspiMotionFile::StopWriter() {
+    if ( writer_active_ == true) {
+        writer_active_ = false;
         writerThread_->Stop();
         writerThread_.reset();
         RTC_LOG(INFO) << "Motion File Writer thread terminated.";
@@ -197,8 +176,8 @@ bool RaspiMotionFile::StopWriterThread() {
     return false;
 }
 
-bool RaspiMotionFile::WriterStatus() {
-    return writerThreadStarted_;
+bool RaspiMotionFile::WriterActive() {
+    return writer_active_;
 }
 
 

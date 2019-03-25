@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <ctime>
 
+#include "system_wrappers/include/clock.h"
 #include "rtc_base/platform_thread.h"
 
 #include "rtc_base/buffer_queue.h"
@@ -52,15 +53,9 @@ public:
     bool ImvQueuing(const void* data, size_t bytes,
             size_t* bytes_written, bool is_keyframe);
 
-
-    // Clear the frame and imv buffer
-    void QueueClear(void);
-    size_t FrameQueueSize(void) const;
-    size_t ImvQueueSize(void) const;
-
-    bool WriterStatus(void);
-    bool StartWriterThread(void);
-    bool StopWriterThread(void);
+    bool WriterActive(void);
+    bool StartWriter(void);
+    bool StopWriter(void);
 
     bool ManagingVideoFolder(void);
     std::string VideoPathname(void) const;
@@ -86,7 +81,7 @@ private:
     std::unique_ptr<rtc::BufferQueue> imv_queue_;
 
     // thread for file writing
-    bool writerThreadStarted_;
+    bool writer_active_;
     std::unique_ptr<rtc::PlatformThread> writerThread_;
 
     rtc::File frame_file_;
@@ -102,6 +97,7 @@ private:
     uint8_t *frame_writer_buffer_;
 
     rtc::CriticalSection crit_sect_;
+    webrtc::Clock* const clock_;
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotionFile);
 };
 

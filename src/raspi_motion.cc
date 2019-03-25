@@ -41,17 +41,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "mmal_video.h"
 
 #include "raspi_motion.h"
-#include "config_media.h"
 #include "config_motion.h"
 
 static const float  kKushGaugeConstant = 0.07;
-int  RaspiMotion::kEventWaitPeriod = 20;    // minimal wait ms period between frame
+static uint64_t kDrainProcessDelayMaximumInMicro = 32000;   // 32 ms
+static int  RaspiMotion::kEventWaitPeriod = 5;
 
 static const int kDefaultMotionAverageSize = 32;
 static const int kDefaultMotionActiveTriggerPercent = 10;
 static const int kDefaultMotionActiveClearPercent = 5;
 static const int kDefaultMotionClearWaitPeriod = 5000; // 5 seconds
-
 static const int kDefaultMotionAveragePrintDiff = 1000; // 1 second
 
 
@@ -59,15 +58,10 @@ RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
     :   Event(false,false), is_active_(false),
     width_(width), height_(height), framerate_(framerate), bitrate_(bitrate),
     mmal_encoder_(nullptr),clock_(webrtc::Clock::GetRealTimeClock()),
-    motion_(width, height, framerate, false),
-#ifdef __NOTI_ENABLE__
-    motion_active_average_(kDefaultMotionAverageSize), http_noti_(nullptr) {
-#else
+    motion_analysis_(width, height, framerate, false),
     motion_active_average_(kDefaultMotionAverageSize) {
-#endif  /* __NOTI_ENABLE__ */
 
-    queue_capacity_ = framerate * VIDEO_INTRAFRAME_PERIOD +
-        (framerate * VIDEO_INTRAFRAME_PERIOD) *0.1f;
+    queue_capacity_ = (framerate * VIDEO_INTRAFRAME_PERIOD * 2) * 1.2;
     frame_queue_size_ = (width * height * kKushGaugeConstant * 2)/8;
     mv_queue_size_ = (width/16+1) * (height/16) * 4;
 
@@ -77,9 +71,9 @@ RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
                 config_motion::motion_file_prefix,
                 queue_capacity_, frame_queue_size_, mv_queue_size_ ));
 
-    motion_.SetBlobEnable(true);
-    motion_.RegisterBlobObserver(this);
-    motion_.RegisterImvObserver(this);
+    motion_analysis_.SetBlobEnable(true);
+    motion_analysis_.RegisterBlobObserver(this);
+    motion_analysis_.RegisterImvObserver(this);
 
     motion_state_  = CLEARED;
     last_average_print_timestamp_ = 0;
@@ -102,8 +96,6 @@ bool RaspiMotion::IsActive() const {
 
 bool RaspiMotion::StartCapture() {
     RTC_LOG(INFO) << "Raspi Motion Starting";
-    // media configuration sigleton reference
-    ConfigMedia *config_media = ConfigMediaSingleton::Instance();
 
     // Get the instance of MMAL encoder wrapper
     if( (mmal_encoder_ = webrtc::MMALWrapper::Instance() ) == nullptr ) {
@@ -227,7 +219,7 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points){
     uint64_t current_timestamp;
 
     motion_active_average_.AddSample( (int)active_percent );
-    absl::optional<int> moving_average 
+    absl::optional<int> moving_average
         = motion_active_average_.GetAverageRoundedDown();
     if( moving_average ){
         current_timestamp = clock_->TimeInMilliseconds();
@@ -260,17 +252,16 @@ bool RaspiMotion::DrainThread(void* obj) {
     return static_cast<RaspiMotion *> (obj)->DrainProcess();
 }
 
+
 bool RaspiMotion::DrainProcess() {
+    uint64_t current_timestamp, timestamp;
     MMAL_BUFFER_HEADER_T *buf = nullptr;
     size_t length;
 
+    current_timestamp = clock_->TimeInMicroseconds();
     buf = mmal_encoder_->GetEncodedFrame();
     if ( buf && buf->length > 0 ) {
         bool is_keyframe =  buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME;
-        if( is_keyframe && motion_file_->FrameQueueSize() != 0 ) {
-            // Reset the frame and motion vector queue
-            motion_file_->QueueClear();
-        };
 
         if( buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO ) {
             // queuing the motion vector for file writer
@@ -283,28 +274,30 @@ bool RaspiMotion::DrainProcess() {
             if( mv_shared_buffer_->WriteBack(buf->data, buf->length, &length)
                     == false ) {
                 RTC_LOG(LS_ERROR) << "Faild to queue in MV shared buffer";
-                Set(); // Event Set to wake up
             };
+            Set(); // Event Set to wake up motion vector process
         }
-        else {
-            // queuing video frame for file writing
+        else if( buf->flags & MMAL_BUFFER_HEADER_FLAG_FRAME ){
             if( motion_file_->FrameQueuing(buf->data, buf->length, &length, is_keyframe)
                     == false ) {
                 RTC_LOG(LS_ERROR) << "Failed to WriteBack in frame queue ";
             };
+            RTC_DCHECK(buf->length == length);
+        }
+        else {
+            RTC_LOG(LS_ERROR) << "**************************************";
+            dump_mmal_buffer(0, buf);
+            RTC_LOG(LS_ERROR) << "**************************************";
         }
     }
 
+    timestamp = clock_->TimeInMicroseconds();
+    if( timestamp - current_timestamp > kDrainProcessDelayMaximumInMicro )
+        RTC_LOG(LS_ERROR) << "Frame DrainProcess Time : " << timestamp - current_timestamp;
     if( buf ) mmal_encoder_->ReleaseFrame(buf);
     // TODO: if encoded_size is zero, we need to reset encoder itself
     return true;
 }
-
-#ifdef __NOTI_ENABLE__
-void RaspiMotion::SetHttpNoti(RaspiHttpNoti *http_noti ) {
-    http_noti_ = http_noti;
-}
-#endif  /* __NOTI_ENABLE__ */
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -316,7 +309,6 @@ bool RaspiMotion::MotionVectorThread(void* obj) {
 }
 
 bool RaspiMotion::MotionVectorProcess() {
-    uint64_t begin_milli_timestamp, end_milli_timestamp;
     uint8_t  buffer[mv_queue_size_];
     size_t   bytes;
 
@@ -325,20 +317,18 @@ bool RaspiMotion::MotionVectorProcess() {
 
     if( mv_shared_buffer_->ReadFront(buffer, mv_queue_size_, &bytes ) ) {
         RTC_DCHECK( bytes == mv_queue_size_ ) << "Error in Motion Vector size";
-        begin_milli_timestamp = clock_->TimeInMilliseconds();
-        motion_.Analyse( buffer, bytes );
-        end_milli_timestamp = clock_->TimeInMilliseconds();
+        motion_analysis_.Analyse( buffer, bytes );
 
         if( (motion_state_ == CLEARED) &&
-                (motion_file_->WriterStatus() == true) ) {
-                motion_file_->StopWriterThread();
+                (motion_file_->WriterActive() == true) ) {
+                motion_file_->StopWriter();
 
                 //
                 motion_file_->ManagingVideoFolder();
         }
         else if( (motion_state_ == TRIGGERED) &&
-                (motion_file_->WriterStatus() == false) ) {
-                motion_file_->StartWriterThread();
+                (motion_file_->WriterActive() == false) ) {
+                motion_file_->StartWriter();
         }
 
     }

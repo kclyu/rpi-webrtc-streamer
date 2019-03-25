@@ -104,13 +104,11 @@ private:
 
     // making buffer queue_capacity based on IntraFrame Period
     size_t queue_capacity_;
-    // Default Frame buffer queue size
-    size_t frame_queue_size_;
-    // Default Frame buffer queue size
-    size_t mv_queue_size_;
+    size_t frame_queue_size_;   // Default Frame buffer queue size
+    size_t mv_queue_size_;      // Default Frame buffer queue size
 
     // MotionVector Analysis
-    RaspiMotionVector motion_;
+    RaspiMotionVector motion_analysis_;
     MOTION_STATE motion_state_;
     uint64_t last_average_print_timestamp_;
     uint64_t motion_clear_wait_timestamp_;
@@ -120,9 +118,6 @@ private:
     int motion_active_percent_clear_threshold_;
     int motion_active_percent_trigger_threshold_;
 
-#ifdef __NOTI_ENABLE__
-    RaspiHttpNoti *http_noti_;
-#endif  /* __NOTI_ENABLE__ */
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotion);
 };
 

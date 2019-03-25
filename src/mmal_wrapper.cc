@@ -110,7 +110,9 @@ void FrameQueue::ReleaseFrame( MMAL_BUFFER_HEADER_T *buffer ) {
 
 MMAL_BUFFER_HEADER_T *FrameQueue::GetEncodedFrame() {
     RTC_DCHECK(inited_);
-    Wait(kEventWaitPeriod);    // Waiting for Event or Timeout
+    if( mmal_queue_length( encoded_frame_queue_) == 0 )
+        Wait(kEventWaitPeriod);    // Waiting for Event or Timeout
+
     return mmal_queue_get(encoded_frame_queue_);
 }
 
@@ -120,7 +122,7 @@ void FrameQueue::HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer ) {
     RTC_DCHECK_GE((mmal_queue_length(encoded_frame_queue_)+
                    mmal_queue_length(pool_internal_->queue)), FRAME_QUEUE_LENGTH - 1);
 
-    // it should be same as FRAME_QUEUE_LENGTH except one queue in the encoder
+    // it should be same as FRAME_QUEUE_LENGTH except one frame buffer of pool in the encoder
     // there is something in the buffer
     if( buffer->length < FRAME_BUFFER_SIZE && buffer->length > 0 ) {
         // there is no end of frame mark in this buffer,
@@ -144,7 +146,7 @@ void FrameQueue::HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer ) {
             };
             RTC_DCHECK( (int)(frame_buf_pos_ + buffer->length) < size_);
 
-            // getting frame from pool
+            // getting one frame buffer from pool
             MMAL_BUFFER_HEADER_T *frame = mmal_queue_get(pool_internal_->queue);
             if( frame ) { 	// frame buffer is available
                 mmal_buffer_header_mem_lock(buffer);
@@ -171,21 +173,22 @@ void FrameQueue::HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer ) {
             }
             else {
                 frame_drop_ ++;
-                //  TODO: Video Frame Dropping occurs when Video API is not
-                //  stabilized. At this time, it is necessary to reset
-                //  the entire MMAL interface.
-                RTC_LOG(INFO) << "MMAL Frame Dropped during HandlingMMALFrame : "
+                RTC_LOG(INFO) << "No availabe frame buffer in queue pool, frame dropped!: "
                     << frame_drop_;
             }
         }
         else {
             char buffer_log[256];
             dump_buffer_flag(buffer_log, 256, buffer->flags );
-            RTC_LOG(INFO) << "***** MMAL Frame : " << buffer_log;
+            RTC_LOG(INFO) << "**** MMAL Frame : " << buffer_log;
         }
 
         // frame count statistics
         frame_count_++;
+    }
+    else {
+        RTC_LOG(LS_ERROR) << "**** MMAL Frame size error (buffer size: " << FRAME_BUFFER_SIZE
+            << "), real frame size : " << buffer->length;
     }
 }
 
