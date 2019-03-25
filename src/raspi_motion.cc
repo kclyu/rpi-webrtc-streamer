@@ -44,8 +44,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config_motion.h"
 
 static const float  kKushGaugeConstant = 0.07;
-static uint64_t kDrainProcessDelayMaximumInMicro = 32000;   // 32 ms
-static int  RaspiMotion::kEventWaitPeriod = 5;
+static const uint64_t kDrainProcessDelayMaximumInMicro = 32000;   // 32 ms
+static const int kEventWaitPeriod = 5;
 
 static const int kDefaultMotionAverageSize = 32;
 static const int kDefaultMotionActiveTriggerPercent = 10;

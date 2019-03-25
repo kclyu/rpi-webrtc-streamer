@@ -80,8 +80,6 @@ private:
     static bool MotionVectorThread(void*);
     bool MotionVectorProcess();
 
-    static int  kEventWaitPeriod;  // minimal wait period between frame
-
     // Motion Capture params
     int width_, height_, framerate_, bitrate_;
 
