@@ -108,6 +108,7 @@ int main(int argc, char** argv) {
     std::string baselog_dir;
     rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
     webrtc::MMALEncoderWrapper* mmal_encoder;
+    std::unique_ptr<utils::FileLogger> file_logger;
 
     // To initialize the MMAL library at the beginning of the program,
     // first import the MMAL wrapper instance.
@@ -175,10 +176,10 @@ int main(int argc, char** argv) {
             return -1;
         };
 
-        utils::FileLogger file_logger(baselog_dir, severity,
-                streamer_config.GetDisableLogBuffering());
+        file_logger.reset(new utils::FileLogger(baselog_dir, severity,
+                streamer_config.GetDisableLogBuffering()));
         // file logging will be enabled only when verbose flag is disabled.
-        if( !file_logger.Init() ) {
+        if( !file_logger->Init() ) {
             std::cerr << "Failed to init file message logger\n" ;
             return -1;
         }
