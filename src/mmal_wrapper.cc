@@ -113,6 +113,8 @@ MMAL_BUFFER_HEADER_T *FrameQueue::GetEncodedFrame() {
     if( mmal_queue_length( encoded_frame_queue_) == 0 )
         Wait(kEventWaitPeriod);    // Waiting for Event or Timeout
 
+    if( mmal_queue_length( encoded_frame_queue_) == 0 )
+        return nullptr;
     return mmal_queue_get(encoded_frame_queue_);
 }
 
@@ -475,7 +477,10 @@ void MMALEncoderWrapper::SetVideoVideoStabilisation(bool stab_enable) {
 
 void MMALEncoderWrapper::SetMediaConfigParams(){
     // reset encoder setting to default state
-    default_status(&state_);
+    if( mmal_initialized_ == false ) {
+        //  state_ resetting to default is done only if the Encoder is not inited.
+        default_status(&state_);
+    };
 
     // Setting Video Rotation and Flip setting
     SetVideoRotation(config_media_->GetVideoRotation());
@@ -1009,19 +1014,25 @@ void MMALEncoderWrapper::CheckCameraConfig() {
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 
-MMALEncoderWrapper* MMALWrapper::Instance() {
-  static MMALEncoderWrapper& mmal_wrapper = *new MMALEncoderWrapper();
+MMALEncoderWrapper *MMALWrapper::mmal_wrapper_=nullptr;
+std::once_flag MMALWrapper::singleton_flag_;
 
-  return &mmal_wrapper;
+void MMALWrapper::createMMALWrapperSingleton() {
+    mmal_wrapper_ = new MMALEncoderWrapper();
+}
+
+MMALEncoderWrapper* MMALWrapper::Instance() {
+    std::call_once(singleton_flag_, createMMALWrapperSingleton);
+    return mmal_wrapper_;
 }
 
 MMALWrapper::~MMALWrapper() {
-  // By above RTC_DEFINE_STATIC_LOCAL.
-  RTC_NOTREACHED() << "MMALWrapper should never be destructed.";
+    // By above RTC_DEFINE_STATIC_LOCAL.
+    RTC_NOTREACHED() << "MMALWrapper should never be destructed.";
 }
 
 MMALWrapper::MMALWrapper()  {
-  RTC_NOTREACHED();
+    RTC_NOTREACHED();
 }
 
 }	// webrtc namespace

@@ -30,6 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __MMAL_WRAPPER_H__
 #define __MMAL_WRAPPER_H__
 
+#include <mutex>
+
 #include "system_wrappers/include/clock.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/task_queue.h"
@@ -223,8 +225,8 @@ private:
 
     ConfigMedia *config_media_;
     rtc::CriticalSection crit_sect_;
+    RTC_DISALLOW_COPY_AND_ASSIGN(MMALEncoderWrapper);
 };
-
 
 
 class MMALWrapper {
@@ -233,6 +235,10 @@ public:
     static MMALEncoderWrapper* Instance();
 
 private:
+    static void createMMALWrapperSingleton();
+    static MMALEncoderWrapper *mmal_wrapper_;
+    static std::once_flag singleton_flag_;
+
     MMALWrapper();
     ~MMALWrapper();
 

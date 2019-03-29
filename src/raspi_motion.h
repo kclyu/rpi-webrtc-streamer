@@ -57,9 +57,6 @@ public:
     // Motion Capture will use fixed resolution
     bool StartCapture();
     void StopCapture();
-#ifdef __NOTI_ENABLE__
-    void SetHttpNoti(RaspiHttpNoti *http_noti);
-#endif  /* __NOTI_ENABLE__ */
 
     // Motion Observers
     virtual void OnMotionTriggered(int active_nums) override ;
