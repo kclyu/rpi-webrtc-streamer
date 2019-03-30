@@ -1,6 +1,3 @@
-#
-#
-#
 include ../mk/cross_arm_build.mk
 include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk

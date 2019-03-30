@@ -487,7 +487,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                         return true;
                     }
                     else {
-                        // save successufl,
+                        // save successful,
                         // and sends the entire media_config to the client.
                         std::string media_config;
                         config_media_->ConfigToJson(media_config);

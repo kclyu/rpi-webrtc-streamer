@@ -42,8 +42,6 @@
 #include "mdns_publish.h"
 
 
-//
-//
 class StreamingSocketServer : public rtc::PhysicalSocketServer {
 public:
     explicit StreamingSocketServer()

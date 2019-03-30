@@ -95,9 +95,7 @@ LibWebSocketServer::LibWebSocketServer() {
 	memset(&webroot_http_mount_, 0x00, sizeof(webroot_http_mount_));
 	memset(&motion_http_mount_, 0x00, sizeof(motion_http_mount_));
     debug_level_ = LibWebSocketServer::DEBUG_LEVEL_NONE;
-
     motion_mount_enabled_ = false;
-
     context_ = nullptr;
     vhost_ = nullptr;
 }

@@ -80,6 +80,8 @@ bool OptionsFile::Load(bool verbose) {
 
 
 bool OptionsFile::Save() {
+  /*
+  6cab98e Delete unused class FileStream by Niels Möller · 6 days ago
   // Open file.
   FileStream stream;
   int err;
@@ -118,6 +120,7 @@ bool OptionsFile::Save() {
   } else {
     return true;
   }
+  */
 }
 
 bool OptionsFile::IsLegalName(const std::string& name) {
