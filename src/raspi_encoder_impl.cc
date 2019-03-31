@@ -279,7 +279,7 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
 
 
 int32_t RaspiEncoderImpl::Encode(
-    const VideoFrame& frame, const CodecSpecificInfo* codec_specific_info,
+    const VideoFrame& frame,
     const std::vector<VideoFrameType>* frame_types) {
 
 
