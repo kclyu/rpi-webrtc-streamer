@@ -49,6 +49,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // delay of message to use for stream release
 static const int kStreamReleaseDelay = 1000;
+static const std::string kDirectSocketDelimiter="\n";
 
 ////////////////////////////////////////////////////////////////////////////////
 // DirectSocketServer
@@ -151,6 +152,7 @@ void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
     DeactivateStreamSession();
 }
 
+
 void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
     RTC_LOG(INFO) << __FUNCTION__;
     RTC_DCHECK( socket != nullptr );
@@ -165,12 +167,26 @@ void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
         buffered_read_.append(buffer, bytes);
     } while (true);
 
-    size_t index = buffered_read_.find("\n");
-    if ( index != std::string::npos ) {
-        RTC_LOG(INFO) << "Message IN from client: \"" << buffered_read_ << "\"";
-        // '\n' delimiter found in read buffer
-        MessageFromPeer(buffered_read_);
-        buffered_read_.clear();
+    std::string string_buffer;
+    std::string line_message;
+    size_t pos;
+
+    string_buffer = buffered_read_;
+    while ((pos = string_buffer.find(kDirectSocketDelimiter))
+            != std::string::npos) {
+        line_message = string_buffer.substr(0, pos);
+        RTC_LOG(INFO) << "Extracted Line: " << line_message;
+        string_buffer.erase(0, pos + kDirectSocketDelimiter.length());
+        MessageFromPeer(line_message);
+    }
+    // keep the left string in original buffered read string
+    buffered_read_ = string_buffer;
+    if( buffered_read_.length()) {
+        // The following message is not a log that notifies you of an error
+        // but tells you when there is an error and a log message for debugging.
+        // If the socket re-reads the tcp mesage with a delimiter,
+        // the read message will be appended to the end and processed.
+        RTC_LOG(LS_WARNING) << "Direct Buffer Left : " << buffered_read_;
     }
 }
 
