@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static const char kConfigDelimiter=',';
 static const char kStunPrefix[] = "stun:";
 static const char kTurnPrefix[] = "turn:";
+static const char kSecureTurnPrefix[] = "turns:";
 static const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
 
 namespace utils {
@@ -102,11 +103,15 @@ std::vector<std::string> ConfigToIceUrls(const std::string urls) {
     std::string token;
 
     while( getline(ss, token, kConfigDelimiter) ) {
-        // only compare "stun:" prefix
+        // only compare "stun:", "turn:", "turns:" prefix scheme
         if( token.compare(0, 5 /* kStunPrefix len */, kStunPrefix) == 0 )  {
             url_list.push_back(token);
         }
         else if( token.compare(0, 5 /* kTurnPrefix len */, kTurnPrefix) == 0 )  {
+            url_list.push_back(token);
+        }
+        else if( token.compare(0, 6 /* kSecureTurnPrefix len */,
+                    kSecureTurnPrefix) == 0 )  {
             url_list.push_back(token);
         }
     }
