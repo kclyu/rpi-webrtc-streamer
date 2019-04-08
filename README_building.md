@@ -43,7 +43,7 @@ export PATH=/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin:$PATH
 
 |URL|SHAsum|Remarks|
 |----------------|---------------|------------|
-|[gcc-linaro-6.4.1-2018.10-x86_64_arm-linux-gnueabihf.tar.xz](https://drive.google.com/open?id=1s67nRSYZtLkIlRDz-BsDPkBXaTA94tsZ)|2b88b6c619e0b28f6493e1b7971c327574ffdb36|RASPBIAN STRETCH|
+|[gcc-linaro-6.4.1-2018.10-x86_64_arm-linux-gnueabihf.tar.xz](https://drive.google.com/open?id=1vBFMTHGdATggRWAK0CFYQXNbchmjGQCj)|2b88b6c619e0b28f6493e1b7971c327574ffdb36|RASPBIAN STRETCH|
 
 
 ## 2. Download Source Repo
