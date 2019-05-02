@@ -70,6 +70,9 @@ enum H264EncoderImplEvent {
 static const int kLowH264QpThreshold = 24;
 static const int kHighH264QpThreshold = 37;
 
+static const int kDelayForStackCalmDown=300;
+static const uint32_t kKeyFrameAllowedInterval = 3000;   // 3 secs
+
 static const ColorSpace mmal_color_space( ColorSpace::PrimaryID::kSMPTE170M,
         ColorSpace::TransferID::kSMPTE170M, ColorSpace::MatrixID::kSMPTE170M,
         ColorSpace::RangeID::kLimited );
@@ -84,15 +87,11 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
     has_reported_init_(false), has_reported_error_(false),
     encoded_image_callback_(nullptr),
     clock_(Clock::GetRealTimeClock()),
-    delta_ntp_internal_ms_(clock_->CurrentNtpInMilliseconds() -
-            clock_->TimeInMilliseconds()),
-    base_internal_ms_(clock_->TimeInMilliseconds()),
     last_keyframe_request_(clock_->TimeInMilliseconds()),
 
     mode_(VideoCodecMode::kRealtimeVideo), max_payload_size_(0),
     key_frame_interval_(0),
-    packetization_mode_(H264PacketizationMode::SingleNalUnit),
-    initial_delay_(0) {
+    packetization_mode_(H264PacketizationMode::SingleNalUnit) {
 
     RTC_CHECK(absl::EqualsIgnoreCase(codec.name, cricket::kH264CodecName));
     std::string packetization_mode_string;
@@ -233,14 +232,16 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
 
     if( target_bitrate == 0 ) {
         // 'target_bitrate == 0' means that stop sending encoded frames
-        sending_enable_  = false;
+        // sending_enable_  = false;
+        EnableSending(false);
         RTC_LOG(INFO) << "Required bitrate is 0, Stopping encoded frame sending";
         return WEBRTC_VIDEO_CODEC_OK;
     }
     if( target_bitrate > 0 ) {
         if( sending_enable_ == false ) {
             // changing enable flag to true
-            sending_enable_  = true;
+            // sending_enable_  = true;
+            EnableSending( true);
             RTC_LOG(INFO) << "Start to send encoded frame.";
         }
     }
@@ -282,7 +283,6 @@ int32_t RaspiEncoderImpl::Encode(
     const VideoFrame& frame,
     const std::vector<VideoFrameType>* frame_types) {
 
-
     if (!IsInitialized()) {
         ReportError();
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -309,7 +309,6 @@ int32_t RaspiEncoderImpl::Encode(
     }
 
     if (send_key_frame) {
-        uint32_t kKeyFrameAllowedInterval = 3000;   // 3 secs
         // function forces a key frame regardless of the |bIDR| argument's value.
         // (If every frame is a key frame we get lag/delays.)
         if( clock_->TimeInMilliseconds() - last_keyframe_request_
@@ -349,13 +348,50 @@ VideoEncoder::EncoderInfo RaspiEncoderImpl::GetEncoderInfo() const {
     EncoderInfo info;
     info.supports_native_handle = false;
     info.implementation_name = "RaspiEncoder";
-    // info.scaling_settings =
-    //     VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
     info.has_trusted_rate_controller = true;
     info.is_hardware_accelerated = true;
     info.has_internal_source = true;
     return info;
 }
+
+bool RaspiEncoderImpl::DelayedFrameSending(bool keyframe) {
+    if( sending_enable_ == false )
+        return false;
+
+    if( sending_frame_enable_ == false ){
+        int64_t current_time_ms = clock_->TimeInMilliseconds();
+        int64_t time_diff_ms =  current_time_ms - sending_enable_time_ms_;
+
+        if( time_diff_ms > kDelayForStackCalmDown ){
+            if( keyframe_requested_in_delayed_ == false ) {
+                keyframe_requested_in_delayed_ = true;
+                mmal_encoder_->SetForceNextKeyFrame();
+                return false;
+            }
+            else if( keyframe ) {
+                sending_frame_enable_ = true;
+                return true;
+            }
+        }
+    }
+    return true;
+}
+
+void RaspiEncoderImpl::EnableSending(bool enable) {
+        if( sending_enable_ == enable ) return;
+        RTC_LOG(INFO) << "RaspiEncoder changing enable status : " << enable;
+
+        sending_enable_ = enable;
+        if( enable ) {
+            sending_frame_enable_ = false;
+            keyframe_requested_in_delayed_ = false;
+        sending_enable_time_ms_ = clock_->TimeInMilliseconds();
+    }
+    else {
+        sending_frame_enable_ = false;
+    }
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -381,18 +417,12 @@ bool RaspiEncoderImpl::DrainProcess() {
     // and the Motion Vector(CODECSIDEINFO) is not transmitted.
     //
     // TODO: if encoded_size is zero, we need to reset encoder itself
-    if ( sending_enable_ && encoded_image_callback_ && buf && buf->length > 0 &&
-            !( buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) ) {
+    if ( encoded_image_callback_ && buf && buf->length > 0 &&
+            !( buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) &&
+            DelayedFrameSending(buf->flags | MMAL_BUFFER_HEADER_FLAG_KEYFRAME )) {
         CodecSpecificInfo codec_specific;
         uint32_t fragment_index;
         int qp;
-
-        // If the native stack is not ready to receive encoded frame,
-        // h.264 encoded frame will be dropped.
-        if( sending_enable_ == false ) {
-            if( buf ) mmal_encoder_->ReleaseFrame(buf);
-            return true;
-        }
 
         // Split encoded image up into fragments. This also updates |encoded_image_|.
         RTPFragmentationHeader frag_header;
@@ -418,30 +448,30 @@ bool RaspiEncoderImpl::DrainProcess() {
         RTC_DCHECK_GT( buf->alloc_size, buf->length )
             << "Internal Error, Frame Queue Bufer size invalid";
 
+
+        // In native code, there is DCHECK-related logic for capture_time
+        // and ntp_time. Currently, RWS does not use video frame capture and
+        // encoding, so DCHECK generates an error message in time.
+        // the '-10' value is for the part to prevent this.
+        // it is tempoary measure, but it happens the '-10' will be
+        // removed when this issue fixed
+        int64_t capture_time_ms = clock_->TimeInMilliseconds() - 10;
+        int64_t ntp_capture_time_ms = clock_->CurrentNtpInMilliseconds() - 10;
+
+        encoded_image_._encodedWidth = mmal_encoder_->GetWidth();
+        encoded_image_._encodedHeight = mmal_encoder_->GetHeight();
+        encoded_image_.SetTimestamp( capture_time_ms);
+        encoded_image_.ntp_time_ms_ = ntp_capture_time_ms;
+        encoded_image_.capture_time_ms_ = capture_time_ms;
         encoded_image_.set_buffer(buf->data, buf->alloc_size);
         encoded_image_.set_size(buf->length);
         encoded_image_._completeFrame = true;
         encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
-        encoded_image_._encodedWidth = mmal_encoder_->GetWidth();
-        encoded_image_._encodedHeight = mmal_encoder_->GetHeight();
-        // TODO m73
-        // encoded_image_.SetColorSpace(&mmal_color_space);
-
-        int64_t capture_ntp_time_ms;
-        int64_t current_time = clock_->TimeInMilliseconds();
-        capture_ntp_time_ms = current_time + delta_ntp_internal_ms_;
-        const int kMsToRtpTimestamp = 90;
-
-        encoded_image_.SetTimestamp( kMsToRtpTimestamp *
-            static_cast<uint32_t>(capture_ntp_time_ms-base_internal_ms_));
-        encoded_image_.ntp_time_ms_ = capture_ntp_time_ms;
-        encoded_image_.capture_time_ms_ = current_time;
-
         encoded_image_._frameType =
             (buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
             ? VideoFrameType::kVideoFrameKey: VideoFrameType::kVideoFrameDelta;
-        if( encoded_image_._frameType  == VideoFrameType::kVideoFrameKey ) initial_delay_ ++;
-
+        // TODO m73
+        // encoded_image_.SetColorSpace(&mmal_color_space);
 
         // Each NAL unit is a fragment starting with the four-byte
         // start code {0,0,0,1}.  All of this encoded data already in the

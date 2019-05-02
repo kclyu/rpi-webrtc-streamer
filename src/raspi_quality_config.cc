@@ -58,7 +58,7 @@ QualityConfig::ResolutionConfigEntry::ResolutionConfigEntry (int width,
 }
 
 QualityConfig::QualityConfig()
-    : target_framerate_(0), target_bitrate_(0), average_mf_(3 * 30) {
+    : target_framerate_(25), target_bitrate_(300) /*kbps*/, average_mf_(3 * 30) {
 
     config_media_  = ConfigMediaSingleton::Instance();
     std::list <ConfigMedia::VideoResolution> resolution_list =
@@ -134,7 +134,6 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
         return false;   // Do not change resoltuion
     };
 
-    // target_bitrate_ = target_bitrate;
     target_bitrate_ = target_bitrate;
     absl::optional<int> average_movingfactor = average_mf_.GetAverageRoundedDown();
     if( average_movingfactor ) {
@@ -158,7 +157,7 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
             candidate.width_ = iter->width_;
             candidate.height_ = iter->height_;
             candidate.bitrate_ = target_bitrate_;
-            candidate.framerate_ = 25;
+            candidate.framerate_ = target_framerate_;
             candidate_diff = diff;
         }
     }

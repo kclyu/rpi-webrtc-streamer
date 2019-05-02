@@ -200,7 +200,7 @@ void FrameQueue::HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer ) {
 // MMAL Encoder Delayed Reinit
 //
 ////////////////////////////////////////////////////////////////////////////////////////
-static const int kDelayInitialDurationMs = 2000;
+static const int kDelayInitialDurationMs = 4000;
 static const int kDelayDurationMs = 1000;
 static const int kDelayTaskInterval = 100;
 

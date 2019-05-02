@@ -84,6 +84,12 @@ private:
     // Only when this flag is true will actually pass the Encoded Frame
     // to the native stack.
     bool sending_enable_;
+    bool sending_frame_enable_;
+    bool keyframe_requested_in_delayed_;
+    int64_t sending_enable_time_ms_;
+
+    bool DelayedFrameSending(bool keyframe);
+    void EnableSending(bool enable);
 
     MMALEncoderWrapper *mmal_encoder_;
     // media configuration sigleton reference
@@ -103,8 +109,6 @@ private:
     webrtc::H264BitstreamParser h264_bitstream_parser_;
 
     Clock* const clock_;
-    const int64_t delta_ntp_internal_ms_;
-    int64_t base_internal_ms_;
     int64_t last_keyframe_request_;
 
     VideoCodecMode mode_;
@@ -117,7 +121,6 @@ private:
 
     // Quality Config
     QualityConfig quality_config_;
-    int initial_delay_;
     VideoCodec codec_;
 };
 
