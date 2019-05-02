@@ -1,40 +1,27 @@
 # Compiled Object files
-*.slo
-*.lo
 *.o
-*.obj
-*.o.d
 *.dwo
 
 # Precompiled Headers
 *.gch
 *.pch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
 # Compiled Static libraries
-*.lai
-*.la
 *.a
 *.lib
 
 # Executables
-*.exe
-*.out
-*.app
 webrtc-streamer
-h264_analyze
-lib/h264bitstream/
 lib/libwebsockets/
 
 # Configuration
 etc/app_channel.conf
 etc/webrtc-streamer.conf
 
+# Tempoary backup
+backup
+src/OLD
+imv_examples
+
+# vscode
+.vscode

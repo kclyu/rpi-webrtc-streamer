@@ -10,13 +10,15 @@
 
 #include <fstream>
 #include <iostream>
-#include "compat/optionsfile.h"
 
 #include <ctype.h>
 
 #include "rtc_base/stream.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
+
+#include "compat/filestream.h"
+#include "compat/optionsfile.h"
 
 const static size_t kConfigLineMinLength=4;
 

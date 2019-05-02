@@ -66,7 +66,6 @@ int32_t RaspiDecoderDummy::RegisterDecodeCompleteCallback(
 
 int32_t RaspiDecoderDummy::Decode(const EncodedImage& input_image,
                                 bool /*missing_frames*/,
-                                const CodecSpecificInfo* codec_specific_info,
                                 int64_t render_time_ms) {
     if (!IsInitialized()) {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -78,10 +77,6 @@ int32_t RaspiDecoderDummy::Decode(const EncodedImage& input_image,
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
     if (!input_image.data() || !input_image.size()) {
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-    }
-    if (codec_specific_info &&
-            codec_specific_info->codecType != kVideoCodecH264) {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
 
