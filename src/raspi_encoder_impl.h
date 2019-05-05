@@ -72,8 +72,9 @@ public:
 private:
     bool IsInitialized() const;
 
-    static bool DrainThread(void*);
+    static void DrainThread(void*);
     bool drainStarted_;
+    bool drainQuit_;
     bool DrainProcess();
 
     // Reports statistics with histograms.

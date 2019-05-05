@@ -189,11 +189,12 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
 
     // start drain thread ;
     if ( !drainThread_) {
+        drainQuit_ = false;
         RTC_LOG(INFO) << "MMAL encoder drain thread initialized.";
         drainThread_.reset(new rtc::PlatformThread(
-                               RaspiEncoderImpl::DrainThread, this, "DrainThread"));
+                    RaspiEncoderImpl::DrainThread, this, "DrainThread",
+                    rtc::kHighPriority));
         drainThread_->Start();
-        drainThread_->SetPriority(rtc::kHighPriority);
         drainStarted_ = true;
     }
 
@@ -205,6 +206,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
 
 int32_t RaspiEncoderImpl::Release() {
     if (drainThread_) {
+        drainQuit_ = true;
         drainStarted_ = false;
         drainThread_->Stop();
         drainThread_.reset();
@@ -399,12 +401,17 @@ void RaspiEncoderImpl::EnableSending(bool enable) {
 // Raspi Encoder MMAL frame drain processing
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool RaspiEncoderImpl::DrainThread(void* obj) {
-    return static_cast<RaspiEncoderImpl *> (obj)->DrainProcess();
+void RaspiEncoderImpl::DrainThread(void* obj) {
+    RaspiEncoderImpl* raspi_encoder =  static_cast<RaspiEncoderImpl *>(obj);
+    while( raspi_encoder->DrainProcess() ) {
+    };
 }
 
 bool RaspiEncoderImpl::DrainProcess() {
     MMAL_BUFFER_HEADER_T *buf = nullptr;
+
+    // quit drain thead
+    if( drainQuit_ == true ) return false;
 
     //  The GetEncodedFrame function will wait in block state
     //  until there is a new buf or timeout.

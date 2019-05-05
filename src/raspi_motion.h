@@ -70,11 +70,13 @@ public:
     };
 
 private:
-    bool is_active_;
-    static bool DrainThread(void*);
+    bool motion_active_;
+    bool motion_drain_quit_;
+    static void DrainThread(void*);
     bool DrainProcess();
 
-    static bool MotionVectorThread(void*);
+    bool motion_vector_quit_;
+    static void MotionVectorThread(void*);
     bool MotionVectorProcess();
 
     // Motion Capture params

@@ -55,7 +55,8 @@ static const int kDefaultMotionAveragePrintDiff = 1000; // 1 second
 
 
 RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
-    :   Event(false,false), is_active_(false),
+    :   Event(false,false), motion_active_(false),
+    motion_drain_quit_(false), motion_vector_quit_(false),
     width_(width), height_(height), framerate_(framerate), bitrate_(bitrate),
     mmal_encoder_(nullptr),clock_(webrtc::Clock::GetRealTimeClock()),
     motion_analysis_(width, height, framerate, false),
@@ -91,7 +92,7 @@ RaspiMotion::RaspiMotion() :
 }
 
 bool RaspiMotion::IsActive() const {
-    return is_active_;
+    return motion_active_;
 }
 
 bool RaspiMotion::StartCapture() {
@@ -133,10 +134,9 @@ bool RaspiMotion::StartCapture() {
     // start drain thread ;
     if ( !drainThread_) {
         RTC_LOG(INFO) << "Frame drain thread initialized.";
-        drainThread_.reset(new rtc::PlatformThread(
-                               RaspiMotion::DrainThread, this, "FrameDrain"));
+        drainThread_.reset(new rtc::PlatformThread( RaspiMotion::DrainThread,
+                    this, "FrameDrain", rtc::kHighPriority));
         drainThread_->Start();
-        drainThread_->SetPriority(rtc::kHighPriority);
         drainThreadStarted_ = true;
     }
 
@@ -144,26 +144,28 @@ bool RaspiMotion::StartCapture() {
     if ( !motionVectorThread_) {
         RTC_LOG(INFO) << "Motion Vector analyse thread initialized.";
         motionVectorThread_.reset(new rtc::PlatformThread(
-                               RaspiMotion::MotionVectorThread, this, "MotionVector"));
+                    RaspiMotion::MotionVectorThread, this, "MotionVector",
+                    rtc::kHighPriority));
         motionVectorThread_->Start();
-        motionVectorThread_->SetPriority(rtc::kHighPriority);
         motionVectorThreadStarted_ = true;
     }
 
-    is_active_ = true;
+    motion_active_ = true;
     return true;
 }
 
 void RaspiMotion::StopCapture() {
-    is_active_ = false;
+    motion_active_ = false;
 
     if (motionVectorThread_) {
+        motion_vector_quit_ = true;
         motionVectorThreadStarted_ = false;
         motionVectorThread_->Stop();
         motionVectorThread_.reset();
     }
 
     if (drainThread_) {
+        motion_drain_quit_ = true;
         drainThreadStarted_ = false;
         drainThread_->Stop();
         drainThread_.reset();
@@ -248,8 +250,10 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points){
 // Raspi Encoder frame drain processing
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool RaspiMotion::DrainThread(void* obj) {
-    return static_cast<RaspiMotion *> (obj)->DrainProcess();
+void RaspiMotion::DrainThread(void* obj) {
+    RaspiMotion *raspi_motion = static_cast<RaspiMotion *>(obj);
+    while( raspi_motion->DrainProcess() ) {
+    }
 }
 
 
@@ -257,6 +261,10 @@ bool RaspiMotion::DrainProcess() {
     uint64_t current_timestamp, timestamp;
     MMAL_BUFFER_HEADER_T *buf = nullptr;
     size_t length;
+
+    if( motion_drain_quit_ == true ) {
+        return false;
+    };
 
     current_timestamp = clock_->TimeInMicroseconds();
     buf = mmal_encoder_->GetEncodedFrame();
@@ -304,13 +312,19 @@ bool RaspiMotion::DrainProcess() {
 // Raspi motion vector processing
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool RaspiMotion::MotionVectorThread(void* obj) {
-    return static_cast<RaspiMotion *> (obj)->MotionVectorProcess();
+void RaspiMotion::MotionVectorThread(void* obj) {
+    RaspiMotion *raspi_motion = static_cast<RaspiMotion *>(obj);
+    while( raspi_motion->MotionVectorProcess() ) {
+    }
 }
 
 bool RaspiMotion::MotionVectorProcess() {
     uint8_t  buffer[mv_queue_size_];
     size_t   bytes;
+
+    if( motion_vector_quit_ == true ) {
+        return false;
+    };
 
     if( mv_shared_buffer_->size() == 0 )
         Wait(kEventWaitPeriod);    // Waiting for Event or Timeout

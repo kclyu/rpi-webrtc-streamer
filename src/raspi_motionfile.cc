@@ -56,7 +56,7 @@ RaspiMotionFile::RaspiMotionFile(const std::string base_path,const std::string p
     :   Event(false,false),
     base_path_(base_path), prefix_(prefix), clock_(webrtc::Clock::GetRealTimeClock()){
 
-    writer_active_ = false;
+    writer_active_ = false, writer_quit_ = false;
 
     frame_queue_.reset( new rtc::BufferQueue(queue_capacity, frame_queue_size ));
     imv_queue_.reset( new rtc::BufferQueue(queue_capacity, motion_queue_size ));
@@ -113,13 +113,19 @@ bool RaspiMotionFile::ImvQueuing(const void* data, size_t bytes,
 // Motion File Writer Thread
 //
 ///////////////////////////////////////////////////////////////////////////////
-bool RaspiMotionFile::WriterThread(void* obj) {
-    return static_cast<RaspiMotionFile *> (obj)->WriterProcess();
+void RaspiMotionFile::WriterThread(void* obj) {
+    RaspiMotionFile *motion_file = static_cast<RaspiMotionFile *> (obj);
+    while( motion_file->WriterProcess()) {
+    }
 }
 
 bool RaspiMotionFile::WriterProcess() {
     RTC_DCHECK( writer_active_ == true )
         << "Unknown Internal Error, Thread activated without flag enabled";
+
+    if( writer_quit_ == true ) {
+        return false;
+    }
 
     if( frame_queue_->size() == 0 && imv_queue_->size() == 0 ) {
         Wait(kEventWaitPeriod);    // Waiting for Event or Timeout
@@ -149,9 +155,9 @@ bool RaspiMotionFile::StartWriter() {
         };
 
         writerThread_.reset(new rtc::PlatformThread(
-                    RaspiMotionFile::WriterThread, this, "MotionWriter"));
+                    RaspiMotionFile::WriterThread, this, "MotionWriter",
+                    rtc::kHighPriority));
         writerThread_->Start();
-        writerThread_->SetPriority(rtc::kHighPriority);
         writer_active_ = true;
         RTC_LOG(LS_VERBOSE) << "Motion File Writer thread initialized.";
         return true;
@@ -163,6 +169,7 @@ bool RaspiMotionFile::StartWriter() {
 bool RaspiMotionFile::StopWriter() {
     if ( writer_active_ == true) {
         writer_active_ = false;
+        writer_quit_ = true;
         writerThread_->Stop();
         writerThread_.reset();
         RTC_LOG(INFO) << "Motion File Writer thread terminated.";

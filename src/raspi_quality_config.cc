@@ -69,7 +69,7 @@ QualityConfig::QualityConfig()
             resolution_list.begin(); iter != resolution_list.end();
             iter++) {
         resolution_config_.push_back(
-                ResolutionConfigEntry(iter->width_,iter->height_, 
+                ResolutionConfigEntry(iter->width_,iter->height_,
                     kMaxFrameRate, 20 /* min_framerate */ ));
     }
 }
@@ -89,7 +89,7 @@ void QualityConfig::ReportTargetBitrate(int bitrate /* kbps */) {
 void QualityConfig::ReportFrame(int frame_length) {
     int motion_factor;
     // Moves the decimal point of the moving factor by 1000
-    motion_factor = static_cast<int>( ((frame_length*8) / 
+    motion_factor = static_cast<int>( ((frame_length*8) /
             ( current_res_.width_ * current_res_.height_ * kKushGaugeConstant ))*1000);
     average_mf_.AddSample(motion_factor);
 }
@@ -101,7 +101,7 @@ bool QualityConfig::GetBestMatch(QualityConfig::Resolution& resolution) {
 bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
     Resolution candidate;
     if( use_dynamic_resolution_ == false) {
-        // using fixed resolution 
+        // using fixed resolution
         config_media_->GetFixedVideoResolution(candidate.width_, candidate.height_);
         candidate.framerate_ = kMaxFrameRate;
         candidate.bitrate_ = static_cast<int>(
@@ -138,7 +138,7 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
     absl::optional<int> average_movingfactor = average_mf_.GetAverageRoundedDown();
     if( average_movingfactor ) {
         motion_factor = *average_movingfactor/1000;
-        if( motion_factor < kDefaultMontionFactor ) 
+        if( motion_factor < kDefaultMontionFactor )
             motion_factor = kDefaultMontionFactor;
     }
     else {
@@ -158,6 +158,7 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
             candidate.height_ = iter->height_;
             candidate.bitrate_ = target_bitrate_;
             candidate.framerate_ = target_framerate_;
+            // candidate.framerate_ = 25;
             candidate_diff = diff;
         }
     }
@@ -166,10 +167,10 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
             candidate.height_ != current_res_.height_ ) {
         current_res_ = resolution = candidate;
         RTC_LOG(INFO) << "BestMatch Resolution "
-            << candidate.width_ << "x" << candidate.height_ 
-            << ", for target bitrate: " << target_bitrate_ 
+            << candidate.width_ << "x" << candidate.height_
+            << ", for target bitrate: " << target_bitrate_
             << ", moving factor: " << motion_factor;
-            
+
         return true;
     }
     resolution = candidate;

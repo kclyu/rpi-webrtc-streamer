@@ -70,7 +70,7 @@ private:
     bool FrameFileWrite(void);
 
 
-    static bool WriterThread(void*);
+    static void WriterThread(void*);
     bool WriterProcess();
 
     std::string base_path_;
@@ -82,6 +82,7 @@ private:
 
     // thread for file writing
     bool writer_active_;
+    bool writer_quit_;
     std::unique_ptr<rtc::PlatformThread> writerThread_;
 
     rtc::File frame_file_;
