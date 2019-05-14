@@ -615,12 +615,12 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
 
 bool MMALEncoderWrapper::ReinitEncoderInternal() {
     return ReinitEncoder(state_.width, state_.height,
-            state_.framerate, state_.bitrate);
+            state_.framerate, state_.bitrate/1000);
 }
 
 
 bool MMALEncoderWrapper::ReinitEncoder(int width, int height,
-        int framerate, int bitrate ) {
+        int framerate, int bitrate /* kbps */ ) {
     MMAL_STATUS_T status = MMAL_SUCCESS;
 
     if( mmal_initialized_ == false ) {

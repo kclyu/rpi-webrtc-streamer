@@ -201,7 +201,8 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
     SimulcastRateAllocator init_allocator(codec_);
     VideoBitrateAllocation allocation = init_allocator.GetAllocation(
             codec_.startBitrate * 1000, codec_.maxFramerate);
-    return SetRateAllocation(allocation, codec_.maxFramerate);
+    SetRates(RateControlParameters(allocation, codec_.maxFramerate));
+    return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int32_t RaspiEncoderImpl::Release() {
@@ -226,43 +227,45 @@ int32_t RaspiEncoderImpl::RegisterEncodeCompleteCallback(
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t RaspiEncoderImpl::SetRateAllocation(
-        const VideoBitrateAllocation& bitrate_allocation, uint32_t framerate) {
+void RaspiEncoderImpl::SetRates(const RateControlParameters& parameters) {
     QualityConfig::Resolution resolution;
-    uint32_t framerate_updated;
-    int target_bitrate = bitrate_allocation.get_sum_kbps();
+    int target_bitrate = parameters.bitrate.get_sum_bps()/1000; // kbps
+    uint32_t framerate = static_cast<uint32_t>(parameters.framerate_fps);
 
-    if( target_bitrate == 0 ) {
-        // 'target_bitrate == 0' means that stop sending encoded frames
-        // sending_enable_  = false;
+    if( mmal_encoder_ == nullptr ) {
+        RTC_LOG(LS_WARNING) << "SetRates() while uninitialized.";
+        return;
+    }
+
+    if (parameters.framerate_fps < 1.0) {
+        RTC_LOG(LS_WARNING) << "Invalid frame rate: " << parameters.framerate_fps;
+        return;
+    }
+
+    if ( target_bitrate == 0 ) {
+        // Encoder paused, turn off all encoding.
         EnableSending(false);
         RTC_LOG(INFO) << "Required bitrate is 0, Stopping encoded frame sending";
-        return WEBRTC_VIDEO_CODEC_OK;
+        return;
     }
-    if( target_bitrate > 0 ) {
-        if( sending_enable_ == false ) {
-            // changing enable flag to true
-            // sending_enable_  = true;
-            EnableSending( true);
-            RTC_LOG(INFO) << "Start to send encoded frame.";
-        }
+
+    if( sending_enable_ == false ) {
+        // changing enable flag to true
+        // sending_enable_  = true;
+        EnableSending( true);
+        RTC_LOG(INFO) << "Start to send encoded frame. bitrate: "
+            << target_bitrate;
     }
 
     if( config_media_->GetVideoDynamicFps() == true ) {
         // using dynamic fps, so update fps when required
-        if( framerate > 30 )
-            framerate_updated = 30;
-        else
-            framerate_updated = framerate;
+        if( framerate > 30 ) framerate =  30;
     }
     else
         // using fixed fps when use_dynamic_video_fps is disabled
-        framerate_updated = config_media_->GetFixedVideoFps();
+        framerate = config_media_->GetFixedVideoFps();
 
-    if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
-        return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-
-    quality_config_.ReportFrameRate(static_cast<int>(framerate_updated) );
+    quality_config_.ReportFrameRate(static_cast<int>(framerate) );
     quality_config_.ReportTargetBitrate( target_bitrate );
     if( quality_config_.GetBestMatch( resolution) == true ) {
         RTC_LOG(INFO) << "Resolution Changing by Bitrate Changing "
@@ -275,11 +278,9 @@ int32_t RaspiEncoderImpl::SetRateAllocation(
         }
     }
     else
-        mmal_encoder_->SetRate( static_cast<uint32_t>(framerate_updated),
+        mmal_encoder_->SetRate( static_cast<uint32_t>(framerate),
                 target_bitrate );
-    return WEBRTC_VIDEO_CODEC_OK;
 }
-
 
 int32_t RaspiEncoderImpl::Encode(
     const VideoFrame& frame,
