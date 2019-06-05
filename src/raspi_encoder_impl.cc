@@ -496,8 +496,6 @@ bool RaspiEncoderImpl::DrainProcess() {
                 = nalu_indexes[fragment_index].payload_start_offset;
             frag_header.fragmentationLength[fragment_index]
                 = nalu_indexes[fragment_index].payload_size;
-            frag_header.fragmentationPlType[fragment_index] = 0;
-            frag_header.fragmentationTimeDiff[fragment_index] = 0;
         }
 
         codec_specific.codecType = kVideoCodecH264;
