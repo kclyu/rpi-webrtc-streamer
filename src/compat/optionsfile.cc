@@ -15,6 +15,7 @@
 
 #include "rtc_base/stream.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/string_utils.h"
 #include "rtc_base/string_encode.h"
 
 #include "compat/filestream.h"

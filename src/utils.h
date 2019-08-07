@@ -16,16 +16,20 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "rtc_base/logging.h"
 
 namespace utils {
+
 void PrintLicenseInfo();
-void PrintVersionInfo();
+std::string GetVersionInfo();
+const char* GetProgramDescriptino();
 
 // utility functions
 std::string IntToString(int i);
 std::string Size_tToString(size_t i);
-bool StringToInt(const std::string &str,int *value );
-bool ParseVideoResolution(const std::string resolution,int *width, int *height );
+bool StringToInt(const std::string& str, int* value);
+bool ParseVideoResolution(const std::string resolution, int* width,
+                          int* height);
 rtc::LoggingSeverity String2LogSeverity(const std::string severity);
 
 // Getting folder and parent folder from std::string path
@@ -38,13 +42,12 @@ bool IsFile(const std::string& file);
 bool DeleteFile(const std::string& file);
 bool MoveFile(const std::string& old_file, const std::string& new_file);
 bool GetFolderWithTailingDelimiter(const std::string& path,
-        std::string& path_with_delimiter);
+                                   std::string& path_with_delimiter);
 absl::optional<size_t> GetFileSize(const std::string& file);
 
 // Get hardware serial number from /proc/cpu
-bool GetHardwareDeviceId(std::string *deviceid);
+bool GetHardwareDeviceId(std::string* deviceid);
 
-};
+};  // namespace utils
 
 #endif  // RPI_STREAMER_UTILS_H_
-

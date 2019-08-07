@@ -35,8 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "websocket_server.h"
-#include "app_channel.h"
 #include "utils.h"
+#include "app_channel.h"
 #include "config_motion.h"
 
 

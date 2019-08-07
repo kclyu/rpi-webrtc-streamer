@@ -16,7 +16,7 @@
 #include <string>
 
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/platform_file.h"
+#include "compat/platform_file.h"
 
 namespace rtc {
 

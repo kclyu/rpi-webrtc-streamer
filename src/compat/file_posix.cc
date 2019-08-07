@@ -17,7 +17,7 @@
 
 #include "compat/file.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/platform_file.h"
+#include "compat/platform_file.h"
 
 namespace rtc {
 
