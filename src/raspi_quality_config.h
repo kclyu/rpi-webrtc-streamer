@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -33,25 +33,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <utility>
 
-#include "common_types.h"
 #include "absl/types/optional.h"
+#include "common_types.h"
 
-#include "system_wrappers/include/clock.h"
 #include "rtc_base/numerics/moving_average.h"
-
+#include "system_wrappers/include/clock.h"
 
 #include "config_media.h"
 
 // Currently, Only BWE-based QoS functions are implemented.
 class QualityConfig {
-public:
+   public:
     explicit QualityConfig();
     ~QualityConfig();
 
     struct Resolution {
-        Resolution() : width_(0), height_(0), framerate_(0), bitrate_(0) {};
-        Resolution(int width, int height) : width_(width), height_(height),
-            bitrate_(0) {};
+        Resolution() : width_(0), height_(0), framerate_(0), bitrate_(0){};
+        Resolution(int width, int height)
+            : width_(width), height_(height), bitrate_(0){};
         int width_;
         int height_;
         int framerate_;
@@ -71,15 +70,16 @@ public:
 
     void ReportFrame(int frame_size);
     void ReportFrameRate(int framerate);
-    void ReportTargetBitrate(int bitrate); // kbps
+    void ReportTargetBitrate(int bitrate);  // kbps
 
-    bool GetBestMatch(int target_bitrate, QualityConfig::Resolution& resolution);
+    bool GetBestMatch(int target_bitrate,
+                      QualityConfig::Resolution& resolution);
     bool GetBestMatch(QualityConfig::Resolution& resolution);
     bool GetInitialBestMatch(QualityConfig::Resolution& resolution);
 
-private:
+   private:
     // media configuration sigleton reference
-    ConfigMedia *config_media_;
+    ConfigMedia* config_media_;
 
     std::list<ResolutionConfigEntry> resolution_config_;
     int target_framerate_;

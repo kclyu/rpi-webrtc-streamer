@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -32,16 +32,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <mutex>
 
-#include "system_wrappers/include/clock.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/event.h"
+#include "rtc_base/task_queue.h"
+#include "system_wrappers/include/clock.h"
+
 #include "config_media.h"
 #include "mmal_video.h"
 
 namespace webrtc {
 
-#define FRAME_BUFFER_SIZE	65536*3
+#define FRAME_BUFFER_SIZE 65536 * 3
 #define FRAME_QUEUE_LENGTH 5
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +52,7 @@ namespace webrtc {
 ////////////////////////////////////////////////////////////////////////////////////////
 
 class FrameQueue : public rtc::Event {
-public:
+   public:
     FrameQueue();
     ~FrameQueue();
     bool Init();
@@ -61,35 +62,35 @@ public:
     int Length();
 
     // Obtain a frame from the encoded frame queue.
-    // If there is no frame in FrameQueue, it will be blocked for a certain period and
-    // return nullptr when timeout is reached.
-    // If there is a frame, it returns the corresponding frame.
+    // If there is no frame in FrameQueue, it will be blocked for a certain
+    // period and return nullptr when timeout is reached. If there is a frame,
+    // it returns the corresponding frame.
     MMAL_BUFFER_HEADER_T *GetEncodedFrame();
 
     // It returns the used Encoded Frame to the frame pool of QueueFrame.
-    void ReleaseFrame( MMAL_BUFFER_HEADER_T *buffer );
+    void ReleaseFrame(MMAL_BUFFER_HEADER_T *buffer);
 
-protected:
+   protected:
     // Make the frame uploaded from MMAL into one H.264 frame,
     // and buffering it in the encoded frame of FrameQueue.
-    void HandlingMMALFrame( MMAL_BUFFER_HEADER_T *buffer );
+    void HandlingMMALFrame(MMAL_BUFFER_HEADER_T *buffer);
 
-private:
-    static int  kEventWaitPeriod;    // minimal wait period between frame
+   private:
+    static int kEventWaitPeriod;  // minimal wait period between frame
 
     int num_, size_;
 
     MMAL_QUEUE_T *encoded_frame_queue_;
     MMAL_POOL_T *pool_internal_;
-    uint8_t		*keyframe_buf_;
-    uint8_t		*frame_buf_;
-    int			frame_buf_pos_;
-    int			frame_segment_cnt_;
-    bool		inited_;
+    uint8_t *keyframe_buf_;
+    uint8_t *frame_buf_;
+    int frame_buf_pos_;
+    int frame_segment_cnt_;
+    bool inited_;
 
-    uint32_t	frame_count_;
-    uint32_t	frame_drop_;
-    uint32_t	frame_queue_drop_;
+    uint32_t frame_count_;
+    uint32_t frame_drop_;
+    uint32_t frame_queue_drop_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -105,13 +106,14 @@ private:
 //
 // DELAY : making kDelayDurationBetweenReinitMs
 //       After kDelayDurationBetweenReinitMs, fire reinit by TaskQueue
-//      condition: time difference should be within kDelayDurationBetweenReinitMs
+//      condition: time difference should be within
+//      kDelayDurationBetweenReinitMs
 //
 // WAITING: making kDelayDurationBetweenReinitMs
 //       After kDelayDurationBetweenReinitMs, status will be PASS
 //
 //
-class MMALEncoderWrapper;   // forward
+class MMALEncoderWrapper;  // forward
 enum EncoderDelayedInitStatus {
     INIT_UNKNOWN = 0,
     INIT_PASS,
@@ -120,23 +122,22 @@ enum EncoderDelayedInitStatus {
 };
 
 struct EncoderDelayedInit {
-    explicit EncoderDelayedInit(MMALEncoderWrapper* mmal_encoder);
+    explicit EncoderDelayedInit(MMALEncoderWrapper *mmal_encoder);
     ~EncoderDelayedInit();
 
     bool InitEncoder(int width, int height, int framerate, int bitrate);
     bool ReinitEncoder(int width, int height, int framerate, int bitrate);
     bool UpdateStatus();
 
-private:
+   private:
     class DelayInitTask;
-    Clock* const clock_;
+    Clock *const clock_;
     uint64_t last_init_timestamp_ms_;
     EncoderDelayedInitStatus status_;
-    MMALEncoderWrapper* mmal_encoder_;
+    MMALEncoderWrapper *mmal_encoder_;
 
-    DelayInitTask* delayinit_task_;
+    DelayInitTask *delayinit_task_;
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -144,7 +145,7 @@ private:
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 class MMALEncoderWrapper : public FrameQueue {
-public:
+   public:
     MMALEncoderWrapper();
     ~MMALEncoderWrapper();
 
@@ -159,11 +160,11 @@ public:
     // It is used when reinitialization is required after InitEncoder.
     // and used when changing the resolution.
     // TODO: merge the ReinitEncoder to SetParam and Reinit Internal
-    bool ReinitEncoder(int width, int height, int framerate, int bitrate );
+    bool ReinitEncoder(int width, int height, int framerate, int bitrate);
 
     // Used in EncoderDelayInit. Init parameters should be initialized first
     // and then Init must be done, so the two functions are separated.
-    bool SetEncodingParams(int width, int height,int framerate, int bitrate );
+    bool SetEncodingParams(int width, int height, int framerate, int bitrate);
     bool ReinitEncoderInternal();
 
     bool StartCapture();
@@ -172,13 +173,14 @@ public:
     bool SetRate(int framerate, int bitrate);
 
     bool IsDigitalZoomActive();
-    bool IncreaseDigitalZoom(double cx, double cy );
+    bool IncreaseDigitalZoom(double cx, double cy);
     bool DecreaseDigitalZoom();
     bool ResetDigitalZoom();
-    bool MoveDigitalZoom(double cx, double cy );
+    bool MoveDigitalZoom(double cx, double cy);
 
-    // When there is a KeyFrame request, it requests the MMAL to generate a key frame.
-    // MMAL generates a key frame, and then operates as it is currently set.
+    // When there is a KeyFrame request, it requests the MMAL to generate a key
+    // frame. MMAL generates a key frame, and then operates as it is currently
+    // set.
     bool SetForceNextKeyFrame();
 
     void SetIntraPeriod(int frame_period);
@@ -211,7 +213,7 @@ public:
 
     EncoderDelayedInit encoder_initdelay_;
 
-private:
+   private:
     void CheckCameraConfig();
     bool mmal_initialized_;
 
@@ -228,13 +230,12 @@ private:
     RTC_DISALLOW_COPY_AND_ASSIGN(MMALEncoderWrapper);
 };
 
-
 class MMALWrapper {
-public:
+   public:
     // Singleton, constructor and destructor are private.
-    static MMALEncoderWrapper* Instance();
+    static MMALEncoderWrapper *Instance();
 
-private:
+   private:
     static void createMMALWrapperSingleton();
     static MMALEncoderWrapper *mmal_wrapper_;
     static std::once_flag singleton_flag_;
@@ -245,7 +246,6 @@ private:
     RTC_DISALLOW_COPY_AND_ASSIGN(MMALWrapper);
 };
 
+}  // namespace webrtc
 
-}	// namespace webrtc
-
-#endif // __MMAL_WRAPPER_H__
+#endif  // __MMAL_WRAPPER_H__

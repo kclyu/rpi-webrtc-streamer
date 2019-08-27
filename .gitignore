@@ -5,6 +5,7 @@
 # Precompiled Headers
 *.gch
 *.pch
+ipch
 
 # Compiled Static libraries
 *.a
@@ -22,6 +23,4 @@ etc/webrtc-streamer.conf
 backup
 src/OLD
 imv_examples
-
-# vscode
-.vscode
+src/.vscode

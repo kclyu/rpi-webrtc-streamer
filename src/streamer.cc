@@ -3,8 +3,8 @@
  *
  * streamer.cc
  *
- * Modified version of src/webrtc/examples/peer/client/conductor.cc in WebRTC source tree
- * The origianl copyright info below.
+ * Modified version of src/webrtc/examples/peer/client/conductor.cc in WebRTC
+ * source tree The origianl copyright info below.
  */
 
 /*
@@ -26,16 +26,16 @@
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/video_codecs/builtin_video_decoder_factory.h"
-#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/audio_options.h"
 #include "api/create_peerconnection_factory.h"
 #include "api/rtp_sender_interface.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
-#include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/dummy/audio_device_dummy.h"
+#include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
@@ -44,18 +44,18 @@
 #include "test/vcm_capturer.h"
 
 #include "rtc_base/checks.h"
-#include "rtc_base/strings/json.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/json.h"
 
+#include "config_media.h"
+#include "config_streamer.h"
 #include "streamer.h"
 #include "streamer_observer.h"
-#include "config_streamer.h"
-#include "config_media.h"
 
-#include "raspi_encoder.h"
-#include "raspi_encoder_impl.h"
 #include "raspi_decoder.h"
 #include "raspi_decoder_dummy.h"
+#include "raspi_encoder.h"
+#include "raspi_encoder_impl.h"
 #include "utils_pc_strings.h"
 
 #include "pc/test/fake_video_track_source.h"
@@ -81,23 +81,22 @@ static const int kDefaultMaxBitrate = 3500000;
 
 class DummySetSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {
-public:
+   public:
     static DummySetSessionDescriptionObserver* Create() {
-        return
-            new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
+        return new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
     }
     virtual void OnSuccess() { RTC_LOG(INFO) << __FUNCTION__; }
     virtual void OnFailure(webrtc::RTCError error) {
         RTC_LOG(INFO) << __FUNCTION__ << " " << ToString(error.type()) << ": "
-            << error.message();
+                      << error.message();
     }
 
-protected:
+   protected:
     DummySetSessionDescriptionObserver() {}
     ~DummySetSessionDescriptionObserver() {}
 };
 
-Streamer::Streamer(SocketServerObserver *session, StreamerConfig *config)
+Streamer::Streamer(SocketServerObserver* session, StreamerConfig* config)
     : peer_id_(-1) {
     RTC_DCHECK(session != nullptr);
     session_ = session;
@@ -105,13 +104,9 @@ Streamer::Streamer(SocketServerObserver *session, StreamerConfig *config)
     streamer_config_ = config;
 }
 
-Streamer::~Streamer() {
-    RTC_DCHECK(!peer_connection_);
-}
+Streamer::~Streamer() { RTC_DCHECK(!peer_connection_); }
 
-bool Streamer::connection_active() const {
-    return peer_connection_ != nullptr;
-}
+bool Streamer::connection_active() const { return peer_connection_ != nullptr; }
 
 void Streamer::Close() {
     // Reset session active session
@@ -147,11 +142,11 @@ bool Streamer::InitializePeerConnection() {
     auto audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
 
     std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory =
-        std::unique_ptr<webrtc::VideoDecoderFactory>
-        (webrtc::RaspiVideoDecoderFactory::CreateVideoDecoderFactory());
+        std::unique_ptr<webrtc::VideoDecoderFactory>(
+            webrtc::RaspiVideoDecoderFactory::CreateVideoDecoderFactory());
     std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory =
-        std::unique_ptr<webrtc::VideoEncoderFactory>
-        (webrtc::RaspiVideoEncoderFactory::CreateVideoEncoderFactory());
+        std::unique_ptr<webrtc::VideoEncoderFactory>(
+            webrtc::RaspiVideoEncoderFactory::CreateVideoEncoderFactory());
 
     //  Audio Device Module
     adm_ = nullptr;
@@ -167,16 +162,14 @@ bool Streamer::InitializePeerConnection() {
     };
     *****/
 
-    peer_connection_factory_  = webrtc::CreatePeerConnectionFactory(
-            network_thread_.get(), worker_thread_.get(),
-            signaling_thread_.get(),
-            adm_.get() /* adm */,
-            audio_encoder_factory, audio_decoder_factory,
-            std::move(video_encoder_factory), std::move(video_decoder_factory),
-            nullptr /* audio_mixer */, nullptr /* audio_processor */ );
+    peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
+        network_thread_.get(), worker_thread_.get(), signaling_thread_.get(),
+        adm_.get() /* adm */, audio_encoder_factory, audio_decoder_factory,
+        std::move(video_encoder_factory), std::move(video_decoder_factory),
+        nullptr /* audio_mixer */, nullptr /* audio_processor */);
     if (!peer_connection_factory_.get()) {
         RTC_LOG(LS_ERROR) << __FUNCTION__
-            << "Failed to initialize PeerConnectionFactory";
+                          << "Failed to initialize PeerConnectionFactory";
         DeletePeerConnection();
         return false;
     }
@@ -195,25 +188,25 @@ void Streamer::UpdateMaxBitrate() {
     RTC_DCHECK(peer_connection_);
     auto senders = peer_connection_->GetSenders();
     for (const auto& sender : senders) {
-        if( sender->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO &&
+        if (sender->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO &&
             sender->id().compare(kVideoLabel) == 0) {
-            webrtc::RtpParameters parameters =  sender->GetParameters();
-            for (webrtc::RtpEncodingParameters& encoding : parameters.encodings) {
-                 if (encoding.max_bitrate_bps) {
-                     RTC_LOG(INFO) << "Previous Max Bitrate Bps setting already exists: "
-                         << *encoding.max_bitrate_bps;
-                     RTC_LOG(INFO) << "Do not modifying Max Bitrate Bps";
+            webrtc::RtpParameters parameters = sender->GetParameters();
+            for (webrtc::RtpEncodingParameters& encoding :
+                 parameters.encodings) {
+                if (encoding.max_bitrate_bps) {
+                    RTC_LOG(INFO)
+                        << "Previous Max Bitrate Bps setting already exists: "
+                        << *encoding.max_bitrate_bps;
+                    RTC_LOG(INFO) << "Do not modifying Max Bitrate Bps";
                     return;
-                 }
-                 else {
-                     encoding.max_bitrate_bps
-                         = absl::optional<int>(
-                                 ConfigMediaSingleton::Instance()->GetMaxBitrate());
-                     RTC_LOG(INFO) << "Changing Max Bitrate Bps: "
-                         << *encoding.max_bitrate_bps;
-                     sender->SetParameters(parameters);
-                     return;
-                 }
+                } else {
+                    encoding.max_bitrate_bps = absl::optional<int>(
+                        ConfigMediaSingleton::Instance()->GetMaxBitrate());
+                    RTC_LOG(INFO) << "Changing Max Bitrate Bps: "
+                                  << *encoding.max_bitrate_bps;
+                    sender->SetParameters(parameters);
+                    return;
+                }
             };
         };
     };
@@ -226,17 +219,17 @@ bool Streamer::CreatePeerConnection() {
     webrtc::PeerConnectionInterface::RTCConfiguration config;
     config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
     config.enable_dtls_srtp =
-            streamer_config_->GetSrtpEnable(); // get Dtls config
+        streamer_config_->GetSrtpEnable();  // get Dtls config
 
     streamer_config_->GetIceTransportsType(config);
     streamer_config_->GetIceBundlePolicy(config);
     streamer_config_->GetIceRtcpMuxPolicy(config);
 
-    streamer_config_->GetIceServers(config, true /* internal_config */ );
+    streamer_config_->GetIceServers(config, true /* internal_config */);
     utils::PrintIceServers(config);
 
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(
-            config, nullptr, nullptr, this);
+        config, nullptr, nullptr, this);
 
     return peer_connection_.get() != nullptr;
 }
@@ -252,18 +245,18 @@ void Streamer::DeletePeerConnection() {
 // PeerConnectionObserver implementation.
 //
 void Streamer::OnAddTrack(
-        rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-        const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
+    rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+    const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
         streams) {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id()
-        << ", " << receiver->media_type();
+    RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id() << ", "
+                  << receiver->media_type();
     receiver->track().release();
 }
 
 void Streamer::OnRemoveTrack(
-        rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id()
-        << ", " << receiver->media_type();
+    rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
+    RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id() << ", "
+                  << receiver->media_type();
     receiver->track().release();
 }
 
@@ -288,38 +281,36 @@ void Streamer::OnIceCandidate(const webrtc::IceCandidateInterface* candidate) {
 
 // PeerConnectionObserver event logging
 void Streamer::OnSignalingChange(
-        webrtc::PeerConnectionInterface::SignalingState new_state) {
-    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
-        << " " << utils::SignalingStateToString(new_state);
+    webrtc::PeerConnectionInterface::SignalingState new_state) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__ << " "
+                  << utils::SignalingStateToString(new_state);
 }
 
 void Streamer::OnIceConnectionChange(
-        webrtc::PeerConnectionInterface::IceConnectionState new_state){
-    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
-        << " changed to " << utils::PeerIceConnectionStateToString(new_state);
+    webrtc::PeerConnectionInterface::IceConnectionState new_state) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__ << " changed to "
+                  << utils::PeerIceConnectionStateToString(new_state);
     ice_state_ = new_state;
-    if( new_state
-            == webrtc::PeerConnectionInterface::IceConnectionState::kIceConnectionFailed &&
-            peerconnection_state_ ==
-            webrtc::PeerConnectionInterface::PeerConnectionState::kConnected ) {
-        RTC_LOG(LS_ERROR) << __FUNCTION__
-            << "Need to delete PeerConnection";
+    if (new_state == webrtc::PeerConnectionInterface::IceConnectionState::
+                         kIceConnectionFailed &&
+        peerconnection_state_ ==
+            webrtc::PeerConnectionInterface::PeerConnectionState::kConnected) {
+        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Need to delete PeerConnection";
         ReportEvent(true /* drop_connection */, "IceConnection Failed");
         return;
     };
-
 }
 
 void Streamer::OnIceGatheringChange(
-        webrtc::PeerConnectionInterface::IceGatheringState new_state) {
-    RTC_LOG(INFO) << "PeerConnectionObserver " <<__FUNCTION__
-        << " " << utils::IceGatheringStateToString(new_state);
+    webrtc::PeerConnectionInterface::IceGatheringState new_state) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__ << " "
+                  << utils::IceGatheringStateToString(new_state);
 }
 
 void Streamer::OnConnectionChange(
-        webrtc::PeerConnectionInterface::PeerConnectionState new_state) {
-    RTC_LOG(INFO) << "PeerConnectionObserver " <<__FUNCTION__
-        << " " << utils::PeerConnectionStateToString(new_state);
+    webrtc::PeerConnectionInterface::PeerConnectionState new_state) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__ << " "
+                  << utils::PeerConnectionStateToString(new_state);
     peerconnection_state_ = new_state;
 }
 
@@ -329,8 +320,8 @@ void Streamer::OnConnectionChange(
 void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
     RTC_DCHECK(peer_id_ == -1);
     RTC_DCHECK(peer_id != -1);
-    RTC_LOG(INFO) << __FUNCTION__ << "Peer " << peer_id  << ", " << name.c_str()
-              << " connected, trying to initialize streamer instance";
+    RTC_LOG(INFO) << __FUNCTION__ << "Peer " << peer_id << ", " << name.c_str()
+                  << " connected, trying to initialize streamer instance";
 
     if (peer_connection_.get()) {
         RTC_LOG(LS_ERROR) << "We only support connecting to one peer at a time";
@@ -340,7 +331,7 @@ void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
     if (InitializePeerConnection()) {
         peer_id_ = peer_id;
         peer_connection_->CreateOffer(
-                this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+            this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
     } else {
         RTC_LOG(LS_ERROR) << "Failed to initialize PeerConnection";
     }
@@ -363,13 +354,15 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         peer_id_ = peer_id;
 
         if (!InitializePeerConnection()) {
-            RTC_LOG(LS_ERROR) << "Failed to initialize our PeerConnection instance";
+            RTC_LOG(LS_ERROR)
+                << "Failed to initialize our PeerConnection instance";
             return;
         }
     } else if (peer_id != peer_id_) {
         RTC_DCHECK(peer_id_ != -1);
-        RTC_LOG(WARNING) << "Received a message from unknown peer while already in a "
-                     "conversation with a different peer.";
+        RTC_LOG(WARNING)
+            << "Received a message from unknown peer while already in a "
+               "conversation with a different peer.";
         return;
     }
 
@@ -383,7 +376,7 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
     std::string type_str;
     std::string json_object;
     rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName,
-            &type_str);
+                                 &type_str);
     if (!type_str.empty()) {
         absl::optional<webrtc::SdpType> type_maybe =
             webrtc::SdpTypeFromString(type_str);
@@ -395,22 +388,24 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
             std::string candidate_message;
 
             if (!rtc::GetStringFromJsonObject(jmessage, kCandidateSdpMidName,
-                        &candidate_mid) ||
-                    !rtc::GetIntFromJsonObject(jmessage,
-                        kCandidateSdpMlineIndexName, &candidate_mlineindex) ||
-                    !rtc::GetStringFromJsonObject(jmessage,
-                        kCandidateSdpName, &candidate_message)) {
-                RTC_LOG(LS_ERROR) << "Can't parse received message." << jmessage;
+                                              &candidate_mid) ||
+                !rtc::GetIntFromJsonObject(jmessage,
+                                           kCandidateSdpMlineIndexName,
+                                           &candidate_mlineindex) ||
+                !rtc::GetStringFromJsonObject(jmessage, kCandidateSdpName,
+                                              &candidate_message)) {
+                RTC_LOG(LS_ERROR)
+                    << "Can't parse received message." << jmessage;
                 return;
             }
 
             webrtc::SdpParseError error;
             std::unique_ptr<webrtc::IceCandidateInterface> candidate(
-                    webrtc::CreateIceCandidate(candidate_mid, candidate_mlineindex,
-                        candidate_message, &error));
+                webrtc::CreateIceCandidate(candidate_mid, candidate_mlineindex,
+                                           candidate_message, &error));
             if (!candidate.get()) {
                 RTC_LOG(WARNING) << "Can't parse received candidate message. "
-                    << "SdpParseError was: " << error.description;
+                                 << "SdpParseError was: " << error.description;
                 return;
             }
             if (!peer_connection_->AddIceCandidate(candidate.get())) {
@@ -424,28 +419,32 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         std::string sdp;
         if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
                                           &sdp)) {
-            RTC_LOG(WARNING) << "Can't parse received session description message.";
+            RTC_LOG(WARNING)
+                << "Can't parse received session description message.";
             RTC_LOG(WARNING) << ":" << message << ":";
             return;
         }
 
         webrtc::SdpParseError error;
-        std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
-            webrtc::CreateSessionDescription(type, sdp, &error);
+        std::unique_ptr<webrtc::SessionDescriptionInterface>
+            session_description =
+                webrtc::CreateSessionDescription(type, sdp, &error);
         if (!session_description) {
-            RTC_LOG(WARNING) << "Can't parse received session description message. "
-                         << "SdpParseError was: " << error.description;
+            RTC_LOG(WARNING)
+                << "Can't parse received session description message. "
+                << "SdpParseError was: " << error.description;
             return;
         }
 
-        RTC_LOG(INFO) << " Received session description : \"" << message << "\"";
+        RTC_LOG(INFO) << " Received session description : \"" << message
+                      << "\"";
         peer_connection_->SetRemoteDescription(
-                DummySetSessionDescriptionObserver::Create(),
-                session_description.release());
+            DummySetSessionDescriptionObserver::Create(),
+            session_description.release());
 
         if (type == webrtc::SdpType::kOffer) {
             peer_connection_->CreateAnswer(
-                    this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+                this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
         }
 
         // Update the max bitrate on RTPSender if there is no SDP negotiation
@@ -453,7 +452,7 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
         UpdateMaxBitrate();
         return;
     }
-    RTC_LOG(LS_ERROR) <<  "Message type is unknown : " << jmessage;
+    RTC_LOG(LS_ERROR) << "Message type is unknown : " << jmessage;
 }
 
 void Streamer::OnMessageSent(int err) {
@@ -466,21 +465,20 @@ void Streamer::AddTracks() {
     }
 
     // media configuration sigleton reference
-    ConfigMedia *config_media = ConfigMediaSingleton::Instance();
+    ConfigMedia* config_media = ConfigMediaSingleton::Instance();
 
-    if(streamer_config_->GetAudioEnable() == true ) {
+    if (streamer_config_->GetAudioEnable() == true) {
         cricket::AudioOptions options;
-        if( config_media->GetAudioProcessing()  == true ) {
-            if( config_media->GetAudioEchoCancel() == true )
+        if (config_media->GetAudioProcessing() == true) {
+            if (config_media->GetAudioEchoCancel() == true)
                 options.echo_cancellation = absl::optional<bool>(true);
-            if( config_media->GetAudioEchoCancel()  == true )
+            if (config_media->GetAudioEchoCancel() == true)
                 options.auto_gain_control = absl::optional<bool>(true);
-            if( config_media->GetAudioHighPassFilter() == true )
+            if (config_media->GetAudioHighPassFilter() == true)
                 options.highpass_filter = absl::optional<bool>(true);
-            if( config_media->GetAudioNoiseSuppression() == true )
+            if (config_media->GetAudioNoiseSuppression() == true)
                 options.noise_suppression = absl::optional<bool>(true);
-        }
-        else {
+        } else {
             options.echo_cancellation = absl::optional<bool>(false);
             options.auto_gain_control = absl::optional<bool>(false);
             options.highpass_filter = absl::optional<bool>(false);
@@ -490,34 +488,33 @@ void Streamer::AddTracks() {
         RTC_LOG(INFO) << "Media Config Audio options: " << options.ToString();
 
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-                peer_connection_factory_->CreateAudioTrack(
-                    kAudioLabel, peer_connection_factory_->CreateAudioSource(
-                        options)));
-        auto result_or_error
-            = peer_connection_->AddTrack(audio_track, {kStreamId});
+            peer_connection_factory_->CreateAudioTrack(
+                kAudioLabel,
+                peer_connection_factory_->CreateAudioSource(options)));
+        auto result_or_error =
+            peer_connection_->AddTrack(audio_track, {kStreamId});
         if (!result_or_error.ok()) {
             RTC_LOG(LS_ERROR) << "Failed to add audio track to PeerConnection: "
-                << result_or_error.error().message();
+                              << result_or_error.error().message();
         }
     }
 
-    if(streamer_config_->GetVideoEnable() == true ) {
+    if (streamer_config_->GetVideoEnable() == true) {
         video_track_sources_.clear();
         video_track_sources_.emplace_back(
-                webrtc::FakeVideoTrackSource::Create(false));
+            webrtc::FakeVideoTrackSource::Create(false));
         rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_(
-                peer_connection_factory_->CreateVideoTrack(kVideoLabel,
-                    video_track_sources_.back()));
+            peer_connection_factory_->CreateVideoTrack(
+                kVideoLabel, video_track_sources_.back()));
 
-        auto result_or_error
-            = peer_connection_->AddTrack(video_track_, {kStreamId});
+        auto result_or_error =
+            peer_connection_->AddTrack(video_track_, {kStreamId});
         if (!result_or_error.ok()) {
             RTC_LOG(LS_ERROR) << "Failed to add video track to PeerConnection: "
-                << result_or_error.error().message();
+                              << result_or_error.error().message();
         }
     }
 }
-
 
 void Streamer::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
     peer_connection_->SetLocalDescription(
@@ -540,13 +537,10 @@ void Streamer::OnFailure(webrtc::RTCError error) {
 
 void Streamer::SendMessage(const std::string& json_object) {
     RTC_LOG(INFO) << "Sending Message to Peer: " << json_object.c_str();
-    session_->SendMessageToPeer( peer_id_, json_object );
+    session_->SendMessageToPeer(peer_id_, json_object);
 }
 
-void Streamer::ReportEvent(bool drop_connection,
-        const std::string message) {
+void Streamer::ReportEvent(bool drop_connection, const std::string message) {
     RTC_LOG(INFO) << "Sending Event Message to Peer: " << message;
-    session_->ReportEvent( peer_id_, drop_connection, message );
+    session_->ReportEvent(peer_id_, drop_connection, message);
 }
-
-

@@ -1,9 +1,8 @@
 /*
  *  Lyu,KeunChang
  *
- * This is a stripped down version of the original RaspiCamControl module from the
- * raspberry pi userland-master branch,
- * Original copyright info below
+ * This is a stripped down version of the original RaspiCamControl module from
+ * the raspberry pi userland-master branch, Original copyright info below
  */
 /*
 Copyright (c) 2013, Broadcom Europe Ltd
@@ -24,8 +23,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -36,8 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RASPICLI_H_
 #define RASPICLI_H_
 
-typedef struct
-{
+typedef struct {
     int id;
     char *command;
     char *abbrev;
@@ -46,18 +44,18 @@ typedef struct
 } COMMAND_LIST;
 
 /// Cross reference structure, mode string against mode id
-typedef struct xref_t
-{
+typedef struct xref_t {
     char *mode;
     int mmal_mode;
 } XREF_T;
 
-
-void raspicli_display_help(const COMMAND_LIST *commands, const int num_commands);
-int raspicli_get_command_id(const COMMAND_LIST *commands, const int num_commands, const char *arg, int *num_parameters);
+void raspicli_display_help(const COMMAND_LIST *commands,
+                           const int num_commands);
+int raspicli_get_command_id(const COMMAND_LIST *commands,
+                            const int num_commands, const char *arg,
+                            int *num_parameters);
 
 int raspicli_map_xref(const char *str, const XREF_T *map, int num_refs);
 const char *raspicli_unmap_xref(const int en, XREF_T *map, int num_refs);
-
 
 #endif

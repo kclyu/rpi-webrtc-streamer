@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,16 +27,16 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <limits>
-#include <string>
+#include <stdio.h>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <stdio.h>
+#include <limits>
+#include <string>
 
 #ifdef __STANDALONE__
-#include <type_traits>
 #include <glog/logging.h>
+#include <type_traits>
 #define RTC_DCHECK CHECK
 #else
 #include "common_types.h"
@@ -50,7 +50,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "raspi_motionblobid.h"
 
 static const uint16_t BLOB_ID_NOT_USED = 0;  // not used for blob id
-static const uint16_t BLOB_ID_CRUMBS = 1;  // used for bread crumbs
+static const uint16_t BLOB_ID_CRUMBS = 1;    // used for bread crumbs
 static const uint16_t BLOB_ID_MIN = 2;
 static const uint16_t BLOB_ID_MAX = std::numeric_limits<uint16_t>::max();
-

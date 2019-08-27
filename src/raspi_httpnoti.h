@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -30,21 +30,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RASPI_HTTPNOTI_H_
 #define RASPI_HTTPNOTI_H_
 
+#include <list>
 #include <map>
 #include <memory>
 #include <string>
-#include <list>
 
+#include "rtc_base/critical_section.h"
 #include "rtc_base/net_helpers.h"
 #include "rtc_base/physical_socket_server.h"
 #include "rtc_base/signal_thread.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/critical_section.h"
 
-
-class RaspiHttpNoti : public sigslot::has_slots<>,
-    public rtc::MessageHandler {
-public:
+class RaspiHttpNoti : public sigslot::has_slots<>, public rtc::MessageHandler {
+   public:
     enum State {
         HTTPNOTI_INIT_ERROR = 0,
         HTTPNOTI_NOT_INITED,
@@ -64,11 +62,11 @@ public:
 
     void OnMessage(rtc::Message* msg);
 
-protected:
-    void ActivateSending(const std::string &noti);
+   protected:
+    void ActivateSending(const std::string& noti);
     void DeactivateSending(void);
 
-    // Resolve server name 
+    // Resolve server name
     void OnResolveResult(rtc::AsyncResolverInterface* resolver);
 
     // Resolve ip address of network interface
@@ -86,12 +84,12 @@ protected:
 
     // Returns true if the whole response has been read.
     bool ReadIntoBuffer(rtc::AsyncSocket* socket, std::string& data,
-            size_t* content_length);
+                        size_t* content_length);
     int GetResponseStatus(const std::string& response);
-    bool GetHeaderValue(const std::string& data,
-        size_t eoh, const char* header_pattern, size_t* value);
     bool GetHeaderValue(const std::string& data, size_t eoh,
-        const char* header_pattern, std::string* value);
+                        const char* header_pattern, size_t* value);
+    bool GetHeaderValue(const std::string& data, size_t eoh,
+                        const char* header_pattern, std::string* value);
 
     std::list<std::string> noti_message_list_;
     std::string response_data_;

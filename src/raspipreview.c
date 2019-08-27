@@ -24,8 +24,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -33,38 +33,39 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <memory.h>
 
 #include "interface/vcos/vcos.h"
 
 #include "interface/mmal/mmal.h"
-#include "interface/mmal/mmal_logging.h"
 #include "interface/mmal/mmal_buffer.h"
+#include "interface/mmal/mmal_logging.h"
+#include "interface/mmal/util/mmal_connection.h"
+#include "interface/mmal/util/mmal_default_components.h"
 #include "interface/mmal/util/mmal_util.h"
 #include "interface/mmal/util/mmal_util_params.h"
-#include "interface/mmal/util/mmal_default_components.h"
-#include "interface/mmal/util/mmal_connection.h"
 
-#include "raspipreview.h"
 #include "raspicli.h"
+#include "raspipreview.h"
 
-#define CommandPreview        1
-#define CommandFullScreen     2
-#define CommandOpacity        3
+#define CommandPreview 1
+#define CommandFullScreen 2
+#define CommandOpacity 3
 #define CommandDisablePreview 4
 
-static COMMAND_LIST cmdline_commands[] =
-{
-    { CommandPreview,       "-preview",    "p",  "Preview window settings <'x,y,w,h'>", 1 },
-    { CommandFullScreen,    "-fullscreen", "f",  "Fullscreen preview mode", 0 },
-    { CommandOpacity,       "-opacity",    "op", "Preview window opacity (0-255)", 1},
-    { CommandDisablePreview,"-nopreview",  "n",  "Do not display a preview window", 0},
+static COMMAND_LIST cmdline_commands[] = {
+    {CommandPreview, "-preview", "p", "Preview window settings <'x,y,w,h'>", 1},
+    {CommandFullScreen, "-fullscreen", "f", "Fullscreen preview mode", 0},
+    {CommandOpacity, "-opacity", "op", "Preview window opacity (0-255)", 1},
+    {CommandDisablePreview, "-nopreview", "n",
+     "Do not display a preview window", 0},
 };
 
-static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
+static int cmdline_commands_size =
+    sizeof(cmdline_commands) / sizeof(cmdline_commands[0]);
 
 /**
  * Create the preview component, set up its ports
@@ -74,45 +75,37 @@ static int cmdline_commands_size = sizeof(cmdline_commands) / sizeof(cmdline_com
  * @return MMAL_SUCCESS if all OK, something else otherwise
  *
  */
-MMAL_STATUS_T raspipreview_create(RASPIPREVIEW_PARAMETERS *state)
-{
+MMAL_STATUS_T raspipreview_create(RASPIPREVIEW_PARAMETERS *state) {
     MMAL_COMPONENT_T *preview = 0;
     MMAL_PORT_T *preview_port = NULL;
     MMAL_STATUS_T status;
 
-    if (!state->wantPreview)
-    {
-        if( state->preview_component == NULL ) {
-            // No preview required, so create a null sink component to take its place
+    if (!state->wantPreview) {
+        if (state->preview_component == NULL) {
+            // No preview required, so create a null sink component to take its
+            // place
             status = mmal_component_create("vc.null_sink", &preview);
-            if (status != MMAL_SUCCESS)
-            {
+            if (status != MMAL_SUCCESS) {
                 vcos_log_error("Unable to create null sink component");
                 goto error;
             }
+        } else {
+            preview = state->preview_component;
         }
-        else {
-            preview = state->preview_component ;
-        }
-    }
-    else
-    {
-        if( state->preview_component == NULL ) {
-            status = mmal_component_create(MMAL_COMPONENT_DEFAULT_VIDEO_RENDERER,
-                                           &preview);
+    } else {
+        if (state->preview_component == NULL) {
+            status = mmal_component_create(
+                MMAL_COMPONENT_DEFAULT_VIDEO_RENDERER, &preview);
 
-            if (status != MMAL_SUCCESS)
-            {
+            if (status != MMAL_SUCCESS) {
                 vcos_log_error("Unable to create preview component");
                 goto error;
             }
-        }
-        else {
-            preview = state->preview_component ;
+        } else {
+            preview = state->preview_component;
         }
 
-        if (!preview->input_num)
-        {
+        if (!preview->input_num) {
             status = MMAL_ENOSYS;
             vcos_log_error("No input ports found on component");
             goto error;
@@ -130,23 +123,21 @@ MMAL_STATUS_T raspipreview_create(RASPIPREVIEW_PARAMETERS *state)
         param.set |= MMAL_DISPLAY_SET_ALPHA;
         param.alpha = state->opacity;
 
-        if (state->wantFullScreenPreview)
-        {
+        if (state->wantFullScreenPreview) {
             param.set |= MMAL_DISPLAY_SET_FULLSCREEN;
             param.fullscreen = 1;
-        }
-        else
-        {
-            param.set |= (MMAL_DISPLAY_SET_DEST_RECT | MMAL_DISPLAY_SET_FULLSCREEN);
+        } else {
+            param.set |=
+                (MMAL_DISPLAY_SET_DEST_RECT | MMAL_DISPLAY_SET_FULLSCREEN);
             param.fullscreen = 0;
             param.dest_rect = state->previewWindow;
         }
 
         status = mmal_port_parameter_set(preview_port, &param.hdr);
 
-        if (status != MMAL_SUCCESS && status != MMAL_ENOSYS)
-        {
-            vcos_log_error("unable to set preview port parameters (%u)", status);
+        if (status != MMAL_SUCCESS && status != MMAL_ENOSYS) {
+            vcos_log_error("unable to set preview port parameters (%u)",
+                           status);
             goto error;
         }
     }
@@ -154,9 +145,9 @@ MMAL_STATUS_T raspipreview_create(RASPIPREVIEW_PARAMETERS *state)
     /* Enable component */
     status = mmal_component_enable(preview);
 
-    if (status != MMAL_SUCCESS)
-    {
-        vcos_log_error("Unable to enable preview/null sink component (%u)", status);
+    if (status != MMAL_SUCCESS) {
+        vcos_log_error("Unable to enable preview/null sink component (%u)",
+                       status);
         goto error;
     }
 
@@ -166,12 +157,10 @@ MMAL_STATUS_T raspipreview_create(RASPIPREVIEW_PARAMETERS *state)
 
 error:
 
-    if (preview)
-        mmal_component_destroy(preview);
+    if (preview) mmal_component_destroy(preview);
 
     return status;
 }
-
 
 /**
  * Destroy the preview component
@@ -179,10 +168,8 @@ error:
  * @param state Pointer to state control struct
  *
  */
-void raspipreview_destroy(RASPIPREVIEW_PARAMETERS *state)
-{
-    if (state->preview_component)
-    {
+void raspipreview_destroy(RASPIPREVIEW_PARAMETERS *state) {
+    if (state->preview_component) {
         mmal_component_destroy(state->preview_component);
         state->preview_component = NULL;
     }
@@ -194,8 +181,7 @@ void raspipreview_destroy(RASPIPREVIEW_PARAMETERS *state)
  * @param state Pointer to parameter block
  *
  */
-void raspipreview_set_defaults(RASPIPREVIEW_PARAMETERS *state)
-{
+void raspipreview_set_defaults(RASPIPREVIEW_PARAMETERS *state) {
     // Disable the Preview in default
     // state->wantPreview = 1;
     state->wantPreview = 0;
@@ -214,14 +200,15 @@ void raspipreview_set_defaults(RASPIPREVIEW_PARAMETERS *state)
  * @param state Pointer to parameter block
  *
  */
-void raspipreview_dump_parameters(RASPIPREVIEW_PARAMETERS *state)
-{
-    fprintf(stderr, "Preview %s, Full screen %s\n", state->wantPreview ? "Yes" : "No",
+void raspipreview_dump_parameters(RASPIPREVIEW_PARAMETERS *state) {
+    fprintf(stderr, "Preview %s, Full screen %s\n",
+            state->wantPreview ? "Yes" : "No",
             state->wantFullScreenPreview ? "Yes" : "No");
 
-    fprintf(stderr, "Preview window %d,%d,%d,%d\nOpacity %d\n", state->previewWindow.x,
-            state->previewWindow.y, state->previewWindow.width,
-            state->previewWindow.height, state->opacity);
+    fprintf(stderr, "Preview window %d,%d,%d,%d\nOpacity %d\n",
+            state->previewWindow.x, state->previewWindow.y,
+            state->previewWindow.width, state->previewWindow.height,
+            state->opacity);
 };
 
 /**
@@ -230,60 +217,61 @@ void raspipreview_dump_parameters(RASPIPREVIEW_PARAMETERS *state)
  * @param arg2 Parameter (could be NULL)
  * @return How many parameters were used, 0,1,2
  */
-int raspipreview_parse_cmdline(RASPIPREVIEW_PARAMETERS *params, const char *arg1, const char *arg2)
-{
+int raspipreview_parse_cmdline(RASPIPREVIEW_PARAMETERS *params,
+                               const char *arg1, const char *arg2) {
     int command_id, used = 0, num_parameters;
 
-    if (!arg1)
-        return 0;
+    if (!arg1) return 0;
 
-    command_id = raspicli_get_command_id(cmdline_commands, cmdline_commands_size, arg1, &num_parameters);
+    command_id = raspicli_get_command_id(
+        cmdline_commands, cmdline_commands_size, arg1, &num_parameters);
 
     // If invalid command, or we are missing a parameter, drop out
-    if (command_id==-1 || (command_id != -1 && num_parameters > 0 && arg2 == NULL))
+    if (command_id == -1 ||
+        (command_id != -1 && num_parameters > 0 && arg2 == NULL))
         return 0;
 
-    switch (command_id)
-    {
-    case CommandPreview: // Preview window
-    {
-        int tmp;
+    switch (command_id) {
+        case CommandPreview:  // Preview window
+        {
+            int tmp;
 
-        params->wantPreview = 1;
+            params->wantPreview = 1;
 
-        tmp = sscanf(arg2, "%d,%d,%d,%d",
-                     &params->previewWindow.x, &params->previewWindow.y,
-                     &params->previewWindow.width, &params->previewWindow.height);
+            tmp = sscanf(arg2, "%d,%d,%d,%d", &params->previewWindow.x,
+                         &params->previewWindow.y, &params->previewWindow.width,
+                         &params->previewWindow.height);
 
-        // Failed to get any window parameters, so revert to full screen
-        if (tmp == 0)
-            params->wantFullScreenPreview = 1;
-        else
-            params->wantFullScreenPreview = 0;
+            // Failed to get any window parameters, so revert to full screen
+            if (tmp == 0)
+                params->wantFullScreenPreview = 1;
+            else
+                params->wantFullScreenPreview = 0;
 
-        used = 2;
-
-        break;
-    }
-
-    case CommandFullScreen: // Want full screen preview mode (overrides display rect)
-        params->wantPreview = 1;
-        params->wantFullScreenPreview = 1;
-
-        used = 1;
-        break;
-
-    case CommandOpacity: // Define preview window opacity
-        if (sscanf(arg2, "%u", &params->opacity) != 1)
-            params->opacity = 255;
-        else
             used = 2;
-        break;
 
-    case CommandDisablePreview: // Turn off preview output
-        params->wantPreview = 0;
-        used = 1;
-        break;
+            break;
+        }
+
+        case CommandFullScreen:  // Want full screen preview mode (overrides
+                                 // display rect)
+            params->wantPreview = 1;
+            params->wantFullScreenPreview = 1;
+
+            used = 1;
+            break;
+
+        case CommandOpacity:  // Define preview window opacity
+            if (sscanf(arg2, "%u", &params->opacity) != 1)
+                params->opacity = 255;
+            else
+                used = 2;
+            break;
+
+        case CommandDisablePreview:  // Turn off preview output
+            params->wantPreview = 0;
+            used = 1;
+            break;
     }
 
     return used;
@@ -292,8 +280,7 @@ int raspipreview_parse_cmdline(RASPIPREVIEW_PARAMETERS *params, const char *arg1
 /**
  * Display help for command line options
  */
-void raspipreview_display_help()
-{
+void raspipreview_display_help() {
     fprintf(stdout, "\nPreview parameter commands\n\n");
     raspicli_display_help(cmdline_commands, cmdline_commands_size);
 }

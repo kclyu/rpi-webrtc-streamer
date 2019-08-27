@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -33,12 +33,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
-#include "system_wrappers/include/clock.h"
 #include "common_video/h264/h264_bitstream_parser.h"
+#include "system_wrappers/include/clock.h"
 
-#include "rtc_base/platform_thread.h"
-#include "rtc_base/message_queue.h"
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/platform_thread.h"
 
 #include "mmal_wrapper.h"
 #include "raspi_quality_config.h"
@@ -48,13 +48,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace webrtc {
 
 class RaspiEncoderImpl : public RaspiEncoder {
-public:
+   public:
     explicit RaspiEncoderImpl(const cricket::VideoCodec& codec);
     ~RaspiEncoderImpl() override;
 
     // number_of_cores, max_payload_size will be ignored.
-    int32_t InitEncode(const VideoCodec* inst,
-                       int32_t number_of_cores,
+    int32_t InitEncode(const VideoCodec* inst, int32_t number_of_cores,
                        size_t max_payload_size) override;
     int32_t Release() override;
 
@@ -68,7 +67,8 @@ public:
                    const std::vector<VideoFrameType>* frame_types) override;
 
     VideoEncoder::EncoderInfo GetEncoderInfo() const override;
-private:
+
+   private:
     bool IsInitialized() const;
 
     static void DrainThread(void*);
@@ -91,9 +91,9 @@ private:
     bool DelayedFrameSending(bool keyframe);
     void EnableSending(bool enable);
 
-    MMALEncoderWrapper *mmal_encoder_;
+    MMALEncoderWrapper* mmal_encoder_;
     // media configuration sigleton reference
-    ConfigMedia *config_media_;
+    ConfigMedia* config_media_;
 
     bool has_reported_init_;
     bool has_reported_error_;

@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -30,8 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RASPI_MOTIONBLOBID_H_
 #define RASPI_MOTIONBLOBID_H_
 
-#include <memory>
 #include <list>
+#include <memory>
 
 struct MotionBlob {
     enum MotionBlobStatus {
@@ -40,24 +40,28 @@ struct MotionBlob {
         ACTIVE,
     };
     MotionBlob()
-        : status_(UNUSED), size_(0), sx_(0), sy_(0), overlap_size_(0), update_counter_(0) {};
+        : status_(UNUSED),
+          size_(0),
+          sx_(0),
+          sy_(0),
+          overlap_size_(0),
+          update_counter_(0){};
     MotionBlobStatus status_;
-    int     size_;
-    int     overlap_size_;
-    int     update_counter_;
+    int size_;
+    int overlap_size_;
+    int update_counter_;
     uint8_t sx_, sy_;
 };
 
 class MotionBlobId {
-public:
+   public:
     explicit MotionBlobId();
     ~RaspiMotionBlobId();
 
-private:
-    bool CreateBlobId(uint16_t *blob_id);
+   private:
+    bool CreateBlobId(uint16_t* blob_id);
     void FreeBlobId(uint16_t blob_id);
     MotionBlob* GetMotionBlob(uint16_t blob_id);
 };
 
 #endif  // RASPI_MOTIONBLOBID_H_
-

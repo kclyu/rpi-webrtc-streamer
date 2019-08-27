@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -50,13 +50,13 @@ void dump_handshake_info(struct lws *wsi) {
         lws_hdr_copy(wsi, buf, sizeof buf, n);
         buf[sizeof(buf) - 1] = '\0';
 
-        lwsl_debug( "    %s(%d) = %s\n", (char *)c, n, buf);
+        lwsl_debug("    %s(%d) = %s\n", (char *)c, n, buf);
         n++;
     } while (c);
 }
 
-const char* to_callbackreason_str(int callback_reason, int brief) {
-    switch( callback_reason ) {
+const char *to_callbackreason_str(int callback_reason, int brief) {
+    switch (callback_reason) {
         case LWS_CALLBACK_ESTABLISHED:
             return "LWS_CALLBACK_ESTABLISHED";
         case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
@@ -126,13 +126,13 @@ const char* to_callbackreason_str(int callback_reason, int brief) {
         case LWS_CALLBACK_DEL_POLL_FD:
             return "LWS_CALLBACK_DEL_POLL_FD";
         case LWS_CALLBACK_CHANGE_MODE_POLL_FD:
-            if( brief ) return NULL;
+            if (brief) return NULL;
             return "LWS_CALLBACK_CHANGE_MODE_POLL_FD";
         case LWS_CALLBACK_LOCK_POLL:
-            if( brief ) return NULL;
+            if (brief) return NULL;
             return "LWS_CALLBACK_LOCK_POLL";
         case LWS_CALLBACK_UNLOCK_POLL:
-            if( brief ) return NULL;
+            if (brief) return NULL;
             return "LWS_CALLBACK_UNLOCK_POLL";
         case LWS_CALLBACK_OPENSSL_CONTEXT_REQUIRES_PRIVATE_KEY:
             return "LWS_CALLBACK_OPENSSL_CONTEXT_REQUIRES_PRIVATE_KEY";
@@ -164,73 +164,70 @@ const char* to_callbackreason_str(int callback_reason, int brief) {
             return "LWS_CALLBACK_HTTP_DROP_PROTOCOL";
         default:
             return "Callback reason does not defined in string reason.";
-
     }
 }
 
-
-const char* to_httpstatus_str(int status) {
-    switch( status ) {
-    case HTTP_STATUS_OK:
-	    return "HTTP_STATUS_OK";
-    case HTTP_STATUS_NO_CONTENT:
-	    return "HTTP_STATUS_NO_CONTENT";
-    case HTTP_STATUS_PARTIAL_CONTENT:
-	    return "HTTP_STATUS_PARTIAL_CONTENT";
-    case HTTP_STATUS_MOVED_PERMANENTLY:
-	    return "HTTP_STATUS_MOVED_PERMANENTLY";
-    case HTTP_STATUS_FOUND:
-	    return "HTTP_STATUS_FOUND";
-    case HTTP_STATUS_SEE_OTHER:
-	    return "HTTP_STATUS_SEE_OTHER";
-    case HTTP_STATUS_UNAUTHORIZED:
-	    return "HTTP_STATUS_UNAUTHORIZED";
-    case HTTP_STATUS_PAYMENT_REQUIRED:
-	    return "HTTP_STATUS_PAYMENT_REQUIRED";
-    case HTTP_STATUS_FORBIDDEN:
-	    return "HTTP_STATUS_FORBIDDEN";
-    case HTTP_STATUS_NOT_FOUND:
-	    return "HTTP_STATUS_NOT_FOUND";
-    case HTTP_STATUS_METHOD_NOT_ALLOWED:
-	    return "HTTP_STATUS_METHOD_NOT_ALLOWED";
-    case HTTP_STATUS_NOT_ACCEPTABLE:
-	    return "HTTP_STATUS_NOT_ACCEPTABLE";
-    case HTTP_STATUS_PROXY_AUTH_REQUIRED:
-	    return "HTTP_STATUS_PROXY_AUTH_REQUIRED";
-    case HTTP_STATUS_REQUEST_TIMEOUT:
-	    return "HTTP_STATUS_REQUEST_TIMEOUT";
-    case HTTP_STATUS_CONFLICT:
-	    return "HTTP_STATUS_CONFLICT";
-    case HTTP_STATUS_GONE:
-	    return "HTTP_STATUS_GONE";
-    case HTTP_STATUS_LENGTH_REQUIRED:
-	    return "HTTP_STATUS_LENGTH_REQUIRED";
-    case HTTP_STATUS_PRECONDITION_FAILED:
-	    return "HTTP_STATUS_PRECONDITION_FAILED";
-    case HTTP_STATUS_REQ_ENTITY_TOO_LARGE:
-	    return "HTTP_STATUS_REQ_ENTITY_TOO_LARGE";
-    case HTTP_STATUS_REQ_URI_TOO_LONG:
-	    return "HTTP_STATUS_REQ_URI_TOO_LONG";
-    case HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE:
-	    return "HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE";
-    case HTTP_STATUS_REQ_RANGE_NOT_SATISFIABLE:
-	    return "HTTP_STATUS_REQ_RANGE_NOT_SATISFIABLE";
-    case HTTP_STATUS_EXPECTATION_FAILED:
-	    return "HTTP_STATUS_EXPECTATION_FAILED";
-    case HTTP_STATUS_INTERNAL_SERVER_ERROR:
-	    return "HTTP_STATUS_INTERNAL_SERVER_ERROR";
-    case HTTP_STATUS_NOT_IMPLEMENTED:
-	    return "HTTP_STATUS_NOT_IMPLEMENTED";
-    case HTTP_STATUS_BAD_GATEWAY:
-	    return "HTTP_STATUS_BAD_GATEWAY";
-    case HTTP_STATUS_SERVICE_UNAVAILABLE:
-	    return "HTTP_STATUS_SERVICE_UNAVAILABLE";
-    case HTTP_STATUS_GATEWAY_TIMEOUT:
-	    return "HTTP_STATUS_GATEWAY_TIMEOUT";
-    case HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED:
-	    return "HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED";
-    default:
-	    return "HTTP_UNKNOWN_STATUS";
+const char *to_httpstatus_str(int status) {
+    switch (status) {
+        case HTTP_STATUS_OK:
+            return "HTTP_STATUS_OK";
+        case HTTP_STATUS_NO_CONTENT:
+            return "HTTP_STATUS_NO_CONTENT";
+        case HTTP_STATUS_PARTIAL_CONTENT:
+            return "HTTP_STATUS_PARTIAL_CONTENT";
+        case HTTP_STATUS_MOVED_PERMANENTLY:
+            return "HTTP_STATUS_MOVED_PERMANENTLY";
+        case HTTP_STATUS_FOUND:
+            return "HTTP_STATUS_FOUND";
+        case HTTP_STATUS_SEE_OTHER:
+            return "HTTP_STATUS_SEE_OTHER";
+        case HTTP_STATUS_UNAUTHORIZED:
+            return "HTTP_STATUS_UNAUTHORIZED";
+        case HTTP_STATUS_PAYMENT_REQUIRED:
+            return "HTTP_STATUS_PAYMENT_REQUIRED";
+        case HTTP_STATUS_FORBIDDEN:
+            return "HTTP_STATUS_FORBIDDEN";
+        case HTTP_STATUS_NOT_FOUND:
+            return "HTTP_STATUS_NOT_FOUND";
+        case HTTP_STATUS_METHOD_NOT_ALLOWED:
+            return "HTTP_STATUS_METHOD_NOT_ALLOWED";
+        case HTTP_STATUS_NOT_ACCEPTABLE:
+            return "HTTP_STATUS_NOT_ACCEPTABLE";
+        case HTTP_STATUS_PROXY_AUTH_REQUIRED:
+            return "HTTP_STATUS_PROXY_AUTH_REQUIRED";
+        case HTTP_STATUS_REQUEST_TIMEOUT:
+            return "HTTP_STATUS_REQUEST_TIMEOUT";
+        case HTTP_STATUS_CONFLICT:
+            return "HTTP_STATUS_CONFLICT";
+        case HTTP_STATUS_GONE:
+            return "HTTP_STATUS_GONE";
+        case HTTP_STATUS_LENGTH_REQUIRED:
+            return "HTTP_STATUS_LENGTH_REQUIRED";
+        case HTTP_STATUS_PRECONDITION_FAILED:
+            return "HTTP_STATUS_PRECONDITION_FAILED";
+        case HTTP_STATUS_REQ_ENTITY_TOO_LARGE:
+            return "HTTP_STATUS_REQ_ENTITY_TOO_LARGE";
+        case HTTP_STATUS_REQ_URI_TOO_LONG:
+            return "HTTP_STATUS_REQ_URI_TOO_LONG";
+        case HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE:
+            return "HTTP_STATUS_UNSUPPORTED_MEDIA_TYPE";
+        case HTTP_STATUS_REQ_RANGE_NOT_SATISFIABLE:
+            return "HTTP_STATUS_REQ_RANGE_NOT_SATISFIABLE";
+        case HTTP_STATUS_EXPECTATION_FAILED:
+            return "HTTP_STATUS_EXPECTATION_FAILED";
+        case HTTP_STATUS_INTERNAL_SERVER_ERROR:
+            return "HTTP_STATUS_INTERNAL_SERVER_ERROR";
+        case HTTP_STATUS_NOT_IMPLEMENTED:
+            return "HTTP_STATUS_NOT_IMPLEMENTED";
+        case HTTP_STATUS_BAD_GATEWAY:
+            return "HTTP_STATUS_BAD_GATEWAY";
+        case HTTP_STATUS_SERVICE_UNAVAILABLE:
+            return "HTTP_STATUS_SERVICE_UNAVAILABLE";
+        case HTTP_STATUS_GATEWAY_TIMEOUT:
+            return "HTTP_STATUS_GATEWAY_TIMEOUT";
+        case HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED:
+            return "HTTP_STATUS_HTTP_VERSION_NOT_SUPPORTED";
+        default:
+            return "HTTP_UNKNOWN_STATUS";
     };
 }
-

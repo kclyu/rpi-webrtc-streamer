@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,19 +27,19 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <string>
-#include <list>
-#include <deque>
-#include <map>
 #include <algorithm>
+#include <deque>
+#include <list>
+#include <map>
+#include <string>
 
 #include <ctime>
 
 // __RWS_VERSION__ defined in Makefile
 #define WEBSOCKET_SERVER_NAME __RWS_VERSION__
 
-#include "websocket_server_internal.h"
 #include "websocket_handler.h"
+#include "websocket_server_internal.h"
 
 #ifndef WEBSOCKET_SERVER_H_
 #define WEBSOCKET_SERVER_H_
@@ -50,7 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //////////////////////////////////////////////////////////////////////
 
-#define  MAX_URI_PATH 128
+#define MAX_URI_PATH 128
 
 // per session stroage
 struct per_session_data__libwebsockets {
@@ -59,13 +59,13 @@ struct per_session_data__libwebsockets {
 };
 
 struct vhd_libwebsocket {
-	struct lws_context *context;
-	struct lws_vhost *vhost;
+    struct lws_context *context;
+    struct lws_vhost *vhost;
 };
 
 struct WSInstanceContainer {
-    explicit WSInstanceContainer(const int sockid,struct lws* wsi )
-        : sockid_(sockid), wsi_(wsi), force_connection_drop_(false){}
+    explicit WSInstanceContainer(const int sockid, struct lws *wsi)
+        : sockid_(sockid), wsi_(wsi), force_connection_drop_(false) {}
     virtual ~WSInstanceContainer() {}
     int sockid_;
     struct lws *wsi_;
@@ -82,8 +82,8 @@ struct WSInstanceContainer {
 
 struct WSInternalHandlerConfig : public WebSocketHandler {
     WSInternalHandlerConfig(std::string path, WebSocketHandlerType handler_type,
-            WebSocketHandler *handler ) :
-        path_(path), handler_type_(handler_type), handler_(handler) {}
+                            WebSocketHandler *handler)
+        : path_(path), handler_type_(handler_type), handler_(handler) {}
     virtual ~WSInternalHandlerConfig() {}
 
     std::string path_;
@@ -92,22 +92,22 @@ struct WSInternalHandlerConfig : public WebSocketHandler {
     std::list<struct WSInstanceContainer> handler_runtime_;
 
     virtual void OnConnect(const int sockid);
-    virtual bool OnMessage(const int sockid, const std::string& message);
+    virtual bool OnMessage(const int sockid, const std::string &message);
     virtual void OnDisconnect(const int sockid);
-    virtual void OnError(const int sockid, const std::string& errmsg);
+    virtual void OnError(const int sockid, const std::string &errmsg);
 
     bool CreateHandlerRuntime(const int sockid, struct lws *wsi);
-    struct lws* GetWsiFromHandlerRuntime(const int sockid);
-    bool QueueMessage(const int sockid, const std::string& message);
-    bool DequeueMessage(const int sockid, std::string& message);
+    struct lws *GetWsiFromHandlerRuntime(const int sockid);
+    bool QueueMessage(const int sockid, const std::string &message);
+    bool DequeueMessage(const int sockid, std::string &message);
     size_t Size();
     size_t QeueueSize(const int sockid);
     bool HasPendingMessage(const int sockid);
-    bool Close(int sockid, int reason_code, const std::string& message);
+    bool Close(int sockid, int reason_code, const std::string &message);
 };
 
-class LibWebSocketServer: public WebSocketMessage {
-public:
+class LibWebSocketServer : public WebSocketMessage {
+   public:
     enum DEBUG_LEVEL {
         DEBUG_LEVEL_ERR,
         DEBUG_LEVEL_WARN,
@@ -127,34 +127,36 @@ public:
     explicit LibWebSocketServer();
     ~LibWebSocketServer();
 
-    bool AddHttpWebMount(bool motion_enabled,
-        const std::string &web_path, const std::string &motion_path);
+    bool AddHttpWebMount(bool motion_enabled, const std::string &web_path,
+                         const std::string &motion_path);
     bool Init(int port);
     bool RunLoop(int timeout);
     void LogLevel(DEBUG_LEVEL level);
-    void LogLevel(DEBUG_LEVEL level,bool log_redirect);
-    static void Log (int level, const char *line);
-    static int  CallbackLibWebsockets(struct lws *wsi, enum lws_callback_reasons reason,
-            void *user, void *in, size_t len);
+    void LogLevel(DEBUG_LEVEL level, bool log_redirect);
+    static void Log(int level, const char *line);
+    static int CallbackLibWebsockets(struct lws *wsi,
+                                     enum lws_callback_reasons reason,
+                                     void *user, void *in, size_t len);
 
     // Add Handler interfaces in LibWebSocket Server
     void AddWebSocketHandler(const std::string path,
-            WebSocketHandlerType instance_type, WebSocketHandler *handler);
+                             WebSocketHandlerType instance_type,
+                             WebSocketHandler *handler);
 
-    virtual void SendMessage(int sockid, const std::string& message);
-    virtual void Close(int sockid, int reason_code, const std::string& message);
+    virtual void SendMessage(int sockid, const std::string &message);
+    virtual void Close(int sockid, int reason_code, const std::string &message);
 
-protected:
+   protected:
     bool IsValidWSPath(const char *path);
-    bool GetFileMapping(const std::string path,std::string& file_mapping);
+    bool GetFileMapping(const std::string path, std::string &file_mapping);
     WSInternalHandlerConfig *GetWebsocketHandler(const char *path);
 
-private:
+   private:
     std::list<WSInternalHandlerConfig> wshandler_config_;
 
     struct lws_context_creation_info info_;
     struct lws_context *context_;
-	struct lws_vhost *vhost_;
+    struct lws_vhost *vhost_;
     struct lws_http_mount webroot_http_mount_;
     struct lws_http_mount motion_http_mount_;
     bool motion_mount_enabled_;
@@ -162,5 +164,4 @@ private:
     DEBUG_LEVEL debug_level_;
 };
 
-#endif // WEBSOCKET_SERVER_H_
-
+#endif  // WEBSOCKET_SERVER_H_

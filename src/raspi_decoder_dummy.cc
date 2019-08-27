@@ -27,18 +27,14 @@
 
 namespace webrtc {
 
-RaspiDecoderDummy::RaspiDecoderDummy() :
-    decoded_image_callback_(nullptr), decoder_initialized_(false) {
-}
+RaspiDecoderDummy::RaspiDecoderDummy()
+    : decoded_image_callback_(nullptr), decoder_initialized_(false) {}
 
-RaspiDecoderDummy::~RaspiDecoderDummy() {
-  Release();
-}
+RaspiDecoderDummy::~RaspiDecoderDummy() { Release(); }
 
 int32_t RaspiDecoderDummy::InitDecode(const VideoCodec* codec_settings,
-        int32_t number_of_cores) {
-    if (codec_settings &&
-            codec_settings->codecType != kVideoCodecH264) {
+                                      int32_t number_of_cores) {
+    if (codec_settings && codec_settings->codecType != kVideoCodecH264) {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
 
@@ -59,29 +55,30 @@ int32_t RaspiDecoderDummy::Release() {
 }
 
 int32_t RaspiDecoderDummy::RegisterDecodeCompleteCallback(
-        DecodedImageCallback* callback) {
+    DecodedImageCallback* callback) {
     decoded_image_callback_ = callback;
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int32_t RaspiDecoderDummy::Decode(const EncodedImage& input_image,
-                                bool /*missing_frames*/,
-                                int64_t render_time_ms) {
+                                  bool /*missing_frames*/,
+                                  int64_t render_time_ms) {
     if (!IsInitialized()) {
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
     if (!decoded_image_callback_) {
         RTC_LOG(LS_WARNING)
             << "InitDecode() has been called, but a callback function "
-            "has not been set with RegisterDecodeCompleteCallback()";
+               "has not been set with RegisterDecodeCompleteCallback()";
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
     if (!input_image.data() || !input_image.size()) {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
 
-    VideoFrame frame(I420Buffer::Create(decoder_config_.width, decoder_config_.height),
-            kVideoRotation_0, render_time_ms * rtc::kNumMicrosecsPerMillisec);
+    VideoFrame frame(
+        I420Buffer::Create(decoder_config_.width, decoder_config_.height),
+        kVideoRotation_0, render_time_ms * rtc::kNumMicrosecsPerMillisec);
     frame.set_timestamp(input_image.Timestamp());
     frame.set_ntp_time_ms(input_image.ntp_time_ms_);
 
@@ -94,8 +91,6 @@ const char* RaspiDecoderDummy::ImplementationName() const {
     return "RaspiDecoderDummy";
 }
 
-bool RaspiDecoderDummy::IsInitialized() const {
-    return decoder_initialized_;
-}
+bool RaspiDecoderDummy::IsInitialized() const { return decoder_initialized_; }
 
 }  // namespace webrtc

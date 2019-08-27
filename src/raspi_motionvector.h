@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -45,28 +45,29 @@ struct MotionBlobObserver {
     virtual void OnMotionTriggered(int active_nums) = 0;
     virtual void OnMotionCleared(int updates) = 0;
 
-protected:
+   protected:
     virtual ~MotionBlobObserver() {}
 };
 
 struct MotionImvObserver {
     virtual void OnActivePoints(int total_points, int active_points) = 0;
 
-protected:
+   protected:
     virtual ~MotionImvObserver() {}
 };
 
 class RaspiMotionVector {
-public:
-    explicit RaspiMotionVector(int width, int height, int framerate, bool use_imv_coordination);
+   public:
+    explicit RaspiMotionVector(int width, int height, int framerate,
+                               bool use_imv_coordination);
     ~RaspiMotionVector();
 
     bool Analyse(uint8_t *buffer, int len);
 
-    void GetIMVImage(uint8_t *buffer, int buflen );
-    void GetMotionImage(uint8_t *buffer, int buflen );
+    void GetIMVImage(uint8_t *buffer, int buflen);
+    void GetMotionImage(uint8_t *buffer, int buflen);
     // available only when blob is enabled
-    bool GetBlobImage(uint8_t *buffer, int buflen );
+    bool GetBlobImage(uint8_t *buffer, int buflen);
 
     void SetBlobEnable(bool blob_enable);
     void SetMotionActiveTreshold(int max, int min);
@@ -74,10 +75,10 @@ public:
     void RegisterImvObserver(MotionImvObserver *observer);
 
     // disallow copy and assign
-    void operator=(const RaspiMotionVector&) = delete;
+    void operator=(const RaspiMotionVector &) = delete;
     RaspiMotionVector(const RaspiMotionVector &) = delete;
 
-private:
+   private:
     // bitcount uses the 'Counting bits set, in parallel' algorithm below.
     // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
     int BitCount(uint32_t motion_value);
@@ -88,8 +89,8 @@ private:
 
     uint32_t binary_oper_;
     // motion vector processing buffers
-    uint32_t * candidate_;
-    uint8_t * motion_;
+    uint32_t *candidate_;
+    uint8_t *motion_;
     uint64_t update_counter_;
     uint32_t initial_coolingdown_;
     bool enable_observer_callback_;
@@ -104,4 +105,3 @@ private:
 };
 
 #endif  // RASPI_MOTIONVECTOR_H_
-

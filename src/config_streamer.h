@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -30,19 +30,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RPI_STREAMER_CONFIG_
 #define RPI_STREAMER_CONFIG_
 
-#include "rtc_base/checks.h"
 #include "api/peer_connection_interface.h"
+#include "rtc_base/checks.h"
 
 #include "compat/optionsfile.h"
 #include "utils_pc_config.h"
 
-class StreamerConfig  {
-public:
-    explicit StreamerConfig(const std::string &config_file);
+class StreamerConfig {
+   public:
+    explicit StreamerConfig(const std::string& config_file);
     ~StreamerConfig();
 
     // Load Config
-    bool LoadConfig(bool verbose=false);
+    bool LoadConfig(bool verbose = false);
     const std::string GetConfigFilename();
 
     bool GetDisableLogBuffering();
@@ -61,28 +61,26 @@ public:
     bool GetVideoEnable();
 
     void GetIceTransportsType(
-            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+        webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config);
     void GetIceBundlePolicy(
-            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+        webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config);
     void GetIceRtcpMuxPolicy(
-            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config);
+        webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config);
     bool GetIceServers(
-            webrtc::PeerConnectionInterface::RTCConfiguration &rtc_config,
-            bool internal_config );
+        webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config,
+        bool internal_config);
     bool GetRTCConfig(std::string& json_rtcconfig);
 
     bool GetMediaConfigFilePath(std::string& conf);
     bool GetMotionConfigFilePath(std::string& conf);
     bool GetLogPath(std::string& log_dir);
 
-private:
+   private:
     bool config_loaded_;
     std::string config_file_;
     bool verbose_;
     std::unique_ptr<rtc::OptionsFile> config_;
     std::string config_dir_basename_;
 };
-
-
 
 #endif  // RPI_STREAMER_CONFIG_

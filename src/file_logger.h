@@ -28,17 +28,18 @@ namespace utils {
 
 // save the logging messsage to file
 class FileLogger {
-public:
+   public:
     explicit FileLogger(const std::string path,
-            const rtc::LoggingSeverity severity, bool disable_buffering);
+                        const rtc::LoggingSeverity severity,
+                        bool disable_buffering);
     bool Init();
     ~FileLogger();
 
-private:
+   private:
     bool DeleteFolderFiles(const std::string &folder);
     bool MoveLogFiletoNextShiftFolder();
-    bool MoveLogFiles(const std::string prefix,
-            const std::string &src, const std::string &dest);
+    bool MoveLogFiles(const std::string prefix, const std::string &src,
+                      const std::string &dest);
     bool inited_;
     std::string dir_path_;
     rtc::LoggingSeverity severity_;
@@ -47,7 +48,6 @@ private:
     bool disable_buffering_;
 };
 
-};
+};  // namespace utils
 
 #endif  // RPI_FILELOGGER_H_
-

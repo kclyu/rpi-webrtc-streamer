@@ -30,21 +30,19 @@
 #include "api/peer_connection_interface.h"
 #include "pc/video_track_source.h"
 
-#include "streamer_observer.h"
 #include "config_streamer.h"
+#include "streamer_observer.h"
 
-class Streamer
-    : public webrtc::PeerConnectionObserver,
-      public webrtc::CreateSessionDescriptionObserver,
-      public StreamerObserver
-{
-public:
-    Streamer(SocketServerObserver *session, StreamerConfig *config );
-    void AddObserver(SocketServerObserver *session);
+class Streamer : public webrtc::PeerConnectionObserver,
+                 public webrtc::CreateSessionDescriptionObserver,
+                 public StreamerObserver {
+   public:
+    Streamer(SocketServerObserver* session, StreamerConfig* config);
+    void AddObserver(SocketServerObserver* session);
     bool connection_active() const;
     virtual void Close();
 
-protected:
+   protected:
     ~Streamer();
     bool InitializePeerConnection();
     bool CreatePeerConnection();
@@ -57,22 +55,23 @@ protected:
     void OnSignalingChange(
         webrtc::PeerConnectionInterface::SignalingState new_state) override;
     void OnAddTrack(
-            rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-            const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
+        rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+        const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
             streams) override;
     void OnRemoveTrack(
-            rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
-    void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
-        override {}
+        rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
+    void OnDataChannel(
+        rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
     void OnRenegotiationNeeded() override {}
     void OnIceConnectionChange(
         webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
     void OnIceGatheringChange(
         webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
-    void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
+    void OnIceCandidate(
+        const webrtc::IceCandidateInterface* candidate) override;
     void OnIceConnectionReceivingChange(bool receiving) override {}
-    void OnConnectionChange(
-        webrtc::PeerConnectionInterface::PeerConnectionState new_state) override;
+    void OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState
+                                new_state) override;
 
     //
     // CreateSessionDescriptionObserver implementation.
@@ -85,10 +84,11 @@ protected:
     //
     virtual void OnPeerConnected(int peer_id, const std::string& name) override;
     virtual void OnPeerDisconnected(int peer_id) override;
-    virtual void OnMessageFromPeer(int peer_id, const std::string& message) override;
+    virtual void OnMessageFromPeer(int peer_id,
+                                   const std::string& message) override;
     virtual void OnMessageSent(int err) override;
 
-private:
+   private:
     // Send a message to the remote peer.
     void SendMessage(const std::string& json_object);
     // Send a event message to the remote peer.
@@ -111,10 +111,9 @@ private:
         video_track_sources_;
 
     SocketServerObserver* session_;
-    StreamerConfig *streamer_config_;
+    StreamerConfig* streamer_config_;
     webrtc::PeerConnectionInterface::IceConnectionState ice_state_;
     webrtc::PeerConnectionInterface::PeerConnectionState peerconnection_state_;
 };
-
 
 #endif  // RPI_STREAMER_H_

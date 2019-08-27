@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -43,20 +43,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   USA.
 ***/
 
-#include <time.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
 
 #include <avahi-common/alternative.h>
-#include <avahi-common/simple-watch.h>
-#include <avahi-common/malloc.h>
 #include <avahi-common/error.h>
+#include <avahi-common/malloc.h>
+#include <avahi-common/simple-watch.h>
 #include <avahi-common/timeval.h>
 
 #include "mdns_publish.h"
@@ -69,7 +69,7 @@ typedef struct _MdnsClientInfo {
     char *service_name;
     char *ws_url_path;
     char *device_id;
-    int  port_number;
+    int port_number;
 } MdnsClientInfo;
 
 // mDNS Client info
@@ -78,25 +78,25 @@ typedef struct _MdnsClientInfo {
 // and malloc only once during the process operation.
 static MdnsClientInfo *_mdnsInfo = NULL;
 
-
 // forward declaration
 static void mdns_create_service(MdnsClientInfo *mi);
 
-static void mdns_entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState state,
-        void *userdata) {
+static void mdns_entry_group_callback(AvahiEntryGroup *g,
+                                      AvahiEntryGroupState state,
+                                      void *userdata) {
     MdnsClientInfo *mi = (MdnsClientInfo *)userdata;
 
     assert(g == mi->group || mi->group == NULL);
 
     /* Called whenever the entry group state changes */
     switch (state) {
-        case AVAHI_ENTRY_GROUP_ESTABLISHED :
+        case AVAHI_ENTRY_GROUP_ESTABLISHED:
             /* The entry group has been established successfully */
-            fprintf(stderr,
-                    "mDNS: Service '%s' successfully established.\n", mi->name);
+            fprintf(stderr, "mDNS: Service '%s' successfully established.\n",
+                    mi->name);
             break;
 
-        case AVAHI_ENTRY_GROUP_COLLISION : {
+        case AVAHI_ENTRY_GROUP_COLLISION: {
             char *n;
 
             /* A service name collision with a remote service
@@ -106,7 +106,8 @@ static void mdns_entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState s
             mi->name = n;
 
             fprintf(stderr,
-                    "mDNS: Service name collision, renaming service to '%s'\n", mi->name);
+                    "mDNS: Service name collision, renaming service to '%s'\n",
+                    mi->name);
 
             /* And recreate the services */
             mi->client = (avahi_entry_group_get_client(g));
@@ -114,11 +115,13 @@ static void mdns_entry_group_callback(AvahiEntryGroup *g, AvahiEntryGroupState s
             break;
         }
 
-        case AVAHI_ENTRY_GROUP_FAILURE :
+        case AVAHI_ENTRY_GROUP_FAILURE:
             fprintf(stderr, "mDNS: Entry group failure: %s\n",
-                    avahi_strerror(avahi_client_errno(avahi_entry_group_get_client(g))));
+                    avahi_strerror(
+                        avahi_client_errno(avahi_entry_group_get_client(g))));
 
-            /* Some kind of failure happened while we were registering our services */
+            /* Some kind of failure happened while we were registering our
+             * services */
             avahi_simple_poll_quit(mi->simple_poll);
             break;
 
@@ -137,8 +140,8 @@ static void mdns_create_service(MdnsClientInfo *mi) {
      * entry group if necessary */
 
     if (!mi->group) {
-        if (!(mi->group = avahi_entry_group_new(mi->client,
-                        mdns_entry_group_callback, mi))) {
+        if (!(mi->group = avahi_entry_group_new(
+                  mi->client, mdns_entry_group_callback, mi))) {
             fprintf(stderr, "mDNS: avahi_entry_group_new() failed: %s\n",
                     avahi_strerror(avahi_client_errno(mi->client)));
             avahi_simple_poll_quit(mi->simple_poll);
@@ -152,10 +155,10 @@ static void mdns_create_service(MdnsClientInfo *mi) {
         fprintf(stderr, "mDNS: Adding service '%s'\n", mi->name);
 
         /* Add the service for IPP */
-        if ((ret = avahi_entry_group_add_service(mi->group, AVAHI_IF_UNSPEC,
-                        AVAHI_PROTO_UNSPEC, 0,
-                        mi->name, mi->service_name, NULL, NULL,
-                        mi->port_number, mi->ws_url_path, mi->device_id, NULL)) < 0) {
+        if ((ret = avahi_entry_group_add_service(
+                 mi->group, AVAHI_IF_UNSPEC, AVAHI_PROTO_UNSPEC, 0, mi->name,
+                 mi->service_name, NULL, NULL, mi->port_number, mi->ws_url_path,
+                 mi->device_id, NULL)) < 0) {
             if (ret == AVAHI_ERR_COLLISION) {
                 /* A service name collision with a local service happened. Let's
                  * pick a new name */
@@ -163,9 +166,10 @@ static void mdns_create_service(MdnsClientInfo *mi) {
                 avahi_free(mi->name);
                 mi->name = n;
 
-                fprintf(stderr,
-                        "mDNS: Service name collision, renaming service to '%s'\n",
-                        mi->name);
+                fprintf(
+                    stderr,
+                    "mDNS: Service name collision, renaming service to '%s'\n",
+                    mi->name);
                 avahi_entry_group_reset(mi->group);
                 mdns_create_service(mi);
                 return;
@@ -187,7 +191,7 @@ static void mdns_create_service(MdnsClientInfo *mi) {
 }
 
 static void mdns_client_callback(AvahiClient *c, AvahiClientState state,
-        void * userdata){
+                                 void *userdata) {
     MdnsClientInfo *mi;
     assert(c);
 
@@ -211,8 +215,7 @@ static void mdns_client_callback(AvahiClient *c, AvahiClientState state,
              * might be caused by a host name change. We need to wait
              * for our own records to register until the host name is
              * properly esatblished. */
-            if (mi->group)
-                avahi_entry_group_reset(mi->group);
+            if (mi->group) avahi_entry_group_reset(mi->group);
             break;
 
         case AVAHI_CLIENT_CONNECTING:
@@ -220,16 +223,17 @@ static void mdns_client_callback(AvahiClient *c, AvahiClientState state,
     }
 }
 
-int mdns_init_clientinfo(int port_number, const char *ws, const char *device_id){
+int mdns_init_clientinfo(int port_number, const char *ws,
+                         const char *device_id) {
     int error = 0;
     char strbuf[128];
 
-    if( _mdnsInfo != NULL ) {
+    if (_mdnsInfo != NULL) {
         fprintf(stderr, "mDNS: Warning, client info already initialized.\n");
         return MDNS_SUCCESS;
     }
 
-    if((_mdnsInfo  = avahi_malloc( sizeof(MdnsClientInfo))) == NULL) {
+    if ((_mdnsInfo = avahi_malloc(sizeof(MdnsClientInfo))) == NULL) {
         fprintf(stderr, "mDNS: Failed to allocate mDNS client info .\n");
         return MDNS_FAILED;
     }
@@ -242,9 +246,9 @@ int mdns_init_clientinfo(int port_number, const char *ws, const char *device_id)
 
     // initialize client info with  parameter values
     _mdnsInfo->port_number = port_number;
-    snprintf(strbuf, sizeof(strbuf),"ws_url_path=%s", ws);
+    snprintf(strbuf, sizeof(strbuf), "ws_url_path=%s", ws);
     _mdnsInfo->ws_url_path = avahi_strdup(strbuf);
-    snprintf(strbuf, sizeof(strbuf),"deviceid=%s", device_id);
+    snprintf(strbuf, sizeof(strbuf), "deviceid=%s", device_id);
     _mdnsInfo->device_id = avahi_strdup(strbuf);
 
     /* Allocate main loop object */
@@ -255,13 +259,14 @@ int mdns_init_clientinfo(int port_number, const char *ws, const char *device_id)
     }
 
     /* Allocate a new client */
-    _mdnsInfo->client = avahi_client_new(
-            avahi_simple_poll_get(_mdnsInfo->simple_poll),
-            0, mdns_client_callback, _mdnsInfo, &error);
+    _mdnsInfo->client =
+        avahi_client_new(avahi_simple_poll_get(_mdnsInfo->simple_poll), 0,
+                         mdns_client_callback, _mdnsInfo, &error);
 
     /* Check wether creating the client object succeeded */
-    if (_mdnsInfo->client == NULL ){
-        fprintf(stderr, "mDNS: Failed to create client: %s\n", avahi_strerror(error));
+    if (_mdnsInfo->client == NULL) {
+        fprintf(stderr, "mDNS: Failed to create client: %s\n",
+                avahi_strerror(error));
         mdns_destroy_clientinfo();
         return MDNS_FAILED;
     }
@@ -269,42 +274,41 @@ int mdns_init_clientinfo(int port_number, const char *ws, const char *device_id)
     return MDNS_SUCCESS;
 }
 
-void mdns_destroy_clientinfo(void){
-    if( _mdnsInfo != NULL ) {
-        if (_mdnsInfo->client)
-            avahi_client_free(_mdnsInfo->client);
-        if (_mdnsInfo->group)
-            avahi_entry_group_free(_mdnsInfo->group);
+void mdns_destroy_clientinfo(void) {
+    if (_mdnsInfo != NULL) {
+        if (_mdnsInfo->client) avahi_client_free(_mdnsInfo->client);
+        if (_mdnsInfo->group) avahi_entry_group_free(_mdnsInfo->group);
         if (_mdnsInfo->simple_poll)
             avahi_simple_poll_free(_mdnsInfo->simple_poll);
 
-        if( _mdnsInfo->name ) avahi_free(_mdnsInfo->name);
-        if( _mdnsInfo->service_name ) avahi_free(_mdnsInfo->service_name);
-        if( _mdnsInfo->ws_url_path ) avahi_free(_mdnsInfo->ws_url_path);
-        if( _mdnsInfo->device_id ) avahi_free(_mdnsInfo->device_id);
+        if (_mdnsInfo->name) avahi_free(_mdnsInfo->name);
+        if (_mdnsInfo->service_name) avahi_free(_mdnsInfo->service_name);
+        if (_mdnsInfo->ws_url_path) avahi_free(_mdnsInfo->ws_url_path);
+        if (_mdnsInfo->device_id) avahi_free(_mdnsInfo->device_id);
 
         avahi_free(_mdnsInfo);
         _mdnsInfo = NULL;
         return;
     }
     fprintf(stderr,
-            "mDNS: Error, Trying to destroy mDNS client info without initialization.\n");
+            "mDNS: Error, Trying to destroy mDNS client info without "
+            "initialization.\n");
 }
 
 // timeout unit is ms.
-int mdns_run_loop(int timeout){
+int mdns_run_loop(int timeout) {
     int retvalue;
-    assert( _mdnsInfo);
-    assert( _mdnsInfo->client);
-    assert( _mdnsInfo->simple_poll);
+    assert(_mdnsInfo);
+    assert(_mdnsInfo->client);
+    assert(_mdnsInfo->simple_poll);
 
-    if( timeout == 0 ) timeout = 5;
-    if ((retvalue = avahi_simple_poll_iterate(_mdnsInfo->simple_poll, timeout)) != 0) {
+    if (timeout == 0) timeout = 5;
+    if ((retvalue =
+             avahi_simple_poll_iterate(_mdnsInfo->simple_poll, timeout)) != 0) {
         if (retvalue >= 0 || errno != EINTR)
-            fprintf(stderr,
-                "mDNS: simple poll returned non-zero value: %d\n", retvalue);
+            fprintf(stderr, "mDNS: simple poll returned non-zero value: %d\n",
+                    retvalue);
         return MDNS_FAILED;
     }
     return MDNS_SUCCESS;
 }
-

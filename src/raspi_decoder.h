@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -33,17 +33,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
-#include "media/base/codec.h"
 #include "api/video_codecs/sdp_video_format.h"
-#include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "media/base/codec.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 
-
 class RaspiDecoder : public VideoDecoder {
-public:
+   public:
     static std::unique_ptr<RaspiDecoder> Create();
     static bool IsSupported();
     ~RaspiDecoder() override {}
@@ -52,7 +51,7 @@ public:
 //
 // Implementation of Raspberry video decoder factory
 class RaspiVideoDecoderFactory : public VideoDecoderFactory {
-public:
+   public:
     RaspiVideoDecoderFactory();
     virtual ~RaspiVideoDecoderFactory() override;
     static RaspiVideoDecoderFactory* CreateVideoDecoderFactory();
@@ -65,7 +64,7 @@ public:
         return supported_formats_;
     }
 
- private:
+   private:
     std::vector<SdpVideoFormat> supported_formats_;
 };
 

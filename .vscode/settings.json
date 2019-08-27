@@ -1,0 +1,17 @@
+{
+    "files.exclude": {
+        "${workspaceFolder}/src/OLD/**": true,
+        "${workspaceFolder}/log/**": true,
+        "${workspaceFolder}/backup/**": true
+    },
+    "C_Cpp.errorSquiggles": "Disabled",
+    "git.ignoreLimitWarning": true,
+    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 4 }",
+    "C_Cpp.default.intelliSenseMode": "gcc-x64",
+    "C_Cpp.default.cppStandard": "c++17",
+    "C_Cpp.default.cStandard": "c11",
+    "files.associations": {
+        "*.tcc": "cpp"
+    },
+    "editor.formatOnSave": true
+}

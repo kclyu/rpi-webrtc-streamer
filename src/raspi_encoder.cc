@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,14 +27,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #include <limits>
 #include <string>
 
-#include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 #include "common_types.h"
 #include "common_video/h264/h264_bitstream_parser.h"
@@ -54,21 +53,19 @@ std::unique_ptr<RaspiEncoder> RaspiEncoder::Create(
     return absl::make_unique<RaspiEncoderImpl>(codec);
 }
 
-bool RaspiEncoder::IsSupported() {
-    return true;
-}
+bool RaspiEncoder::IsSupported() { return true; }
 
-RaspiVideoEncoderFactory* RaspiVideoEncoderFactory::CreateVideoEncoderFactory() {
+RaspiVideoEncoderFactory*
+RaspiVideoEncoderFactory::CreateVideoEncoderFactory() {
     RTC_LOG(LS_INFO) << "Creating RaspiVideoEncoderFactory.";
     return new RaspiVideoEncoderFactory;
 }
 
 // borrowed from src/modules/video_coding/codecs/h264/h264.cc
 static bool IsSameFormat(const SdpVideoFormat& format1,
-                  const SdpVideoFormat& format2) {
+                         const SdpVideoFormat& format2) {
     // If different names (case insensitive), then not same formats.
-    if (!absl::EqualsIgnoreCase(format1.name, format2.name))
-        return false;
+    if (!absl::EqualsIgnoreCase(format1.name, format2.name)) return false;
     // For every format besides H264, comparing names is enough.
     if (!absl::EqualsIgnoreCase(format1.name.c_str(), cricket::kH264CodecName))
         return true;
@@ -79,21 +76,23 @@ static bool IsSameFormat(const SdpVideoFormat& format1,
         H264::ParseSdpProfileLevelId(format2.parameters);
     // Compare H264 profiles, but not levels.
     return profile_level_id && other_profile_level_id &&
-        profile_level_id->profile == other_profile_level_id->profile;
+           profile_level_id->profile == other_profile_level_id->profile;
 }
 
-static SdpVideoFormat CreateH264Format(H264::Profile profile, H264::Level level) {
+static SdpVideoFormat CreateH264Format(H264::Profile profile,
+                                       H264::Level level) {
     const absl::optional<std::string> profile_string =
         H264::ProfileLevelIdToString(H264::ProfileLevelId(profile, level));
     RTC_CHECK(profile_string);
     return SdpVideoFormat(cricket::kH264CodecName,
-            {{cricket::kH264FmtpProfileLevelId, *profile_string},
-            {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
-            {cricket::kH264FmtpPacketizationMode, "1"}});
+                          {{cricket::kH264FmtpProfileLevelId, *profile_string},
+                           {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
+                           {cricket::kH264FmtpPacketizationMode, "1"}});
 }
 
 static std::vector<SdpVideoFormat> SupportedH264Codecs() {
-    return {CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1),
+    return {
+        CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1),
         CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1)};
 }
 
@@ -108,11 +107,11 @@ RaspiVideoEncoderFactory::RaspiVideoEncoderFactory() {
 }
 
 VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncoder(
-        const SdpVideoFormat& format) const {
-
+    const SdpVideoFormat& format) const {
     for (const SdpVideoFormat& supported_format : supported_formats_) {
         if (IsSameFormat(format, supported_format)) {
-            RTC_LOG(INFO) << "Codec " << format.name
+            RTC_LOG(INFO)
+                << "Codec " << format.name
                 << " found in RaspiVideoEncoderFactory supported format";
             // RaspiVideoEncoder only supports InternalSource H.264 Video Codec
             VideoEncoderFactory::CodecInfo info;
@@ -123,7 +122,7 @@ VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncoder(
     }
 
     RTC_LOG(LS_ERROR) << "Codec " << format.name
-        << " does not support in RaspiVideoEncoderFactory";
+                      << " does not support in RaspiVideoEncoderFactory";
     VideoEncoderFactory::CodecInfo info;
     info.has_internal_source = false;
     info.is_hardware_accelerated = false;
@@ -131,7 +130,7 @@ VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncoder(
 }
 
 std::unique_ptr<VideoEncoder> RaspiVideoEncoderFactory::CreateVideoEncoder(
-        const SdpVideoFormat& format) {
+    const SdpVideoFormat& format) {
     const cricket::VideoCodec codec(format);
 
     // Try creating external encoder.
@@ -139,7 +138,8 @@ std::unique_ptr<VideoEncoder> RaspiVideoEncoderFactory::CreateVideoEncoder(
 
     for (const SdpVideoFormat& supported_format : supported_formats_) {
         if (IsSameFormat(format, supported_format)) {
-            RTC_LOG(INFO) << "Raspi " << format.name << " video encoder created";
+            RTC_LOG(INFO) << "Raspi " << format.name
+                          << " video encoder created";
             video_encoder = RaspiEncoder::Create(codec);
             return move(video_encoder);
         }

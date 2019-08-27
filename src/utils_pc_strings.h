@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -42,28 +42,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace utils {
 
 std::string SignalingStateToString(
-        const webrtc::PeerConnectionInterface::SignalingState state);
+    const webrtc::PeerConnectionInterface::SignalingState state);
 
 std::string IceGatheringStateToString(
-        const webrtc::PeerConnectionInterface::IceGatheringState state);
+    const webrtc::PeerConnectionInterface::IceGatheringState state);
 
 std::string PeerConnectionStateToString(
-        const webrtc::PeerConnectionInterface::PeerConnectionState state);
+    const webrtc::PeerConnectionInterface::PeerConnectionState state);
 
 std::string PeerIceConnectionStateToString(
-        const webrtc::PeerConnectionInterface::IceConnectionState state);
+    const webrtc::PeerConnectionInterface::IceConnectionState state);
 
 // It is not a printer for state, but an Ice related enum printer.
-std::string IceTransportsTypeToString(
-        const TransportsType type, bool default_value=false);
-std::string BundlePolicyToString(
-        const BundlePolicy type, bool default_value=false);
-std::string RtcpMuxPolicyToString(
-        const MuxPolicy type, bool default_value=false);
-std::string TlsCertPolicyToString(
-        const CertPolicy type, bool default_value=false);
+std::string IceTransportsTypeToString(const TransportsType type,
+                                      bool default_value = false);
+std::string BundlePolicyToString(const BundlePolicy type,
+                                 bool default_value = false);
+std::string RtcpMuxPolicyToString(const MuxPolicy type,
+                                  bool default_value = false);
+std::string TlsCertPolicyToString(const CertPolicy type,
+                                  bool default_value = false);
 
-};  // utils namespace
+};  // namespace utils
 
 #endif  // UTILS_PC_STRINGS_H_
-

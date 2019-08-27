@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,32 +27,30 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <deque>
+#include <list>
 #include <memory>
 #include <string>
-#include <list>
-#include <deque>
-
 
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
 
-#include "websocket_server.h"
 #include "app_ws_client.h"
 #include "config_streamer.h"
+#include "websocket_server.h"
 
 #ifndef APP_CHANNEL_H_
 #define APP_CHANNEL_H_
 
 class AppChannel : public LibWebSocketServer {
-public:
+   public:
     explicit AppChannel();
     ~AppChannel();
     bool AppInitialize(StreamerConfig& config);
 
-private:
+   private:
     bool is_inited_;
     AppWsClient ws_client_;
 };
 
-#endif // APP_CHANNEL_H_
-
+#endif  // APP_CHANNEL_H_

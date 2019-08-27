@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,18 +27,17 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <memory>
-#include <string>
 #include <map>
+#include <memory>
 #include <set>
+#include <string>
 
 #ifndef WEBSOCKET_HANDLER_H_
 #define WEBSOCKET_HANDLER_H_
 
-
 enum WebSocketHandlerType {
-    SINGLE_INSTANCE,        // allow only one handler runtime
-    MULTIPLE_INSTANCE,      // allow multiple handler runtime
+    SINGLE_INSTANCE,    // allow only one handler runtime
+    MULTIPLE_INSTANCE,  // allow multiple handler runtime
 };
 
 enum FileMappingType {
@@ -48,10 +47,11 @@ enum FileMappingType {
 };
 
 struct FileMapping {
-    FileMapping(const std::string uri_prefix,
-            FileMappingType type, const std::string uri_resource_path)
-        : uri_prefix_(uri_prefix), type_(type),
-        uri_resource_path_(uri_resource_path) {}
+    FileMapping(const std::string uri_prefix, FileMappingType type,
+                const std::string uri_resource_path)
+        : uri_prefix_(uri_prefix),
+          type_(type),
+          uri_resource_path_(uri_resource_path) {}
     ~FileMapping() {}
     // allowed prefix for input URI
     const std::string uri_prefix_;
@@ -65,18 +65,18 @@ struct WebSocketHandler {
     virtual bool OnMessage(int sockid, const std::string& message) = 0;
     virtual void OnDisconnect(int sockid) = 0;
     virtual void OnError(int sockid, const std::string& message) = 0;
-protected:
+
+   protected:
     virtual ~WebSocketHandler() {}
 };
 
 struct WebSocketMessage {
     virtual void SendMessage(int sockid, const std::string& message) = 0;
     virtual void Close(int sockid, int reason_code,
-            const std::string& message) = 0;
-protected:
+                       const std::string& message) = 0;
+
+   protected:
     virtual ~WebSocketMessage() {}
 };
 
-
-#endif // WEBSOCKET_HANDLER_H_
-
+#endif  // WEBSOCKET_HANDLER_H_

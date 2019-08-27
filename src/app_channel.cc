@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -34,27 +34,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <vector>
 
-#include "websocket_server.h"
-#include "utils.h"
 #include "app_channel.h"
 #include "config_motion.h"
+#include "utils.h"
+#include "websocket_server.h"
 
-
-//////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // Application Channel
 //
-//////////////////////////////////////////////////////////////////////////////////////////
-AppChannel::AppChannel() : is_inited_(false) {
-}
+////////////////////////////////////////////////////////////////////////////////
+AppChannel::AppChannel() : is_inited_(false) {}
 
-bool AppChannel::AppInitialize(StreamerConfig& config){
+bool AppChannel::AppInitialize(StreamerConfig& config) {
     std::string ws_url;
     int port_num;
     std::string web_root;
 
     // LibWebSocket debug log
-    if(config.GetLibwebsocketDebugEnable() ) {
+    if (config.GetLibwebsocketDebugEnable()) {
         RTC_LOG(INFO) << "enabling debug logging message of websocket library";
         LogLevel(LibWebSocketServer::DEBUG_LEVEL_ALL);
     };
@@ -62,14 +60,14 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
     // need to initialize the motion mount after WebRoot initialization.
     config.GetWebRootPath(web_root);
     RTC_LOG(INFO) << "Using http file mapping : " << web_root;
-    RTC_LOG(INFO) << "Using motion video mapping : " << config_motion::motion_directory;
-    AddHttpWebMount( config_motion::motion_detection_enable,
-            web_root, config_motion::motion_directory );
+    RTC_LOG(INFO) << "Using motion video mapping : "
+                  << config_motion::motion_directory;
+    AddHttpWebMount(config_motion::motion_detection_enable, web_root,
+                    config_motion::motion_directory);
 
     config.GetWebSocketPort(port_num);
     RTC_LOG(INFO) << "WebSocket port num : " << port_num;
-    if( Init(port_num) == false ) return false;
-
+    if (Init(port_num) == false) return false;
 
     config.GetRwsWsURL(ws_url);
     RTC_LOG(INFO) << "Using RWS WS client url : " << ws_url;
@@ -81,6 +79,4 @@ bool AppChannel::AppInitialize(StreamerConfig& config){
     return true;
 }
 
-AppChannel::~AppChannel() {
-}
-
+AppChannel::~AppChannel() {}

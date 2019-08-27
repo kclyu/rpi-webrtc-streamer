@@ -18,8 +18,8 @@ modification, are permitted provided that the following conditions are met:
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -27,13 +27,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #include <limits>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "absl/memory/memory.h"
 
 #include "common_types.h"
 #include "common_video/h264/h264_bitstream_parser.h"
@@ -52,15 +51,13 @@ std::unique_ptr<RaspiDecoder> RaspiDecoder::Create() {
     return absl::make_unique<RaspiDecoderDummy>();
 }
 
-bool RaspiDecoder::IsSupported() {
-    return true;
-}
+bool RaspiDecoder::IsSupported() { return true; }
 
-RaspiVideoDecoderFactory* RaspiVideoDecoderFactory::CreateVideoDecoderFactory() {
+RaspiVideoDecoderFactory*
+RaspiVideoDecoderFactory::CreateVideoDecoderFactory() {
     RTC_LOG(LS_INFO) << "Creating RaspiVideoDecoderFactory.";
     return new RaspiVideoDecoderFactory;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -72,7 +69,7 @@ RaspiVideoDecoderFactory::RaspiVideoDecoderFactory() {
 }
 
 std::unique_ptr<VideoDecoder> RaspiVideoDecoderFactory::CreateVideoDecoder(
-        const SdpVideoFormat& format) {
+    const SdpVideoFormat& format) {
     const cricket::VideoCodec codec(format);
 
     // Try creating external decoder.
@@ -86,7 +83,5 @@ std::unique_ptr<VideoDecoder> RaspiVideoDecoderFactory::CreateVideoDecoder(
 RaspiVideoDecoderFactory::~RaspiVideoDecoderFactory() {
     RTC_LOG(INFO) << "Raspi Video decoder factory destroy";
 }
-
-
 
 }  // namespace webrtc
