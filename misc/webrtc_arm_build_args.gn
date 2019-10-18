@@ -22,7 +22,6 @@ host_toolchain="//build/toolchain/linux:arm"
 is_clang=false
 use_sysroot=true
 target_sysroot="/opt/rpi_rootfs"
-system_libdir="/opt/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
 gold_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
 binutils_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
 
@@ -39,6 +38,7 @@ arm_tune="cortex-a7"
 # Setting for removing component for desktop related stuffs
 use_ozone=true
 is_desktop_linux=false
+use_libjpeg_turbo=false
 
 #
 use_custom_libcxx=false    
