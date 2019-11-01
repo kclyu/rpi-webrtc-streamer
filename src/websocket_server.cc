@@ -140,24 +140,34 @@ void LibWebSocketServer::LogLevel(DEBUG_LEVEL level, bool log_redirect) {
     debug_level_ = level;
     switch (level) {
         case DEBUG_LEVEL_ALL:
+            [[fallthrough]];
         case DEBUG_LEVEL_LATENCY:
             debug_level |= LLL_LATENCY;
+            [[fallthrough]];
         case DEBUG_LEVEL_CLIENT:
             debug_level |= LLL_CLIENT;
+            [[fallthrough]];
         case DEBUG_LEVEL_HEADER:
             debug_level |= LLL_HEADER;
+            [[fallthrough]];
         case DEBUG_LEVEL_EXT:
             debug_level |= LLL_EXT;
+            [[fallthrough]];
         case DEBUG_LEVEL_PARSER:
             // debug_level |= LLL_PARSER;   // supress the parser debug log
+            [[fallthrough]];
         case DEBUG_LEVEL_DEBUG:
             debug_level |= LLL_DEBUG;
+            [[fallthrough]];
         case DEBUG_LEVEL_INFO:
             debug_level |= LLL_INFO;
+            [[fallthrough]];
         case DEBUG_LEVEL_NOTICE:
             debug_level |= LLL_NOTICE;
+            [[fallthrough]];
         case DEBUG_LEVEL_WARN:
             debug_level |= LLL_WARN;
+            [[fallthrough]];
         case DEBUG_LEVEL_ERR:
             debug_level |= LLL_ERR;
             break;
