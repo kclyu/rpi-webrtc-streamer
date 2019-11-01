@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CONFIG_MEDIA_H_
 #define CONFIG_MEDIA_H_
 
+#include <list>
 #include <memory>
 
 #include "rtc_base/checks.h"
