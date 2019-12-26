@@ -53,8 +53,8 @@ class RaspiEncoderImpl : public RaspiEncoder {
     ~RaspiEncoderImpl() override;
 
     // number_of_cores, max_payload_size will be ignored.
-    int32_t InitEncode(const VideoCodec* inst, int32_t number_of_cores,
-                       size_t max_payload_size) override;
+    int32_t InitEncode(const VideoCodec* codec_settings,
+                       const VideoEncoder::Settings& settings) override;
     int32_t Release() override;
 
     int32_t RegisterEncodeCompleteCallback(
@@ -106,7 +106,7 @@ class RaspiEncoderImpl : public RaspiEncoder {
     EncodedImage encoded_image_;
 
     // H264 bitstream parser, used to extract QP from encoded bitstreams.
-    webrtc::H264BitstreamParser h264_bitstream_parser_;
+    H264BitstreamParser h264_bitstream_parser_;
 
     Clock* const clock_;
     int64_t last_keyframe_request_;

@@ -71,11 +71,6 @@ static const int kHighH264QpThreshold = 37;
 static const int kDelayForStackCalmDown = 300;
 static const uint32_t kKeyFrameAllowedInterval = 3000;  // 3 secs
 
-static const ColorSpace mmal_color_space(ColorSpace::PrimaryID::kSMPTE170M,
-                                         ColorSpace::TransferID::kSMPTE170M,
-                                         ColorSpace::MatrixID::kSMPTE170M,
-                                         ColorSpace::RangeID::kLimited);
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Raspi Encoder Impl
@@ -108,36 +103,36 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
 
 RaspiEncoderImpl::~RaspiEncoderImpl() { Release(); }
 
-int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
-                                     int32_t number_of_cores,
-                                     size_t max_payload_size) {
+int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
+                                     const VideoEncoder::Settings& settings) {
     RTC_LOG(INFO) << __FUNCTION__;
     int framerate_updated;
 
     ReportInit();
-    if (!inst || inst->codecType != kVideoCodecH264) {
+    if (!codec_settings || codec_settings->codecType != kVideoCodecH264) {
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-    if (inst->maxFramerate == 0) {
+    if (codec_settings->maxFramerate == 0) {
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-    if (inst->width < 1 || inst->height < 1) {
+    if (codec_settings->width < 1 || codec_settings->height < 1) {
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
     }
-    codec_ = *inst;
+    codec_ = *codec_settings;
 
     //
     // TODO: Need to implement SimulCast related functions
-    int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
+    int number_of_streams =
+        SimulcastUtility::NumberOfSimulcastStreams(*codec_settings);
     if (number_of_streams > 1) {
         RTC_LOG(LS_ERROR) << "SimulCast streaming is not implemented";
         return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
     }
 
-    framerate_updated = static_cast<int>(inst->maxFramerate);
+    framerate_updated = static_cast<int>(codec_settings->maxFramerate);
     if (config_media_->GetVideoDynamicFps() == false)
         // using fixed fps when use_dynamic_video_fps is disabled
         framerate_updated = config_media_->GetFixedVideoFps();
@@ -145,15 +140,15 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
     if (framerate_updated > 30) framerate_updated = 30;
     quality_config_.ReportFrameRate(framerate_updated);
 
-    mode_ = inst->mode;
-    key_frame_interval_ = inst->H264().keyFrameInterval;
-    max_payload_size_ = max_payload_size;
+    mode_ = codec_settings->mode;
+    key_frame_interval_ = codec_settings->H264().keyFrameInterval;
+    max_payload_size_ = settings.max_payload_size;
 
     // frame dropping is not used...
-    frame_dropping_on_ = inst->H264().frameDroppingOn;
+    frame_dropping_on_ = codec_settings->H264().frameDroppingOn;
 
     // Codec_settings uses kbits/second; encoder uses bits/second.
-    quality_config_.ReportTargetBitrate(inst->startBitrate);
+    quality_config_.ReportTargetBitrate(codec_settings->startBitrate);
 
     // Get the instance of MMAL encoder wrapper
     if ((mmal_encoder_ = MMALWrapper::Instance()) == nullptr) {
@@ -200,8 +195,9 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* inst,
     }
 
     SimulcastRateAllocator init_allocator(codec_);
-    VideoBitrateAllocation allocation = init_allocator.GetAllocation(
-        codec_.startBitrate * 1000, codec_.maxFramerate);
+    VideoBitrateAllocation allocation =
+        init_allocator.Allocate(VideoBitrateAllocationParameters(
+            DataRate::kbps(codec_.startBitrate), codec_.maxFramerate));
     SetRates(RateControlParameters(allocation, codec_.maxFramerate));
     return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -252,6 +248,7 @@ void RaspiEncoderImpl::SetRates(const RateControlParameters& parameters) {
         return;
     }
 
+    // TODO: Refactoring Frame Sending
     if (sending_enable_ == false) {
         // changing enable flag to true
         // sending_enable_  = true;
@@ -352,6 +349,7 @@ VideoEncoder::EncoderInfo RaspiEncoderImpl::GetEncoderInfo() const {
     info.has_trusted_rate_controller = true;
     info.is_hardware_accelerated = true;
     info.has_internal_source = true;
+    info.supports_simulcast = false;
     return info;
 }
 
@@ -404,8 +402,7 @@ void RaspiEncoderImpl::DrainThread(void* obj) {
 bool RaspiEncoderImpl::DrainProcess() {
     MMAL_BUFFER_HEADER_T* buf = nullptr;
 
-    // quit drain thead
-    if (drainQuit_ == true) return false;
+    if (drainQuit_ == true) return false;  // quit drain thread
 
     //  The GetEncodedFrame function will wait in block state
     //  until there is a new buf or timeout.
@@ -464,16 +461,16 @@ bool RaspiEncoderImpl::DrainProcess() {
         encoded_image_.SetTimestamp(capture_time_ms);
         encoded_image_.ntp_time_ms_ = ntp_capture_time_ms;
         encoded_image_.capture_time_ms_ = capture_time_ms;
+
         encoded_image_.set_buffer(buf->data, buf->alloc_size);
         encoded_image_.set_size(buf->length);
-        encoded_image_._completeFrame = true;
-        encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
         encoded_image_._frameType =
             (buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
                 ? VideoFrameType::kVideoFrameKey
                 : VideoFrameType::kVideoFrameDelta;
-        // TODO m73
-        // encoded_image_.SetColorSpace(&mmal_color_space);
+
+        // SimulCast is not implemented
+        encoded_image_.SetSpatialIndex(0);
 
         // Each NAL unit is a fragment starting with the four-byte
         // start code {0,0,0,1}.  All of this encoded data already in the
@@ -495,9 +492,10 @@ bool RaspiEncoderImpl::DrainProcess() {
         codec_specific.codecType = kVideoCodecH264;
         codec_specific.codecSpecific.H264.packetization_mode =
             packetization_mode_;
-
-        // SimulCast is not implemented
-        encoded_image_.SetSpatialIndex(0);
+        codec_specific.codecSpecific.H264.temporal_idx = kNoTemporalIdx;
+        codec_specific.codecSpecific.H264.idr_frame =
+            encoded_image_._frameType == VideoFrameType::kVideoFrameKey;
+        codec_specific.codecSpecific.H264.base_layer_sync = false;
 
         // Deliver encoded image.
         EncodedImageCallback::Result result =
