@@ -49,10 +49,36 @@ namespace webrtc {
 
 class RaspiEncoderImpl : public RaspiEncoder {
    public:
+    struct FrameFlowCtl {
+        enum FLOWCTL_STATE {
+            FLOW_DISABLED = 0,
+            FLOW_WAITING_KEYFRAME,
+            FLOW_KEYFRAME_REQUSTED,
+            FLOW_ENABLED
+        };
+        explicit FrameFlowCtl();
+        virtual ~FrameFlowCtl(){};
+
+        Clock* const clock_;
+        MMALEncoderWrapper* mmal_encoder_;
+
+        // Change the value to enable when the Encode function is called
+        // and wiil be enable when SetRates method called with positive
+        // bitrate and will be disable when SetRates methold called with 0
+        // bitrate
+        FLOWCTL_STATE flow_state_ = FLOW_DISABLED;
+        int64_t keyframe_wait_start_time_ = 0;
+
+        void Set();
+        void Clear();
+        bool IsEnabled(void);
+        bool CheckKeyframe(bool keyframe);
+    };
+
+   public:
     explicit RaspiEncoderImpl(const cricket::VideoCodec& codec);
     ~RaspiEncoderImpl() override;
 
-    // number_of_cores, max_payload_size will be ignored.
     int32_t InitEncode(const VideoCodec* codec_settings,
                        const VideoEncoder::Settings& settings) override;
     int32_t Release() override;
@@ -61,8 +87,9 @@ class RaspiEncoderImpl : public RaspiEncoder {
         EncodedImageCallback* callback) override;
     void SetRates(const RateControlParameters& parameters) override;
 
-    // The result of encoding - an EncodedImage and RTPFragmentationHeader - are
-    // passed to the encode complete callback.
+    // Encode metholds are not used to encode frames. This methold is used only
+    // as an event for creating a keyframe in the encoder when a keyframe is
+    // needed.
     int32_t Encode(const VideoFrame& frame,
                    const std::vector<VideoFrameType>* frame_types) override;
 
@@ -79,17 +106,6 @@ class RaspiEncoderImpl : public RaspiEncoder {
     // Reports statistics with histograms.
     void ReportInit();
     void ReportError();
-
-    // Change the value to enable when the Encode function is called.
-    // Only when this flag is true will actually pass the Encoded Frame
-    // to the native stack.
-    bool sending_enable_;
-    bool sending_frame_enable_;
-    bool keyframe_requested_in_delayed_;
-    int64_t sending_enable_time_ms_;
-
-    bool DelayedFrameSending(bool keyframe);
-    void EnableSending(bool enable);
 
     MMALEncoderWrapper* mmal_encoder_;
     // media configuration sigleton reference
@@ -122,6 +138,9 @@ class RaspiEncoderImpl : public RaspiEncoder {
     // Quality Config
     QualityConfig quality_config_;
     VideoCodec codec_;
+
+    // Frame Flow Control
+    FrameFlowCtl frame_flow_;
 };
 
 }  // namespace webrtc

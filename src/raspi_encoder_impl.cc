@@ -77,8 +77,7 @@ static const uint32_t kKeyFrameAllowedInterval = 3000;  // 3 secs
 //
 ///////////////////////////////////////////////////////////////////////////////
 RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
-    : sending_enable_(false),
-      mmal_encoder_(nullptr),
+    : mmal_encoder_(nullptr),
       config_media_(nullptr),
       has_reported_init_(false),
       has_reported_error_(false),
@@ -241,18 +240,15 @@ void RaspiEncoderImpl::SetRates(const RateControlParameters& parameters) {
     }
 
     if (target_bitrate == 0) {
-        // Encoder paused, turn off all encoding.
-        EnableSending(false);
+        // Encoder paused, turn off all frame sending to native stack.
+        frame_flow_.Clear();
         RTC_LOG(INFO)
             << "Required bitrate is 0, Stopping encoded frame sending";
         return;
     }
 
-    // TODO: Refactoring Frame Sending
-    if (sending_enable_ == false) {
-        // changing enable flag to true
-        // sending_enable_  = true;
-        EnableSending(true);
+    if (frame_flow_.IsEnabled() == false) {
+        frame_flow_.Set();
         RTC_LOG(INFO) << "Start to send encoded frame. bitrate: "
                       << target_bitrate;
     }
@@ -305,7 +301,7 @@ int32_t RaspiEncoderImpl::Encode(
         }  // Force key frame?
 
         if ((*frame_types)[0] == VideoFrameType::kVideoFrameKey &&
-            sending_enable_) {
+            frame_flow_.IsEnabled()) {
             send_key_frame = true;
         }
     }
@@ -353,39 +349,58 @@ VideoEncoder::EncoderInfo RaspiEncoderImpl::GetEncoderInfo() const {
     return info;
 }
 
-bool RaspiEncoderImpl::DelayedFrameSending(bool keyframe) {
-    if (sending_enable_ == false) return false;
+///////////////////////////////////////////////////////////////////////////////
+//
+// Raspi Encoder Frame Flow Control
+//
+///////////////////////////////////////////////////////////////////////////////
+RaspiEncoderImpl::FrameFlowCtl::FrameFlowCtl()
+    : clock_(Clock::GetRealTimeClock()) {
+    // Get the instance of MMAL encoder wrapper
+    if ((mmal_encoder_ = MMALWrapper::Instance()) == nullptr) {
+        RTC_LOG(LS_ERROR) << "Failed to get MMAL encoder wrapper";
+    }
+}
 
-    if (sending_frame_enable_ == false) {
-        int64_t current_time_ms = clock_->TimeInMilliseconds();
-        int64_t time_diff_ms = current_time_ms - sending_enable_time_ms_;
+void RaspiEncoderImpl::FrameFlowCtl::Set() {
+    if (flow_state_ != FLOW_DISABLED) return;  // no need to change
+    RTC_LOG(INFO) << "RaspiEncoder changing Frame flow changed to enable: ";
+    flow_state_ = FLOW_WAITING_KEYFRAME;
+    keyframe_wait_start_time_ = clock_->TimeInMilliseconds();
+}
 
-        if (time_diff_ms > kDelayForStackCalmDown) {
-            if (keyframe_requested_in_delayed_ == false) {
-                keyframe_requested_in_delayed_ = true;
-                mmal_encoder_->SetForceNextKeyFrame();
-                return false;
-            } else if (keyframe) {
-                sending_frame_enable_ = true;
-                return true;
-            }
+void RaspiEncoderImpl::FrameFlowCtl::Clear() {
+    if (flow_state_ == FLOW_DISABLED) return;  // no need to change
+    RTC_LOG(INFO) << "RaspiEncoder changing frame flow changed to disable: ";
+    flow_state_ = FLOW_DISABLED;
+    keyframe_wait_start_time_ = 0;
+}
+
+bool RaspiEncoderImpl::FrameFlowCtl::IsEnabled() {
+    if (flow_state_ != FLOW_DISABLED)
+        return true;
+    else
+        return false;
+}
+
+bool RaspiEncoderImpl::FrameFlowCtl::CheckKeyframe(bool is_keyframe) {
+    if (IsEnabled() == false) return false;
+    if (flow_state_ == FLOW_ENABLED)
+        // no need to go through below logic
+        return true;
+    if (is_keyframe == true) {
+        flow_state_ = FLOW_ENABLED;
+        return true;
+    }
+
+    if ((clock_->TimeInMilliseconds() - keyframe_wait_start_time_) >
+        kDelayForStackCalmDown) {
+        if (flow_state_ == FLOW_WAITING_KEYFRAME) {
+            flow_state_ = FLOW_KEYFRAME_REQUSTED;
+            mmal_encoder_->SetForceNextKeyFrame();
         }
     }
     return true;
-}
-
-void RaspiEncoderImpl::EnableSending(bool enable) {
-    if (sending_enable_ == enable) return;
-    RTC_LOG(INFO) << "RaspiEncoder changing enable status : " << enable;
-
-    sending_enable_ = enable;
-    if (enable) {
-        sending_frame_enable_ = false;
-        keyframe_requested_in_delayed_ = false;
-        sending_enable_time_ms_ = clock_->TimeInMilliseconds();
-    } else {
-        sending_frame_enable_ = false;
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -411,13 +426,16 @@ bool RaspiEncoderImpl::DrainProcess() {
     // encoded_image_callback must be registered before pass
     // the frame to WebRTC native stack.
     // If it is timout, buf will have null.
-    // In addition, only the normal frame is transmitted to the WebRTC native
-    // stack, and the Motion Vector(CODECSIDEINFO) is not transmitted.
+    // In addition, only the normal frame is transmitted to the WebRTC
+    // native stack, and the Motion Vector(CODECSIDEINFO) is not
+    // transmitted.
     //
     // TODO: if encoded_size is zero, we need to reset encoder itself
     if (encoded_image_callback_ && buf && buf->length > 0 &&
-        !(buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) &&
-        DelayedFrameSending(buf->flags | MMAL_BUFFER_HEADER_FLAG_KEYFRAME)) {
+        !(buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO)
+        // && frame_flow_.CheckKeyframe(buf->flags &
+        //                           MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
+    ) {
         CodecSpecificInfo codec_specific;
         uint32_t fragment_index;
         int qp;
@@ -475,8 +493,8 @@ bool RaspiEncoderImpl::DrainProcess() {
         // Each NAL unit is a fragment starting with the four-byte
         // start code {0,0,0,1}.  All of this encoded data already in the
         // encoded_image->_buffer which is filled by MMAL encoder.
-        // Fragmentize will count the nal start code in the encoded_image and
-        // will mark the the frag_header for fragmentation.
+        // Fragmentize will count the nal start code in the encoded_image
+        // and will mark the the frag_header for fragmentation.
         frag_header.VerifyAndAllocateFragmentationHeader(nalu_indexes.size());
 
         fragment_index = 0;
