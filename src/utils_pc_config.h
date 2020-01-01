@@ -40,11 +40,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace utils {
 
+// typedef aliases for webrtc::PeerConnectionInterface structures
+typedef webrtc::PeerConnectionInterface::SignalingState SignalingState;
+typedef webrtc::PeerConnectionInterface::IceGatheringState IceGatheringState;
+typedef webrtc::PeerConnectionInterface::PeerConnectionState
+    PeerConnectionState;
+typedef webrtc::PeerConnectionInterface::IceConnectionState IceConnectionState;
+
 typedef webrtc::PeerConnectionInterface::RTCConfiguration RTCConfiguration;
-typedef webrtc::PeerConnectionInterface::IceTransportsType TransportsType;
+typedef webrtc::PeerConnectionInterface::IceTransportsType IceTransportsType;
 typedef webrtc::PeerConnectionInterface::BundlePolicy BundlePolicy;
-typedef webrtc::PeerConnectionInterface::RtcpMuxPolicy MuxPolicy;
-typedef webrtc::PeerConnectionInterface::TlsCertPolicy CertPolicy;
+typedef webrtc::PeerConnectionInterface::RtcpMuxPolicy RtcpMuxPolicy;
+typedef webrtc::PeerConnectionInterface::TlsCertPolicy TlsCertPolicy;
 typedef webrtc::PeerConnectionInterface::IceServer IceServer;
 typedef webrtc::PeerConnectionInterface::IceServers IceServers;
 
@@ -52,13 +59,13 @@ extern const char kDefaultIceTransportsType[];
 extern const char kDefaultBundlePolicy[];
 extern const char kDefaultRtcpMuxPolicy[];
 
-TransportsType ConfigToIceTransportsType(const std::string type);
+IceTransportsType ConfigToIceTransportsType(const std::string type);
 BundlePolicy ConfigToIceBundlePolicy(const std::string bundle_policy);
-MuxPolicy ConfigToIceRtcpMuxPolicy(const std::string mux_policy);
+RtcpMuxPolicy ConfigToIceRtcpMuxPolicy(const std::string mux_policy);
 
 // for ice servers
 std::vector<std::string> ConfigToIceUrls(const std::string urls);
-CertPolicy ConfigToIceTlsCertPolicy(const std::string policy);
+TlsCertPolicy ConfigToIceTlsCertPolicy(const std::string policy);
 std::vector<std::string> ConfigToVector(const std::string configs);
 
 void PrintIceServers(const RTCConfiguration &rtc_config);

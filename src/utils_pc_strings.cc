@@ -35,92 +35,74 @@ const char kDefaultIceTransportsType[] = "all";
 const char kDefaultBundlePolicy[] = "balanced";
 const char kDefaultRtcpMuxPolicy[] = "require";
 
-std::string SignalingStateToString(
-    const webrtc::PeerConnectionInterface::SignalingState state) {
+std::string SignalingStateToString(const SignalingState state) {
     switch (state) {
-        case webrtc::PeerConnectionInterface::SignalingState::kStable:
+        case SignalingState::kStable:
             return "Stable";
-        case webrtc::PeerConnectionInterface::SignalingState::kHaveLocalOffer:
+        case SignalingState::kHaveLocalOffer:
             return "HaveLocalOffer";
-        case webrtc::PeerConnectionInterface::SignalingState::
-            kHaveLocalPrAnswer:
+        case SignalingState::kHaveLocalPrAnswer:
             return "HaveLocalPrAnswer";
-        case webrtc::PeerConnectionInterface::SignalingState::kHaveRemoteOffer:
+        case SignalingState::kHaveRemoteOffer:
             return "HaveRemoteOffer";
-        case webrtc::PeerConnectionInterface::SignalingState::
-            kHaveRemotePrAnswer:
+        case SignalingState::kHaveRemotePrAnswer:
             return "HaveRemotePrAnswer";
-        case webrtc::PeerConnectionInterface::SignalingState::kClosed:
+        case SignalingState::kClosed:
             return "Closed";
         default:
             return "Unknown";
     };
 }
 
-std::string IceGatheringStateToString(
-    const webrtc::PeerConnectionInterface::IceGatheringState state) {
+std::string IceGatheringStateToString(const IceGatheringState state) {
     switch (state) {
-        case webrtc::PeerConnectionInterface::IceGatheringState::
-            kIceGatheringNew:
+        case IceGatheringState::kIceGatheringNew:
             return "IceGatheringNoew";
-        case webrtc::PeerConnectionInterface::IceGatheringState::
-            kIceGatheringGathering:
+        case IceGatheringState::kIceGatheringGathering:
             return "IceGatherringGathering";
-        case webrtc::PeerConnectionInterface::IceGatheringState::
-            kIceGatheringComplete:
+        case IceGatheringState::kIceGatheringComplete:
             return "IceGatheringComplete";
         default:
             return "Unknown";
     };
 }
 
-std::string PeerConnectionStateToString(
-    const webrtc::PeerConnectionInterface::PeerConnectionState state) {
+std::string PeerConnectionStateToString(const PeerConnectionState state) {
     switch (state) {
-        case webrtc::PeerConnectionInterface::PeerConnectionState::kNew:
+        case PeerConnectionState::kNew:
             return "New";
-        case webrtc::PeerConnectionInterface::PeerConnectionState::kConnecting:
+        case PeerConnectionState::kConnecting:
             return "Connecting";
-        case webrtc::PeerConnectionInterface::PeerConnectionState::kConnected:
+        case PeerConnectionState::kConnected:
             return "Connected";
-        case webrtc::PeerConnectionInterface::PeerConnectionState::
-            kDisconnected:
+        case PeerConnectionState::kDisconnected:
             return "Disconnected";
-        case webrtc::PeerConnectionInterface::PeerConnectionState::kFailed:
+        case PeerConnectionState::kFailed:
             return "Failed";
-        case webrtc::PeerConnectionInterface::PeerConnectionState::kClosed:
+        case PeerConnectionState::kClosed:
             return "Closed";
         default:
             return "Unknown";
     };
 }
 
-std::string PeerIceConnectionStateToString(
-    const webrtc::PeerConnectionInterface::IceConnectionState state) {
+std::string PeerIceConnectionStateToString(const IceConnectionState state) {
     switch (state) {
-        case webrtc::PeerConnectionInterface::IceConnectionState::
-            kIceConnectionNew:
+        case IceConnectionState::kIceConnectionNew:
             return "IceConnectionNew";
-        case webrtc::PeerConnectionInterface::IceConnectionState::
-            kIceConnectionChecking:
+        case IceConnectionState::kIceConnectionChecking:
             return "IceConnectionChecking";
-        case webrtc::PeerConnectionInterface::IceConnectionState::
-            kIceConnectionConnected:
+        case IceConnectionState::kIceConnectionConnected:
             return "IceConnectionConnected";
-        case webrtc::PeerConnectionInterface::IceConnectionState::
-            kIceConnectionCompleted:
+        case IceConnectionState::kIceConnectionCompleted:
             return "IceConnectionComplted";
-        case webrtc::PeerConnectionInterface::IceConnectionState::
-            kIceConnectionFailed:
+        case IceConnectionState::kIceConnectionFailed:
             return "IceConnectionFailed";
-        case webrtc::PeerConnectionInterface::IceConnectionState::
-            kIceConnectionDisconnected:
+        case IceConnectionState::kIceConnectionDisconnected:
             return "IceConnectionDisconnected";
-        case webrtc::PeerConnectionInterface::IceConnectionState::
-            kIceConnectionClosed:
+        case IceConnectionState::kIceConnectionClosed:
             return "IceConnectionClosed";
-        case webrtc::PeerConnectionInterface::IceConnectionState::
-            kIceConnectionMax:
+        case IceConnectionState::kIceConnectionMax:
             return "IceConnectionMax";
         default:
             return "Unknown";
@@ -129,16 +111,16 @@ std::string PeerIceConnectionStateToString(
 
 // It is not a printer for state, but an Ice related enum printer.
 //
-std::string IceTransportsTypeToString(const TransportsType type,
+std::string IceTransportsTypeToString(const IceTransportsType type,
                                       bool default_value) {
     switch (type) {
-        case webrtc::PeerConnectionInterface::IceTransportsType::kNone:
+        case IceTransportsType::kNone:
             return "none";
-        case webrtc::PeerConnectionInterface::IceTransportsType::kRelay:
+        case IceTransportsType::kRelay:
             return "relay";
-        case webrtc::PeerConnectionInterface::IceTransportsType::kNoHost:
+        case IceTransportsType::kNoHost:
             return "nohost";
-        case webrtc::PeerConnectionInterface::IceTransportsType::kAll:
+        case IceTransportsType::kAll:
             return "all";
         default:
             if (default_value == false)
@@ -150,14 +132,11 @@ std::string IceTransportsTypeToString(const TransportsType type,
 
 std::string BundlePolicyToString(const BundlePolicy type, bool default_value) {
     switch (type) {
-        case webrtc::PeerConnectionInterface::BundlePolicy::
-            kBundlePolicyBalanced:
+        case BundlePolicy::kBundlePolicyBalanced:
             return "balanced";
-        case webrtc::PeerConnectionInterface::BundlePolicy::
-            kBundlePolicyMaxBundle:
+        case BundlePolicy::kBundlePolicyMaxBundle:
             return "max-bundle";
-        case webrtc::PeerConnectionInterface::BundlePolicy::
-            kBundlePolicyMaxCompat:
+        case BundlePolicy::kBundlePolicyMaxCompat:
             return "max-compat";
         default:
             if (default_value == false)
@@ -167,13 +146,12 @@ std::string BundlePolicyToString(const BundlePolicy type, bool default_value) {
     };
 }
 
-std::string RtcpMuxPolicyToString(const MuxPolicy type, bool default_value) {
+std::string RtcpMuxPolicyToString(const RtcpMuxPolicy type,
+                                  bool default_value) {
     switch (type) {
-        case webrtc::PeerConnectionInterface::RtcpMuxPolicy::
-            kRtcpMuxPolicyNegotiate:
+        case RtcpMuxPolicy::kRtcpMuxPolicyNegotiate:
             return "negotiate";
-        case webrtc::PeerConnectionInterface::RtcpMuxPolicy::
-            kRtcpMuxPolicyRequire:
+        case RtcpMuxPolicy::kRtcpMuxPolicyRequire:
             return "require";
         default:
             if (default_value == false)
@@ -183,13 +161,12 @@ std::string RtcpMuxPolicyToString(const MuxPolicy type, bool default_value) {
     };
 }
 
-std::string TlsCertPolicyToString(const CertPolicy type, bool default_value) {
+std::string TlsCertPolicyToString(const TlsCertPolicy type,
+                                  bool default_value) {
     switch (type) {
-        case webrtc::PeerConnectionInterface::TlsCertPolicy::
-            kTlsCertPolicySecure:
+        case TlsCertPolicy::kTlsCertPolicySecure:
             return "TlsCertPolicySecure";
-        case webrtc::PeerConnectionInterface::TlsCertPolicy::
-            kTlsCertPolicyInsecureNoCheck:
+        case TlsCertPolicy::kTlsCertPolicyInsecureNoCheck:
             return "TlsCertPolicyInsecureNoCheck";
         default:
             return "Unknown";

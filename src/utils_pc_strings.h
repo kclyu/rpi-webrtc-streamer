@@ -54,13 +54,13 @@ std::string PeerIceConnectionStateToString(
     const webrtc::PeerConnectionInterface::IceConnectionState state);
 
 // It is not a printer for state, but an Ice related enum printer.
-std::string IceTransportsTypeToString(const TransportsType type,
+std::string IceTransportsTypeToString(const IceTransportsType type,
                                       bool default_value = false);
 std::string BundlePolicyToString(const BundlePolicy type,
                                  bool default_value = false);
-std::string RtcpMuxPolicyToString(const MuxPolicy type,
+std::string RtcpMuxPolicyToString(const RtcpMuxPolicy type,
                                   bool default_value = false);
-std::string TlsCertPolicyToString(const CertPolicy type,
+std::string TlsCertPolicyToString(const TlsCertPolicy type,
                                   bool default_value = false);
 
 };  // namespace utils

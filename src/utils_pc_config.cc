@@ -42,18 +42,18 @@ static const char kDefaultStunServer[] = "stun:stun.l.google.com:19302";
 
 namespace utils {
 
-TransportsType ConfigToIceTransportsType(const std::string type) {
-    std::map<std::string, TransportsType> keyword_map;
-    keyword_map["none"] = TransportsType::kNone;
-    keyword_map["relay"] = TransportsType::kRelay;
-    keyword_map["nohost"] = TransportsType::kNoHost;
-    keyword_map["all"] = TransportsType::kAll;
+IceTransportsType ConfigToIceTransportsType(const std::string type) {
+    std::map<std::string, IceTransportsType> keyword_map;
+    keyword_map["none"] = IceTransportsType::kNone;
+    keyword_map["relay"] = IceTransportsType::kRelay;
+    keyword_map["nohost"] = IceTransportsType::kNoHost;
+    keyword_map["all"] = IceTransportsType::kAll;
     if (keyword_map.find(type) != keyword_map.end())
         return keyword_map[type];
     else {
         RTC_LOG(LS_ERROR) << __FUNCTION__ << "TransportsType : " << type
                           << " not found, using default all";
-        return TransportsType::kAll;
+        return IceTransportsType::kAll;
     }
 }
 
@@ -71,29 +71,29 @@ BundlePolicy ConfigToIceBundlePolicy(const std::string bundle_policy) {
     }
 }
 
-MuxPolicy ConfigToIceRtcpMuxPolicy(const std::string mux_policy) {
-    std::map<std::string, MuxPolicy> keyword_map;
-    keyword_map["require"] = MuxPolicy::kRtcpMuxPolicyRequire;
-    keyword_map["negotiate"] = MuxPolicy::kRtcpMuxPolicyNegotiate;
+RtcpMuxPolicy ConfigToIceRtcpMuxPolicy(const std::string mux_policy) {
+    std::map<std::string, RtcpMuxPolicy> keyword_map;
+    keyword_map["require"] = RtcpMuxPolicy::kRtcpMuxPolicyRequire;
+    keyword_map["negotiate"] = RtcpMuxPolicy::kRtcpMuxPolicyNegotiate;
     if (keyword_map.find(mux_policy) != keyword_map.end())
         return keyword_map[mux_policy];
     else {
         RTC_LOG(LS_ERROR) << __FUNCTION__ << "MuxPolicy : " << mux_policy
                           << " not found, using default require";
-        return MuxPolicy::kRtcpMuxPolicyRequire;
+        return RtcpMuxPolicy::kRtcpMuxPolicyRequire;
     }
 }
 
-CertPolicy ConfigToIceTlsCertPolicy(const std::string cert_poicy) {
-    std::map<std::string, CertPolicy> keyword_map;
-    keyword_map["secure"] = CertPolicy::kTlsCertPolicySecure;
-    keyword_map["insecure"] = CertPolicy::kTlsCertPolicyInsecureNoCheck;
+TlsCertPolicy ConfigToIceTlsCertPolicy(const std::string cert_poicy) {
+    std::map<std::string, TlsCertPolicy> keyword_map;
+    keyword_map["secure"] = TlsCertPolicy::kTlsCertPolicySecure;
+    keyword_map["insecure"] = TlsCertPolicy::kTlsCertPolicyInsecureNoCheck;
     if (keyword_map.find(cert_poicy) != keyword_map.end())
         return keyword_map[cert_poicy];
     else {
         RTC_LOG(LS_ERROR) << __FUNCTION__ << "CertPolicy : " << cert_poicy
                           << " not found, using default secure";
-        return CertPolicy::kTlsCertPolicySecure;
+        return TlsCertPolicy::kTlsCertPolicySecure;
     }
 }
 
