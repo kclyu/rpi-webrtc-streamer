@@ -186,6 +186,7 @@ bool Streamer::InitializePeerConnection() {
 
 void Streamer::UpdateMaxBitrate() {
     RTC_DCHECK(peer_connection_);
+
     auto senders = peer_connection_->GetSenders();
     for (const auto& sender : senders) {
         if (sender->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO &&
@@ -286,7 +287,7 @@ void Streamer::OnSignalingChange(
                   << utils::SignalingStateToString(new_state);
 }
 
-void Streamer::OnIceConnectionChange(
+void Streamer::OnStandardizedIceConnectionChange(
     webrtc::PeerConnectionInterface::IceConnectionState new_state) {
     RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__ << " changed to "
                   << utils::PeerIceConnectionStateToString(new_state);
@@ -312,6 +313,29 @@ void Streamer::OnConnectionChange(
     RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__ << " "
                   << utils::PeerConnectionStateToString(new_state);
     peerconnection_state_ = new_state;
+}
+
+void Streamer::OnIceCandidateError(const std::string& host_candidate,
+                                   const std::string& url, int error_code,
+                                   const std::string& error_text) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
+                  << " host candidate: " << host_candidate << ", url : " << url
+                  << ", errorcode : " << error_code
+                  << ", error_text : " << error_text;
+}
+
+void Streamer::OnIceCandidateError(const std::string& address, int port,
+                                   const std::string& url, int error_code,
+                                   const std::string& error_text) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
+                  << " address: " << address << ", port : " << port
+                  << ", url : " << url << ", errorcode : " << error_code
+                  << ", error_text : " << error_text;
+}
+
+void Streamer::OnInterestingUsage(int usage_pattern) {
+    RTC_LOG(INFO) << "PeerConnectionObserver " << __FUNCTION__
+                  << " usage pattern: " << usage_pattern;
 }
 
 //

@@ -54,24 +54,36 @@ class Streamer : public webrtc::PeerConnectionObserver,
     //
     void OnSignalingChange(
         webrtc::PeerConnectionInterface::SignalingState new_state) override;
+    void OnDataChannel(
+        rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
+    void OnRenegotiationNeeded() override {}
+
+    void OnStandardizedIceConnectionChange(
+        webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
+    void OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState
+                                new_state) override;
+    void OnIceGatheringChange(
+        webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
+    void OnIceCandidate(
+        const webrtc::IceCandidateInterface* candidate) override;
+    void OnIceConnectionReceivingChange(bool receiving) override {}
+
+    void OnIceCandidateError(const std::string& host_candidate,
+                             const std::string& url, int error_code,
+                             const std::string& error_text) override;
+
+    void OnIceCandidateError(const std::string& address, int port,
+                             const std::string& url, int error_code,
+                             const std::string& error_text) override;
+
     void OnAddTrack(
         rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
         const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
             streams) override;
     void OnRemoveTrack(
         rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
-    void OnDataChannel(
-        rtc::scoped_refptr<webrtc::DataChannelInterface> channel) override {}
-    void OnRenegotiationNeeded() override {}
-    void OnIceConnectionChange(
-        webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
-    void OnIceGatheringChange(
-        webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
-    void OnIceCandidate(
-        const webrtc::IceCandidateInterface* candidate) override;
-    void OnIceConnectionReceivingChange(bool receiving) override {}
-    void OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState
-                                new_state) override;
+
+    void OnInterestingUsage(int usage_pattern) override;
 
     //
     // CreateSessionDescriptionObserver implementation.
