@@ -20,8 +20,7 @@ enable_iterator_debugging=false
 host_toolchain="//build/toolchain/linux:arm"
 is_clang=false
 use_sysroot=true
-target_sysroot="/opt/rpi_rootfs"
-system_libdir="/opt/rpi_rootfs/usr/lib/arm-linux-gnueabihf"
+target_sysroot="/opt/rpi_rootfs/rootfs"
 gold_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
 binutils_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
 

@@ -1,4 +1,4 @@
-SYSROOT=/opt/rpi_rootfs
+SYSROOT=/opt/rpi_rootfs/rootfs
 SYSROOTFLAG=--sysroot=$(SYSROOT)
 #ARMIFY=-mfpu=neon-vfpv4 -mfloat-abi=hard -funsafe-math-optimizations
 #BACKTRACE=-funwind-tables -rdynamic
@@ -40,7 +40,6 @@ WEBRTC_LDFLAGS = $(shell $(WEBRTC_NINJA_EXTACTOR) ldflags)
 #$(info WEBRTC_LDFLAGS is "$(WEBRTC_LDFLAGS)")
 #$(info WEBRTC_BUILD_LIBS is "$(WEBRTC_BUILD_LIBS)")
 
-SYSROOT=/opt/rpi_rootfs
 SYSROOTFLAG=--sysroot=$(SYSROOT)
 
 

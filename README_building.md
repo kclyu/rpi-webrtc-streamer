@@ -58,7 +58,7 @@ Currently, the directory name is fixed for each source package. If possible, use
 | \$(HOME)/Workspace/webrtc               | WebRTC native-code package source                                            |
 | \$(HOME)/Workspace/webrtc/src/arm_build | The WebRTC library and object created by WebRTC native-code package building |
 | \$(HOME)/Workspace/rpi-webrtc-streamer  | Rpi-Webrtc-Streamer source                                                   |
-| \$(HOME)/Workspace/rpi_rootfs           | Rootfs for Raspberry PI                                                      |
+| \$(HOME)/Workspace/rpi_rootfs/rootfs    | Rootfs for Raspberry PI                                                      |
 
 ### 2.2. [WebRTC native-code package](https://webrtc.org/native-code/development/)
 
@@ -89,14 +89,7 @@ ssh pi@your-raspberry-pi-ipaddress
 
 sudo apt-get update && sudo apt-get upgrade
 sudo apt-get install rsync
-sudo apt-get install libasound2-dev libcairo2-dev  libffi-dev libglib2.0-dev  \
-libgtk2.0-dev libpam0g-dev libpulse-dev  libudev-dev  libxtst-dev  \
-ttf-dejavu-core libatk1.0-0 libc6 libasound2  libcairo2 libcap2 libcups2  \
-libexpat1 libffi6 libfontconfig1 libfreetype6  libglib2.0-0 libgnome-keyring0  \
-libgtk2.0-0 libpam0g libpango1.0-0  libpcre3 libpixman-1-0 libpng12-0 libstdc++6  \
-libx11-6 libx11-xcb1 libxau6 libxcb1 libxcomposite1 libxcursor1 libxdamage1   \
-libxdmcp6 libxext6 libxfixes3 libxi6 libxinerama1 libxrandr2 libxrender1  \
-libxtst6 zlib1g gtk+-3.0 libavahi-client-dev
+sudo apt-get install gmodule-2.0 gtk+-3.0 libasound2-dev libavahi-client-dev
 ```
 
 ### 3.2. Installing prerequisite s/w package in Ubuntu Linux
@@ -111,7 +104,8 @@ sudo apt install ant autoconf bison cmake gawk intltool xutils-dev xsltproc pkg-
 
 ```
 cd ~/Workspace/rpi_rootfs
-./rpi_rootfs.py pi@your-raspberry-pi-ipaddress ./
+mkdir rootfs
+./rpi_rootfs.py pi@your-raspberry-pi-ipaddress rootfs
 ```
 
 _When rpi_rootfs.py is executed, many messages are output to console during the sync list of files and library link fixing. Please ignore the messages._
