@@ -1,6 +1,6 @@
 #
-# libwebsocket compiler and linker definiton 
-# 
+# libwebsocket compiler and linker definiton
+#
 #
 LIBWEBSOCKETS_ROOT=$(HOME)/Workspace/rpi-webrtc-streamer/lib/libwebsockets
 

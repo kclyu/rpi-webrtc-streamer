@@ -1,6 +1,6 @@
-#
-#
-#
+
+# including make scripts supports RWS building
+include ../mk/validate_variables.mk	 # validating required variable to build 
 include ../mk/cross_arm_build.mk
 include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk
@@ -12,17 +12,16 @@ include ../mk/libavahi_arm.mk
 VPATH = .:./compat
 
 RWS_INSTALL_DIR=\"/opt/rws\"
-RWS_VERSION=\"$(shell git describe --abbrev=32 --dirty --always --tags)\"
-WEBRTC_GIT=$(shell (cd $(WEBRTC_ROOT)/src/; git describe --abbrev=32 --dirty --always --tags))
+RWS_VERSION=\"$(shell git describe --abbrev=16 --dirty --always --tags)\"
+WEBRTC_GIT=$(shell (cd $(WEBRTC_ROOT)/src/; git describe --abbrev=16 --dirty --always --tags))
 WEBRTC_CRPOSITION=$(shell (cd $(WEBRTC_ROOT)/src/;\
 	git log -1 | gawk 'match($$0,/Cr-Commit-Position/){print $$0}' | sed 's/ //g'))
-
 
 CCFLAGS += -DINSTALL_DIR=$(RWS_INSTALL_DIR) $(LWS_C_FLAGS) $(WEBRTC_CCFLAGS)
 CFLAGS += -DINSTALL_DIR=$(RWS_INSTALL_DIR) $(WEBRTC_CFLAGS)
 
-INCLUDES += $(LWS_INCLUDES) $(WEBRTC_DEFINES) $(WEBRTC_FLAGS_INCLUDES) $(H264BITSTREAM_INCLUDES) \
-			$(MMAL_INCLUDES)
+INCLUDES += $(LWS_INCLUDES) $(WEBRTC_DEFINES) $(WEBRTC_FLAGS_INCLUDES) \
+			$(H264BITSTREAM_INCLUDES) $(MMAL_INCLUDES) $(AVAHI_INCLUDES)
 
 # adding abseil-cpp include path in this makefile
 INCLUDES += -I$(WEBRTC_ROOT)/src/third_party/abseil-cpp/
@@ -39,24 +38,29 @@ CCFLAGS += -D__RWS_VERSION__=$(RWS_VERSION) \
 #
 # Debugging purpose only
 #
-#$(info LWS_C_FLAGS is "$(LWS_C_FLAGS)")
-#$(info WEBRTC_CCFLAGS is "$(WEBRTC_CCFLAGS)")
-#$(info MMAL_CFLAGS is "$(MMAL_CFLAGS)")
-#$(info RWS_INSTALL_DIR is "$(RWS_INSTALL_DIR)")
-#$(info CFLAGS is "$(CFLAGS)")
-#$(info CCFLAGS is  "$(CCFLAGS)")
-#$(info INCLUDES is "$(INCLUDES)")
-#$(info SYSLIBS is "$(SYSLIBS)")
-#$(info LDFLAGS is "$(LDFLAGS)")
-#$(info BUILD_LIBS is "$(BUILD_LIBS)")
+ifdef VERBOSE
+  $(info LWS_C_FLAGS is "$(LWS_C_FLAGS)")
+  $(info WEBRTC_CCFLAGS is "$(WEBRTC_CCFLAGS)")
+  $(info MMAL_CFLAGS is "$(MMAL_CFLAGS)")
+  $(info RWS_INSTALL_DIR is "$(RWS_INSTALL_DIR)")
+  $(info CFLAGS is "$(CFLAGS)")
+  $(info CCFLAGS is  "$(CCFLAGS)")
+  $(info INCLUDES is "$(INCLUDES)")
+  $(info SYSLIBS is "$(SYSLIBS)")
+  $(info LDFLAGS is "$(LDFLAGS)")
+  $(info BUILD_LIBS is "$(BUILD_LIBS)")
+endif
 
 #
 # Raspberry PI testing host
+ifndef RPI_HOST_URL
 RPI_HOST_URL=pi@10.0.0.11:~/Workspace/client
+endif
 
 # TARGET
 #
 TARGET = ../webrtc-streamer
+TARGET_LWS_LIBS = $(LWS_LIBS)
 
 #
 # source & object list definition
@@ -80,7 +84,7 @@ OBJECTS.CPP = $(SOURCES.CPP:.cpp=.o)
 OBJECTS.C = $(SOURCES.C:.c=.o)
 OBJECTS = $(OBJECTS.CC) $(OBJECTS.C) $(OBJECTS.CPP)
 
-all: $(TARGET)
+all: $(TARGET_LWS_LIBS) $(TARGET)
 
 #
 # Makefile rules...
@@ -97,6 +101,15 @@ $(TARGET): $(OBJECTS)
 clean:
 	rm -f *.o  *.o.d  *.dwo $(TARGET)
 
+distclean: clean
+	rm -fr ../lib/libwebsockets
+
+$(TARGET_LWS_LIBS) :
+	../mk/config_libwebsockets.sh $(RPI_ROOTFS)
+
+#
+#  helper rules
+#
 rcp: $(TARGET)
 	rsync -v -u -r --stats $(TARGET) *.cc *.h *.dwo compat $(RPI_HOST_URL)
 

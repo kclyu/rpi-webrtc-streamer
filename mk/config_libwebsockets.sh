@@ -1,14 +1,14 @@
 #!/bin/bash
-export CC=arm-linux-gnueabihf-gcc
-export CXX=arm-linux-gnueabihf-g++
-export AR=arm-linux-gnueabihf-ar
-export LD=arm-linux-gnueabihf-ld
-export AS=arm-linux-gnueabihf-as
-export RANLIB=arm-linux-gnueabihf-ranlib
-
+# this script will accept RPI_ROOTFS path a argument
+# e.g: ./config_libwebsocket.sh /opt/rpi_rootfs
+# if argument does not exist, the default rpi_rootfs path will be used
+if [ "$#" -lt 1 ]; then
+RPI_ROOTFS_CMAKE=${HOME}/Workspace/rpi_rootfs/PI.cmake
+else
+RPI_ROOTFS_CMAKE=$1/PI.cmake
+fi
 
 RWS_LIBRARY_DIR=../lib
-RPI_ROOTFS_CMAKE=${HOME}/Workspace/rpi_rootfs/PI.cmake
 
 LIBWEBSOCKETS_BASENAME=libwebsockets-3.1.0
 LIBWEBSOCKET_DIR=${RWS_LIBRARY_DIR}/libwebsockets
@@ -31,7 +31,8 @@ then
     if [ ! -d ${LIBWEBSOCKET_DIR} ]
     then
 	    echo "extracting libwebsocket library in lib"
-        cd ${RWS_LIBRARY_DIR} && unzip ${LIBWEBSOCKETS_BASENAME}.zip && mv ${LIBWEBSOCKETS_BASENAME} ${LIBWEBSOCKET_DIR}
+        cd ${RWS_LIBRARY_DIR} && unzip ${LIBWEBSOCKETS_BASENAME}.zip && \
+			mv ${LIBWEBSOCKETS_BASENAME} ${LIBWEBSOCKET_DIR}
     fi
 
     # checking libwebsockets library archive file
@@ -39,7 +40,10 @@ then
     then
 	    echo "start building libwebsockets library"
         mkdir -p ${LIBWEBSOCKET_BUILD_DIR}
-        cd ${LIBWEBSOCKET_BUILD_DIR} && cmake .. -DCMAKE_TOOLCHAIN_FILE=${RPI_ROOTFS_CMAKE} -DCMAKE_BUILD_TYPE=Debug -DLWS_WITH_SSL=OFF -DLWS_WITH_SHARED=OFF -DLWS_WITH_LIBEV=0 && make
+        cd ${LIBWEBSOCKET_BUILD_DIR} && \
+			cmake .. -DCMAKE_TOOLCHAIN_FILE=${RPI_ROOTFS_CMAKE} \
+			-DCMAKE_BUILD_TYPE=Debug -DLWS_WITH_SSL=OFF -DLWS_WITH_SHARED=OFF \
+			-DLWS_WITH_LIBEV=0 && make
     else
 	    echo "libwebsockets.a already exist"
     fi

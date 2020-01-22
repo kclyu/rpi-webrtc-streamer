@@ -14,7 +14,6 @@ Global variable for peerconnection ninja build file
 """
 peerconnection_ninja_file = '/obj/examples/peerconnection_client.ninja'
 
-
 search_path = ""
 webrtc_build_path = ""
 webrtc_root_path = ""
@@ -23,6 +22,12 @@ def displaymatch(match):
     if match is None:
         return None
     return '<Match: %r, groups=%r>' % (match.group(), match.groups())
+
+"""
+generate absolute path from
+"""
+def generate_AbsolutePath( relpath_of_file ):
+    return "".join(os.path.abspath(webrtc_build_path+'/../'+relpath_of_file))
 
 """
 Exclude Fiter
@@ -44,12 +49,12 @@ def Fiter_ExcludeFilter(splited_list, exclude_patterns):
     return filtered_splited_list
 
 """
-Parse 'defines' from ninja build file and print 
+Parse 'defines' from ninja build file and print
 """
 def Parse_Defines(contents):
     regex = re.compile(r'\bdefines\b\s*=.*\n', re.M)
     sp = re.compile(r'[\s$]')
-    
+
     matched_ = regex.search(contents)
     if matched_ == None:
         sys.stderr.write('failed to match option define\n')
@@ -77,9 +82,9 @@ def Fiter_CCflags(ccflags_lists):
         # print("Index : %d, Include: %s" % (index, inc ))
         ### replacing rules
         if inc.find(include_system_str) != -1:
-            isystem_dir = inc[len("-isystem"):]   
-            gen_relpath = "".join(os.path.relpath(webrtc_build_path+'/'+isystem_dir))
-            filtered_ccflags_lists.append("-isystem" + gen_relpath)
+            isystem_dir = inc[len("-isystem"):]
+            gen_abspath = generate_AbsolutePath(isystem_dir)
+            filtered_ccflags_lists.append("-isystem" + gen_abspath)
             continue
         ### ending rule
         filtered_ccflags_lists.append(inc)
@@ -87,12 +92,12 @@ def Fiter_CCflags(ccflags_lists):
     return filtered_ccflags_lists
 
 """
-Parse 'ccflags' from ninja build file and print 
+Parse 'ccflags' from ninja build file and print
 """
 def Parse_CCflags(contents):
     regex = re.compile(r'\bcflags_cc\b\s*=.*\n', re.M)
     sp = re.compile(r'[\s$]')
-    
+
     matched_ = regex.search(contents)
     if matched_ == None:
         sys.stderr.write('failed to match option define\n')
@@ -101,18 +106,18 @@ def Parse_CCflags(contents):
     splited = filter(lambda a: a != '', splited)
     splited.pop(0)   # remove define word
     splited.pop(0)   # remove = character
-    # running include fillter 
+    # running include fillter
     splited = Fiter_CCflags(splited)
     print('%s' % " ".join(str(x) for x in splited))
 
 
 """
-Parse 'cflags' from ninja build file and print 
+Parse 'cflags' from ninja build file and print
 """
 def Parse_Cflags(contents):
     regex = re.compile(r'\bcflags\b\s*=.*\n', re.M)
     sp = re.compile(r'[\s$]')
-    
+
     matched_ = regex.search(contents)
     if matched_ == None:
         sys.stderr.write('failed to match option define\n')
@@ -121,7 +126,10 @@ def Parse_Cflags(contents):
     splited = filter(lambda a: a != '', splited)
     splited.pop(0)   # remove define word
     splited.pop(0)   # remove = character
+    splited = Fiter_CCflags(splited)
     print('%s' % " ".join(str(x) for x in splited))
+
+
 
 """
 Fiter 'include_dirs' from includes in ninja build
@@ -143,7 +151,7 @@ def Fiter_Includes(include_lists):
     exclude_pattern=r'gtk|atk|pango|cairo|pixmap|freetype|pixbuf|harfbuzz|pixman|png12'
 
     for index,inc in enumerate(include_lists):
-        # print("Index : %d, Include: %s" % (index, inc ))
+        #print("Index : %d, Include: %s, Build %s" % (index, inc, webrtc_build_path ))
         ### filtering rules for webrtc includes
         if any(re.findall(exclude_pattern, inc, re.IGNORECASE)):
             continue
@@ -154,13 +162,13 @@ def Fiter_Includes(include_lists):
         ### replacing rules
         if inc.find(gen_str) != -1:
             gen_dir = inc[len("-I"):]   # include 'gen' string in dirname
-            gen_relpath = "".join(os.path.relpath(webrtc_build_path+'/'+gen_dir))
-            filtered_include_lists.append("-I" + gen_relpath)
+            gen_abspath = generate_AbsolutePath(gen_dir)
+            filtered_include_lists.append("-I" + gen_abspath)
             continue
         if inc.find(include_dotdot_str) != -1:
             include_dir = inc[len(include_dotdot_str):]
-            include_relpath = "".join(os.path.relpath(webrtc_root_path+include_dir))
-            filtered_include_lists.append("-I" + include_relpath)
+            include_abspath = generate_AbsolutePath(include_dir)
+            filtered_include_lists.append("-I" + include_abspath)
             continue
         ### ending rule
         filtered_include_lists.append(inc)
@@ -168,12 +176,12 @@ def Fiter_Includes(include_lists):
     return filtered_include_lists
 
 """
-Parse 'include_dirs' from ninja build file and print 
+Parse 'include_dirs' from ninja build file and print
 """
 def Parse_Includes(contents):
     regex = re.compile(r'\binclude_dirs\b\s*=.*\n', re.M)
     sp = re.compile(r'[\s\$]')
-    
+
     matched_ = regex.search(contents)
     if matched_ == None:
         sys.stderr.write('failed to match option define\n')
@@ -182,12 +190,12 @@ def Parse_Includes(contents):
     splited = filter(lambda a: a != '', splited)
     splited.pop(0)   # remove define word
     splited.pop(0)   # remove = character
-    # running include fillter 
+    # running include fillter
     splited = Fiter_Includes(splited)
     print('%s' % " ".join(str(x) for x in splited))
 
 """
-Parse 'libs' from ninja build file and print 
+Parse 'libs' from ninja build file and print
 """
 def Parse_Libs(contents):
     # build peerconnection_client: link $
@@ -208,17 +216,17 @@ def Parse_Libs(contents):
     splited.pop(0)   # remove peerconnection_client object
     splited.pop(0)   # remove peerconnection_client object
 
-    print('%s' % " ".join(os.path.relpath(webrtc_build_path+'/'+x) for x in splited))
+    print('%s' % " ".join(os.path.abspath(webrtc_build_path+'/'+x) for x in splited))
 
 
 """
-Parse 'ldflags' from ninja build file and print 
+Parse 'ldflags' from ninja build file and print
 """
 def Parse_Ldflags(contents):
     regex = re.compile(r'\bldflags\b\s*=.*\n', re.M)
     sp = re.compile(r'[\s$]')
-    
-    ## exclude_patern 
+
+    ## exclude_patern
     exclude_patterns=r'-B'
 
     matched_ = regex.search(contents)
@@ -229,7 +237,7 @@ def Parse_Ldflags(contents):
     splited = filter(lambda a: a != '', splited)
     splited.pop(0)   # remove define word
     splited.pop(0)   # remove = character
-    # running include fillter 
+    # running include fillter
     splited = Fiter_ExcludeFilter(splited, exclude_patterns)
     print('%s' % " ".join(str(x) for x in splited))
 
@@ -240,7 +248,7 @@ Parse 'syslibs' from ninja build file and print for webrtc peerconnection libs
 def Parse_Syslibs(contents):
     regex = re.compile(r'\blibs\b\s*=.*\n', re.M)
     sp = re.compile(r'[\s$]')
-    
+
     # syslib exclude patterns
     exclude_patterns=r'X11|Xcomposite|Xext|Xrender|gdk|gobjects|fontconfig|atk|pango|cairo|freetype|'
 
@@ -252,7 +260,7 @@ def Parse_Syslibs(contents):
     splited = filter(lambda a: a != '', splited)
     splited.pop(0)   # remove define word
     splited.pop(0)   # remove = character
-    # running include fillter 
+    # running include fillter
     splited = Fiter_ExcludeFilter(splited, exclude_patterns)
     print('%s' % " ".join(str(x) for x in splited))
 
@@ -276,8 +284,7 @@ def ParseNinjaFile(ninja_file, option):
         Parse_Syslibs(ninja_file_contents)
     else:
         sys.stderr.write('undefined options : ' + option + ' specified!\n')
-        return 
-        
+        return
 
 def Main(argv):
     if len(argv) != 4:
@@ -294,11 +301,12 @@ def Main(argv):
         sys.stderr.write('                syslibs - extract system library list for linker options\n')
         return 1
 
-    global search_path, webrtc_build_path, webrtc_root_path
+    global search_path, webrtc_build_path, webrtc_root_path, peerconnection_ninja_path
     search_path = os.path.normpath(argv[1])
     webrtc_build_path = search_path + '/src/' + argv[2]
     target_file = webrtc_build_path + peerconnection_ninja_file
     webrtc_root_path = search_path + '/src/'
+    peerconnection_ninja_path = os.path.dirname(os.path.abspath(target_file))
 
     if not os.path.exists(webrtc_build_path):
         sys.stderr.write('webrtc build path does not exist: %s\n' % webrtc_build_path)
