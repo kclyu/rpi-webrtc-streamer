@@ -64,6 +64,9 @@ class RaspiVideoEncoderFactory : public VideoEncoderFactory {
     std::vector<SdpVideoFormat> GetSupportedFormats() const override {
         return supported_formats_;
     }
+    std::vector<SdpVideoFormat> GetImplementations() const override {
+        return supported_formats_;
+    }
 
     CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
 

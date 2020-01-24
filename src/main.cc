@@ -56,7 +56,7 @@ class StreamingSocketServer : public rtc::PhysicalSocketServer {
     }
 
     // TODO: Quit feature implementation using message queue is required.
-    void SetMessageQueue(rtc::MessageQueue* queue) override {
+    void SetMessageQueue(rtc::Thread* queue) override {
         message_queue_ = queue;
     }
 
@@ -81,7 +81,7 @@ class StreamingSocketServer : public rtc::PhysicalSocketServer {
 
    protected:
     bool mdns_publish_enable_;
-    rtc::MessageQueue* message_queue_;
+    rtc::Thread* message_queue_;
     std::unique_ptr<rtc::AsyncSocket> listener_;
     LibWebSocketServer* websocket_;
 };

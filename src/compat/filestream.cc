@@ -15,7 +15,6 @@
 #include "rtc_base/stream.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
-#include "rtc_base/message_queue.h"
 #include "rtc_base/thread.h"
 
 #include "compat/filestream.h"
