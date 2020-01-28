@@ -39,7 +39,7 @@ def Fiter_ExcludeFilter(splited_list, exclude_patterns):
     filtered_splited_list =  []
 
     for index,inc in enumerate(splited_list):
-        # print("Index : %d, Include: %s" % (index, inc ))
+        #print("Index : %d, Include: %s" % (index, inc ))
         ### filtering rules
         if any(re.findall(exclude_patterns, inc, re.IGNORECASE)):
             continue
@@ -250,7 +250,8 @@ def Parse_Syslibs(contents):
     sp = re.compile(r'[\s$]')
 
     # syslib exclude patterns
-    exclude_patterns=r'X11|Xcomposite|Xext|Xrender|gdk|gobjects|fontconfig|atk|pango|cairo|freetype|'
+    exclude_patterns= r'X11|Xcomposite|Xext|Xrender|atomic|gmodule|gtk|gio|gdk|\
+            gobjects|gthread|glib|gobject|fontconfig|atk|pango|cairo|freetype|'
 
     matched_ = regex.search(contents)
     if matched_ == None:
