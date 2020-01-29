@@ -250,7 +250,7 @@ def Parse_Syslibs(contents):
     sp = re.compile(r'[\s$]')
 
     # syslib exclude patterns
-    exclude_patterns= r'X11|Xcomposite|Xext|Xrender|atomic|gmodule|gtk|gio|gdk|\
+    exclude_patterns= r'X11|Xcomposite|Xext|Xrender|gmodule|gtk|gio|gdk|\
             gobjects|gthread|glib|gobject|fontconfig|atk|pango|cairo|freetype|'
 
     matched_ = regex.search(contents)
