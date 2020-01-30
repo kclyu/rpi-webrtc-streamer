@@ -1,0 +1,151 @@
+# Copyright (c) 2019, rpi-webrtc-streamer Lyu,KeunChang
+#
+# This dockerfile builds rpi-webrtc-streamer to create a docker image 
+# for Raspberry PI.
+#
+# To build, you need kclyu/rpi_rootfs which is used as rootfs for 
+# Raspberry PI. And it will download the WebRTC and rpi-webrtc-streamer 
+# source code and perform the build procedure.
+#
+# Build command:
+#  armv7l:
+#    docker build --rm -t rpi-webrtc-streamer:0.74  -f Dockerfile.build .
+#
+#  armv6l:
+#    docker build --rm -t rpi-webrtc-streamer:0.74 --build-arg ARCH=armv6 -f Dockerfile.build .
+#
+#  - Change the image name and tag as necessary.
+#
+# This argument is required to change commit position of WebRTC native 
+# code package. It should match the git commit log.
+ARG HASH_COMMIT=NONE
+#
+# arm (default): build for armv7l or later (Raspberry PI2)
+# armv6 : build only for armv6 (Raspberry Zero)
+ARG ARCH=arm
+
+# Defines the required paths and variables
+# Using Rpi_RootFS as base image
+FROM kclyu/rpi_rootfs:0.74 AS env_tool_base
+LABEL maintainer="lyu.keun.chang@gmail.com"
+LABEL version="0.74"
+LABEL description="Rpi-Webrtc-Streamer Docker builer"
+
+# multiple ENV command does not working in current dockerfile
+# so, this multiple env definitions are required.
+ENV	WORKSPACE /root/Workspace
+ENV WEBRTC_HOME /root/Workspace/webrtc
+ENV	RWS_SRC_HOME /root/Workspace/rpi-webrtc-streamer
+ENV RPI_ROOTFS /root/Workspace/rpi_rootfs
+
+ENV	WEBRTC_BUILD_BASE ${WEBRTC_HOME}/src/out
+ENV	WEBRTC_ARM_BUILD ${WEBRTC_BUILD_BASE}/arm_build
+ENV	WEBRTC_ARMV6_BUILD ${WEBRTC_BUILD_BASE}/armv6_build
+ENV	ARM_ARGS_GN ${RWS_SRC_HOME}/misc/webrtc_arm_build_args.gn
+ENV	ARMV6_ARGS_GN ${RWS_SRC_HOME}/misc/webrtc_armv6_build_args.gn
+
+RUN apt-get update && apt-get -y install  --no-install-recommends  \
+		ant autoconf python bison cmake gawk intltool xutils-dev xsltproc \
+		pkg-config
+
+RUN mkdir -p /root/tools
+WORKDIR /root/tools
+RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
+ENV PATH="${PATH}:/root/tools/depot_tools"
+
+##
+## Downloading WebRTC native code package and Rpi-WebRTC-Streamer sources
+FROM env_tool_base AS build_src_base
+
+RUN mkdir -p ${WEBRTC_HOME}
+# changing working directory 
+WORKDIR ${WEBRTC_HOME}
+# fetching WebRTC native source code package without history
+RUN fetch --nohooks --no-history webrtc && \ 
+		gclient sync && \
+		cd /root/Workspace/webrtc/src && \
+		git config branch.autosetupmerge always && \
+		git config branch.autosetuprebase always && \
+		git checkout master
+
+# to build webrtc source, we need the args.gn file of rpi-webrtc-streamer
+WORKDIR ${WORKSPACE}
+RUN git clone https://github.com/kclyu/rpi-webrtc-streamer.git
+#RUN mkdir -p ${RWS_SRC_HOME}
+#COPY . ${RWS_SRC_HOME}/
+
+##
+## Downloading WebRTC and Rpi-WebRTC-Streamer sources
+FROM build_src_base AS webrtc_build
+ARG HASH_COMMIT
+ARG ARCH
+
+# changing working directory 
+WORKDIR ${WEBRTC_HOME}/src
+RUN if [ "${HASH_COMMIT}" = "NONE" ]; then \
+		echo "No need to change comit position"; \
+	else  \
+		echo "changing commit position: ${HASH}"; \
+		gclient sync -n -D -r ${HASH_COMMIT};\
+		gclient sync; \
+	fi
+
+
+# Building WebRTC native code depend on ARCH argument
+RUN if [ "${ARCH}" = "arm" ]; then  \
+		echo "Start Building WebRTC (armv7l), arch: ${ARCH}"; \
+		mkdir -p ${WEBRTC_ARM_BUILD} && \
+		cp ${ARM_ARGS_GN} ${WEBRTC_ARM_BUILD}/args.gn && \
+		gn gen ${WEBRTC_ARM_BUILD}  && \
+		ninja -C ${WEBRTC_ARM_BUILD}; \
+	else  \	 
+		echo "Start Building WebRTC (armv6l), arch: ${ARCH}"; \
+		mkdir -p ${WEBRTC_ARMV6_BUILD} && \
+		cp ${ARMV6_ARGS_GN} ${WEBRTC_ARMV6_BUILD}/args.gn && \
+		gn gen ${WEBRTC_ARMV6_BUILD} && \
+		ninja -C ${WEBRTC_ARMV6_BUILD}; \
+	fi
+
+# RWS building both of arm and armv6
+FROM webrtc_build AS rws_build
+ARG HASH_COMMIT
+ARG ARCH
+
+WORKDIR ${RWS_SRC_HOME}/src
+# Building Rpi-WebRTC-Streamer depend on ARCH argument
+RUN if [ "${ARCH}" = "arm" ]; then  \
+		echo "Start Building RWS (armv7l), arch: ${ARCH}"; \
+		make clean && \
+		make RPI_ROOTFS=/root/Workspace/rpi_rootfs; \
+	else  \	 
+		echo "Start Building RWS (armv6l), arch: ${ARCH}"; \
+		make clean &&  \
+		make RPI_ROOTFS=/root/Workspace/rpi_rootfs ARCH=armv6; \
+	fi
+
+WORKDIR ${RWS_SRC_HOME}
+RUN ls -l webrtc-streamer && echo "after strip :" && \
+		arm-linux-gnueabihf-strip webrtc-streamer  && \
+		ls -l webrtc-streamer
+
+RUN tar cf /root/rws_build.tar etc web-root tools webrtc-streamer
+
+# Running container
+# docker container run --device=/dev/vcsm --device=/dev/vchiq --net=host --mount type=bind,source=/var/run/dbus,target=/var/run/dbus --rm -d rpi-webrtc-streamer
+FROM balenalib/raspberry-pi2:latest
+RUN apt-get update && apt-get -y install --no-install-recommends \
+	libatomic1 libasound2 libavahi-client3
+
+WORKDIR /root
+COPY --from=rws_build /root/rws_build.tar /root/
+RUN tar xvf rws_build.tar && rm rws_build.tar 
+RUN ls -l
+
+RUN sed 's/\/opt\/rws/\/root/g' etc/template/webrtc_streamer.conf > etc/webrtc_streamer.conf && \
+	cp etc/template/motion_config.conf etc/ && \
+	cp etc/template/media_config.conf etc/ && \
+	for dir in 00 01 02 03 04 05 06 07 08 09; do mkdir -p log/${dir}; done;
+
+ENTRYPOINT ["./webrtc-streamer"]
+CMD ["-log","/root/log"]
+

@@ -60,6 +60,14 @@ Please refer to the  [README_audio.md](https://github.com/kclyu/rpi-webrtc-strea
 ## Running RWS on Raspberry PI
 Please refer to [README_rws_setup.md document](../master/README_rws_setup.md).
 
+## Download Docker image for Testing
+In Raspberry PI, you can run the image directly after the pull from the docker hub as shown below.
+
+```
+docker pull kclyu/rpi-webrtc-streamer
+docker container run --device=/dev/vcsm --device=/dev/vchiq --net=host --mount type=bind,source=/var/run/dbus,target=/var/run/dbus --rm -d kclyu/rpi-webrtc-streamer # note1
+```
+_Note1: docker image is currently for armv7l (Raspberry PI2 and above)._
 ## Download Deb package for Testing
 To download RWS deb package, please refer to the following URL. RWS is currently in development and testing, so please use it with consideration.
 
