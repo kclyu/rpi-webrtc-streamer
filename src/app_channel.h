@@ -34,7 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
-
 #include "app_ws_client.h"
 #include "config_streamer.h"
 #include "websocket_server.h"

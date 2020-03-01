@@ -31,9 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RPI_STREAMER_CONFIG_
 
 #include "api/peer_connection_interface.h"
-#include "rtc_base/checks.h"
-
 #include "compat/optionsfile.h"
+#include "rtc_base/checks.h"
 #include "utils_pc_config.h"
 
 class StreamerConfig {

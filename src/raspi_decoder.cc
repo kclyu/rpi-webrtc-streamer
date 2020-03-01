@@ -27,22 +27,20 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "raspi_decoder.h"
+
 #include <limits>
 #include <string>
 
 #include "absl/memory/memory.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-
 #include "common_types.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/profile_level_id.h"
-
 #include "media/base/codec.h"
-
-#include "raspi_decoder.h"
 #include "raspi_decoder_dummy.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

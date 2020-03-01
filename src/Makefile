@@ -1,6 +1,6 @@
 
 # including make scripts supports RWS building
-include ../mk/validate_variables.mk	 # validating required variable to build 
+include ../mk/validate_variables.mk	 # validating required variable to build
 include ../mk/cross_arm_build.mk
 include ../mk/cross_mmal.mk
 include ../mk/libwebsocket_arm_build.mk
@@ -21,7 +21,8 @@ CCFLAGS += -DINSTALL_DIR=$(RWS_INSTALL_DIR) $(LWS_C_FLAGS) $(WEBRTC_CCFLAGS)
 CFLAGS += -DINSTALL_DIR=$(RWS_INSTALL_DIR) $(WEBRTC_CFLAGS)
 
 INCLUDES += $(LWS_INCLUDES) $(WEBRTC_DEFINES) $(WEBRTC_FLAGS_INCLUDES) \
-			$(H264BITSTREAM_INCLUDES) $(MMAL_INCLUDES) $(AVAHI_INCLUDES)
+			$(H264BITSTREAM_INCLUDES) $(MMAL_INCLUDES) $(AVAHI_INCLUDES) \
+			-I$(SYSROOT)/usr/include/arm-linux-gnueabihf
 
 # adding abseil-cpp include path in this makefile
 INCLUDES += -I$(WEBRTC_ROOT)/src/third_party/abseil-cpp/
@@ -114,8 +115,23 @@ rcp: $(TARGET)
 	rsync -v -u -r --stats $(TARGET) *.cc *.h *.dwo compat $(RPI_HOST_URL)
 
 rcp_full: $(TARGET)
-	rsync -v -u -r --stats $(TARGET) ../LICENSE ../tools ../etc ../etc/template ../web-root ../scripts $(RPI_HOST_URL)
+	rsync -v -u -r --stats $(TARGET) ../LICENSE ../tools ../etc ../etc/template ../web-root \
+		../scripts $(RPI_HOST_URL)
 
 web: $(TARGET)
 	rsync -v -u -r --stats ../web-root  $(RPI_HOST_URL)
+
+#
+# You need to install clang-format-9 
+format:
+	find . -maxdepth 2 -iname \*.h -o -iname \*.cc -o -iname \*.c \
+		| xargs clang-format-9 -style=file -i -fallback-style=none
+
+#
+# You need to configure ccls and bear(2.4.3 >= version) to generate compile_commands.json
+ccls:
+	make clean
+	bear --use-cc arm-linux-gnueabihf-gcc --use-c++ arm-linux-gnueabihf-g++  make
+	rm -f ../compile_commands.json
+	mv compile_commands.json ../
 

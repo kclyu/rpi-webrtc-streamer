@@ -20,6 +20,7 @@
 #pragma once
 
 #include <assert.h>
+
 #include <string>
 
 #include "rtc_base/log_sinks.h"

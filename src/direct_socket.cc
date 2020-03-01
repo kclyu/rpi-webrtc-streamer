@@ -34,17 +34,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if defined(WEBRTC_POSIX)
 #include <unistd.h>
 #endif
+#include "direct_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/time_utils.h"
-
-#include "utils.h"
-
-#include "direct_socket.h"
 #include "streamer_observer.h"
+#include "utils.h"
 
 // delay of message to use for stream release
 static const int kStreamReleaseDelay = 1000;

@@ -43,23 +43,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   USA.
 ***/
 
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include "mdns_publish.h"
 
+#include <assert.h>
 #include <avahi-client/client.h>
 #include <avahi-client/publish.h>
-
 #include <avahi-common/alternative.h>
 #include <avahi-common/error.h>
 #include <avahi-common/malloc.h>
 #include <avahi-common/simple-watch.h>
 #include <avahi-common/timeval.h>
-
-#include "mdns_publish.h"
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
 typedef struct _MdnsClientInfo {
     AvahiClient *client;

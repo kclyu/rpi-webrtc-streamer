@@ -28,9 +28,8 @@
 
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
-#include "pc/video_track_source.h"
-
 #include "config_streamer.h"
+#include "pc/video_track_source.h"
 #include "streamer_observer.h"
 
 class Streamer : public webrtc::PeerConnectionObserver,

@@ -27,11 +27,11 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "raspi_quality_config.h"
+
 #include "limits.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-
-#include "raspi_quality_config.h"
 
 static const int kAverageDuration = 30;  // Approximately 30 samples per second
 

@@ -34,15 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 #include "common_video/h264/h264_bitstream_parser.h"
-#include "system_wrappers/include/clock.h"
-
-#include "modules/video_coding/include/video_codec_interface.h"
-#include "rtc_base/platform_thread.h"
-
 #include "mmal_wrapper.h"
-#include "raspi_quality_config.h"
-
+#include "modules/video_coding/include/video_codec_interface.h"
 #include "raspi_encoder.h"
+#include "raspi_quality_config.h"
+#include "rtc_base/platform_thread.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 

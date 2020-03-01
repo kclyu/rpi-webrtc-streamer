@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <stdio.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -36,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef __STANDALONE__
 #include <glog/logging.h>
+
 #include <type_traits>
 #define RTC_DCHECK CHECK
 #define RTC_ERROR LOG(ERROR)

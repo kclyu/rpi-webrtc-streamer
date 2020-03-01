@@ -19,17 +19,17 @@
 #ifndef DIRECTORY_ITERATOR_H_
 #define DIRECTORY_ITERATOR_H_
 
-#include <string>
-
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <string>
+
+#include "compat/platform_file.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
-#include "compat/platform_file.h"
 
 namespace utils {
 
@@ -42,34 +42,34 @@ namespace utils {
 // allows you to get information about each file.
 
 class DirectoryIterator {
- public:
-  // Constructor
-  DirectoryIterator();
-  // Destructor
-  virtual ~DirectoryIterator();
+   public:
+    // Constructor
+    DirectoryIterator();
+    // Destructor
+    virtual ~DirectoryIterator();
 
-  // Starts traversing a directory
-  // dir is the directory to traverse
-  // returns true if the directory exists and is valid
-  // The iterator will point to the first entry in the directory
-  virtual bool Iterate(const std::string& path);
+    // Starts traversing a directory
+    // dir is the directory to traverse
+    // returns true if the directory exists and is valid
+    // The iterator will point to the first entry in the directory
+    virtual bool Iterate(const std::string& path);
 
-  // Advances to the next file
-  // returns true if there were more files in the directory.
-  virtual bool Next();
+    // Advances to the next file
+    // returns true if there were more files in the directory.
+    virtual bool Next();
 
-  // returns true if the file currently pointed to is a directory
-  virtual bool IsDirectory() const;
+    // returns true if the file currently pointed to is a directory
+    virtual bool IsDirectory() const;
 
-  // returns the name of the file currently pointed to
-  virtual std::string Name() const;
+    // returns the name of the file currently pointed to
+    virtual std::string Name() const;
 
- private:
-  std::string ValidateDirectoryPath(const std::string& dir);
-  std::string directory_;
-  DIR* dir_;
-  struct dirent* dirent_;
-  struct stat stat_;
+   private:
+    std::string ValidateDirectoryPath(const std::string& dir);
+    std::string directory_;
+    DIR* dir_;
+    struct dirent* dirent_;
+    struct stat stat_;
 };
 
 }  // namespace utils

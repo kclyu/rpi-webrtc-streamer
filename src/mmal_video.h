@@ -13,9 +13,9 @@ extern "C" {
 // MMAL related header files
 //
 ///////////////////////////////////////////////////////////////////////////////
-#include "bcm_host.h"
-#include "interface/vcos/vcos.h"
+#include <semaphore.h>
 
+#include "bcm_host.h"
 #include "interface/mmal/mmal.h"
 #include "interface/mmal/mmal_buffer.h"
 #include "interface/mmal/mmal_logging.h"
@@ -24,12 +24,10 @@ extern "C" {
 #include "interface/mmal/util/mmal_default_components.h"
 #include "interface/mmal/util/mmal_util.h"
 #include "interface/mmal/util/mmal_util_params.h"
-
+#include "interface/vcos/vcos.h"
 #include "raspicamcontrol.h"
 #include "raspicli.h"
 #include "raspipreview.h"
-
-#include <semaphore.h>
 
 #define RASPI_CAM_FIXED_WIDTH 1296
 #define RASPI_CAM_FIXED_HEIGHT 972
@@ -99,7 +97,7 @@ typedef struct RASPIVID_STATE_S RASPIVID_STATE;
 
 typedef struct {
     RASPIVID_STATE
-        *pstate;  /// pointer to our state in case required in callback
+    *pstate;    /// pointer to our state in case required in callback
     int abort;  /// Set to 1 in callback if an error occurs to attempt to abort
                 /// the capture
     int frame_buff[FRAME_BUFSIZE];  /// frame buffer to assemble segmented frame

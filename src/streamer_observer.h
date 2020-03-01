@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <memory>
+
 #include "raspi_motion.h"
 #ifdef __NOTI_ENABLE__
 #include "raspi_httpnoti.h"

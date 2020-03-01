@@ -27,14 +27,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "websocket_server.h"
+
 #include <list>
 #include <vector>
 
 #include "rtc_base/logging.h"
 #include "rtc_base/network.h"
-
 #include "utils.h"
-#include "websocket_server.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //

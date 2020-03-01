@@ -27,20 +27,18 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "raspi_motion.h"
+
 #include <limits>
 #include <string>
 
 #include "common_types.h"
-
+#include "config_motion.h"
+#include "mmal_video.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/thread.h"
-
-#include "mmal_video.h"
-
-#include "config_motion.h"
-#include "raspi_motion.h"
 
 static const float kKushGaugeConstant = 0.07;
 static const uint64_t kDrainProcessDelayMaximumInMicro = 32000;  // 32 ms

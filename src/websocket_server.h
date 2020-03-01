@@ -28,12 +28,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include <algorithm>
+#include <ctime>
 #include <deque>
 #include <list>
 #include <map>
 #include <string>
-
-#include <ctime>
 
 // __RWS_VERSION__ defined in Makefile
 #define WEBSOCKET_SERVER_NAME __RWS_VERSION__

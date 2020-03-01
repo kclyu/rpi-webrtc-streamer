@@ -27,13 +27,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "config_motion.h"
+
 #include <memory>
 #include <string>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-
-#include "config_motion.h"
 #include "utils.h"
 
 namespace config_motion {

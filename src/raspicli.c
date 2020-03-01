@@ -45,14 +45,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Some functions/structures for command line parameter parsing
  *
  */
+#include "raspicli.h"
+
 #include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "interface/vcos/vcos.h"
-
-#include "raspicli.h"
 
 /**
  * Convert a string from command line to a comand_id from the list

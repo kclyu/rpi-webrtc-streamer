@@ -12,7 +12,9 @@
 #include <algorithm>
 #include <limits>
 
+#include "api/video/i420_buffer.h"
 #include "common_video/include/video_frame_buffer.h"
+#include "raspi_decoder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/keep_ref_until_done.h"
@@ -20,10 +22,9 @@
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/metrics.h"
 
-#include "api/video/i420_buffer.h"
-
-#include "raspi_decoder.h"
+// clang-format off
 #include "raspi_decoder_dummy.h"
+// clang-format on
 
 namespace webrtc {
 

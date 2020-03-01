@@ -27,13 +27,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "app_clientinfo.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <iostream>
 #include <vector>
-#include "app_clientinfo.h"
+
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

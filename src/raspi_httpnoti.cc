@@ -16,23 +16,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "raspi_httpnoti.h"
+
 #include <limits>
 #include <list>
 #include <string>
 
 #include "common_types.h"
-
 #include "rtc_base/checks.h"
 #include "rtc_base/fileutils.h"
+#include "rtc_base/httpcommon.h"
 #include "rtc_base/logging.h"
-
 #include "rtc_base/stream.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
-
-#include "rtc_base/httpcommon.h"
-
-#include "raspi_httpnoti.h"
 #include "utils.h"  // GetHardwareDeviceId
 #include "utils_url.h"
 

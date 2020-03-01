@@ -33,12 +33,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctime>
 #include <memory>
 
-#include "rtc_base/platform_thread.h"
-#include "system_wrappers/include/clock.h"
-
 #include "compat/file.h"
 #include "rtc_base/buffer_queue.h"
 #include "rtc_base/event.h"
+#include "rtc_base/platform_thread.h"
+#include "system_wrappers/include/clock.h"
 
 class RaspiMotionFile : public rtc::Event {
    public:

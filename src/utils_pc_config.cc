@@ -27,11 +27,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "utils_pc_config.h"
+
 #include <map>
 #include <string>
-#include "rtc_base/logging.h"
 
-#include "utils_pc_config.h"
+#include "rtc_base/logging.h"
 #include "utils_pc_strings.h"
 
 static const char kConfigDelimiter = ',';

@@ -16,24 +16,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "utils.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
 
-#include <sys/stat.h>
-
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-
 #include "rtc_base/file_rotating_stream.h"
 #include "rtc_base/log_sinks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
-
-#include "utils.h"
 
 namespace utils {
 

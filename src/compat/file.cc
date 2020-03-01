@@ -16,38 +16,32 @@ File::File(PlatformFile file) : file_(file) {}
 
 File::File() : file_(kInvalidPlatformFileValue) {}
 
-File::~File() {
-  Close();
-}
+File::~File() { Close(); }
 
 // static
 File File::Open(const std::string& path) {
-  return File(OpenPlatformFile(path));
+    return File(OpenPlatformFile(path));
 }
 
 // static
 File File::Create(const std::string& path) {
-  return File(CreatePlatformFile(path));
+    return File(CreatePlatformFile(path));
 }
 
 // static
-bool File::Remove(const std::string& path) {
-  return RemoveFile(path);
-}
+bool File::Remove(const std::string& path) { return RemoveFile(path); }
 
 File::File(File&& other) : file_(other.file_) {
-  other.file_ = kInvalidPlatformFileValue;
+    other.file_ = kInvalidPlatformFileValue;
 }
 
 File& File::operator=(File&& other) {
-  Close();
-  file_ = other.file_;
-  other.file_ = kInvalidPlatformFileValue;
-  return *this;
+    Close();
+    file_ = other.file_;
+    other.file_ = kInvalidPlatformFileValue;
+    return *this;
 }
 
-bool File::IsOpen() {
-  return file_ != kInvalidPlatformFileValue;
-}
+bool File::IsOpen() { return file_ != kInvalidPlatformFileValue; }
 
 }  // namespace rtc

@@ -35,11 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "absl/types/optional.h"
 #include "common_types.h"
-
+#include "config_media.h"
 #include "rtc_base/numerics/moving_average.h"
 #include "system_wrappers/include/clock.h"
-
-#include "config_media.h"
 
 // Currently, Only BWE-based QoS functions are implemented.
 class QualityConfig {

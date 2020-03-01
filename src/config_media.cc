@@ -27,6 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "config_media.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -39,8 +41,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/strings/json.h"
-
-#include "config_media.h"
 #include "utils.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////

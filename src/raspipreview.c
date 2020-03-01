@@ -38,8 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 
-#include "interface/vcos/vcos.h"
-
 #include "interface/mmal/mmal.h"
 #include "interface/mmal/mmal_buffer.h"
 #include "interface/mmal/mmal_logging.h"
@@ -47,9 +45,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "interface/mmal/util/mmal_default_components.h"
 #include "interface/mmal/util/mmal_util.h"
 #include "interface/mmal/util/mmal_util_params.h"
-
+#include "interface/vcos/vcos.h"
 #include "raspicli.h"
+
+// clang-format off
 #include "raspipreview.h"
+// clang-format on
 
 #define CommandPreview 1
 #define CommandFullScreen 2

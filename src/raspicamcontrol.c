@@ -36,16 +36,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory.h>
 #include <stdio.h>
 
-#include "interface/vcos/vcos.h"
-
 #include "interface/mmal/mmal.h"
 #include "interface/mmal/mmal_logging.h"
 #include "interface/mmal/util/mmal_default_components.h"
 #include "interface/mmal/util/mmal_util.h"
 #include "interface/mmal/util/mmal_util_params.h"
+#include "interface/vcos/vcos.h"
 #include "interface/vmcs_host/vc_vchi_gencmd.h"
-#include "raspicamcontrol.h"
 #include "raspicli.h"
+
+// clang-format off
+#include "raspicamcontrol.h"
+// clang-format on
 
 /// Structure to cross reference exposure strings against the MMAL parameter
 /// equivalent

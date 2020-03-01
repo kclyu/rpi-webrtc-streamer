@@ -34,14 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
-#include "rtc_base/message_handler.h"
-#include "rtc_base/strings/json.h"
-
-#include "compat/optionsfile.h"
-
 #include "app_clientinfo.h"
+#include "compat/optionsfile.h"
 #include "config_media.h"
 #include "config_streamer.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/strings/json.h"
 #include "streamer_observer.h"
 #include "utils.h"
 #include "websocket_server.h"

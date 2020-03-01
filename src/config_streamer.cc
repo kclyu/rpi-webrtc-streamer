@@ -27,15 +27,16 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "config_streamer.h"
+
 #include <iostream>
 #include <memory>
 #include <string>
+
+#include "config_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
-
-#include "config_defines.h"
-#include "config_streamer.h"
 #include "utils.h"
 #include "utils_pc_strings.h"
 

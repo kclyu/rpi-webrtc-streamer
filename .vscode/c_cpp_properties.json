@@ -1,33 +1,12 @@
 {
-    "env" : {
-        "webRtcRoot": "${env:HOME}/Workspace/webrtc/src",
-        "rpiRootFs": "${env:HOME}/Workspace/rpi_rootfs"
-    },
     "configurations": [
         {
             "name": "Linux",
-            "includePath": [
-                "${workspaceFolder}/src",
-                "${workspaceFolder}/src/**",
-                "${workspaceFolder}/src/compat/**",
-                "${workspaceFolder}/lib/libwebsockets/**",
-                "${webRtcRoot}",
-                "${webRtcRoot}/third_party/jsoncpp/source/include",
-                "${webRtcRoot}/third_party/jsoncpp/generated",
-                "${webRtcRoot}/third_party/abseil-cpp",
-                "${rpiRootFs}/opt/vc/include"
-            ],
-            "defines": [
-                "INSTALL_DIR=\"/opt/rws\"", "__RWS_VERSION__=\"v0.73\"", "__WEBRTC_VERSION__=VSC",
-                "__STDC_CONSTANT_MACROS",  "__STDC_LIMIT_MACROS",  "TARGET_POSIX",  "_LINUX", 
-                "_REENTRANT", "_LARGEFILE64_SOURCE", "_FILE_OFFSET_BITS=64", "HAVE_LIBOPENMAX=2",
-                "OMX",  "OMX_SKIP64BIT", "USE_EXTERNAL_OMX", "HAVE_LIBBCM_HOST", "USE_EXTERNAL_LIBBCM_HOST",
-                "USE_VCHIQ_ARM"
-            ],
-            "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "gcc-x64"
+            "intelliSenseMode": "gcc-x64",
+            "compileCommands": "${workspaceFolder}/compile_commands.json",
+            "compilerPath": "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-g++"
         }
     ],
     "version": 4

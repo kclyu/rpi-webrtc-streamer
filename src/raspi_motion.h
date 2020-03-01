@@ -33,16 +33,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
-#include "rtc_base/platform_thread.h"
-#include "system_wrappers/include/clock.h"
-
-#include "rtc_base/buffer_queue.h"
-#include "rtc_base/numerics/moving_average.h"
-
 #include "mmal_wrapper.h"
 #include "raspi_httpnoti.h"
 #include "raspi_motionfile.h"
 #include "raspi_motionvector.h"
+#include "rtc_base/buffer_queue.h"
+#include "rtc_base/numerics/moving_average.h"
+#include "rtc_base/platform_thread.h"
+#include "system_wrappers/include/clock.h"
 
 class RaspiMotion : public MotionBlobObserver,
                     public MotionImvObserver,

@@ -1,17 +1,23 @@
 {
-    "files.exclude": {
-        "${workspaceFolder}/src/OLD/**": true,
-        "${workspaceFolder}/log/**": true,
-        "${workspaceFolder}/backup/**": true
-    },
-    "C_Cpp.errorSquiggles": "Disabled",
-    "git.ignoreLimitWarning": true,
-    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 4 }",
-    "C_Cpp.default.intelliSenseMode": "gcc-x64",
-    "C_Cpp.default.cppStandard": "c++17",
-    "C_Cpp.default.cStandard": "c11",
-    "files.associations": {
-        "*.tcc": "cpp"
-    },
-    "editor.formatOnSave": true
+  "files.exclude": {
+    "**/.ccls-cache/**": true,
+    "${workspaceFolder}/backup/**": true,
+    "${workspaceFolder}/log/**": true,
+    "${workspaceFolder}/src/OLD/**": true,
+    "**/*.dwo": true,
+    "**/*.o": true
+  },
+  "C_Cpp.clang_format_path": "/usr/bin/clang-format-9",
+  "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 4 }",
+  "git.ignoreLimitWarning": true,
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.cStandard": "c11",
+  "files.associations": {
+    "*.tcc": "cpp",
+    "string": "cpp"
+  },
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
+  "editor.formatOnSave": true,
+  "C_Cpp.errorSquiggles": "Disabled",
+  "C_Cpp.default.intelliSenseMode": "gcc-x64"
 }

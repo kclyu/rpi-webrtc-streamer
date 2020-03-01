@@ -25,14 +25,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "api/scoped_refptr.h"
-#include "rtc_base/physical_socket_server.h"
-#include "rtc_base/ssl_adapter.h"
-#include "system_wrappers/include/field_trial.h"
-#include "test/field_trial.h"
-
 #include "app_channel.h"
-#include "websocket_server.h"
-
 #include "config_media.h"
 #include "config_motion.h"
 #include "config_streamer.h"
@@ -41,9 +34,14 @@
 #include "mdns_publish.h"
 #include "mmal_wrapper.h"
 #include "raspi_motion.h"
+#include "rtc_base/physical_socket_server.h"
+#include "rtc_base/ssl_adapter.h"
 #include "streamer.h"
 #include "streamer_observer.h"
+#include "system_wrappers/include/field_trial.h"
+#include "test/field_trial.h"
 #include "utils.h"
+#include "websocket_server.h"
 
 //
 //
@@ -64,7 +62,7 @@ class StreamingSocketServer : public rtc::PhysicalSocketServer {
         websocket_ = websocket;
     }
 
-    virtual bool Wait(int cms, bool process_io) {
+    bool Wait(int cms, bool process_io) override {
         if (websocket_)
             websocket_->RunLoop(0);  // Run Websocket loop once per call
         if (mdns_publish_enable_) {

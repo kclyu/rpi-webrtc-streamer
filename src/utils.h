@@ -13,6 +13,7 @@
 #pragma once
 
 #include <assert.h>
+
 #include <string>
 
 #include "absl/types/optional.h"

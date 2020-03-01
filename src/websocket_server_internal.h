@@ -33,9 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-
 #include <sys/time.h>
 #include <unistd.h>
+
 #include "libwebsockets.h"
 
 #ifdef __cplusplus
