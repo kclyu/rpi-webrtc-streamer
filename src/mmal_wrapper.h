@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace webrtc {
 
 #define FRAME_BUFFER_SIZE 65536 * 3
-#define FRAME_QUEUE_LENGTH 5
+#define FRAME_QUEUE_LENGTH 3
 
 ////////////////////////////////////////////////////////////////////////////////////////
 //

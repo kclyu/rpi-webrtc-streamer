@@ -39,15 +39,24 @@ arm_tune="arm1176jz-s"
 rtc_build_with_neon=false
 
 #
-#
+# Setting for removing component for desktop related stuffs
 use_ozone=true
 is_desktop_linux=false
+libyuv_disable_jpeg=true
+use_system_libjpeg=true
+
+#
+# do not use libaom(AV1 codec)
+enable_libaom=false
+# not working removing vpx configuration
+#rtc_build_libvpx=false  # do not build libvpx
+#rtc_libvpx_build_vp9=false  # do not build VP9
+rtc_use_h264=true
+use_openh264=false
 
 #
 use_custom_libcxx=false
 is_chrome_branded=true
-rtc_use_h264=false
-rtc_libvpx_build_vp9=false
 rtc_include_tests=false
 rtc_include_pulse_audio=false
 rtc_enable_protobuf=false

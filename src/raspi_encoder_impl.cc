@@ -175,6 +175,11 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 
+    // TESTING
+    const int required_capacity = 400000;
+    encoded_image_.SetEncodedData(
+        EncodedImageBuffer::Create(required_capacity));
+
     // start capture in here
     mmal_encoder_->StartCapture();
 
@@ -477,7 +482,8 @@ bool RaspiEncoderImpl::DrainProcess() {
         encoded_image_.ntp_time_ms_ = ntp_capture_time_ms;
         encoded_image_.capture_time_ms_ = capture_time_ms;
 
-        encoded_image_.set_buffer(buf->data, buf->alloc_size);
+        // encoded_image_.set_buffer(buf->data, buf->alloc_size);
+        memcpy(encoded_image_.data(), buf->data, buf->length);
         encoded_image_.set_size(buf->length);
         encoded_image_._frameType =
             (buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)

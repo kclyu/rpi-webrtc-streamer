@@ -48,21 +48,20 @@ class RaspiDecoder : public VideoDecoder {
     ~RaspiDecoder() override {}
 };
 
+std::unique_ptr<VideoDecoderFactory> CreateRaspiVideoDecoderFactory();
+
 //
 // Implementation of Raspberry video decoder factory
 class RaspiVideoDecoderFactory : public VideoDecoderFactory {
    public:
     RaspiVideoDecoderFactory();
     virtual ~RaspiVideoDecoderFactory() override;
-    static RaspiVideoDecoderFactory* CreateVideoDecoderFactory();
 
     std::unique_ptr<VideoDecoder> CreateVideoDecoder(
         const SdpVideoFormat& format) override;
 
     // Returns a list of supported codecs in order of preference.
-    std::vector<SdpVideoFormat> GetSupportedFormats() const override {
-        return supported_formats_;
-    }
+    std::vector<SdpVideoFormat> GetSupportedFormats() const override;
 
    private:
     std::vector<SdpVideoFormat> supported_formats_;

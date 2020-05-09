@@ -53,10 +53,9 @@ std::unique_ptr<RaspiEncoder> RaspiEncoder::Create(
 
 bool RaspiEncoder::IsSupported() { return true; }
 
-RaspiVideoEncoderFactory *
-RaspiVideoEncoderFactory::CreateVideoEncoderFactory() {
+std::unique_ptr<VideoEncoderFactory> CreateRaspiVideoEncoderFactory() {
     RTC_LOG(LS_INFO) << "Creating RaspiVideoEncoderFactory.";
-    return new RaspiVideoEncoderFactory;
+    return std::make_unique<RaspiVideoEncoderFactory>();
 }
 
 // borrowed from src/modules/video_coding/codecs/h264/h264.cc
@@ -110,6 +109,7 @@ RaspiVideoEncoderFactory::RaspiVideoEncoderFactory() {
 
 VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncoder(
     const SdpVideoFormat &format) const {
+    RTC_LOG(INFO) << __FUNCTION__;
     for (const SdpVideoFormat &supported_format : supported_formats_) {
         if (IsSameFormat(format, supported_format)) {
             RTC_LOG(INFO)
@@ -136,18 +136,22 @@ std::unique_ptr<VideoEncoder> RaspiVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat &format) {
     const cricket::VideoCodec codec(format);
 
+    RTC_LOG(INFO) << __FUNCTION__;
     // Try creating external encoder.
-    std::unique_ptr<VideoEncoder> video_encoder;
-
     for (const SdpVideoFormat &supported_format : supported_formats_) {
         if (IsSameFormat(format, supported_format)) {
             RTC_LOG(INFO) << "Raspi " << format.name
                           << " video encoder created";
-            video_encoder = RaspiEncoder::Create(codec);
-            return move(video_encoder);
+            return RaspiEncoder::Create(codec);
         }
     }
-    return move(video_encoder);
+    return nullptr;
+}
+
+std::unique_ptr<VideoEncoderFactory::EncoderSelectorInterface>
+RaspiVideoEncoderFactory::GetEncoderSelector() const {
+    RTC_LOG(INFO) << __FUNCTION__ << ", Encoder Selector";
+    return nullptr;
 }
 
 RaspiVideoEncoderFactory::~RaspiVideoEncoderFactory() {

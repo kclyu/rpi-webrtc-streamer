@@ -915,7 +915,6 @@ MMAL_STATUS_T create_encoder_component(RASPIVID_STATE *state) {
     /* Create pool of buffer headers for the output port to consume */
     pool = mmal_port_pool_create(encoder_output, encoder_output->buffer_num,
                                  encoder_output->buffer_size);
-
     if (!pool) {
         vcos_log_error(
             "Failed to create buffer header pool for encoder output port %s",

@@ -1,9 +1,6 @@
 
 # WebRTC streamer for Raspberry PI
 
-## Notice
-New Version added. [RWS deb](https://github.com/kclyu/rpi-webrtc-streamer-deb) file and [docker image](https://hub.docker.com/repository/docker/kclyu/rpi-webrtc-streamer) for Raspberry Pi.
-
 ## General
 Notice:  This is a work in progress, 
 

@@ -49,13 +49,14 @@ class RaspiEncoder : public VideoEncoder {
     ~RaspiEncoder() override {}
 };
 
+std::unique_ptr<VideoEncoderFactory> CreateRaspiVideoEncoderFactory();
+
 //
 // Implementation of Raspberry video encoder factory
 class RaspiVideoEncoderFactory : public VideoEncoderFactory {
    public:
     RaspiVideoEncoderFactory();
     virtual ~RaspiVideoEncoderFactory() override;
-    static RaspiVideoEncoderFactory* CreateVideoEncoderFactory();
 
     std::unique_ptr<VideoEncoder> CreateVideoEncoder(
         const SdpVideoFormat& format) override;
@@ -69,6 +70,9 @@ class RaspiVideoEncoderFactory : public VideoEncoderFactory {
     }
 
     CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
+
+    std::unique_ptr<EncoderSelectorInterface> GetEncoderSelector()
+        const override;
 
    private:
     std::vector<SdpVideoFormat> supported_formats_;

@@ -71,9 +71,6 @@ static const char kCandidateType[] = "type";
 static const char kSessionDescriptionTypeName[] = "type";
 static const char kSessionDescriptionSdpName[] = "sdp";
 
-// Max Bitrate
-static const int kDefaultMaxBitrate = 3500000;
-
 class DummySetSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {
    public:
@@ -133,16 +130,6 @@ bool Streamer::InitializePeerConnection() {
     signaling_thread_->SetName("signaling_thread", nullptr);
     RTC_CHECK(signaling_thread_->Start()) << "Failed to start signaling thread";
 
-    auto audio_encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
-    auto audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
-
-    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory =
-        std::unique_ptr<webrtc::VideoDecoderFactory>(
-            webrtc::RaspiVideoDecoderFactory::CreateVideoDecoderFactory());
-    std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory =
-        std::unique_ptr<webrtc::VideoEncoderFactory>(
-            webrtc::RaspiVideoEncoderFactory::CreateVideoEncoderFactory());
-
     //  Audio Device Module
     adm_ = nullptr;
     // TODO: Tempoary Disable audio_enable config parameter.
@@ -156,12 +143,13 @@ bool Streamer::InitializePeerConnection() {
         webrtc::AudioDeviceModule::AudioLayer::kDummyAudio);
     };
     *****/
-
     peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
         network_thread_.get(), worker_thread_.get(), signaling_thread_.get(),
-        adm_.get() /* adm */, audio_encoder_factory, audio_decoder_factory,
-        std::move(video_encoder_factory), std::move(video_decoder_factory),
-        nullptr /* audio_mixer */, nullptr /* audio_processor */);
+        adm_.get() /* adm */, webrtc::CreateBuiltinAudioEncoderFactory(),
+        webrtc::CreateBuiltinAudioDecoderFactory(),
+        webrtc::CreateRaspiVideoEncoderFactory(),
+        webrtc::CreateRaspiVideoDecoderFactory(), nullptr /* audio_mixer */,
+        nullptr /* audio_processor */);
     if (!peer_connection_factory_.get()) {
         RTC_LOG(LS_ERROR) << __FUNCTION__
                           << "Failed to initialize PeerConnectionFactory";

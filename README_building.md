@@ -105,12 +105,12 @@ If you are already using Raspberry PI, there is a way to use rsync on your Raspb
 sudo apt install ant autoconf bison cmake gawk intltool xutils-dev xsltproc pkg-config # note 1
 cd ~/Workspace/webrtc/src
 mkdir out/arm_build
-cp ~/Workspace/rpi-webrtc-stremer/misc/webrtc_arm_build_args.gn arm/arm_build/args.gn # note 2
+cp ~/Workspace/rpi-webrtc-stremer/misc/webrtc_arm_build_args.gn out/arm_build/args.gn # note 2
 gn gen out/arm_build
 ninja -C out/arm_build
 
 mkdir out/armv6_build # note 3
-cp ~/Workspace/rpi-webrtc-stremer/misc/webrtc_armv6_build_args.gn arm/armv6_build/args.gn # note 2
+cp ~/Workspace/rpi-webrtc-stremer/misc/webrtc_armv6_build_args.gn out/armv6_build/args.gn # note 2
 gn gen out/armv6_build
 ninja -C out/armv6_build
 ```
