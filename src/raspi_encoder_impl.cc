@@ -175,8 +175,17 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 
-    // TESTING
-    const int required_capacity = 400000;
+    // Find the largest video resolution among the resolutions registered
+    // in the video resolution, and set the maximum EncodedImageBufer capacity
+    // to the frame buffer.
+    int max_width = 0, max_height = 0;
+    config_media_->GetMaxVideoResolution(max_width, max_height);
+    if (max_width * max_height == 0)
+        RTC_LOG(LS_ERROR) << "Invalid Max Video Width or Height"
+                          << "Width: " << max_width << "Height: " << max_height;
+    int required_capacity = max_width * max_height * 0.85;
+    RTC_LOG(INFO) << "********************** EncodedImageBuffer capacity: "
+                  << required_capacity;
     encoded_image_.SetEncodedData(
         EncodedImageBuffer::Create(required_capacity));
 

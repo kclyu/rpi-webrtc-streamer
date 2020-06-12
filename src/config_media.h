@@ -80,6 +80,7 @@ class ConfigMedia {
     void DumpConfig(void);
     std::list<VideoResolution> GetVideoResolutionList();
     bool GetFixedVideoResolution(int &width, int &height);
+    void GetMaxVideoResolution(int &width, int &height) const;
 
 // define expasion macros for Getter
 //      type GetName();

@@ -17,6 +17,7 @@
 //
 
 #define MEDIA_CONFIG_ROW_LIST \
+    _CR_I( CameraSelect,            camera_select,              false, int, 0 ) \
     _CR_I( MaxBitrate,              max_bitrate,                false, int, 3500000 ) \
     _CR_B( Resolution4_3,           resolution_4_3_enable,      false, bool, true ) \
     _CR_I( VideoRotation,           video_rotation,             true, int, 0) \

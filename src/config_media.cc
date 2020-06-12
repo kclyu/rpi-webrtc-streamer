@@ -118,6 +118,37 @@ bool ConfigMedia::validate__resolution(int width, int height) {
     return false;
 }
 
+void ConfigMedia::GetMaxVideoResolution(int &width, int &height) const {
+    int max_width = 0, max_height = 0;
+    if (use_dynamic_video_resolution == true) {
+        if (resolution_4_3_enable) {
+            for (std::list<ConfigMedia::VideoResolution>::const_iterator iter =
+                     video_resolution_list_4_3_.begin();
+                 iter != video_resolution_list_4_3_.end(); iter++) {
+                if ((iter->width_ * iter->height_) > (max_width * max_height)) {
+                    max_width = iter->width_;
+                    max_height = iter->height_;
+                }
+            }
+        } else {
+            for (std::list<ConfigMedia::VideoResolution>::const_iterator iter =
+                     video_resolution_list_16_9_.begin();
+                 iter != video_resolution_list_16_9_.end(); iter++) {
+                if ((iter->width_ * iter->height_) > (max_width * max_height)) {
+                    max_width = iter->width_;
+                    max_height = iter->height_;
+                }
+            }
+        }
+    } else {
+        max_width = fixed_resolution_.width_;
+        max_height = fixed_resolution_.height_;
+    }
+    RTC_LOG(INFO) << "Max Resolution : " << max_width << "x" << max_height;
+    width = max_width;
+    height = max_height;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // config value validation functions
@@ -126,6 +157,16 @@ bool ConfigMedia::validate__resolution(int width, int height) {
 #define DECLARE_VALIDATOR(class_name, config_var, config_type)             \
     bool class_name ::validate_value__##config_var(config_type config_var, \
                                                    config_type default_value)
+
+DECLARE_VALIDATOR(ConfigMedia, camera_select, int) {
+    if (camera_select < 0 || camera_select > 2) {
+        RTC_LOG(LS_ERROR) << "Error in video camera select num : "
+                          << camera_select
+                          << " is not a valid video camera number";
+        return false;
+    }
+    return true;
+}
 
 DECLARE_VALIDATOR(ConfigMedia, video_rotation, int) {
     if (!((video_rotation == 0) || (video_rotation == 90) ||

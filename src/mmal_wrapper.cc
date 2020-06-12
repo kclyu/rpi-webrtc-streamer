@@ -479,6 +479,10 @@ void MMALEncoderWrapper::SetMediaConfigParams() {
         //  inited.
         default_status(&state_);
     };
+	// Setting Camera Number
+	// cameraNum sets the config value as it is. 
+	// There is no need to change or use this value internally.
+	state_.cameraNum = config_media_->GetCameraSelect();
 
     // Setting Video Rotation and Flip setting
     SetVideoRotation(config_media_->GetVideoRotation());

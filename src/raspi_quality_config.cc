@@ -152,10 +152,6 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
     for (std::list<ResolutionConfigEntry>::iterator iter =
              resolution_config_.begin();
          iter != resolution_config_.end(); iter++) {
-        int max_bitrate =
-            static_cast<int>((iter->width_ * iter->height_ * iter->max_fps_ *
-                              kKushGaugeConstant * motion_factor) /
-                             1000);
         int avg_bitrate =
             static_cast<int>((iter->width_ * iter->height_ * 25 *
                               kKushGaugeConstant * motion_factor) /
@@ -185,3 +181,4 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
     resolution = candidate;
     return false;
 }
+
