@@ -65,7 +65,6 @@ ConfigMediaSingleton::ConfigMediaSingleton() { RTC_NOTREACHED(); }
 //
 ////////////////////////////////////////////////////////////////////////////////
 static const char kConfigVideoResolutionDelimiter = ',';
-static const int kDefaultVideoMaxFrameRate = 30;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -341,7 +340,7 @@ bool ConfigMedia::GetFixedVideoResolution(int &width, int &height) {
 #define _CR(name, config_var, config_remote_access, config_type, \
             default_value)                                       \
     config_type ConfigMedia::Get##name(void) {                   \
-        rtc::CritScope cs(&crit_sect_);                          \
+        webrtc::MutexLock lock(&mutex_);                         \
         return config_var;                                       \
     }
 // ignore CR_L type
@@ -366,7 +365,7 @@ MEDIA_CONFIG_ROW_LIST
 #define _CR(name, config_var, config_remote_access, config_type,            \
             default_value)                                                  \
     bool ConfigMedia::Set##name(config_type value) {                        \
-        rtc::CritScope cs(&crit_sect_);                                     \
+        webrtc::MutexLock lock(&mutex_);                                    \
         if (validate_value__##config_var(value, default_value) == false)    \
             return false;                                                   \
         config_var = value;                                                 \
@@ -377,7 +376,7 @@ MEDIA_CONFIG_ROW_LIST
 #define _CR_B(name, config_var, config_remote_access, config_type,          \
               default_value)                                                \
     bool ConfigMedia::Set##name(config_type value) {                        \
-        rtc::CritScope cs(&crit_sect_);                                     \
+        webrtc::MutexLock lock(&mutex_);                                    \
         config_var = value;                                                 \
         if (isloaded__##config_var == false) isloaded__##config_var = true; \
         return true;                                                        \

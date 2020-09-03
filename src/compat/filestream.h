@@ -17,7 +17,6 @@
 
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/message_handler.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 

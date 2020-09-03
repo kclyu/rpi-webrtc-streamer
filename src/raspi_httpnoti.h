@@ -35,10 +35,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <string>
 
-#include "rtc_base/critical_section.h"
 #include "rtc_base/net_helpers.h"
 #include "rtc_base/physical_socket_server.h"
 #include "rtc_base/signal_thread.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 class RaspiHttpNoti : public sigslot::has_slots<>, public rtc::MessageHandler {
@@ -103,7 +103,7 @@ class RaspiHttpNoti : public sigslot::has_slots<>, public rtc::MessageHandler {
     rtc::SocketAddress local_address_;
     State state_;
     rtc::AsyncResolver* resolver_;
-    rtc::CriticalSection crit_sect_;
+    webrtc::Mutex mutex_;
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiHttpNoti);
 };
 

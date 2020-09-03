@@ -119,7 +119,6 @@ VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncoder(
             // Codec
             VideoEncoderFactory::CodecInfo info;
             info.has_internal_source = true;
-            info.is_hardware_accelerated = true;
             return info;
         }
     }
@@ -128,7 +127,6 @@ VideoEncoderFactory::CodecInfo RaspiVideoEncoderFactory::QueryVideoEncoder(
                       << " does not support in RaspiVideoEncoderFactory";
     VideoEncoderFactory::CodecInfo info;
     info.has_internal_source = false;
-    info.is_hardware_accelerated = false;
     return info;
 }
 

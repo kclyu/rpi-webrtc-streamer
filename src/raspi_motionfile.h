@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/buffer_queue.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
 
 class RaspiMotionFile : public rtc::Event {
@@ -96,7 +97,7 @@ class RaspiMotionFile : public rtc::Event {
 
     uint8_t* frame_writer_buffer_;
 
-    rtc::CriticalSection crit_sect_;
+    webrtc::Mutex mutex_;
     webrtc::Clock* const clock_;
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotionFile);
 };

@@ -35,7 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "compat/optionsfile.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/synchronization/mutex.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,7 +130,8 @@ class ConfigMedia {
 
    private:
     std::unique_ptr<rtc::OptionsFile> media_optionfile_;
-    rtc::CriticalSection crit_sect_;
+
+    webrtc::Mutex mutex_;
     std::string config_file_;
     bool config_file_loaded_;
     struct VideoResolution fixed_resolution_;

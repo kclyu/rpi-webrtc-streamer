@@ -14,9 +14,9 @@
 
 #include <memory>
 
+#include "./raspi_decoder.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
-#include "common_video/include/video_frame.h"
 
 namespace webrtc {
 

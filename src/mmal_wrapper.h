@@ -34,8 +34,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config_media.h"
 #include "mmal_video.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
 
@@ -225,7 +225,7 @@ class MMALEncoderWrapper : public FrameQueue {
     RASPIVID_STATE state_;
 
     ConfigMedia *config_media_;
-    rtc::CriticalSection crit_sect_;
+    webrtc::Mutex mutex_;
     RTC_DISALLOW_COPY_AND_ASSIGN(MMALEncoderWrapper);
 };
 

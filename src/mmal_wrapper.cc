@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/task_queue.h"
@@ -205,7 +204,6 @@ void FrameQueue::HandlingMMALFrame(MMAL_BUFFER_HEADER_T *buffer) {
 //
 ////////////////////////////////////////////////////////////////////////////////////////
 static const int kDelayInitialDurationMs = 4000;
-static const int kDelayDurationMs = 1000;
 static const int kDelayTaskInterval = 100;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -479,10 +477,10 @@ void MMALEncoderWrapper::SetMediaConfigParams() {
         //  inited.
         default_status(&state_);
     };
-	// Setting Camera Number
-	// cameraNum sets the config value as it is. 
-	// There is no need to change or use this value internally.
-	state_.cameraNum = config_media_->GetCameraSelect();
+    // Setting Camera Number
+    // cameraNum sets the config value as it is.
+    // There is no need to change or use this value internally.
+    state_.cameraNum = config_media_->GetCameraSelect();
 
     // Setting Video Rotation and Flip setting
     SetVideoRotation(config_media_->GetVideoRotation());
@@ -519,7 +517,7 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
     RTC_LOG(INFO) << "Start initialize the MMAL encode wrapper." << width << "x"
                   << height << "@" << framerate << ", " << bitrate << "kbps";
 
-    rtc::CritScope cs(&crit_sect_);
+    webrtc::MutexLock lock(&mutex_);
     if (mmal_initialized_ == true) return true;
 
     state_.width = width;
@@ -646,7 +644,7 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate,
             1;
     }
 
-    rtc::CritScope cs(&crit_sect_);
+    webrtc::MutexLock lock(&mutex_);
 
     RTC_LOG(INFO) << "Start reinitialize the MMAL encode wrapper." << width
                   << "x" << height << "@" << framerate << ", " << bitrate
@@ -807,7 +805,7 @@ void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port,
 }
 
 bool MMALEncoderWrapper::UninitEncoder() {
-    rtc::CritScope cs(&crit_sect_);
+    webrtc::MutexLock lock(&mutex_);
     if (mmal_initialized_ == false) return true;
 
     RTC_LOG(INFO) << "unitialize the MMAL encode wrapper.";
@@ -926,7 +924,7 @@ bool MMALEncoderWrapper::SetEncodingParams(int width, int height, int framerate,
                                            int bitrate) {
     if (state_.width != width || state_.height != height ||
         state_.framerate != framerate || state_.bitrate != bitrate) {
-        rtc::CritScope cs(&crit_sect_);
+        webrtc::MutexLock lock(&mutex_);
 
         state_.width = width;
         state_.height = height;
@@ -941,7 +939,7 @@ bool MMALEncoderWrapper::SetEncodingParams(int width, int height, int framerate,
 bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
     if (mmal_initialized_ == false) return true;
     if (state_.framerate != framerate || state_.bitrate != bitrate * 1000) {
-        rtc::CritScope cs(&crit_sect_);
+        webrtc::MutexLock lock(&mutex_);
         MMAL_STATUS_T status;
 
         if (state_.bitrate != bitrate * 1000) {
@@ -980,7 +978,7 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
 
 bool MMALEncoderWrapper::SetForceNextKeyFrame() {
     if (mmal_initialized_ == false) return true;
-    rtc::CritScope cs(&crit_sect_);
+    webrtc::MutexLock lock(&mutex_);
     RTC_LOG(INFO) << "MMAL force key frame encoding";
 
     if (mmal_port_parameter_set_boolean(encoder_output_port_,

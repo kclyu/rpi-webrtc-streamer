@@ -60,10 +60,6 @@ enum H264EncoderImplEvent {
 };
 }  // namespace
 
-// QP scaling thresholds.
-static const int kLowH264QpThreshold = 24;
-static const int kHighH264QpThreshold = 37;
-
 static const int kDelayForStackCalmDown = 300;
 static const uint32_t kKeyFrameAllowedInterval = 3000;  // 3 secs
 
@@ -448,13 +444,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         //                           MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
     ) {
         CodecSpecificInfo codec_specific;
-        uint32_t fragment_index;
         int qp;
-
-        // Split encoded image up into fragments. This also updates
-        // |encoded_image_|.
-        RTPFragmentationHeader frag_header;
-        memset(&frag_header, 0x00, sizeof(frag_header));
 
         // Parsing h264 frame
         h264_bitstream_parser_.ParseBitstream(buf->data, buf->length);
@@ -502,23 +492,6 @@ bool RaspiEncoderImpl::DrainProcess() {
         // SimulCast is not implemented
         encoded_image_.SetSpatialIndex(0);
 
-        // Each NAL unit is a fragment starting with the four-byte
-        // start code {0,0,0,1}.  All of this encoded data already in the
-        // encoded_image->_buffer which is filled by MMAL encoder.
-        // Fragmentize will count the nal start code in the encoded_image
-        // and will mark the the frag_header for fragmentation.
-        frag_header.VerifyAndAllocateFragmentationHeader(nalu_indexes.size());
-
-        fragment_index = 0;
-        for (std::vector<H264::NaluIndex>::const_iterator it =
-                 nalu_indexes.begin();
-             it != nalu_indexes.end(); it++, fragment_index++) {
-            frag_header.fragmentationOffset[fragment_index] =
-                nalu_indexes[fragment_index].payload_start_offset;
-            frag_header.fragmentationLength[fragment_index] =
-                nalu_indexes[fragment_index].payload_size;
-        }
-
         codec_specific.codecType = kVideoCodecH264;
         codec_specific.codecSpecific.H264.packetization_mode =
             packetization_mode_;
@@ -529,8 +502,8 @@ bool RaspiEncoderImpl::DrainProcess() {
 
         // Deliver encoded image.
         EncodedImageCallback::Result result =
-            encoded_image_callback_->OnEncodedImage(
-                encoded_image_, &codec_specific, &frag_header);
+            encoded_image_callback_->OnEncodedImage(encoded_image_,
+                                                    &codec_specific);
         if (result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED) {
             RTC_LOG(LS_ERROR) << "Error in passng EncodedImage";
         }
