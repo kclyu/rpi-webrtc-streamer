@@ -42,7 +42,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RTC_DCHECK CHECK
 #define RTC_ERROR LOG(ERROR)
 #else
-#include "common_types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #define RTC_ERROR RTC_LOG(LS_ERROR)

@@ -53,7 +53,7 @@ static const std::string kDirectSocketDelimiter = "\n";
 ////////////////////////////////////////////////////////////////////////////////
 
 DirectSocketServer::DirectSocketServer()
-    : listener_(nullptr), direct_socket_(nullptr) {
+    : listener_(nullptr), direct_socket_(nullptr), rtc::MessageHandler(false) {
     last_reject_time_ms_ = connection_reject_count_ = 0;
 }
 DirectSocketServer::~DirectSocketServer() {}

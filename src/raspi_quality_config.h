@@ -34,7 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 
 #include "absl/types/optional.h"
-#include "common_types.h"
 #include "config_media.h"
 #include "rtc_base/numerics/moving_average.h"
 #include "system_wrappers/include/clock.h"

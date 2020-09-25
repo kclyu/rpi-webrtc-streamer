@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <string>
 
-#include "common_types.h"
 #include "compat/directory_iterator.h"
 #include "config_motion.h"
 #include "rtc_base/checks.h"

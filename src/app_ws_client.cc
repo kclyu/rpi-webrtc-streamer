@@ -186,7 +186,9 @@ static const int kStreamReleaseDelay = 1000;
 //
 ////////////////////////////////////////////////////////////////////////////////
 AppWsClient::AppWsClient()
-    : websocket_message_(nullptr), num_chunked_frames_(0) {
+    : websocket_message_(nullptr),
+      num_chunked_frames_(0),
+      rtc::MessageHandler(false) {
     deviceid_inited_ = utils::GetHardwareDeviceId(&deviceid_);
     config_media_ = ConfigMediaSingleton::Instance();
     streamer_config_ = nullptr;

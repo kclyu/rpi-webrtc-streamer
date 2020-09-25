@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 #include "absl/memory/memory.h"
-#include "common_types.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/profile_level_id.h"

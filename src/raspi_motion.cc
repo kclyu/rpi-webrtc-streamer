@@ -32,7 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <limits>
 #include <string>
 
-#include "common_types.h"
 #include "config_motion.h"
 #include "mmal_video.h"
 #include "rtc_base/checks.h"

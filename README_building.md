@@ -89,9 +89,9 @@ git clone https://github.com/kclyu/rpi-webrtc-streamer
 ```
 cd ~/Workspace/rpi_rootfs
 ./build_rootfs.sh download   # note1
-unzip yyyy-mm-dd-raspbian-buster.zip  # yyyy-mm-dd is date format of image released
+unzip yyyy-mm-dd-raspios-buster.zip  # yyyy-mm-dd is date format of image released
 
-./build_rootfs.sh create yyyy-mm-dd-raspbian-buster.img  # note 2
+./build_rootfs.sh create yyyy-mm-dd-raspios-buster.img  # note 2
 ```
 _Note 1: If you already have an OS image, you don't need to download it_
 

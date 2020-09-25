@@ -44,6 +44,7 @@ use_ozone=true
 is_desktop_linux=false
 libyuv_disable_jpeg=true
 use_system_libjpeg=true
+rtc_use_x11=false
 
 #
 # do not use libaom(AV1 codec)
