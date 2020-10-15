@@ -22,7 +22,6 @@ is_clang=false
 use_sysroot=true
 target_sysroot="/opt/rpi_rootfs/rootfs"
 gold_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
-binutils_path = "/opt/rpi_rootfs/tools/arm-linux-gnueabihf/bin"
 
 # taget CPU optimization for PI ZeroW
 target_os="linux"
@@ -41,10 +40,16 @@ rtc_build_with_neon=false
 #
 # Setting for removing component for desktop related stuffs
 use_ozone=true
-is_desktop_linux=false
 libyuv_disable_jpeg=true
 use_system_libjpeg=true
 rtc_use_x11=false
+
+use_aura=false
+libyuv_include_tests=false
+libcxx_natvis_include=false
+use_partition_alloc=false
+use_allocator_shim=false
+rtc_use_pipewire=false
 
 #
 # do not use libaom(AV1 codec)

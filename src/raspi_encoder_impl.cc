@@ -481,7 +481,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         encoded_image_.capture_time_ms_ = capture_time_ms;
 
         // encoded_image_.set_buffer(buf->data, buf->alloc_size);
-        memcpy(encoded_image_.data(), buf->data, buf->length);
+        memcpy((uint8_t *)encoded_image_.data(), buf->data, buf->length);
         encoded_image_.set_size(buf->length);
         encoded_image_._frameType =
             (buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
