@@ -321,7 +321,10 @@ void raspicamcontrol_set_defaults(RASPICAM_CAMERA_PARAMETERS *params) {
     params->rotation = 0;
     params->hflip = params->vflip = 0;
     params->roi.x = params->roi.y = 0.0;
-    params->roi.w = params->roi.h = 1.0;
+    // https://github.com/kclyu/rpi-webrtc-streamer/issues/90#issuecomment-704048735
+    // https://www.raspberrypi.org/forums/viewtopic.php?t=227701
+    params->roi.w = 0.998;  // changing 1.0 to 0.998
+    params->roi.h = 1.0;
     params->shutter_speed = 0;  // 0 = auto
     params->awb_gains_r = 0;    // Only have any function if AWB OFF is used.
     params->awb_gains_b = 0;
