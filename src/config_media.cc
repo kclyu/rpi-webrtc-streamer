@@ -29,6 +29,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config_media.h"
 
+#include <gsl/gsl_math.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -75,43 +77,99 @@ static const char kConfigVideoResolutionDelimiter = ',';
 static bool parse_vidio_resolution(
     const std::string resolution_list,
     std::list<ConfigMedia::VideoResolution> &resolution) {
-    std::list<ConfigMedia::VideoResolution> resolution_temp;
-    std::stringstream ss(resolution_list);
-    std::string token;
-    int count = 0;
+    std::list<ConfigMedia::VideoResolution> res;
 
-    while (getline(ss, token, kConfigVideoResolutionDelimiter)) {
+    std::vector<std::string> splited_list;
+    rtc::split(resolution_list, kConfigVideoResolutionDelimiter, &splited_list);
+    for (auto token : splited_list) {
         int width, height;
         if (utils::ParseVideoResolution(token, &width, &height) == true) {
-            count++;
-            resolution_temp.push_back(
-                ConfigMedia::VideoResolution(width, height));
+            res.push_back(ConfigMedia::VideoResolution(width, height));
         } else {
-            RTC_LOG(LS_ERROR) << "Failed to add resolution : " << token;
+            RTC_LOG(LS_ERROR) << "Failed to parse resolution : " << token;
+            // there is error, so do not assign local list to resolution
             return false;
         }
     }
-    if (count > 0) {
-        resolution = resolution_temp;
-        return true;
+    resolution = res;
+    return true;
+}
+
+static bool parse_video_roi(const std::string video_roi,
+                            ConfigMedia::VideoRoi &roi) {
+    std::vector<std::string> splited_list;
+    ConfigMedia::VideoRoi temp_roi;
+    rtc::split(video_roi, kConfigVideoResolutionDelimiter, &splited_list);
+    if (splited_list.size() != 4) {
+        RTC_LOG(LS_ERROR) << "Error, ROI value must be specified as 4 values";
+        return false;
     }
-    return false;
+    int index = 0;
+    for (auto it = splited_list.begin(); it != splited_list.end();
+         ++it, index++) {
+        double value = 0.0f;
+        if (!(rtc::FromString(*it, &value) == true &&
+              isgreater(value, 1.0f) == false)) {
+            RTC_LOG(LS_ERROR) << "Error in Roi Value at index: " << index
+                              << ", Value: " << *it;
+            return false;
+        }
+        // keep the value in temp_roi
+        switch (index) {
+            case 0:
+                temp_roi.x_ = value;
+                break;
+            case 1:
+                temp_roi.y_ = value;
+                break;
+            case 2:
+                temp_roi.width_ = value;
+                break;
+            case 3:
+                temp_roi.height_ = value;
+                break;
+            default:
+                RTC_LOG(LS_ERROR) << "Error in Roi Value at index: " << index
+                                  << ", Value: " << *it;
+                return false;
+        }
+    }
+    if (temp_roi.width_ < 0.2f || temp_roi.height_ < 0.2f) {
+        RTC_LOG(LS_ERROR)
+            << "Error, the value of width,height must be greater than 0.2."
+            << ", roi width: " << temp_roi.width_
+            << ", roi height: " << temp_roi.height_;
+        return false;
+    }
+    // parsing successful, validate correlation between value
+    if (temp_roi.x_ + temp_roi.width_ > 1.0f) {
+        RTC_LOG(LS_ERROR)
+            << "Error, the value of x + width must be less than 1.0."
+            << ", roi x: " << temp_roi.x_ << "roi width: " << temp_roi.width_;
+        return false;
+    }
+    if (temp_roi.y_ + temp_roi.height_ > 1.0f) {
+        RTC_LOG(LS_ERROR)
+            << "Error, the value of y + height must be less than 1.0."
+            << ", roi y: " << temp_roi.y_ << "roi heigth: " << temp_roi.height_;
+        return false;
+    }
+    roi = temp_roi;  // all validation passed, store
+    RTC_LOG(INFO) << "Setting ROI: " << roi.x_ << "," << roi.y_ << ","
+                  << roi.width_ << "," << roi.height_;
+    return true;
 }
 
 // Returns true if the resolution exists in the resolution_list,
 // or false otherwise.
 bool ConfigMedia::validate__resolution(int width, int height) {
     if (resolution_4_3_enable) {
-        for (std::list<ConfigMedia::VideoResolution>::iterator iter =
-                 video_resolution_list_4_3_.begin();
-             iter != video_resolution_list_4_3_.end(); iter++) {
-            if (iter->width_ == width && iter->height_ == height) return true;
+        for (auto res : video_resolution_list_4_3_) {
+            if (res.width_ == width && res.height_ == height) return true;
         }
     } else {
-        for (std::list<ConfigMedia::VideoResolution>::iterator iter =
-                 video_resolution_list_16_9_.begin();
-             iter != video_resolution_list_16_9_.end(); iter++) {
-            if (iter->width_ == width && iter->height_ == height) return true;
+        for (auto res : video_resolution_list_16_9_) {
+            if (res.width_ == width && res.height_ == height) return true;
         }
     }
     return false;
@@ -121,21 +179,17 @@ void ConfigMedia::GetMaxVideoResolution(int &width, int &height) const {
     int max_width = 0, max_height = 0;
     if (use_dynamic_video_resolution == true) {
         if (resolution_4_3_enable) {
-            for (std::list<ConfigMedia::VideoResolution>::const_iterator iter =
-                     video_resolution_list_4_3_.begin();
-                 iter != video_resolution_list_4_3_.end(); iter++) {
-                if ((iter->width_ * iter->height_) > (max_width * max_height)) {
-                    max_width = iter->width_;
-                    max_height = iter->height_;
+            for (auto res : video_resolution_list_4_3_) {
+                if ((res.width_ * res.height_) > (max_width * max_height)) {
+                    max_width = res.width_;
+                    max_height = res.height_;
                 }
             }
         } else {
-            for (std::list<ConfigMedia::VideoResolution>::const_iterator iter =
-                     video_resolution_list_16_9_.begin();
-                 iter != video_resolution_list_16_9_.end(); iter++) {
-                if ((iter->width_ * iter->height_) > (max_width * max_height)) {
-                    max_width = iter->width_;
-                    max_height = iter->height_;
+            for (auto res : video_resolution_list_16_9_) {
+                if ((res.width_ * res.height_) > (max_width * max_height)) {
+                    max_width = res.width_;
+                    max_height = res.height_;
                 }
             }
         }
@@ -147,6 +201,8 @@ void ConfigMedia::GetMaxVideoResolution(int &width, int &height) const {
     width = max_width;
     height = max_height;
 }
+
+ConfigMedia::VideoRoi &ConfigMedia::GetVideoROI(void) { return video_roi_; }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -220,6 +276,10 @@ DECLARE_VALIDATOR(ConfigMedia, video_resolution_list_4_3, std::string) {
 DECLARE_VALIDATOR(ConfigMedia, video_resolution_list_16_9, std::string) {
     return parse_vidio_resolution(video_resolution_list_16_9,
                                   video_resolution_list_16_9_);
+}
+
+DECLARE_VALIDATOR(ConfigMedia, video_roi, std::string) {
+    return parse_video_roi(video_roi, video_roi_);
 }
 
 //

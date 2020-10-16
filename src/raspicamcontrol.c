@@ -323,10 +323,10 @@ void raspicamcontrol_set_defaults(RASPICAM_CAMERA_PARAMETERS *params) {
     params->roi.x = params->roi.y = 0.0;
     // https://github.com/kclyu/rpi-webrtc-streamer/issues/90#issuecomment-704048735
     // https://www.raspberrypi.org/forums/viewtopic.php?t=227701
-    params->roi.w = 0.998;  // changing 1.0 to 0.998
-    params->roi.h = 1.0;
-    params->shutter_speed = 0;  // 0 = auto
-    params->awb_gains_r = 0;    // Only have any function if AWB OFF is used.
+    params->roi.w = MAX_VIDEO_ROI_WIDTH;   // changing 1.0 to 0.998
+    params->roi.h = MAX_VIDEO_ROI_HEIGHT;  // 1.0
+    params->shutter_speed = 0;             // 0 = auto
+    params->awb_gains_r = 0;  // Only have any function if AWB OFF is used.
     params->awb_gains_b = 0;
     params->drc_level = MMAL_PARAMETER_DRC_STRENGTH_OFF;
     params->stats_pass = MMAL_FALSE;

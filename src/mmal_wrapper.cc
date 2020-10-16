@@ -381,6 +381,13 @@ void MMALEncoderWrapper::SetVideoRotation(int rotation) {
     state_.camera_parameters.rotation = rotation;
 }
 
+void MMALEncoderWrapper::SetVideoROI(ConfigMedia::VideoRoi roi) {
+    state_.camera_parameters.roi.x = roi.x_;
+    state_.camera_parameters.roi.y = roi.y_;
+    state_.camera_parameters.roi.h = roi.height_;
+    state_.camera_parameters.roi.w = roi.width_;
+}
+
 void MMALEncoderWrapper::SetVideoFlip(bool vflip, bool hflip) {
     state_.camera_parameters.vflip = (vflip ? 1 : 0);
     state_.camera_parameters.hflip = (hflip ? 1 : 0);
@@ -481,6 +488,9 @@ void MMALEncoderWrapper::SetMediaConfigParams() {
     // cameraNum sets the config value as it is.
     // There is no need to change or use this value internally.
     state_.cameraNum = config_media_->GetCameraSelect();
+
+    // Setting Video ROI
+    SetVideoROI(config_media_->GetVideoROI());
 
     // Setting Video Rotation and Flip setting
     SetVideoRotation(config_media_->GetVideoRotation());
@@ -768,8 +778,8 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate,
 }
 
 bool MMALEncoderWrapper::IsDigitalZoomActive() {
-    if (state_.camera_parameters.roi.w == 1.0 &&
-        state_.camera_parameters.roi.h == 1.0)
+    if (state_.camera_parameters.roi.w == MAX_VIDEO_ROI_WIDTH &&
+        state_.camera_parameters.roi.h == MAX_VIDEO_ROI_HEIGHT )
         return true;  // using 1.0/1.0 width/height
     return false;
 }

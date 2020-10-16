@@ -185,6 +185,7 @@ class MMALEncoderWrapper : public FrameQueue {
     void SetIntraPeriod(int frame_period);
     void SetInlineMotionVectors(bool motion_enable);
     void SetVideoRotation(int rotation);
+    void SetVideoROI(ConfigMedia::VideoRoi roi);
     void SetVideoFlip(bool vflip, bool hflip);
     void SetVideoAnnotate(bool annotate_enable);
     void SetVideoAnnotateUserText(const std::string user_text);

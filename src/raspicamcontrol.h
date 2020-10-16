@@ -116,6 +116,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ANNOTATE_FRAME_NUMBER 512
 #define ANNOTATE_BLACK_BACKGROUND 1024
 
+#define MAX_VIDEO_ROI_WIDTH 0.998
+#define MAX_VIDEO_ROI_HEIGHT 0.998
+
 // There isn't actually a MMAL structure for the following, so make one
 typedef struct {
     int enable;  /// Turn colourFX on or off

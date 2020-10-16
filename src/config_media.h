@@ -72,6 +72,14 @@ class ConfigMedia {
         int height_;
     };
 
+    struct VideoRoi {
+        explicit VideoRoi(float x, float y, float width, float height)
+            : x_(x), y_(y), width_(width), height_(height){};
+        explicit VideoRoi() : x_(0), y_(0), width_(0), height_(0){};
+        virtual ~VideoRoi(){};
+        double x_, y_, width_, height_;
+    };
+
     bool Load(std::string config_filename);
     bool Save(void);
     bool ConfigFromJson(const std::string &config_message,
@@ -82,6 +90,7 @@ class ConfigMedia {
     std::list<VideoResolution> GetVideoResolutionList();
     bool GetFixedVideoResolution(int &width, int &height);
     void GetMaxVideoResolution(int &width, int &height) const;
+    ConfigMedia::VideoRoi &GetVideoROI(void);
 
 // define expasion macros for Getter
 //      type GetName();
@@ -137,6 +146,7 @@ class ConfigMedia {
     struct VideoResolution fixed_resolution_;
     std::list<VideoResolution> video_resolution_list_4_3_;
     std::list<VideoResolution> video_resolution_list_16_9_;
+    VideoRoi video_roi_;
 
     // Additional config value validator
     bool validate__resolution(int width, int height);
