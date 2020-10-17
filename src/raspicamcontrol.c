@@ -793,10 +793,10 @@ int raspicamcontrol_set_ROI(MMAL_COMPONENT_T *camera, PARAM_FLOAT_RECT_T rect) {
     MMAL_PARAMETER_INPUT_CROP_T crop = {
         {MMAL_PARAMETER_INPUT_CROP, sizeof(MMAL_PARAMETER_INPUT_CROP_T)}};
 
-    crop.rect.x = (65536 * rect.x);
-    crop.rect.y = (65536 * rect.y);
-    crop.rect.width = (65536 * rect.w);
-    crop.rect.height = (65536 * rect.h);
+    crop.rect.x = (MAX_VIDEO_CROP_X * rect.x);
+    crop.rect.y = (MAX_VIDEO_CROP_Y * rect.y);
+    crop.rect.width = (MAX_VIDEO_CROP_WIDTH * rect.w);
+    crop.rect.height = (MAX_VIDEO_CROP_HEIGHT * rect.h);
 
     return mmal_port_parameter_set(camera->control, &crop.hdr);
 }
@@ -834,8 +834,8 @@ int raspicamcontrol_zoom_in_zoom_out(MMAL_COMPONENT_T *camera,
         unsigned int increased_size = crop.rect.width + zoom_increment_16P16;
         if (increased_size < (unsigned int)crop.rect.width)  // overflow
         {
-            crop.rect.width = 65536;
-            crop.rect.height = 65536;
+            crop.rect.width = MAX_VIDEO_CROP_WIDTH;
+            crop.rect.height = MAX_VIDEO_CROP_HEIGHT;
         } else {
             crop.rect.width = increased_size;
             crop.rect.height = increased_size;
@@ -845,10 +845,11 @@ int raspicamcontrol_zoom_in_zoom_out(MMAL_COMPONENT_T *camera,
     if (zoom_command == ZOOM_RESET) {
         crop.rect.x = 0;
         crop.rect.y = 0;
-        crop.rect.width = 65536;
-        crop.rect.height = 65536;
+        crop.rect.width = MAX_VIDEO_CROP_WIDTH;
+        crop.rect.height = MAX_VIDEO_CROP_HEIGHT;
     } else {
-        unsigned int centered_top_coordinate = (65536 - crop.rect.width) / 2;
+        unsigned int centered_top_coordinate =
+            (MAX_VIDEO_CROP_WIDTH - crop.rect.width) / 2;
         crop.rect.x = centered_top_coordinate;
         crop.rect.y = centered_top_coordinate;
     }
@@ -857,8 +858,9 @@ int raspicamcontrol_zoom_in_zoom_out(MMAL_COMPONENT_T *camera,
         mmal_status_to_int(mmal_port_parameter_set(camera->control, &crop.hdr));
 
     if (ret == 0) {
-        roi->x = roi->y = (double)crop.rect.x / 65536;
-        roi->w = roi->h = (double)crop.rect.width / 65536;
+        roi->x = roi->y = (double)crop.rect.x / MAX_VIDEO_CROP_X;
+        roi->w = (double)crop.rect.width / MAX_VIDEO_CROP_WIDTH;
+        roi->h = (double)crop.rect.width / MAX_VIDEO_CROP_HEIGHT;
     } else {
         vcos_log_error("Failed to set crop values, x/y: %u, w/h: %u",
                        crop.rect.x, crop.rect.width);
@@ -911,8 +913,8 @@ int raspicamcontrol_zoom_with_coordination(MMAL_COMPONENT_T *camera,
         unsigned int increased_size = crop.rect.width + zoom_increment_16P16;
         if (increased_size < (unsigned int)crop.rect.width) {
             // overflow
-            crop.rect.width = 65536;
-            crop.rect.height = 65536;
+            crop.rect.width = MAX_VIDEO_CROP_WIDTH;
+            crop.rect.height = MAX_VIDEO_CROP_HEIGHT;
         } else {
             dx = (unsigned int)zoom_increment_16P16 * 0.5; /* cx not used */
             dy = (unsigned int)zoom_increment_16P16 * 0.5; /* cy not used */
@@ -930,22 +932,24 @@ int raspicamcontrol_zoom_with_coordination(MMAL_COMPONENT_T *camera,
     } else if (zoom_command == ZOOM_RESET) {
         crop.rect.x = 0;
         crop.rect.y = 0;
-        crop.rect.width = 65536;
-        crop.rect.height = 65536;
+        crop.rect.width = MAX_VIDEO_CROP_WIDTH;
+        crop.rect.height = MAX_VIDEO_CROP_HEIGHT;
     } else if (zoom_command == ZOOM_MOVE) {
         // relative drag x, y
         dx = (unsigned int)crop.rect.width * cx;
         dy = (unsigned int)crop.rect.height * cy;
 
         if (crop.rect.x + dx < 0) crop.rect.x = 0;
-        if ((unsigned int)crop.rect.x + crop.rect.width + dx > 65536)
+        if ((unsigned int)crop.rect.x + crop.rect.width + dx >
+            MAX_VIDEO_CROP_WIDTH)
             crop.rect.x = 65536 - crop.rect.width;
         else
             crop.rect.x = crop.rect.x + dx;
 
         if (crop.rect.y + dy < 0) crop.rect.y = 0;
-        if ((unsigned int)crop.rect.y + crop.rect.height + dy > 65536)
-            crop.rect.y = 65536 - crop.rect.height;
+        if ((unsigned int)crop.rect.y + crop.rect.height + dy >
+            MAX_VIDEO_CROP_HEIGHT)
+            crop.rect.y = MAX_VIDEO_CROP_HEIGHT - crop.rect.height;
         else
             crop.rect.y = crop.rect.y + dy;
     } else {
@@ -956,10 +960,10 @@ int raspicamcontrol_zoom_with_coordination(MMAL_COMPONENT_T *camera,
     int ret =
         mmal_status_to_int(mmal_port_parameter_set(camera->control, &crop.hdr));
     if (ret == 0) {
-        roi->x = (double)crop.rect.x / 65536;
-        roi->y = (double)crop.rect.y / 65536;
-        roi->w = (double)crop.rect.width / 65536;
-        roi->h = (double)crop.rect.height / 65536;
+        roi->x = (double)crop.rect.x / MAX_VIDEO_CROP_X;
+        roi->y = (double)crop.rect.y / MAX_VIDEO_CROP_Y;
+        roi->w = (double)crop.rect.width / MAX_VIDEO_CROP_WIDTH;
+        roi->h = (double)crop.rect.height / MAX_VIDEO_CROP_HEIGHT;
     } else {
         vcos_log_error("Failed to set crop values, x/y: %u, w/h: %u",
                        crop.rect.x, crop.rect.width);

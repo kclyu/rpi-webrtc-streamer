@@ -308,7 +308,11 @@ handleVideoDragEnd (event) {
 
     if( parseFloat(timeDiff) < parseFloat(200) ) {
         // regard this as button click
-        this.sendZoomCommand( cx, cy, 'in');
+		if( event.shiftKey ) {
+			this.sendZoomCommand( cx, cy, 'out');
+		} else {
+			this.sendZoomCommand( cx, cy, 'in');
+		}
         return;
     }
     else if( parseFloat(timeDiff) > parseFloat(2000) ) {
