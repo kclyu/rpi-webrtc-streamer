@@ -78,6 +78,9 @@ class ConfigMedia {
         explicit VideoRoi() : x_(0), y_(0), width_(0), height_(0){};
         virtual ~VideoRoi(){};
         double x_, y_, width_, height_;
+
+        bool access(size_t index, double value);
+        bool isValid(void);
     };
 
     bool Load(std::string config_filename);

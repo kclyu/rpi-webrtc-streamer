@@ -29,7 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config_media.h"
 
-#include <gsl/gsl_math.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,6 +66,70 @@ ConfigMediaSingleton::ConfigMediaSingleton() { RTC_NOTREACHED(); }
 //
 ////////////////////////////////////////////////////////////////////////////////
 static const char kConfigVideoResolutionDelimiter = ',';
+static const double kVideoRoiMin = 0.2f;
+static const double kVideoRoiMax = 1.0f;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// VideoRoi helpers
+//
+////////////////////////////////////////////////////////////////////////////////
+bool ConfigMedia::VideoRoi::access(size_t index, double value) {
+    switch (index) {
+        case 0:
+            x_ = value;
+            if (isless(value, 0.0f) == true ||
+                isgreater(value, kVideoRoiMax) == true) {
+                RTC_LOG(LS_ERROR) << "Error, out of valid value range";
+                return false;
+            }
+            return true;
+        case 1:
+            y_ = value;
+            if (isless(value, 0.0f) == true ||
+                isgreater(value, kVideoRoiMax) == true) {
+                RTC_LOG(LS_ERROR) << "Error, out of valid value range";
+                return false;
+            }
+            return true;
+        case 2:
+            width_ = value;
+            if (isgreater(value, kVideoRoiMin) == false) {
+                RTC_LOG(LS_ERROR) << "Error, the value of width must be "
+                                     "greater than 0.2."
+                                  << ", roi width: " << width_;
+                return false;
+            }
+            return true;
+        case 3:
+            height_ = value;
+            if (isgreater(value, kVideoRoiMin) == false) {
+                RTC_LOG(LS_ERROR) << "Error, the value of width must be "
+                                     "greater than 0.2."
+                                  << ", roi height: " << height_;
+                return false;
+            }
+            return true;
+    }
+    return false;
+}
+
+bool ConfigMedia::VideoRoi::isValid(void) {
+    // validate correlation between value
+    if (isgreater(x_ + width_, kVideoRoiMax) == true) {
+        RTC_LOG(LS_ERROR)
+            << "Error, the value of x + width must be less than 1.0."
+            << ", roi x: " << x_ << "roi width: " << width_;
+        return false;
+    }
+    if (isgreater(y_ + height_, kVideoRoiMax) == true) {
+        RTC_LOG(LS_ERROR)
+            << "Error, the value of y + height must be less than 1.0."
+            << ", roi y: " << y_ << "roi heigth: " << height_;
+        return false;
+    }
+    return true;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -98,63 +161,28 @@ static bool parse_vidio_resolution(
 static bool parse_video_roi(const std::string video_roi,
                             ConfigMedia::VideoRoi &roi) {
     std::vector<std::string> splited_list;
-    ConfigMedia::VideoRoi temp_roi;
+    ConfigMedia::VideoRoi parsed_roi;
     rtc::split(video_roi, kConfigVideoResolutionDelimiter, &splited_list);
     if (splited_list.size() != 4) {
-        RTC_LOG(LS_ERROR) << "Error, ROI value must be specified as 4 values";
+        RTC_LOG(LS_ERROR) << "Error, ROI value must be specified as 4 values :"
+                          << video_roi;
         return false;
     }
-    int index = 0;
-    for (auto it = splited_list.begin(); it != splited_list.end();
-         ++it, index++) {
+    for (auto it = splited_list.begin(); it != splited_list.end(); ++it) {
         double value = 0.0f;
+        int index = std::distance(splited_list.begin(), it);
         if (!(rtc::FromString(*it, &value) == true &&
-              isgreater(value, 1.0f) == false)) {
+              isgreater(value, 1.0f) == false &&
+              parsed_roi.access(index, value) == true)) {
             RTC_LOG(LS_ERROR) << "Error in Roi Value at index: " << index
                               << ", Value: " << *it;
             return false;
         }
-        // keep the value in temp_roi
-        switch (index) {
-            case 0:
-                temp_roi.x_ = value;
-                break;
-            case 1:
-                temp_roi.y_ = value;
-                break;
-            case 2:
-                temp_roi.width_ = value;
-                break;
-            case 3:
-                temp_roi.height_ = value;
-                break;
-            default:
-                RTC_LOG(LS_ERROR) << "Error in Roi Value at index: " << index
-                                  << ", Value: " << *it;
-                return false;
-        }
     }
-    if (temp_roi.width_ < 0.2f || temp_roi.height_ < 0.2f) {
-        RTC_LOG(LS_ERROR)
-            << "Error, the value of width,height must be greater than 0.2."
-            << ", roi width: " << temp_roi.width_
-            << ", roi height: " << temp_roi.height_;
-        return false;
-    }
-    // parsing successful, validate correlation between value
-    if (temp_roi.x_ + temp_roi.width_ > 1.0f) {
-        RTC_LOG(LS_ERROR)
-            << "Error, the value of x + width must be less than 1.0."
-            << ", roi x: " << temp_roi.x_ << "roi width: " << temp_roi.width_;
-        return false;
-    }
-    if (temp_roi.y_ + temp_roi.height_ > 1.0f) {
-        RTC_LOG(LS_ERROR)
-            << "Error, the value of y + height must be less than 1.0."
-            << ", roi y: " << temp_roi.y_ << "roi heigth: " << temp_roi.height_;
-        return false;
-    }
-    roi = temp_roi;  // all validation passed, store
+
+    if (parsed_roi.isValid() == false) return false;
+
+    roi = parsed_roi;  // all validation passed, store
     RTC_LOG(INFO) << "Setting ROI: " << roi.x_ << "," << roi.y_ << ","
                   << roi.width_ << "," << roi.height_;
     return true;
