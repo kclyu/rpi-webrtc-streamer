@@ -26,9 +26,6 @@ std::string GetVersionInfo();
 const char* GetProgramDescriptino();
 
 // utility functions
-std::string IntToString(int i);
-std::string Size_tToString(size_t i);
-bool StringToInt(const std::string& str, int* value);
 bool ParseVideoResolution(const std::string resolution, int* width,
                           int* height);
 rtc::LoggingSeverity String2LogSeverity(const std::string severity);

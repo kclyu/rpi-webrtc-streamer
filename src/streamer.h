@@ -107,6 +107,8 @@ class Streamer : public webrtc::PeerConnectionObserver,
 
     // Change the max_bitrate in RtpSender
     void UpdateMaxBitrate();
+    // audio options
+    void GetAudioOptionsFromConfig(cricket::AudioOptions& options);
 
     int peer_id_;
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;

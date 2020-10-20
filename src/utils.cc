@@ -79,14 +79,6 @@ void PrintLicenseInfo() {
     }
 }
 
-std::string IntToString(int i) { return rtc::ToString(i); }
-
-std::string Size_tToString(size_t i) { return rtc::ToString(i); }
-
-bool StringToInt(const std::string &str, int *value) {
-    return rtc::FromString<int>(str, value);
-}
-
 rtc::LoggingSeverity String2LogSeverity(const std::string severity) {
     if (severity.compare("VERBOSE") == 0) {
         return rtc::LoggingSeverity::LS_VERBOSE;
@@ -110,7 +102,7 @@ bool ParseVideoResolution(const std::string resolution, int *width,
     if ((pos = resolution.find(delimiter)) != std::string::npos) {
         token = resolution.substr(0, pos);
         // getting width value
-        if (StringToInt(token, &value) == false) {
+        if (rtc::FromString(token, &value) == false) {
             *width = *height = 0;
             return false;
         }
@@ -119,7 +111,7 @@ bool ParseVideoResolution(const std::string resolution, int *width,
 
     // getting height value
     token = resolution.substr(pos + 1, std::string::npos);
-    if (StringToInt(token, &value) == false) {
+    if (rtc::FromString(token, &value) == false) {
         *width = *height = 0;
         return false;
     }

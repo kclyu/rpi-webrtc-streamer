@@ -19,7 +19,7 @@
 #define MEDIA_CONFIG_ROW_LIST \
     _CR_I( CameraSelect,            camera_select,              false, int, 0 ) \
     _CR( VideoRoi,   				video_roi,  				false, std::string, \
-            "0,0,0.998,1.0" ) \
+            "0,0,1.0,1.0" ) \
     _CR_I( MaxBitrate,              max_bitrate,                false, int, 3500000 ) \
     _CR_B( Resolution4_3,           resolution_4_3_enable,      false, bool, true ) \
     _CR_I( VideoRotation,           video_rotation,             true, int, 0) \
@@ -35,11 +35,17 @@
             "640x480") \
     _CR_I( FixedVideoFps,           fixed_video_fps,            false, int, 30) \
     _CR_B( AudioProcessing,         audio_processing_enable,    true, bool, false ) \
-    _CR_B( AudioEchoCancel,         audio_echo_cancel,          true, bool, true ) \
-    _CR_B( AudioGainControl,        audio_gain_control,         true, bool, true ) \
-    _CR_B( AudioHighPassFilter,     audio_highpass_filter,      true, bool, true ) \
+    _CR_B( AudioEchoCancel,         audio_echo_cancellation,    true, bool, true ) \
+    _CR_B( AudioAutoGainControl,    audio_auto_gain_control,    true, bool, true ) \
     _CR_B( AudioNoiseSuppression,   audio_noise_suppression,    true, bool, true ) \
-    _CR_B( AudioLevelControl,       audio_level_control,        true, bool, true ) \
+    _CR_B( AudioHighPassFilter,     audio_highpass_filter,      true, bool, true ) \
+    _CR_B( AudioJitterBufferEnable, audio_jitter_buffer_enable, false, bool, false ) \
+    _CR_I( AudioJitterBufferMaxPackets, audio_jitter_buffer_max_packets, false, int, 75 ) \
+    _CR_B( AudioJitterBufferFastAccel, audio_jitter_buffer_fast_accel, false, bool, true ) \
+    _CR_I( AudioJitterBufferMinDelayMs, audio_jitter_buffer_min_delay_ms, false, int, 20 ) \
+    _CR_B( AudioJitterBufferEnableRtx, audio_jitter_buffer_enable_rtx_handling, false, bool, false ) \
+    _CR_B( AudioExperimentalAgc,    audio_experimental_agc,     false, bool, false ) \
+    _CR_B( AudioExperimentalNs,     audio_experimental_ns,      false, bool, false ) \
     _CR_I( VideoSharpness,          video_sharpness,            true, int, 0 ) \
     _CR_I( VideoContrast,           video_contrast,             true, int, 0 ) \
     _CR_I( VideoBrightness,         video_brightness,           true, int, 50 ) \

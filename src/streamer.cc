@@ -466,34 +466,50 @@ void Streamer::OnMessageSent(int err) {
     RTC_LOG(INFO) << __FUNCTION__ << "Message Sent result : " << err;
 }
 
+void Streamer::GetAudioOptionsFromConfig(cricket::AudioOptions& options) {
+    // media configuration reference
+    ConfigMedia* config_media = ConfigMediaSingleton::Instance();
+
+    if (config_media->GetAudioProcessing() == true) {
+        if (config_media->GetAudioEchoCancel() == true)
+            options.echo_cancellation = absl::optional<bool>(true);
+        if (config_media->GetAudioAutoGainControl() == true)
+            options.auto_gain_control = absl::optional<bool>(true);
+        if (config_media->GetAudioNoiseSuppression() == true)
+            options.noise_suppression = absl::optional<bool>(true);
+        if (config_media->GetAudioHighPassFilter() == true)
+            options.highpass_filter = absl::optional<bool>(true);
+    }
+    if (config_media->GetAudioJitterBufferEnable() == true) {
+        options.audio_jitter_buffer_max_packets =
+            absl::optional<int>(config_media->GetAudioJitterBufferMaxPackets());
+        options.audio_jitter_buffer_min_delay_ms =
+            absl::optional<int>(config_media->GetAudioJitterBufferMinDelayMs());
+
+        if (config_media->GetAudioJitterBufferFastAccel() == true)
+            options.audio_jitter_buffer_fast_accelerate =
+                absl::optional<bool>(true);
+        if (config_media->GetAudioJitterBufferEnableRtx() == true)
+            options.audio_jitter_buffer_enable_rtx_handling =
+                absl::optional<bool>(true);
+    }
+    if (config_media->GetAudioExperimentalAgc() == true)
+        options.experimental_agc = absl::optional<bool>(true);
+    if (config_media->GetAudioExperimentalNs() == true)
+        options.experimental_ns = absl::optional<bool>(true);
+
+    RTC_LOG(INFO) << "Media Config Audio options: " << options.ToString();
+}
+
 void Streamer::AddTracks() {
     if (!peer_connection_->GetSenders().empty()) {
         return;  // Already added.
     }
 
-    // media configuration sigleton reference
-    ConfigMedia* config_media = ConfigMediaSingleton::Instance();
-
     if (streamer_config_->GetAudioEnable() == true) {
         cricket::AudioOptions options;
-        if (config_media->GetAudioProcessing() == true) {
-            if (config_media->GetAudioEchoCancel() == true)
-                options.echo_cancellation = absl::optional<bool>(true);
-            if (config_media->GetAudioEchoCancel() == true)
-                options.auto_gain_control = absl::optional<bool>(true);
-            if (config_media->GetAudioHighPassFilter() == true)
-                options.highpass_filter = absl::optional<bool>(true);
-            if (config_media->GetAudioNoiseSuppression() == true)
-                options.noise_suppression = absl::optional<bool>(true);
-        } else {
-            options.echo_cancellation = absl::optional<bool>(false);
-            options.auto_gain_control = absl::optional<bool>(false);
-            options.highpass_filter = absl::optional<bool>(false);
-            options.noise_suppression = absl::optional<bool>(false);
-        }
 
-        RTC_LOG(INFO) << "Media Config Audio options: " << options.ToString();
-
+        GetAudioOptionsFromConfig(options);
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
             peer_connection_factory_->CreateAudioTrack(
                 kAudioLabel,

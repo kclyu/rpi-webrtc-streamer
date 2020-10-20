@@ -183,8 +183,6 @@ static bool parse_video_roi(const std::string video_roi,
     if (parsed_roi.isValid() == false) return false;
 
     roi = parsed_roi;  // all validation passed, store
-    RTC_LOG(INFO) << "Setting ROI: " << roi.x_ << "," << roi.y_ << ","
-                  << roi.width_ << "," << roi.height_;
     return true;
 }
 
@@ -386,6 +384,26 @@ DECLARE_VALIDATOR(ConfigMedia, video_annotate_text_size_ratio, int) {
             << video_annotate_text_size_ratio
             << "\" text size ratio should be within 2 - 10, using default:"
             << default_value;
+        return false;
+    }
+    return true;
+}
+
+DECLARE_VALIDATOR(ConfigMedia, audio_jitter_buffer_max_packets, int) {
+    if (audio_jitter_buffer_max_packets < 0) {
+        RTC_LOG(LS_ERROR) << "jitter buffer max packets is not valid\""
+                          << audio_jitter_buffer_max_packets
+                          << "\", using default: " << default_value;
+        return false;
+    }
+    return true;
+}
+
+DECLARE_VALIDATOR(ConfigMedia, audio_jitter_buffer_min_delay_ms, int) {
+    if (audio_jitter_buffer_min_delay_ms < 0) {
+        RTC_LOG(LS_ERROR) << "jitter buffer main delay ms is not valid\""
+                          << audio_jitter_buffer_min_delay_ms
+                          << "\", using default: " << default_value;
         return false;
     }
     return true;
