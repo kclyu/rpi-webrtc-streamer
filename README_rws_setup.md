@@ -114,113 +114,6 @@ If you have successfully set up the VPN and can use the network through the VPN,
 http://your-private-ip-address:8889/native-peerconnection/
 ```
 *`8889` port number is the websocket_port specified in the config file, and the URL protocol uses http instead of https.*
-### Open in Android AppRTC app
-Android AppRTCMobile is a WebRTC app for Android designed to work with Google's https://appr.tc. One of the unique features of the Android App is that it provides a function to directly link without the signaling server (appr.tc) using a TCP socket called Direct RTC Client.
-
-See below for how to install AppRTCMobile on android devices.
-```
-cd ~/Workspace/rpi-webrtc-streamer/misc
-adb install -r AppRTCMobile.apk
-```
-
-Please change the following in AppRTC Settings menu of App.
-- Setup AppRTCMobile app
-   - 'Enter ApRTC local video resolution' --- select the lowest resolution
-   - 'Select default video codec' -- select one of H264 baseline or H264 High
-
-To work with RWS, enter the IP address of RWS is installed in the room number input field.
-
-## Running RWS with Nginx
-The HTTP function of RWS has no room for adding user-friendly HTTP return code and other functions. Therefore, it is recommended to use reverse proxy in front of RWS to add user authentication or other logging function in addition to using RWS in local network.
-####  Nginx  as a Reverse Proxy
-Below is an example of using reverse proxy with nginx.
-```
-server {
-        listen 8080;
-        server_name example.server.com;
-        root /home/pi/Workspace/client/web-root;
-        index index.html index.htm;
-
-        location / {
-                allow 10.0.0.0/24;
-                allow 192.168.0.0/24;
-                allow 127.0.0.1;
-                deny all;
-                try_files $uri $uri/ =404;
-        }
-
-        location /rws/ws {
-                proxy_pass http://localhost:8889;
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection "upgrade";
-        }
-}
-```
-
-
-####  Nginx with Client Side Certificate Auth as a Reverse Proxy
-Below is an example of how RWS works with Nginx. It shows how to use Nginx as HTTPS and Secured WebScoket Reverse Proxy and cover the security part with client side certs. Other configurations or other requirements may require Googling, web server configuration, or security expert advice. (It may not be enough to emphasize as much, I recommend that you do not leave the camera feed open to the public internet without any security measures.)
-
-```
-###
-### Nginx with SSL as a Reverse Proxy
-###
-server {
-    listen 80;
-	server_name example.server.com; # change your domain name
-    rewrite ^(.*) https://$server_name$1 permanent;
-}
-
-server {
-	listen 443 ssl;
-
-	server_name example.server.com; # change your domain name
-
-	ssl on;
-	ssl_certificate /etc/ssl/webrtc_ca/certs/server.crt;
-	ssl_certificate_key /etc/ssl/webrtc_ca/private/server.key;
-	ssl_client_certificate /etc/ssl/webrtc_ca/certs/ca.crt;
-	ssl_crl /etc/ssl/webrtc_ca/private/ca.crl;
-	ssl_verify_client on;
-
-	ssl_session_timeout 5m;
-
-	ssl_protocols SSLv3 TLSv1;
-	ssl_ciphers ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv3:+EXP;
-	ssl_prefer_server_ciphers on;
-
-    ### For WebSocket Reverse proxy
-    location /rws/ws {
-            proxy_pass http://localhost:8889;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-     }
-    ### For HTTP Reverse proxy
-	location /rws {
-		  ## proxy setting for RWS(Rpi-WebRTC-Streamer)
-		  ## it will bind 8889 port on localhost
-          proxy_pass          http://localhost:8889
-          proxy_set_header    Host             $host;
-          proxy_set_header    X-Real-IP        $remote_addr;
-          proxy_set_header    X-Forwarded-For  $proxy_add_x_forwarded_for;
-          proxy_set_header    X-Client-Verify  SUCCESS;
-          proxy_set_header    X-Client-DN      $ssl_client_s_dn;
-          proxy_set_header    X-SSL-Subject    $ssl_client_s_dn;
-          proxy_set_header    X-SSL-Issuer     $ssl_client_i_dn;
-          proxy_read_timeout 1800;
-          proxy_connect_timeout 1800;
-	}
-}
-
-```
-#### installing html example for testing
-You need to copy the html and javascript files to nginx html directory. 
-```
-cd $(WHERE_RWS_DIRECTORY)/web-root
-sudo cp -r native-peerconnection /usr/share/nginx/html
-``` 
 
 #### Testing RWS in browser
 To test RWS WebRTC streaming in browser, Open the following URL in the latest chrome or firefox browser.
@@ -261,10 +154,10 @@ https://server.example.com/native-connection/index.html
 |fixed_video_resolution|video resolution|The specified video resolution will be used from startup, and video resolution will not be changed dynamically *Note 1*|
 |fixed_video_fps|integer|The specified video fps will be used from startup, and video fps will not be changed dynamically|
 |audio_processing|boolean|enable/disable below audio processing feature|
-|audio_echo_cancellation|boolean|enable/disable google echo cancellation feature|
-|auido_gain_control|boolean|enable/disable google gain control feature|
-|audio_high_passfilter|boolean|enable/disable google high pass filter feature|
-|auido_noise_suppression|boolean|enable/disable google noise suppression feature|
+|audio_echo_cancellation|boolean|enable/disable echo cancellation feature|
+|auido_gain_control|boolean|enable/disable gain control feature|
+|audio_high_passfilter|boolean|enable/disable high pass filter feature|
+|auido_noise_suppression|boolean|enable/disable noise suppression feature|
 |audio_level_control|boolean|enable/disable audio level control feature (this feature does not depend on the audio_processing config)||
 |video_sharpness |integer|set image sharpness (-100 to 100), 0 is the default.|
 |video_contrast |integer|set image contrast (-100 to 100), 0 is the default|
