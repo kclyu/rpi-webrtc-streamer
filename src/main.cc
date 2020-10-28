@@ -122,12 +122,11 @@ int main(int argc, char** argv) {
     flag_config.contains_help_flags = &RWsContrainHelpFlags;
     flag_config.version_string = &utils::GetVersionInfo;
 
-    absl::SetProgramUsageMessage(absl::StrCat(utils::GetProgramDescriptino(),
+    absl::SetProgramUsageMessage(absl::StrCat(utils::GetProgramDescription(),
                                               " \n", argv[0], " <flags>"));
     absl::SetFlagsUsageConfig(flag_config);
     absl::ParseCommandLine(argc, argv);
 
-    // if( absl::GetFlag(FLAGS_licenses.on_comand_line )) {
     if (FLAGS_licenses.IsSpecifiedOnCommandLine()) {
         utils::PrintLicenseInfo();
         return 0;

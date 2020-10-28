@@ -34,12 +34,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 
 #include "raspi_motion.h"
+#include "session_config.h"
+
 #ifdef __NOTI_ENABLE__
 #include "raspi_httpnoti.h"
 #endif /* __NOTI_ENABLE__ */
 
 struct StreamerObserver {
-    virtual void OnPeerConnected(int peer_id, const std::string& name) = 0;
+    virtual void OnPeerConnected(int peer_id,
+                                 const SessionConfig::Config& config) = 0;
     virtual void OnPeerDisconnected(int peer_id) = 0;
     virtual void OnMessageFromPeer(int peer_id, const std::string& message) = 0;
     virtual void OnMessageSent(int err) = 0;
@@ -69,9 +72,11 @@ class SocketServerHelper : public SocketServerObserver {
    protected:
     virtual ~SocketServerHelper() {}
     // Offer will be generated at server side.
-    bool ActivateStreamSession(const int peer_id, const std::string& peer_name);
+    bool ActivateStreamSession(const int peer_id,
+                               const SessionConfig::Config& config);
     // the messsage is offer message from client
-    bool ActivateStreamSession(const int peer_id, const std::string& peer_name,
+    bool ActivateStreamSession(const int peer_id,
+                               const SessionConfig::Config& config,
                                const std::string& message);
     void DeactivateStreamSession();
     void MessageFromPeer(const std::string& message);
@@ -82,7 +87,6 @@ class SocketServerHelper : public SocketServerObserver {
     bool streamsession_active_;
     StreamerObserver* streamer_callback_;
     StreamerProxy* streamer_proxy_;
-    std::string peer_name_;
     int peer_id_;
 };
 
@@ -90,9 +94,10 @@ class StreamerProxy : public SocketServerObserver {
    public:
     static StreamerProxy* GetInstance();
     bool ObtainStreamer(SocketServerObserver* socket_server, int peer_id,
-                        const std::string& name);
+                        const SessionConfig::Config& config);
     bool ObtainStreamer(SocketServerObserver* socket_server, int peer_id,
-                        const std::string& name, const std::string& message);
+                        const SessionConfig::Config& config,
+                        const std::string& message);
     void ReleaseStreamer(SocketServerObserver* socket_server, int peer_id);
     void MessageFromPeer(int peer_id, const std::string& message);
     void MessageSent(int err);

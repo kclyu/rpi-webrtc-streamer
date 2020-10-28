@@ -95,6 +95,12 @@ class ConfigMedia {
     void GetMaxVideoResolution(int &width, int &height) const;
     ConfigMedia::VideoRoi &GetVideoROI(void);
 
+    // The rtc_config configured through the websocket interface can be used
+    // only in the websocket that requested the configuration.
+    bool SetSessionRtcConfig(const int sockid, const std::string rtc_config);
+    bool GetSessionRtcConfig(const int sockid, const std::string &rtc_config);
+    bool RemoveSessionRtcConfig(const int sockid);
+
 // define expasion macros for Getter
 //      type GetName();
 #define _CR(name, config_var, config_remote_access, config_type, \
@@ -150,6 +156,7 @@ class ConfigMedia {
     std::list<VideoResolution> video_resolution_list_4_3_;
     std::list<VideoResolution> video_resolution_list_16_9_;
     VideoRoi video_roi_;
+    std::map<int, std::string> session_rtcconfig_;
 
     // Additional config value validator
     bool validate__resolution(int width, int height);

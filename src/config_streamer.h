@@ -59,16 +59,8 @@ class StreamerConfig {
     bool GetAudioEnable();
     bool GetVideoEnable();
 
-    void GetIceTransportsType(
-        webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config);
-    void GetIceBundlePolicy(
-        webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config);
-    void GetIceRtcpMuxPolicy(
-        webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config);
-    bool GetIceServers(
-        webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config,
-        bool internal_config);
-    bool GetRTCConfig(std::string& json_rtcconfig);
+    bool GetJsonRtcConfig(std::string& json_rtcconfig);
+    bool GetRtcConfig(utils::RTCConfiguration& config);
 
     bool GetMediaConfigFilePath(std::string& conf);
     bool GetMotionConfigFilePath(std::string& conf);

@@ -232,6 +232,28 @@ ConfigMedia::VideoRoi &ConfigMedia::GetVideoROI(void) { return video_roi_; }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// session RTC configuration
+//
+////////////////////////////////////////////////////////////////////////////////
+bool ConfigMedia::SetSessionRtcConfig(const int sockid,
+                                      const std::string rtc_config) {
+    RTC_LOG(INFO) << "RTC configuration for session request: " << sockid
+                  << ", RTC config: " << rtc_config;
+    return true;
+}
+bool ConfigMedia::GetSessionRtcConfig(const int sockid,
+                                      const std::string &rtc_config) {
+    RTC_LOG(INFO) << "RTC configuration for session : " << sockid
+                  << ", RTC config: " << rtc_config;
+    return true;
+}
+
+bool ConfigMedia::RemoveSessionRtcConfig(const int sockid) {
+    return (bool)session_rtcconfig_.erase(sockid);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // config value validation functions
 //
 ////////////////////////////////////////////////////////////////////////////////

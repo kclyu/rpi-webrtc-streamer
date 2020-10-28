@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
+#include "rtc_base/strings/string_format.h"
 #include "utils.h"
 #include "utils_pc_strings.h"
 
@@ -78,22 +79,20 @@ CONFIG_DEFINE(RWS_WS_URL, rws_ws_url, std::string, "/rws/ws");
 //
 ////////////////////////////////////////////////////////////////////////////////
 // Ice Servers configuration keys
-static const char kConfigIceTransportsType[] = "ice_transports_type";
-static const char kConfigIceBundlePolicy[] = "bundle_policy";
-static const char kConfigIceRtcpMuxPolicy[] = "rtcp_mux_policy";
+constexpr char kConfigIceTransportsType[] = "ice_transports_type";
+constexpr char kConfigIceBundlePolicy[] = "bundle_policy";
+constexpr char kConfigIceRtcpMuxPolicy[] = "rtcp_mux_policy";
 
-static const char kConfigIceServerUrls[] = "ice_server_urls";
-static const char kConfigIceServerInternalUrls[] = "ice_server_internal_urls";
-static const char kConfigIceServerUsername[] = "ice_server_username";
-static const char kConfigIceServerPassword[] = "ice_server_password";
-static const char kConfigIceServerHostname[] = "ice_server_hostname";
-static const char kConfigIceServerTlsCertPolicy[] =
-    "ice_server_tls_cert_policy";
-static const char kConfigIceServerTlsAlpnProtocols[] =
+constexpr char kConfigIceServerUrls[] = "ice_server_urls";
+constexpr char kConfigIceServerUsername[] = "ice_server_username";
+constexpr char kConfigIceServerPassword[] = "ice_server_password";
+constexpr char kConfigIceServerHostname[] = "ice_server_hostname";
+constexpr char kConfigIceServerTlsCertPolicy[] = "ice_server_tls_cert_policy";
+constexpr char kConfigIceServerTlsAlpnProtocols[] =
     "ice_server_tls_alpn_protocols";
-static const char kConfigIceServerTlsEllipticCurves[] =
+constexpr char kConfigIceServerTlsEllipticCurves[] =
     "ice_server_tls_elliptic_curves";
-static const int kMaxIceServers = 10;
+constexpr int kMaxIceServers = 10;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -152,6 +151,7 @@ bool StreamerConfig::LoadConfig(bool verbose) {
                                                      : config_dir_basename_)
               << std::endl;
     config_loaded_ = true;
+
     return true;
 }
 
@@ -223,123 +223,93 @@ bool StreamerConfig::GetVideoEnable() {
     DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(VideoEnable);
 }
 
-// Get IceTransportsType
-void StreamerConfig::GetIceTransportsType(
-    webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config) {
+// loading RTCConfiguration from config file
+bool StreamerConfig::GetRtcConfig(utils::RTCConfiguration& config) {
     RTC_DCHECK(config_loaded_ == true);
+
     std::string config_value;
     if (config_->GetStringValue(kConfigIceTransportsType, &config_value) ==
         true) {
-        rtc_config.type = utils::ConfigToIceTransportsType(config_value);
+        config.type = utils::StrToIceTransportsType(config_value);
     }
-}
-
-// Get IceBundlePolicy
-void StreamerConfig::GetIceBundlePolicy(
-    webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config) {
-    RTC_DCHECK(config_loaded_ == true);
-    std::string config_value;
     if (config_->GetStringValue(kConfigIceBundlePolicy, &config_value) ==
         true) {
-        rtc_config.bundle_policy = utils::ConfigToIceBundlePolicy(config_value);
+        config.bundle_policy = utils::StrToBundlePolicy(config_value);
     }
-    // BundlePolicy does not exist in config, always it will return true
-}
-
-// Get IceRtcpMuxPolicy
-void StreamerConfig::GetIceRtcpMuxPolicy(
-    webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config) {
-    RTC_DCHECK(config_loaded_ == true);
-    std::string config_value;
     if (config_->GetStringValue(kConfigIceRtcpMuxPolicy, &config_value) ==
         true) {
-        rtc_config.rtcp_mux_policy =
-            utils::ConfigToIceRtcpMuxPolicy(config_value);
+        config.rtcp_mux_policy = utils::StrToRtcpMuxPolicy(config_value);
     }
-}
-
-// IceServers
-bool StreamerConfig::GetIceServers(
-    webrtc::PeerConnectionInterface::RTCConfiguration& rtc_config,
-    bool internal_config) {
-    RTC_DCHECK(config_loaded_ == true);
-    char config_key_buffer[512];
-    std::string config_value;
-    bool gen_config_exist = false;
-
-#define LOAD_CONF_KEY(key, index)                                          \
-    snprintf(config_key_buffer, sizeof(config_key_buffer), "%s_%d", key,   \
-             index);                                                       \
-    if (config_->GetStringValue(config_key_buffer, &config_value) == true) \
-        gen_config_exist = true;                                           \
-    else                                                                   \
-        gen_config_exist = false;
 
     for (int config_index = 0; config_index < kMaxIceServers; config_index++) {
-        LOAD_CONF_KEY(kConfigIceServerUrls, config_index);
-        if (gen_config_exist) {
+        if (config_->GetStringValue(
+                rtc::StringFormat("%s_%d", kConfigIceServerUrls, config_index),
+                &config_value) == true) {
             webrtc::PeerConnectionInterface::IceServer ice_server;
-
             // ice servers
-            ice_server.urls = utils::ConfigToIceUrls(config_value);
-            LOAD_CONF_KEY(kConfigIceServerInternalUrls, config_index);
-            if (internal_config) {
-                if (gen_config_exist) {
-                    // replace ice server url with internal config url
-                    ice_server.urls = utils::ConfigToIceUrls(config_value);
-                }
-            }
+            ice_server.urls = utils::StrToIceUrls(config_value);
 
-            // username
-            LOAD_CONF_KEY(kConfigIceServerUsername, config_index);
-            if (gen_config_exist) ice_server.username = config_value;
-            // password
-            LOAD_CONF_KEY(kConfigIceServerPassword, config_index);
-            if (gen_config_exist) ice_server.password = config_value;
-            // hostname
-            LOAD_CONF_KEY(kConfigIceServerHostname, config_index);
-            if (gen_config_exist) ice_server.hostname = config_value;
-            // Cert Policy
-            LOAD_CONF_KEY(kConfigIceServerTlsCertPolicy, config_index);
-            if (gen_config_exist)
+            // IceServerUsername
+            if (config_->GetStringValue(
+                    rtc::StringFormat("%s_%d", kConfigIceServerUsername,
+                                      config_index),
+                    &config_value)) {
+                ice_server.username = config_value;
+            }
+            // IceServerPassword
+            if (config_->GetStringValue(
+                    rtc::StringFormat("%s_%d", kConfigIceServerPassword,
+                                      config_index),
+                    &config_value)) {
+                ice_server.password = config_value;
+            }
+            // IceServerHostname
+            if (config_->GetStringValue(
+                    rtc::StringFormat("%s_%d", kConfigIceServerHostname,
+                                      config_index),
+                    &config_value)) {
+                ice_server.hostname = config_value;
+            }
+            // IceServerCertPolicy
+            if (config_->GetStringValue(
+                    rtc::StringFormat("%s_%d", kConfigIceServerTlsCertPolicy,
+                                      config_index),
+                    &config_value)) {
                 ice_server.tls_cert_policy =
-                    utils::ConfigToIceTlsCertPolicy(config_value);
-            // Alpn Protocols
-            LOAD_CONF_KEY(kConfigIceServerTlsAlpnProtocols, config_index);
-            if (gen_config_exist) {
+                    utils::StrToTlsCertPolicy(config_value);
+            }
+            // IceServerAlpnProtocols
+            if (config_->GetStringValue(
+                    rtc::StringFormat("%s_%d", kConfigIceServerTlsAlpnProtocols,
+                                      config_index),
+                    &config_value)) {
                 ice_server.tls_alpn_protocols =
-                    utils::ConfigToVector(config_value);
+                    utils::StrToVector(config_value);
             }
             // TlsEllipticCurves
-            LOAD_CONF_KEY(kConfigIceServerTlsEllipticCurves, config_index);
-            if (gen_config_exist) {
+            if (config_->GetStringValue(
+                    rtc::StringFormat("%s_%d",
+                                      kConfigIceServerTlsEllipticCurves,
+                                      config_index),
+                    &config_value)) {
                 ice_server.tls_elliptic_curves =
-                    utils::ConfigToVector(config_value);
+                    utils::StrToVector(config_value);
             }
-
             // Add new ice server information
-            rtc_config.servers.push_back(ice_server);
+            config.servers.push_back(ice_server);
         }
     }
-
-    return (bool)rtc_config.servers.size();
+    // return size of iceServers
+    return config.servers.size();
 }
 
 // JSON RTCConfig
-bool StreamerConfig::GetRTCConfig(std::string& json_rtcconfig) {
-    webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
-
-    GetIceTransportsType(rtc_config);
-    GetIceRtcpMuxPolicy(rtc_config);
-    GetIceBundlePolicy(rtc_config);
-    if (GetIceServers(rtc_config, false /* internal_config */) == false) {
-        RTC_LOG(LS_ERROR) << "Internal Errror, failed to load ICE servers";
-        return false;
-    };
-
+bool StreamerConfig::GetJsonRtcConfig(std::string& json_rtcconfig) {
+    utils::RTCConfiguration rtc_config;
     Json::Value jsonPCConfig;
     Json::StyledWriter json_writer;
 
+    GetRtcConfig(rtc_config);  // load rtc configuration from config
     for (const webrtc::PeerConnectionInterface::IceServer& server :
          rtc_config.servers) {
         if (!server.urls.empty()) {

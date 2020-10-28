@@ -62,7 +62,7 @@ std::string GetVersionInfo() {
     return version_info;
 }
 
-const char *GetProgramDescriptino() { return kProgramDescription; }
+const char *GetProgramDescription() { return kProgramDescription; }
 
 // Print licenses information for command line option
 void PrintLicenseInfo() {

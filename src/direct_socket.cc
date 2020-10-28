@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
 #include "rtc_base/time_utils.h"
+#include "session_config.h"
 #include "streamer_observer.h"
 #include "utils.h"
 
@@ -88,6 +89,8 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
     RTC_DCHECK(socket == listener_.get());
     rtc::AsyncSocket* incoming = listener_->Accept(nullptr);
     RTC_CHECK(incoming != nullptr);
+    // TODO: direct socket also need session config too.
+    SessionConfig::Config session_config;
 
     if (IsStreamSessionActive() == false) {
         // stream session is not active, it will start to new stream session
@@ -98,7 +101,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
                             incoming->GetRemoteAddress().ToString();
         RTC_LOG(INFO) << "New Session Name: " << socket_peer_name_;
 
-        if (ActivateStreamSession(socket_peer_id_, socket_peer_name_) == true) {
+        if (ActivateStreamSession(socket_peer_id_, session_config) == true) {
             direct_socket_.reset(incoming);
             // Close event will be handled in DirectSocketServer
             incoming->SignalCloseEvent.connect(this,

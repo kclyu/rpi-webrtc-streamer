@@ -23,7 +23,7 @@ namespace utils {
 
 void PrintLicenseInfo();
 std::string GetVersionInfo();
-const char* GetProgramDescriptino();
+const char* GetProgramDescription();
 
 // utility functions
 bool ParseVideoResolution(const std::string resolution, int* width,

@@ -27,8 +27,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <deque>
-#include <list>
 #include <memory>
 #include <string>
 
@@ -39,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config_media.h"
 #include "config_streamer.h"
 #include "rtc_base/message_handler.h"
-#include "rtc_base/strings/json.h"
+#include "session_config.h"
 #include "streamer_observer.h"
 #include "utils.h"
 #include "websocket_server.h"
@@ -74,17 +72,20 @@ class AppWsClient : public rtc::MessageHandler,
 
    private:
     // message handler interface
-    void OnMessage(rtc::Message* msg);
+    void OnMessage(rtc::Message* msg) override;
 
     void SendResponseDeviceId(int sockid, bool success,
+                              const std::string transaction,
                               const std::string& deviceid);
     void SendResponse(int sockid, bool success, const std::string& type,
-                      const std::string& data, const std::string& error_mesg);
+                      const std::string& transaction, const std::string& data,
+                      const std::string& error_mesg);
     void SendEvent(int sockid, EventType is_event,
                    const std::string& event_mesg);
 
     std::string ws_url_;
     AppClientInfo app_client_;
+    SessionConfig session_config_;
     WebSocketMessage* websocket_message_;
 
     // WebSocket chunked frames

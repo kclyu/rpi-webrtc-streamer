@@ -60,16 +60,23 @@ extern const char kDefaultIceTransportsType[];
 extern const char kDefaultBundlePolicy[];
 extern const char kDefaultRtcpMuxPolicy[];
 
-IceTransportsType ConfigToIceTransportsType(const std::string type);
-BundlePolicy ConfigToIceBundlePolicy(const std::string bundle_policy);
-RtcpMuxPolicy ConfigToIceRtcpMuxPolicy(const std::string mux_policy);
+bool RTCConfigFromJson(utils::RTCConfiguration& config,
+                       const std::string& json_string,
+                       std::string& error_message);
+
+IceTransportsType StrToIceTransportsType(const std::string type);
+BundlePolicy StrToBundlePolicy(const std::string bundle_policy);
+RtcpMuxPolicy StrToRtcpMuxPolicy(const std::string mux_policy);
 
 // for ice servers
-std::vector<std::string> ConfigToIceUrls(const std::string urls);
-TlsCertPolicy ConfigToIceTlsCertPolicy(const std::string policy);
-std::vector<std::string> ConfigToVector(const std::string configs);
+std::vector<std::string> StrToIceUrls(const std::string urls);
+TlsCertPolicy StrToTlsCertPolicy(const std::string policy);
+std::vector<std::string> StrToVector(const std::string configs);
 
-void PrintIceServers(const RTCConfiguration &rtc_config);
+std::string maskingPassword(const std::string password);
+void PrintRTCConfig(const RTCConfiguration& rtc_config);
+bool validateIceServerUrl(const std::string url, std::string& error_message,
+                          bool not_allow_numberic_ipaddress = true);
 
 };  // namespace utils
 

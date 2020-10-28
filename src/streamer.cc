@@ -200,17 +200,23 @@ bool Streamer::CreatePeerConnection() {
     RTC_DCHECK(peer_connection_factory_);
     RTC_DCHECK(!peer_connection_);
 
-    webrtc::PeerConnectionInterface::RTCConfiguration config;
+    utils::RTCConfiguration config;
     config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
     config.enable_dtls_srtp =
         streamer_config_->GetSrtpEnable();  // get Dtls config
+    std::string json_rtc_config, error_message;
+    if ((json_rtc_config = pc_config_.GetRtcConfig()).empty() == false) {
+        if (utils::RTCConfigFromJson(config, json_rtc_config, error_message) ==
+            false)
+            RTC_LOG(LS_ERROR)
+                << "Internal Error in loading RTCConfiguration: "
+                << json_rtc_config << ", error message: " << error_message;
 
-    streamer_config_->GetIceTransportsType(config);
-    streamer_config_->GetIceBundlePolicy(config);
-    streamer_config_->GetIceRtcpMuxPolicy(config);
-
-    streamer_config_->GetIceServers(config, true /* internal_config */);
-    utils::PrintIceServers(config);
+    } else {
+        // load RTCConfiguration from local configuration
+        streamer_config_->GetRtcConfig(config);
+    }
+    utils::PrintRTCConfig(config);
 
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(
         config, nullptr, nullptr, this);
@@ -219,6 +225,7 @@ bool Streamer::CreatePeerConnection() {
 }
 
 void Streamer::DeletePeerConnection() {
+    pc_config_.clear();
     adm_ = nullptr;
     peer_connection_ = nullptr;
     peer_connection_factory_ = nullptr;
@@ -324,12 +331,15 @@ void Streamer::OnInterestingUsage(int usage_pattern) {
 //
 // StreamerObserver implementation.
 //
-void Streamer::OnPeerConnected(int peer_id, const std::string& name) {
+void Streamer::OnPeerConnected(int peer_id,
+                               const SessionConfig::Config& config) {
     RTC_DCHECK(peer_id_ == -1);
     RTC_DCHECK(peer_id != -1);
-    RTC_LOG(INFO) << __FUNCTION__ << "Peer " << peer_id << ", " << name.c_str()
+    RTC_LOG(INFO) << __FUNCTION__ << "Peer " << peer_id
                   << " connected, trying to initialize streamer instance";
 
+    // keep the session config
+    pc_config_ = config;
     if (peer_connection_.get()) {
         RTC_LOG(LS_ERROR) << "We only support connecting to one peer at a time";
         return;
@@ -454,8 +464,8 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
                 this, webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
         }
 
-        // Update the max bitrate on RTPSender if there is no SDP negotiation
-        // of max bitrate between client.
+        // Update the max bitrate on RTPSender if there is no SDP
+        // negotiation of max bitrate between client.
         UpdateMaxBitrate();
         return;
     }
@@ -466,7 +476,7 @@ void Streamer::OnMessageSent(int err) {
     RTC_LOG(INFO) << __FUNCTION__ << "Message Sent result : " << err;
 }
 
-void Streamer::GetAudioOptionsFromConfig(cricket::AudioOptions& options) {
+void Streamer::GetAudioOptions(cricket::AudioOptions& options) {
     // media configuration reference
     ConfigMedia* config_media = ConfigMediaSingleton::Instance();
 
@@ -509,7 +519,7 @@ void Streamer::AddTracks() {
     if (streamer_config_->GetAudioEnable() == true) {
         cricket::AudioOptions options;
 
-        GetAudioOptionsFromConfig(options);
+        GetAudioOptions(options);
         rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
             peer_connection_factory_->CreateAudioTrack(
                 kAudioLabel,
@@ -558,9 +568,9 @@ void Streamer::OnFailure(webrtc::RTCError error) {
     RTC_LOG(LERROR) << ToString(error.type()) << ": " << error.message();
 }
 
-void Streamer::SendMessage(const std::string& json_object) {
-    RTC_LOG(INFO) << "Sending Message to Peer: " << json_object.c_str();
-    session_->SendMessageToPeer(peer_id_, json_object);
+void Streamer::SendMessage(const std::string& message) {
+    RTC_LOG(INFO) << "Sending Message to Peer: " << message;
+    session_->SendMessageToPeer(peer_id_, message);
 }
 
 void Streamer::ReportEvent(bool drop_connection, const std::string message) {

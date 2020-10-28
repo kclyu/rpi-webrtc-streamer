@@ -30,6 +30,7 @@
 #include "api/peer_connection_interface.h"
 #include "config_streamer.h"
 #include "pc/video_track_source.h"
+#include "session_config.h"
 #include "streamer_observer.h"
 
 class Streamer : public webrtc::PeerConnectionObserver,
@@ -93,7 +94,8 @@ class Streamer : public webrtc::PeerConnectionObserver,
     //
     // StreamerSessionObserver implementation.
     //
-    virtual void OnPeerConnected(int peer_id, const std::string& name) override;
+    virtual void OnPeerConnected(int peer_id,
+                                 const SessionConfig::Config& config) override;
     virtual void OnPeerDisconnected(int peer_id) override;
     virtual void OnMessageFromPeer(int peer_id,
                                    const std::string& message) override;
@@ -101,16 +103,17 @@ class Streamer : public webrtc::PeerConnectionObserver,
 
    private:
     // Send a message to the remote peer.
-    void SendMessage(const std::string& json_object);
+    void SendMessage(const std::string& message /* json format */);
     // Send a event message to the remote peer.
     void ReportEvent(bool drop_connection, const std::string message);
 
     // Change the max_bitrate in RtpSender
     void UpdateMaxBitrate();
     // audio options
-    void GetAudioOptionsFromConfig(cricket::AudioOptions& options);
+    void GetAudioOptions(cricket::AudioOptions& options);
 
     int peer_id_;
+    SessionConfig::Config pc_config_;
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
         peer_connection_factory_;

@@ -179,8 +179,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         RTC_LOG(LS_ERROR) << "Invalid Max Video Width or Height"
                           << "Width: " << max_width << "Height: " << max_height;
     int required_capacity = max_width * max_height * 0.85;
-    RTC_LOG(INFO) << "********************** EncodedImageBuffer capacity: "
-                  << required_capacity;
+    RTC_LOG(INFO) << "EncodedImageBuffer capacity: " << required_capacity;
     encoded_image_.SetEncodedData(
         EncodedImageBuffer::Create(required_capacity));
 
@@ -481,7 +480,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         encoded_image_.capture_time_ms_ = capture_time_ms;
 
         // encoded_image_.set_buffer(buf->data, buf->alloc_size);
-        memcpy((uint8_t *)encoded_image_.data(), buf->data, buf->length);
+        memcpy((uint8_t*)encoded_image_.data(), buf->data, buf->length);
         encoded_image_.set_size(buf->length);
         encoded_image_._frameType =
             (buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)

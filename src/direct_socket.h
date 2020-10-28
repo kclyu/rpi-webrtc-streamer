@@ -68,7 +68,7 @@ class DirectSocketServer : public SocketServerHelper,
     void OnRead(rtc::AsyncSocket* socket);
 
     // message handler interface
-    void OnMessage(rtc::Message* msg);
+    void OnMessage(rtc::Message* msg) override;
 
     std::unique_ptr<rtc::AsyncSocket> listener_;
     std::unique_ptr<rtc::AsyncSocket> direct_socket_;

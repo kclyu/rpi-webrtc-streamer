@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2020, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -27,44 +27,47 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <list>
+#ifndef SESSION_CONFIG_H_
+#define SESSION_CONFIG_H_
+
+#include <algorithm>
 #include <memory>
-#include <string>
+#include <vector>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/strings/json.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "utils_pc_config.h"
 
-#ifndef APP_CLINETINFO_H_
-#define APP_CLINETINFO_H_
-
-// AppClient does not have room concept and only one clinet connection..
-// so room_id and client_id will be held within AppClientInfo
-class AppClientInfo {
-    enum ClientState {
-        CLIENT_UNKNOWN = 0,
-        CLIENT_DISCONNECTED,
-        CLIENT_REGISTERED,
-        CLIENT_DISCONNECT_WAIT
+class SessionConfig {
+   public:
+    struct Config {
+        explicit Config(int id, const std::string &str_rtc_config)
+            : id_(id), rtc_config_(str_rtc_config) {}
+        Config() : id_(0) {}
+        virtual ~Config(){};
+        inline const std::string GetRtcConfig(void) const {
+            return rtc_config_.empty() == false ? rtc_config_ : "";
+        }
+        inline void clear() { rtc_config_.clear(); }
+        int id_;
+        std::string rtc_config_;
+		// TODO: need to implement video/audio config
     };
 
-   public:
-    explicit AppClientInfo();
-    ~AppClientInfo(){};
+    SessionConfig();
+    ~SessionConfig();
 
-    bool Register(int sockid, int room_id, int client_id);
-    bool Disconnect(int sockid);
-    bool GetSockId(int client_id, int& sockid);
-    bool IsRegistered(int sockid);
-    void Reset();
+    // Temporarily save the rtc config set by the manager through
+    // the websocket interface and make it available for use in the session.
+    // void Set(int id, utils::RTCConfiguration &pc_config);
+    void SetRtcConfig(int id, std::string str_rtc_config);
+    bool GetConfig(int id, Config &pc_config);
+    void Remove(int id);
 
    private:
     webrtc::Mutex mutex_;
-    // Status transition
-    ClientState state_;
-    int client_id_;
-    int room_id_;
-    int sockid_;
+    // Session RtcConfig
+    std::vector<Config> session_pc_config_;
 };
 
-#endif  // APP_CLINETINFO_H_
+#endif  // SESSION_CONFIG_H_

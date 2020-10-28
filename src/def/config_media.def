@@ -34,11 +34,11 @@
     _CR( FixedVideoResolution,      fixed_video_resolution,     false, std::string, \
             "640x480") \
     _CR_I( FixedVideoFps,           fixed_video_fps,            false, int, 30) \
-    _CR_B( AudioProcessing,         audio_processing_enable,    true, bool, false ) \
-    _CR_B( AudioEchoCancel,         audio_echo_cancellation,    true, bool, true ) \
-    _CR_B( AudioAutoGainControl,    audio_auto_gain_control,    true, bool, true ) \
-    _CR_B( AudioNoiseSuppression,   audio_noise_suppression,    true, bool, true ) \
-    _CR_B( AudioHighPassFilter,     audio_highpass_filter,      true, bool, true ) \
+    _CR_B( AudioProcessing,         audio_processing_enable,    false, bool, false ) \
+    _CR_B( AudioEchoCancel,         audio_echo_cancellation,    false, bool, true ) \
+    _CR_B( AudioAutoGainControl,    audio_auto_gain_control,    false, bool, true ) \
+    _CR_B( AudioNoiseSuppression,   audio_noise_suppression,    false, bool, true ) \
+    _CR_B( AudioHighPassFilter,     audio_highpass_filter,      false, bool, true ) \
     _CR_B( AudioJitterBufferEnable, audio_jitter_buffer_enable, false, bool, false ) \
     _CR_I( AudioJitterBufferMaxPackets, audio_jitter_buffer_max_packets, false, int, 75 ) \
     _CR_B( AudioJitterBufferFastAccel, audio_jitter_buffer_fast_accel, false, bool, true ) \
