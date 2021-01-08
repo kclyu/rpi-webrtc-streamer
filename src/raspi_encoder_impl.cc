@@ -171,14 +171,9 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     }
 
     // Find the largest video resolution among the resolutions registered
-    // in the video resolution, and set the maximum EncodedImageBufer capacity
-    // to the frame buffer.
-    int max_width = 0, max_height = 0;
-    config_media_->GetMaxVideoResolution(max_width, max_height);
-    if (max_width * max_height == 0)
-        RTC_LOG(LS_ERROR) << "Invalid Max Video Width or Height"
-                          << "Width: " << max_width << "Height: " << max_height;
-    int required_capacity = max_width * max_height * 0.85;
+    // in the video resolution, and set the recommended EncodedImageBufer
+    // capacity to the frame buffer.
+    size_t required_capacity = mmal_encoder_->GetBufferSize();
     RTC_LOG(INFO) << "EncodedImageBuffer capacity: " << required_capacity;
     encoded_image_.SetEncodedData(
         EncodedImageBuffer::Create(required_capacity));
@@ -420,13 +415,13 @@ void RaspiEncoderImpl::DrainThread(void* obj) {
 }
 
 bool RaspiEncoderImpl::DrainProcess() {
-    MMAL_BUFFER_HEADER_T* buf = nullptr;
+    FrameBuffer* buf = nullptr;
 
     if (drainQuit_ == true) return false;  // quit drain thread
 
     //  The GetEncodedFrame function will wait in block state
     //  until there is a new buf or timeout.
-    buf = mmal_encoder_->GetEncodedFrame();
+    buf = mmal_encoder_->ReadFront();
 
     // encoded_image_callback must be registered before pass
     // the frame to WebRTC native stack.
@@ -435,34 +430,27 @@ bool RaspiEncoderImpl::DrainProcess() {
     // native stack, and the Motion Vector(CODECSIDEINFO) is not
     // transmitted.
     //
-    // TODO: if encoded_size is zero, we need to reset encoder itself
-    if (encoded_image_callback_ && buf && buf->length > 0 &&
-        !(buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO)
-        // && frame_flow_.CheckKeyframe(buf->flags &
-        //                           MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
-    ) {
+    if (encoded_image_callback_ && buf && !buf->isMotionVector()) {
         CodecSpecificInfo codec_specific;
         int qp;
 
         // Parsing h264 frame
-        h264_bitstream_parser_.ParseBitstream(buf->data, buf->length);
+        h264_bitstream_parser_.ParseBitstream(buf->data(), buf->length());
         if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
             encoded_image_.qp_ = qp;
         };
 
         // Search the NAL unit in the stream
         const std::vector<H264::NaluIndex> nalu_indexes =
-            H264::FindNaluIndices(buf->data, buf->length);
+            H264::FindNaluIndices(buf->data(), buf->length());
 
         if (nalu_indexes.empty()) {
             // could not find the nal unit in the buffer, so do nothing.
             RTC_LOG(INFO) << "NAL unit length is zero!!!";
-            if (buf) mmal_encoder_->ReleaseFrame(buf);
+            RTC_LOG(INFO) << "Frame length : " << buf->length()
+                          << ", Buffer flag: " << buf->toString();
             return true;
         };
-
-        RTC_DCHECK_GT(buf->alloc_size, buf->length)
-            << "Internal Error, Frame Queue Bufer size invalid";
 
         // In native code, there is DCHECK-related logic for capture_time
         // and ntp_time. Currently, RWS does not use video frame capture and
@@ -480,12 +468,11 @@ bool RaspiEncoderImpl::DrainProcess() {
         encoded_image_.capture_time_ms_ = capture_time_ms;
 
         // encoded_image_.set_buffer(buf->data, buf->alloc_size);
-        memcpy((uint8_t*)encoded_image_.data(), buf->data, buf->length);
-        encoded_image_.set_size(buf->length);
-        encoded_image_._frameType =
-            (buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME)
-                ? VideoFrameType::kVideoFrameKey
-                : VideoFrameType::kVideoFrameDelta;
+        memcpy((uint8_t*)encoded_image_.data(), buf->data(), buf->length());
+        encoded_image_.set_size(buf->length());
+        encoded_image_._frameType = buf->isKeyFrame()
+                                        ? VideoFrameType::kVideoFrameKey
+                                        : VideoFrameType::kVideoFrameDelta;
 
         // SimulCast is not implemented
         encoded_image_.SetSpatialIndex(0);
@@ -505,10 +492,8 @@ bool RaspiEncoderImpl::DrainProcess() {
         if (result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED) {
             RTC_LOG(LS_ERROR) << "Error in passng EncodedImage";
         }
-        quality_config_.ReportFrame(buf->length);
+        quality_config_.ReportFrame(buf->length());
     }
-
-    if (buf) mmal_encoder_->ReleaseFrame(buf);
     return true;
 }
 

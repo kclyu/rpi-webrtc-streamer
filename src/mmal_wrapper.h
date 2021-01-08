@@ -30,9 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef __MMAL_WRAPPER_H__
 #define __MMAL_WRAPPER_H__
 
-#include <mutex>
-
 #include "config_media.h"
+#include "frame_queue.h"
 #include "mmal_video.h"
 #include "rtc_base/event.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -41,62 +40,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace webrtc {
 
-#define FRAME_BUFFER_SIZE 65536 * 3
-#define FRAME_QUEUE_LENGTH 3
-
-////////////////////////////////////////////////////////////////////////////////////////
-//
-// Frame Queue
-//
-////////////////////////////////////////////////////////////////////////////////////////
-
-class FrameQueue : public rtc::Event {
-   public:
-    FrameQueue();
-    ~FrameQueue();
-    bool Init();
-    void Reset();
-    bool Isinitialized();
-
-    int Length();
-
-    // Obtain a frame from the encoded frame queue.
-    // If there is no frame in FrameQueue, it will be blocked for a certain
-    // period and return nullptr when timeout is reached. If there is a frame,
-    // it returns the corresponding frame.
-    MMAL_BUFFER_HEADER_T *GetEncodedFrame();
-
-    // It returns the used Encoded Frame to the frame pool of QueueFrame.
-    void ReleaseFrame(MMAL_BUFFER_HEADER_T *buffer);
-
-   protected:
-    // Make the frame uploaded from MMAL into one H.264 frame,
-    // and buffering it in the encoded frame of FrameQueue.
-    void HandlingMMALFrame(MMAL_BUFFER_HEADER_T *buffer);
-
-   private:
-    static int kEventWaitPeriod;  // minimal wait period between frame
-
-    int num_, size_;
-
-    MMAL_QUEUE_T *encoded_frame_queue_;
-    MMAL_POOL_T *pool_internal_;
-    uint8_t *keyframe_buf_;
-    uint8_t *frame_buf_;
-    int frame_buf_pos_;
-    int frame_segment_cnt_;
-    bool inited_;
-
-    uint32_t frame_count_;
-    uint32_t frame_drop_;
-    uint32_t frame_queue_drop_;
-};
-
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // Encoder Init Delay
 //
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 //
 // PASS  : Initial Status
@@ -138,11 +86,11 @@ struct EncoderDelayedInit {
     DelayInitTask *delayinit_task_;
 };
 
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // MMAL Encoder Wrapper
 //
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 class MMALEncoderWrapper : public FrameQueue {
    public:
     MMALEncoderWrapper();
@@ -210,10 +158,14 @@ class MMALEncoderWrapper : public FrameQueue {
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
     static void BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
+    size_t GetBufferSize() const;
+    size_t GetBufferNum() const;
 
     EncoderDelayedInit encoder_initdelay_;
 
    private:
+    size_t GetRecommandedBufferSize(MMAL_PORT_T *port);
+    size_t GetRecommandedBufferNum(MMAL_PORT_T *port);
     void CheckCameraConfig();
     bool mmal_initialized_;
 
@@ -227,6 +179,8 @@ class MMALEncoderWrapper : public FrameQueue {
 
     ConfigMedia *config_media_;
     webrtc::Mutex mutex_;
+    size_t recommanded_buffer_size_;
+    size_t recommanded_buffer_num_;
     RTC_DISALLOW_COPY_AND_ASSIGN(MMALEncoderWrapper);
 };
 

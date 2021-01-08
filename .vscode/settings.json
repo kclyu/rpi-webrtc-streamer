@@ -1,11 +1,13 @@
 {
   "files.exclude": {
     "**/.ccls-cache/**": true,
+    "**/.DS_Store": false,
+    "**/*.dwo": true,
+    "**/*.o": true,
+    "**/webrtc/out/**": true,
     "${workspaceFolder}/backup/**": true,
     "${workspaceFolder}/log/**": true,
-    "${workspaceFolder}/src/OLD/**": true,
-    "**/*.dwo": true,
-    "**/*.o": true
+    "${workspaceFolder}/src/OLD/**": true
   },
   "C_Cpp.clang_format_path": "/usr/bin/clang-format-9",
   "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 4 }",
@@ -18,6 +20,12 @@
   },
   "C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json",
   "editor.formatOnSave": true,
-  "C_Cpp.errorSquiggles": "Disabled",
-  "C_Cpp.default.intelliSenseMode": "gcc-x64"
+  "C_Cpp.default.intelliSenseMode": "gcc-x64",
+  "search.exclude": {
+    "**/webrtc/**/*.c": true,
+    "**/webrtc/**/*.cc": true
+  },
+  "files.watcherExclude": {
+    "**/webrtc/src/**.cc": true
+  }
 }

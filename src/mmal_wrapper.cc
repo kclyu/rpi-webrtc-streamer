@@ -39,170 +39,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace webrtc {
 
-////////////////////////////////////////////////////////////////////////////////////////
-//
-// Frame Queue
-//
-////////////////////////////////////////////////////////////////////////////////////////
-int FrameQueue::kEventWaitPeriod = 30;  // minimal wait period between frame
-
-FrameQueue::FrameQueue()
-    : Event(false, false),
-      num_(FRAME_QUEUE_LENGTH),
-      size_(FRAME_BUFFER_SIZE),
-      encoded_frame_queue_(nullptr),
-      pool_internal_(nullptr),
-      keyframe_buf_(nullptr),
-      frame_buf_(nullptr),
-      frame_buf_pos_(0),
-      frame_segment_cnt_(0),
-      inited_(false),
-      frame_count_(0),
-      frame_drop_(0),
-      frame_queue_drop_(0) {}
-
-FrameQueue::~FrameQueue() {
-    mmal_queue_destroy(encoded_frame_queue_);
-    mmal_pool_destroy(pool_internal_);
-    delete frame_buf_;
-}
-
-bool FrameQueue::Isinitialized() { return inited_; }
-
-bool FrameQueue::Init() {
-    if (inited_ == true) return true;
-    if ((pool_internal_ = mmal_pool_create(num_, size_)) == NULL) {
-        RTC_LOG(LS_ERROR) << "FrameQueue internal pool creation failed";
-        return false;
-    };
-
-    if ((encoded_frame_queue_ = mmal_queue_create()) == NULL) {
-        RTC_LOG(LS_ERROR) << "FrameQueue queue creation failed";
-        return false;
-    };
-
-    // temporary buffer to assemble frame from encoder
-    frame_buf_ = new uint8_t[size_];
-    inited_ = true;
-
-    return true;
-}
-
-void FrameQueue::Reset() {
-    MMAL_BUFFER_HEADER_T *buf;
-    int len = mmal_queue_length(encoded_frame_queue_);
-
-    for (int i = 0; i < len; i++) {
-        buf = mmal_queue_get(encoded_frame_queue_);
-        mmal_buffer_header_release(buf);
-    };
-    frame_buf_pos_ = 0;
-    frame_segment_cnt_ = 0;
-    inited_ = true;
-
-    RTC_DCHECK_EQ(mmal_queue_length(encoded_frame_queue_), 0);
-    RTC_DCHECK_EQ(mmal_queue_length(pool_internal_->queue), FRAME_QUEUE_LENGTH);
-}
-
-int FrameQueue::Length() { return mmal_queue_length(encoded_frame_queue_); }
-
-void FrameQueue::ReleaseFrame(MMAL_BUFFER_HEADER_T *buffer) {
-    RTC_DCHECK(inited_);
-    mmal_buffer_header_release(buffer);
-}
-
-MMAL_BUFFER_HEADER_T *FrameQueue::GetEncodedFrame() {
-    RTC_DCHECK(inited_);
-    if (mmal_queue_length(encoded_frame_queue_) == 0)
-        Wait(kEventWaitPeriod);  // Waiting for Event or Timeout
-
-    if (mmal_queue_length(encoded_frame_queue_) == 0) return nullptr;
-    return mmal_queue_get(encoded_frame_queue_);
-}
-
-void FrameQueue::HandlingMMALFrame(MMAL_BUFFER_HEADER_T *buffer) {
-    RTC_DCHECK(inited_);
-    RTC_DCHECK(buffer != NULL);
-    RTC_DCHECK_GE((mmal_queue_length(encoded_frame_queue_) +
-                   mmal_queue_length(pool_internal_->queue)),
-                  FRAME_QUEUE_LENGTH - 1);
-
-    // it should be same as FRAME_QUEUE_LENGTH except one frame buffer of pool
-    // in the encoder there is something in the buffer
-    if (buffer->length < FRAME_BUFFER_SIZE && buffer->length > 0) {
-        // there is no end of frame mark in this buffer,
-        // so keep it in the internal buffer
-        if (!(buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END) ||
-            (buffer->flags & MMAL_BUFFER_HEADER_FLAG_CONFIG)) {
-            RTC_DCHECK(frame_buf_pos_ < size_);
-            mmal_buffer_header_mem_lock(buffer);
-            // save partial frame data to assemble frame at next time
-            memcpy(frame_buf_ + frame_buf_pos_, buffer->data, buffer->length);
-            frame_buf_pos_ += buffer->length;
-            frame_segment_cnt_++;
-            mmal_buffer_header_mem_unlock(buffer);
-        }
-        // end of frame marked
-        else if (buffer->flags & MMAL_BUFFER_HEADER_FLAG_FRAME_END ||
-                 buffer->flags &
-                     MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) {  // Motion Vector
-            if ((int)(frame_buf_pos_ + buffer->length) >= size_) {
-                RTC_LOG(INFO) << "frame_buf_pos : " << frame_buf_pos_
-                              << ", buffer length: " << buffer->length;
-            };
-            RTC_DCHECK((int)(frame_buf_pos_ + buffer->length) < size_);
-
-            // getting one frame buffer from pool
-            MMAL_BUFFER_HEADER_T *frame = mmal_queue_get(pool_internal_->queue);
-            if (frame) {  // frame buffer is available
-                mmal_buffer_header_mem_lock(buffer);
-                // copy the previously saved frame at first
-                if (frame_buf_pos_) {
-                    memcpy(frame->data, frame_buf_, frame_buf_pos_);
-                }
-                memcpy(frame->data + frame_buf_pos_, buffer->data,
-                       buffer->length);
-
-                // copying meta data to frame
-                mmal_buffer_header_copy_header(frame, buffer);
-                if (frame_buf_pos_) {
-                    frame->length += frame_buf_pos_;
-                }
-
-                mmal_buffer_header_mem_unlock(buffer);
-
-                // reset internal buffer pointer
-                frame_segment_cnt_ = frame_buf_pos_ = 0;
-                // one frame done
-                mmal_queue_put(encoded_frame_queue_, frame);
-
-                Set();  // Event set to wake up DrainThread
-            } else {
-                frame_drop_++;
-                RTC_LOG(INFO) << "No availabe frame buffer in queue pool, "
-                                 "frame dropped!: "
-                              << frame_drop_;
-            }
-        } else {
-            char buffer_log[256];
-            dump_buffer_flag(buffer_log, 256, buffer->flags);
-            RTC_LOG(INFO) << "**** MMAL Frame : " << buffer_log;
-        }
-
-        // frame count statistics
-        frame_count_++;
-    } else {
-        RTC_LOG(LS_ERROR) << "**** MMAL Frame size error (buffer size: "
-                          << FRAME_BUFFER_SIZE
-                          << "), real frame size : " << buffer->length;
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // MMAL Encoder Delayed Reinit
 //
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 static const int kDelayInitialDurationMs = 4000;
 static const int kDelayTaskInterval = 100;
 
@@ -344,11 +185,11 @@ bool EncoderDelayedInit::UpdateStatus() {
     return true;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // MMAL Encoder Wrapper
 //
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 MMALEncoderWrapper::MMALEncoderWrapper()
     : encoder_initdelay_(this),
@@ -376,6 +217,14 @@ int MMALEncoderWrapper::GetWidth() { return state_.width; }
 int MMALEncoderWrapper::GetHeight() { return state_.height; }
 
 bool MMALEncoderWrapper::IsInited() { return mmal_initialized_; }
+
+size_t MMALEncoderWrapper::GetBufferSize() const {
+    return recommanded_buffer_size_;
+}
+
+size_t MMALEncoderWrapper::GetBufferNum() const {
+    return recommanded_buffer_num_;
+}
 
 void MMALEncoderWrapper::SetVideoRotation(int rotation) {
     state_.camera_parameters.rotation = rotation;
@@ -481,7 +330,6 @@ void MMALEncoderWrapper::SetMediaConfigParams() {
     // reset encoder setting to default state
     if (mmal_initialized_ == false) {
         //  state_ resetting to default is done only if the Encoder is not
-        //  inited.
         default_status(&state_);
     };
     // Setting Camera Number
@@ -606,8 +454,13 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
         encoder_output_port_->userdata = (struct MMAL_PORT_USERDATA_T *)this;
         if (state_.verbose) RTC_LOG(INFO) << "Enabling encoder output port";
 
-        // FrameQueue Init
-        Init();
+        // Init Frame Queue with recommended frame buffer size
+        recommanded_buffer_size_ =
+            GetRecommandedBufferSize(encoder_output_port_);
+        recommanded_buffer_num_ = GetRecommandedBufferNum(encoder_output_port_);
+        RTC_LOG(INFO) << "Queue Buffer size: " << recommanded_buffer_size_
+                      << ", Buffer num: " << recommanded_buffer_num_;
+        Init(recommanded_buffer_num_, recommanded_buffer_size_);
 
         // Enable the encoder output port and tell it its callback function
         status = mmal_port_enable(encoder_output_port_, BufferCallback);
@@ -759,8 +612,11 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate,
         encoder_output_port_->userdata = (struct MMAL_PORT_USERDATA_T *)this;
         if (state_.verbose) RTC_LOG(INFO) << "Enabling encoder output port";
 
-        // FrameQueue Init
-        Init();
+        recommanded_buffer_size_ =
+            GetRecommandedBufferSize(encoder_output_port_);
+        recommanded_buffer_num_ = GetRecommandedBufferNum(encoder_output_port_);
+        // Init Frame Queue with recommended frame buffer size
+        Init(recommanded_buffer_num_, recommanded_buffer_size_);
 
         // Enable the encoder output port and tell it its callback function
         status = mmal_port_enable(encoder_output_port_, BufferCallback);
@@ -779,7 +635,7 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate,
 
 bool MMALEncoderWrapper::IsDigitalZoomActive() {
     if (state_.camera_parameters.roi.w == MAX_VIDEO_ROI_WIDTH &&
-        state_.camera_parameters.roi.h == MAX_VIDEO_ROI_HEIGHT )
+        state_.camera_parameters.roi.h == MAX_VIDEO_ROI_HEIGHT)
         return true;  // using 1.0/1.0 width/height
     return false;
 }
@@ -812,6 +668,25 @@ void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port,
                                         MMAL_BUFFER_HEADER_T *buffer) {
     reinterpret_cast<MMALEncoderWrapper *>(port->userdata)
         ->OnBufferCallback(port, buffer);
+}
+
+size_t MMALEncoderWrapper::GetRecommandedBufferSize(MMAL_PORT_T *port) {
+    RTC_LOG(INFO) << "MMAL Port Recommanded buffer size: "
+                  << port->buffer_size_recommended;
+    // normally, it required  the doube of port recommanded size
+    // for safety,,
+    return port->buffer_size_recommended * 3;
+}
+
+size_t MMALEncoderWrapper::GetRecommandedBufferNum(MMAL_PORT_T *port) {
+    RTC_LOG(INFO) << "MMAL Port Recommanded buffer size: "
+                  << port->buffer_num_recommended;
+    // normally, it required  the doube of port recommanded size
+    // for safety,,
+    if (state_.inlineMotionVectors)
+        return port->buffer_num_recommended * 3;
+    else
+        return port->buffer_num_recommended * 3 * 2;
 }
 
 bool MMALEncoderWrapper::UninitEncoder() {
@@ -861,7 +736,7 @@ void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port,
     PORT_USERDATA *pData = (PORT_USERDATA *)port->userdata;
 
     if (pData) {
-        HandlingMMALFrame(buffer);
+        WriteBack(buffer);
     } else {
         vcos_log_error("Received a encoder buffer callback with no state");
     }
@@ -1028,11 +903,11 @@ void MMALEncoderWrapper::CheckCameraConfig() {
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // MMALWrapper Sigletone interface
 //
-////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 MMALEncoderWrapper *MMALWrapper::mmal_wrapper_ = nullptr;
 std::once_flag MMALWrapper::singleton_flag_;

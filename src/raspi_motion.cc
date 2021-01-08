@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 #include "config_motion.h"
-#include "mmal_video.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
@@ -258,7 +257,7 @@ void RaspiMotion::DrainThread(void *obj) {
 
 bool RaspiMotion::DrainProcess() {
     uint64_t current_timestamp, timestamp;
-    MMAL_BUFFER_HEADER_T *buf = nullptr;
+    webrtc::FrameBuffer *buf = nullptr;
     size_t length;
 
     if (motion_drain_quit_ == true) {
@@ -266,33 +265,31 @@ bool RaspiMotion::DrainProcess() {
     };
 
     current_timestamp = clock_->TimeInMicroseconds();
-    buf = mmal_encoder_->GetEncodedFrame();
-    if (buf && buf->length > 0) {
-        bool is_keyframe = buf->flags & MMAL_BUFFER_HEADER_FLAG_KEYFRAME;
+    buf = mmal_encoder_->ReadFront();
+    if (buf && buf->length() > 0) {
+        bool is_keyframe = buf->isKeyFrame();
 
-        if (buf->flags & MMAL_BUFFER_HEADER_FLAG_CODECSIDEINFO) {
+        if (buf->isMotionVector()) {
             // queuing the motion vector for file writer
-            if (motion_file_->ImvQueuing(buf->data, buf->length, &length,
+            if (motion_file_->ImvQueuing(buf->data(), buf->length(), &length,
                                          is_keyframe) == false) {
                 RTC_LOG(LS_ERROR) << "Failed to WriteBack in MV queue ";
             };
 
             // queuing motion vector for motion analysis
-            if (mv_shared_buffer_->WriteBack(buf->data, buf->length, &length) ==
-                false) {
+            if (mv_shared_buffer_->WriteBack(buf->data(), buf->length(),
+                                             &length) == false) {
                 RTC_LOG(LS_ERROR) << "Faild to queue in MV shared buffer";
             };
             Set();  // Event Set to wake up motion vector process
-        } else if (buf->flags & MMAL_BUFFER_HEADER_FLAG_FRAME) {
-            if (motion_file_->FrameQueuing(buf->data, buf->length, &length,
+        } else if (buf->isFrame()) {
+            if (motion_file_->FrameQueuing(buf->data(), buf->length(), &length,
                                            is_keyframe) == false) {
                 RTC_LOG(LS_ERROR) << "Failed to WriteBack in frame queue ";
             };
-            RTC_DCHECK(buf->length == length);
+            RTC_DCHECK(buf->length() == length);
         } else {
-            RTC_LOG(LS_ERROR) << "**************************************";
-            dump_mmal_buffer(0, buf);
-            RTC_LOG(LS_ERROR) << "**************************************";
+            RTC_LOG(LS_ERROR) << "Motion Buffer error: " << buf->toString();
         }
     }
 
@@ -300,7 +297,6 @@ bool RaspiMotion::DrainProcess() {
     if (timestamp - current_timestamp > kDrainProcessDelayMaximumInMicro)
         RTC_LOG(LS_ERROR) << "Frame DrainProcess Time : "
                           << timestamp - current_timestamp;
-    if (buf) mmal_encoder_->ReleaseFrame(buf);
     // TODO: if encoded_size is zero, we need to reset encoder itself
     return true;
 }

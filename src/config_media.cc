@@ -223,6 +223,11 @@ void ConfigMedia::GetMaxVideoResolution(int &width, int &height) const {
         max_width = fixed_resolution_.width_;
         max_height = fixed_resolution_.height_;
     }
+    if (max_width * max_height == 0) {
+        RTC_LOG(LS_ERROR) << "One of height/height is zero";
+        max_width = 640;
+        max_height = 480;  // using 640x480 as default resolution
+    }
     RTC_LOG(INFO) << "Max Resolution : " << max_width << "x" << max_height;
     width = max_width;
     height = max_height;
