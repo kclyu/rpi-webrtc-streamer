@@ -481,33 +481,23 @@ void Streamer::GetAudioOptions(cricket::AudioOptions& options) {
     ConfigMedia* config_media = ConfigMediaSingleton::Instance();
 
     if (config_media->GetAudioProcessing() == true) {
-        if (config_media->GetAudioEchoCancel() == true)
-            options.echo_cancellation = absl::optional<bool>(true);
-        if (config_media->GetAudioAutoGainControl() == true)
-            options.auto_gain_control = absl::optional<bool>(true);
-        if (config_media->GetAudioNoiseSuppression() == true)
-            options.noise_suppression = absl::optional<bool>(true);
-        if (config_media->GetAudioHighPassFilter() == true)
-            options.highpass_filter = absl::optional<bool>(true);
+        options.echo_cancellation = config_media->GetAudioEchoCancel();
+        options.auto_gain_control = config_media->GetAudioAutoGainControl();
+        options.noise_suppression = config_media->GetAudioNoiseSuppression();
+        options.highpass_filter = config_media->GetAudioHighPassFilter();
     }
     if (config_media->GetAudioJitterBufferEnable() == true) {
         options.audio_jitter_buffer_max_packets =
-            absl::optional<int>(config_media->GetAudioJitterBufferMaxPackets());
+            config_media->GetAudioJitterBufferMaxPackets();
         options.audio_jitter_buffer_min_delay_ms =
-            absl::optional<int>(config_media->GetAudioJitterBufferMinDelayMs());
-
+            config_media->GetAudioJitterBufferMinDelayMs();
         if (config_media->GetAudioJitterBufferFastAccel() == true)
-            options.audio_jitter_buffer_fast_accelerate =
-                absl::optional<bool>(true);
+            options.audio_jitter_buffer_fast_accelerate = true;
         if (config_media->GetAudioJitterBufferEnableRtx() == true)
-            options.audio_jitter_buffer_enable_rtx_handling =
-                absl::optional<bool>(true);
+            options.audio_jitter_buffer_enable_rtx_handling = true;
     }
-    if (config_media->GetAudioExperimentalAgc() == true)
-        options.experimental_agc = absl::optional<bool>(true);
-    if (config_media->GetAudioExperimentalNs() == true)
-        options.experimental_ns = absl::optional<bool>(true);
-
+    options.experimental_agc = config_media->GetAudioExperimentalAgc();
+    options.experimental_ns = config_media->GetAudioExperimentalNs();
     RTC_LOG(INFO) << "Media Config Audio options: " << options.ToString();
 }
 
