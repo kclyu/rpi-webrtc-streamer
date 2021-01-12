@@ -3,6 +3,7 @@
 #   is_debug = false
 # See "gn args <out_dir> --list" for available build arguments.
 
+#  
 #
 # The following two flags are used for debugging.
 #
@@ -34,37 +35,39 @@ arm_use_thumb=false
 arm_fpu="vfp"
 arm_optionally_use_neon=false
 arm_tune="arm1176jz-s"
-
 rtc_build_with_neon=false
 
 #
-# Setting for removing component for desktop related stuffs
-use_ozone=true
+# build option for third party package of WebRTC native code
+rtc_use_pipewire=false
 libyuv_disable_jpeg=true
 use_system_libjpeg=true
-rtc_use_x11=false
-
-use_aura=false
-libyuv_include_tests=false
+# disabled
 libcxx_natvis_include=false
-use_partition_alloc=false
-use_allocator_shim=false
-rtc_use_pipewire=false
+libyuv_include_tests=false
+rtc_enable_protobuf=false
+ffmpeg_use_atomics_fallback=false
 
 #
+# codec config options
+rtc_use_h264=true
+rtc_include_pulse_audio=false
+rtc_libvpx_build_vp9=false
 # do not use libaom(AV1 codec)
 enable_libaom=false
-# not working removing vpx configuration
-#rtc_build_libvpx=false  # do not build libvpx
-#rtc_libvpx_build_vp9=false  # do not build VP9
-rtc_use_h264=true
-use_openh264=false
 
 #
-use_custom_libcxx=false
+# WebRTC native package code build options which related to 
+# target system envirionment
+# 
+rtc_use_x11=false
+rtc_use_gtk=false
+use_ozone=true
+use_aura=false
+use_partition_alloc=false
+use_allocator_shim=false
+use_custom_libcxx=false    
 is_chrome_branded=true
 rtc_include_tests=false
-rtc_include_pulse_audio=false
-rtc_enable_protobuf=false
 treat_warnings_as_errors=false
 
