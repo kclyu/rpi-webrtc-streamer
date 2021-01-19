@@ -1,8 +1,8 @@
 /*
  * Includes for broadcom and ilclient headers wrapped in C style.
  */
-#ifndef __MMAL_VIDEO_H__
-#define __MMAL_VIDEO_H__
+#ifndef MMAL_VIDEO_H_
+#define MMAL_VIDEO_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -225,4 +225,4 @@ MMAL_STATUS_T check_installed_camera(void);
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif  // __MMAL_VIDEO_H__
+#endif  // MMAL_VIDEO_H_

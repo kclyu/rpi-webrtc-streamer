@@ -1,0 +1,45 @@
+
+// Configuration Row Macro
+//
+// CR   : String
+// CR_I : Integer Type
+// CR_B : Boolean Type
+// CR_L : List Type ( string but need speical list parsing function )
+//
+// Configuration Rearod Argument
+//
+// Argument Index:
+//   0 :  confiugration item name
+//   1 :  string to be used as config name in config file
+//   2 :  whether the json message can be modified from remote.
+//   3 :  define cpp type of configuration value
+//   4 :  default value
+//
+
+#define STREAMER_CONFIG_ROW_LIST \
+	_CR_B(WebSocketEnable, 	websocket_enable, 	false, bool, true) \
+	_CR_I(WebSocketPort, 	websocket_port, 	false, int, 8889) \
+	_CR_I(DirectSocketPort, direct_socket_port, false, int, 8888) \
+	_CR_B(DirectSocketEnable, direct_socket_enable, false, bool, false) \
+	_CR(MediaConfig, 		media_config, 		false, std::string, "etc/media_config.conf") \
+	_CR(MotionConfig, 		motion_config, 		false, std::string, "etc/motion_config.conf") \
+	_CR(FieldTrials, 		fieldtrials, 		false, std::string, "") \
+	_CR_B(DisableLogBuffering, disable_log_buffering, false, bool, true) \
+	_CR_B(LwsDebugEnable, 	libwebsocket_debug, false, bool, false) \
+	_CR_B(AudioEnable, 		audio_enable, 		false, bool, false) \
+	_CR_B(VideoEnable, 		video_enable, 		false, bool, true) \
+	_CR_B(SrtpEnable, 		srtp_enable, 		false, bool, true) \
+	_CR(WebRootPath,		web_root, 			false, std::string, INSTALL_DIR "/web-root") \
+	_CR(RwsWsUrlPath,		rws_ws_url, 		false, std::string, "/rws/ws")
+
+// DO actual macro expansion
+STREAMER_CONFIG_ROW_LIST
+
+// Removing configuraiton row definition macros
+#undef _CR
+#undef _CR_B
+#undef _CR_I
+
+#undef STREAMER_CONFIG_ROW_LIST
+
+

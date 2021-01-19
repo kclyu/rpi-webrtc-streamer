@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef UTILS_PC_STRINGS_H_
-#define UTILS_PC_STRINGS_H_
+#ifndef STREAMER_UTILS_PC_STRINGS_H_
+#define STREAMER_UTILS_PC_STRINGS_H_
 
 #pragma once
 
@@ -66,4 +66,4 @@ std::string TlsCertPolicyToString(const TlsCertPolicy type,
 
 };  // namespace utils
 
-#endif  // UTILS_PC_STRINGS_H_
+#endif  // STREAMER_UTILS_PC_STRINGS_H_

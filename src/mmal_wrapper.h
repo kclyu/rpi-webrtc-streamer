@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __MMAL_WRAPPER_H__
-#define __MMAL_WRAPPER_H__
+#ifndef MMAL_WRAPPER_H_
+#define MMAL_WRAPPER_H_
 
 #include "config_media.h"
 #include "frame_queue.h"
@@ -202,4 +202,4 @@ class MMALWrapper {
 
 }  // namespace webrtc
 
-#endif  // __MMAL_WRAPPER_H__
+#endif  // MMAL_WRAPPER_H_

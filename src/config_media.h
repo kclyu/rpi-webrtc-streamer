@@ -83,16 +83,17 @@ class ConfigMedia {
         bool isValid(void);
     };
 
-    bool Load(std::string config_filename);
+    bool Load(std::string config_filename, const bool dump_config = false);
     bool Save(void);
-    bool ConfigFromJson(const std::string &config_message,
-                        std::string *config_updated, std::string &error);
-    bool ConfigToJson(std::string &config_message);
-    void LoadConfigWithDefault(void);
+    bool FromJson(const std::string &config_message,
+                  std::string *config_updated, std::string &error);
+    bool ToJson(std::string &config_message);
+    void Reset(void);
     void DumpConfig(void);
     std::list<VideoResolution> GetVideoResolutionList();
     bool GetFixedVideoResolution(int &width, int &height);
     void GetMaxVideoResolution(int &width, int &height) const;
+    size_t GetRecommandedBufferSize() const;
     ConfigMedia::VideoRoi &GetVideoROI(void);
 
     // The rtc_config configured through the websocket interface can be used
@@ -101,30 +102,24 @@ class ConfigMedia {
     bool GetSessionRtcConfig(const int sockid, const std::string &rtc_config);
     bool RemoveSessionRtcConfig(const int sockid);
 
+// define expasion macros for Getter and Setter
+//      type Get##name();
+//      type Set##name(config_type value);
+
 // define expasion macros for Getter
 //      type GetName();
 #define _CR(name, config_var, config_remote_access, config_type, \
             config_default)                                      \
-    config_type Get##name(void);
+    config_type Get##name(void) const;
 #define _CR_L(name, config_var, config_remote_access, config_type, \
               config_default)
 #define _CR_B _CR
 #define _CR_I _CR
 
 #include "def/config_media.def"
-    // define config_media prototype
-    MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
 
 // define expasion macros for Setter
 // bool type:
-//      bool SetName(bool);
-//      bool validate_value__config_var(bool,bool)
 #define _CR(name, config_var, config_remote_access, config_type, \
             config_default)                                      \
     config_type config_var;                                      \
@@ -137,14 +132,6 @@ class ConfigMedia {
 #define _CR_I _CR
 
 #include "def/config_media.def"
-    // define config_media prototype
-    MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
 
    private:
     std::unique_ptr<rtc::OptionsFile> media_optionfile_;

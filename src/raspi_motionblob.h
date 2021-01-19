@@ -73,7 +73,8 @@ struct ActiveBlob {
 
 class RaspiMotionBlob {
    public:
-    explicit RaspiMotionBlob(int mvx, int mvy);
+    explicit RaspiMotionBlob(int mvx, int mvy, float blob_cancel_threshold,
+                             int blob_tracking_threshold);
     ~RaspiMotionBlob();
 
     bool UpdateBlob(uint8_t *motion, size_t size);

@@ -107,10 +107,11 @@ static const uint8_t BLOB_ID_CRUMBS = 1;    // used for bread crumbs
 static const uint8_t BLOB_ID_MIN = 2;
 static const uint8_t BLOB_ID_MAX = 255;
 
-RaspiMotionBlob::RaspiMotionBlob(int mvx, int mvy) : mvx_(mvx), mvy_(mvy) {
-    blob_cancel_threshold_ =
-        (mvx_ * mvy_ * config_motion::blob_cancel_threshold) / 100;
-    blob_tracking_threshold_ = config_motion::blob_tracking_threshold;
+RaspiMotionBlob::RaspiMotionBlob(int mvx, int mvy, float blob_cancel_threshold,
+                                 int blob_tracking_threshold)
+    : mvx_(mvx), mvy_(mvy) {
+    blob_cancel_threshold_ = (mvx_ * mvy_ * blob_cancel_threshold) / 100;
+    blob_tracking_threshold_ = blob_tracking_threshold;
     RTC_LOG(INFO) << "Cancel Treshold : " << blob_cancel_threshold_
                   << ", Track treshold : " << blob_tracking_threshold_
                   << ", IMV size: " << mvx_ * mvy_;

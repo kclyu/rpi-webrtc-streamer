@@ -32,69 +32,121 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <string>
 
+#include "config_defs.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "utils.h"
-
-namespace config_motion {
-
-///////////////////////////////////////////////////////////////////////////////////////////
-//
-// motion config key name and constants values
-//
-///////////////////////////////////////////////////////////////////////////////////////////
-
-CONFIG_DEFINE(MotionDetectionEnable, motion_detection_enable, bool, false);
-CONFIG_DEFINE(MotionWidth, motion_width, int, 1024);
-CONFIG_DEFINE(MotionHeight, motion_height, int, 768);
-CONFIG_DEFINE(MotionFps, motion_fps, int, 30);
-CONFIG_DEFINE(MotionBitrate, motion_bitrate, int, 3500);
-CONFIG_DEFINE(MotionClearPercent, motion_clear_percent, int, 5);
-CONFIG_DEFINE(MotionClearWaitPeriod, motion_clear_wait_period, int, 5000);
-
-CONFIG_DEFINE(MotionDirBase, motion_directory, std::string,
-              "/opt/rws/motion_captured");
-CONFIG_DEFINE(MotionFilePrefix, motion_file_prefix, std::string, "motion");
-CONFIG_DEFINE(MotionFileSizeLimit, motion_file_size_limit, int,
-              6000);  // kbytes
-CONFIG_DEFINE(MotionSaveImvFile, motion_save_imv_file, bool, false);
-
-CONFIG_DEFINE(MotionEnableAnnotateText, motion_enable_annotate_text, bool,
-              true);
-CONFIG_DEFINE(MotionAnnotateText, motion_annotate_text, std::string, "");
-CONFIG_DEFINE(MotionAnnotateTextSize, motion_annotate_text_size, int, 32);
-
-CONFIG_DEFINE(MotionBlobCancelThreshold, blob_cancel_threshold, float, 0.5);
-CONFIG_DEFINE(MotionBlobTrackingThreshold, blob_tracking_threshold, int, 15);
-
-CONFIG_DEFINE(MotionTotalFileSizeLimit, motion_file_total_size_limit, int,
-              4000);  // Mbytes
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
 // config validation helper functions
 //
 ///////////////////////////////////////////////////////////////////////////////////////////
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_width, int) {
+    // do nothing
+    return true;
+}
 
-// Returns true if the specifiec directory path exists
-// or return false otherwise.
-bool validate_motion_directory_path(std::string path,
-                                    std::string default_value) {
-    if (!utils::IsFolder(path)) {
-        RTC_LOG(LS_ERROR) << "Path \"" << path
-                          << "\" is not directory. using default:"
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_height, int) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_bitrate, int) {
+    // do nothing
+    return true;
+}
+
+static constexpr int kMaxClearWaitPeriod = 10000;  // 10 seconds
+static constexpr int kMinClearWaitPeriod = 2000;   // 10 seconds
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_clear_wait_period, int) {
+    if (motion_clear_wait_period < kMinClearWaitPeriod ||
+        motion_clear_wait_period > kMaxClearWaitPeriod) {
+        RTC_LOG(LS_ERROR) << "Motion Clear Wait period \""
+                          << motion_clear_wait_period
+                          << "\" is not vali. using default: " << default_value;
+        return false;
+    }
+    return true;
+}
+
+static constexpr int kMaxClearPercent = 10;
+static constexpr int kMinClearPercent = 3;
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_clear_percent, int) {
+    if (motion_clear_percent < kMinClearPercent ||
+        motion_clear_percent > kMaxClearPercent) {
+        RTC_LOG(LS_ERROR) << "Motion Clear Percent\"" << motion_clear_percent
+                          << "\" is not vali. using default: " << default_value;
+        return false;
+    }
+    return true;
+}
+
+static constexpr int kMaxMotionFps = 30;
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_fps, int) {
+    if (motion_fps < 0 || motion_fps > kMaxMotionFps) {
+        RTC_LOG(LS_ERROR) << "Motion FPS  \"" << motion_fps
+                          << "\" is not vali. using default: " << default_value;
+        return false;
+    }
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_file_prefix, std::string) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_file_size_limit, int) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_file_total_size_limit, int) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, blob_tracking_threshold, int) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, blob_cancel_threshold, float) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_directory, std::string) {
+    if (!utils::IsFolder(motion_directory)) {
+        RTC_LOG(LS_ERROR) << "Path \"" << motion_directory
+                          << "\" is not directory. using default: "
                           << default_value;
         return false;
     }
     return true;
 }
 
-// Returns true if the specifiec text size within valid range
-// or return false otherwise.
-bool validate_motion_annotate_text_size(int text_size, int default_value) {
-    if (text_size < 6 || text_size >= 160) {
+static constexpr int kMaxAnnotationTextLength = 256;
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_annotate_text, std::string) {
+    if (motion_annotate_text.length() > kMaxAnnotationTextLength) {
+        RTC_LOG(LS_ERROR) << "Annotate text string length  is not valid\""
+                          << motion_annotate_text.length()
+                          << "\" text size string length should be within 6 - "
+                             "256, using default: \"\"";
+        return false;
+    }
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_annotate_text_size, int) {
+    if (motion_annotate_text_size < 6 || motion_annotate_text_size >= 160) {
         RTC_LOG(LS_ERROR)
-            << "Annotate text size is not valid\"" << text_size
+            << "Annotate text size is not valid\"" << motion_annotate_text_size
             << "\" text size should be within 6 - 160, using default:"
             << default_value;
         return false;
@@ -102,55 +154,162 @@ bool validate_motion_annotate_text_size(int text_size, int default_value) {
     return true;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 //
-// motion config loading functions
+// ConfigStreamer, Getter methods
 //
-///////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
-bool config_load(const std::string config_filename) {
-    rtc::OptionsFile config_(config_filename);
+#define _CR(name, config_var, config_remote_access, config_type, \
+            default_value)                                       \
+    config_type ConfigMotion::Get##name(void) const { return config_var; }
 
-    if (config_.Load() == false) {
+#define _CR_B _CR
+#define _CR_I _CR
+#define _CR_F _CR
+
+#include "def/config_motion.def"
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// ConfigMotion
+//
+////////////////////////////////////////////////////////////////////////////////
+ConfigMotion::ConfigMotion(const std::string& config_file, bool dump_config)
+    : config_loaded_(false),
+      config_file_(config_file),
+      dump_config_(dump_config) {
+    // trying to check flag config_file is regular file
+    if (utils::IsFile(config_file_) == false) {
+        RTC_LOG(LS_ERROR) << "Failed to find motion configuration file :"
+                          << config_file_;
+    }
+}
+
+bool ConfigMotion::Load() {
+    options_file_.reset(new rtc::OptionsFile(config_file_));
+    if (options_file_->Load() == false) {
+        RTC_LOG(LS_ERROR) << "Failed to load config options:" << config_file_;
         return false;
-    };
+    }
 
-    // loading MotionDetectionEnable
-    DEFINE_CONFIG_LOAD_BOOL(MotionDetectionEnable, motion_detection_enable);
+    // Inititialize the config variables with default value
+#define _CR(name, config_var, config_remote_access, config_type, \
+            default_value)                                       \
+    config_var = default_value;                                  \
+    isloaded__##config_var = false;
 
-    // do not load motion config when the motion_detection_enable is false
-    if (motion_detection_enable == false) return true;
+#define _CR_B _CR
+#define _CR_I _CR
+#define _CR_F _CR
 
-    // loading Motion Config
-    DEFINE_CONFIG_LOAD_INT(MotionWidth, motion_width);
-    DEFINE_CONFIG_LOAD_INT(MotionHeight, motion_height);
-    DEFINE_CONFIG_LOAD_INT(MotionFps, motion_fps);
-    DEFINE_CONFIG_LOAD_INT(MotionBitrate, motion_bitrate);
-    DEFINE_CONFIG_LOAD_INT(MotionClearPercent, motion_clear_percent);
-    DEFINE_CONFIG_LOAD_INT(MotionClearWaitPeriod, motion_clear_wait_period);
+#include "def/config_motion.def"
 
-    DEFINE_CONFIG_LOAD_STR_VALIDATE(MotionDirBase, motion_directory,
-                                    validate_motion_directory_path);
-    DEFINE_CONFIG_LOAD_STR(MotionFilePrefix, motion_file_prefix);
+#define _CR(name, config_var, config_remote_access, config_type,             \
+            default_value)                                                   \
+    {                                                                        \
+        std::string config_value;                                            \
+        if (options_file_->GetStringValue(#config_var, &config_value) ==     \
+            true) {                                                          \
+            if (validate_value__##config_var(config_value, default_value) == \
+                true) {                                                      \
+                isloaded__##config_var = true;                               \
+                config_var = config_value;                                   \
+            } else {                                                         \
+                RTC_LOG(LS_ERROR) << "Config " << #config_var                \
+                                  << " error in value : " << config_value;   \
+            };                                                               \
+        }                                                                    \
+    }
 
-    DEFINE_CONFIG_LOAD_INT(MotionFileSizeLimit,
-                           motion_file_size_limit);  // kbytes
-    DEFINE_CONFIG_LOAD_BOOL(MotionSaveImvFile, motion_save_imv_file);
+#define _CR_B(name, config_var, config_remote_access, config_type,         \
+              default_value)                                               \
+    {                                                                      \
+        std::string config_value;                                          \
+        if (options_file_->GetStringValue(#config_var, &config_value) ==   \
+            true) {                                                        \
+            if (config_value.compare("true") == 0)                         \
+                config_var = true;                                         \
+            else if (config_value.compare("false") == 0)                   \
+                config_var = false;                                        \
+            else {                                                         \
+                RTC_LOG(LS_ERROR) << "Config " << #config_var              \
+                                  << " error in value : " << config_value; \
+            }                                                              \
+        };                                                                 \
+    }
 
-    DEFINE_CONFIG_LOAD_BOOL(MotionEnableAnnotateText,
-                            motion_enable_annotate_text);
-    DEFINE_CONFIG_LOAD_STR(MotionAnnotateText, motion_annotate_text);
-    DEFINE_CONFIG_LOAD_INT_VALIDATE(MotionAnnotateTextSize,
-                                    motion_annotate_text_size,
-                                    validate_motion_annotate_text_size);
+#define _CR_I(name, config_var, config_remote_access, config_type,            \
+              default_value)                                                  \
+    {                                                                         \
+        int config_value;                                                     \
+        if (options_file_->GetIntValue(#config_var, &config_value) == true) { \
+            if (validate_value__##config_var(config_value, default_value) ==  \
+                true) {                                                       \
+                isloaded__##config_var = true;                                \
+                config_var = config_value;                                    \
+            } else {                                                          \
+                RTC_LOG(LS_ERROR) << "Config " << #config_var                 \
+                                  << " error in value : " << config_value;    \
+            };                                                                \
+        }                                                                     \
+    }
 
-    DEFINE_CONFIG_LOAD_FLOAT(MotionBlobCancelThreshold, blob_cancel_threshold);
-    DEFINE_CONFIG_LOAD_INT(MotionBlobTrackingThreshold,
-                           blob_tracking_threshold);
+#define _CR_F(name, config_var, config_remote_access, config_type,         \
+              default_value)                                               \
+    {                                                                      \
+        std::string config_value;                                          \
+        float config_value_float;                                          \
+        if (options_file_->GetStringValue(#config_var, &config_value) ==   \
+                true &&                                                    \
+            rtc::FromString(config_value, &config_value_float) == true) {  \
+            if (validate_value__##config_var(config_value_float,           \
+                                             default_value) == true) {     \
+                isloaded__##config_var = true;                             \
+                config_var = config_value_float;                           \
+            } else {                                                       \
+                RTC_LOG(LS_ERROR) << "Config " << #config_var              \
+                                  << " error in value : " << config_value; \
+            };                                                             \
+        }                                                                  \
+    }
 
-    DEFINE_CONFIG_LOAD_INT(MotionTotalFileSizeLimit,
-                           motion_file_total_size_limit);  // Mbytes
+#include "def/config_motion.def"
+
+    config_loaded_ = true;
+    if (dump_config_) DumpConfig();
     return true;
 }
 
-}  // namespace config_motion
+void ConfigMotion::DumpConfig(void) {
+    RTC_LOG(INFO) << "Config Dump : "
+                  << " Filename : " << config_file_;
+    RTC_LOG(INFO) << "Config Rows : ";
+
+#define _CR(name, config_var, config_remote_access, config_type,               \
+            default_value)                                                     \
+    {                                                                          \
+        const char* loaded_str = (isloaded__##config_var) ? "*" : " ";         \
+        RTC_LOG(INFO) << "Config: " << loaded_str << "\"" << #config_var       \
+                      << "\": " << config_var << " -- (type: " << #config_type \
+                      << ", default: " << default_value << ")";                \
+    }
+
+#define _CR_B(name, config_var, config_remote_access, config_type,           \
+              default_value)                                                 \
+    {                                                                        \
+        const char* loaded_str = (isloaded__##config_var) ? "*" : " ";       \
+        const char* bool_str = (config_var) ? "true" : "false";              \
+        const char* bool_default_str = (default_value) ? "true" : "false";   \
+        RTC_LOG(INFO) << "Config: " << loaded_str << "\"" << #config_var     \
+                      << "\": " << bool_str << " -- (type: " << #config_type \
+                      << ", default: " << bool_default_str << ")";           \
+    }
+#define _CR_I _CR
+#define _CR_F _CR
+
+#include "def/config_motion.def"
+}
+
+ConfigMotion::~ConfigMotion() {}
+

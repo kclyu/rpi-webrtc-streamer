@@ -58,8 +58,10 @@ struct MotionImvObserver {
 
 class RaspiMotionVector {
    public:
-    explicit RaspiMotionVector(int width, int height, int framerate,
-                               bool use_imv_coordination);
+    explicit RaspiMotionVector(int x, int y, int framerate,
+                               bool use_imv_coordination,
+                               float blob_cancel_threshold,
+                               int blob_tracking_threshold);
     ~RaspiMotionVector();
 
     bool Analyse(uint8_t *buffer, int len);
@@ -102,6 +104,8 @@ class RaspiMotionVector {
     MotionImvObserver *imv_observer_;
     uint32_t motion_trigger_threshold_;
     uint32_t motion_clear_threshold_;
+    float blob_cancel_threshold_;
+    int blob_tracking_threshold_;
 };
 
 #endif  // RASPI_MOTIONVECTOR_H_

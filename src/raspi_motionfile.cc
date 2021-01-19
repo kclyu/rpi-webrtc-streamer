@@ -48,13 +48,15 @@ static const size_t DefaultVideoFrameBufferSize = 65536 * 2;
 int RaspiMotionFile::kEventWaitPeriod =
     20;  // minimal wait ms period between frame
 
-RaspiMotionFile::RaspiMotionFile(const std::string base_path,
+RaspiMotionFile::RaspiMotionFile(ConfigMotion* config_motion,
+                                 const std::string base_path,
                                  const std::string prefix, int queue_capacity,
                                  int frame_queue_size, int motion_queue_size)
     : Event(false, false),
       base_path_(base_path),
       prefix_(prefix),
-      clock_(webrtc::Clock::GetRealTimeClock()) {
+      clock_(webrtc::Clock::GetRealTimeClock()),
+      config_motion_(config_motion) {
     writer_active_ = false, writer_quit_ = false;
 
     frame_queue_.reset(new rtc::BufferQueue(queue_capacity, frame_queue_size));
@@ -62,8 +64,7 @@ RaspiMotionFile::RaspiMotionFile(const std::string base_path,
 
     // Since the imv file is relatively small compared to the video file size,
     // the size limit is used only for the video file.
-    frame_file_size_limit_ = config_motion::motion_file_size_limit * 1024;
-
+    frame_file_size_limit_ = config_motion_->GetFileSizeLimit() * 1024;
     frame_writer_buffer_ = new uint8_t[DefaultVideoFrameBufferSize];
 }
 
@@ -130,7 +131,7 @@ bool RaspiMotionFile::WriterProcess() {
     }
 
     if (imv_queue_->size()) {
-        if (config_motion::motion_save_imv_file == true) {
+        if (config_motion_->GetSaveImvFile() == true) {
             ImvFileWrite();
         } else {
             // clearing the imv queue
@@ -221,7 +222,7 @@ bool RaspiMotionFile::OpenWriterFiles(void) {
     }
 
     // open imv file when the flag is enabled
-    if (config_motion::motion_save_imv_file == true) {
+    if (config_motion_->GetSaveImvFile() == true) {
         std::string imv_filename =
             prefix_ + "_" + date_string + imvFileExtension;
         RTC_LOG(INFO) << "IMV File : " << base_path_ + "/" + imv_filename;
@@ -300,7 +301,7 @@ bool RaspiMotionFile::CloseWriterFiles(void) {
     // Rename the video temporary file to video file name
     utils::MoveFile(h264_temp_, h264_filename_);
 
-    if (config_motion::motion_save_imv_file == true) {
+    if (config_motion_->GetSaveImvFile() == true) {
         if (imv_file_.IsOpen() == false) {
             RTC_LOG(LS_ERROR) << "Trying to close the imv file is not opened";
             close_status = false;
@@ -331,7 +332,7 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
     size_t file_counter = 0;
 
     // check video path is folder
-    if (!utils::GetFolderWithTailingDelimiter(config_motion::motion_directory,
+    if (!utils::GetFolderWithTailingDelimiter(config_motion_->GetDirectory(),
                                               video_files_folder)) {
         RTC_LOG(LS_ERROR) << "Motion file path is not folder : "
                           << video_files_folder;
@@ -368,7 +369,7 @@ bool RaspiMotionFile::ManagingVideoFolder(void) {
 
     while (video_file_list.size() > 0 &&
            ((total_directory_size - video_file_list.front().size_) >
-            (size_t)config_motion::motion_file_total_size_limit * 1000000)) {
+            (size_t)config_motion_->GetTotalFileSizeLimit() * 1000000)) {
         total_directory_size -= video_file_list.front().size_;
         video_file_path =
             video_files_folder + video_file_list.front().video_file_;

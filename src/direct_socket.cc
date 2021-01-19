@@ -27,14 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#if defined(WEBRTC_POSIX)
-#include <unistd.h>
-#endif
 #include "direct_socket.h"
+
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/socket.h"
@@ -53,8 +47,8 @@ static const std::string kDirectSocketDelimiter = "\n";
 // DirectSocketServer
 ////////////////////////////////////////////////////////////////////////////////
 
-DirectSocketServer::DirectSocketServer()
-    : listener_(nullptr), direct_socket_(nullptr) {
+DirectSocketServer::DirectSocketServer(StreamerProxy* proxy)
+    : SocketServerHelper(proxy), listener_(nullptr), direct_socket_(nullptr) {
     last_reject_time_ms_ = connection_reject_count_ = 0;
 }
 DirectSocketServer::~DirectSocketServer() {}

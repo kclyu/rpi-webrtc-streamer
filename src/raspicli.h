@@ -58,4 +58,5 @@ int raspicli_get_command_id(const COMMAND_LIST *commands,
 int raspicli_map_xref(const char *str, const XREF_T *map, int num_refs);
 const char *raspicli_unmap_xref(const int en, XREF_T *map, int num_refs);
 
-#endif
+#endif	// RASPICLI_H_
+

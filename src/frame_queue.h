@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __FRAME_QUEUE_H__
-#define __FRAME_QUEUE_H__
+#ifndef FRAME_QUEUE_H_
+#define FRAME_QUEUE_H_
 
 #include <bitset>
 #include <deque>
@@ -135,4 +135,4 @@ class FrameQueue : public rtc::Event {
 
 }  // namespace webrtc
 
-#endif  // __FRAME_QUEUE_H__
+#endif  // FRAME_QUEUE_H_

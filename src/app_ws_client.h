@@ -27,6 +27,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef APP_WS_CLIENT_H_
+#define APP_WS_CLIENT_H_
+
 #include <memory>
 #include <string>
 
@@ -42,21 +45,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "utils.h"
 #include "websocket_server.h"
 
-#ifndef APP_WS_CLIENT_H_
-#define APP_WS_CLIENT_H_
-
 class AppWsClient : public rtc::MessageHandler,
                     public WebSocketHandler,
                     public SocketServerHelper {
    public:
     enum EventType { EventNotice, EventError };
 
-    explicit AppWsClient();
+    explicit AppWsClient(StreamerProxy* proxy);
     ~AppWsClient();
 
     // register WebSocket Server for SendMessage
     void RegisterWebSocketMessage(WebSocketMessage* server_instance);
-    void RegisterConfigStreamer(StreamerConfig* streamer_config);
+    void RegisterConfigStreamer(ConfigStreamer* config_streamer);
 
     // WebSocket Handler
     void OnConnect(int sockid) override;
@@ -94,7 +94,7 @@ class AppWsClient : public rtc::MessageHandler,
     std::string deviceid_;
     bool deviceid_inited_;
     ConfigMedia* config_media_;
-    StreamerConfig* streamer_config_;
+    ConfigStreamer* config_streamer_;
 };
 
 #endif  // APP_WS_CLIENT_H_

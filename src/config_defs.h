@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2021, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -27,27 +27,20 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef APP_CHANNEL_H_
-#define APP_CHANNEL_H_
+#ifndef CONFIG_DEFS_H_
+#define CONFIG_DEFS_H_
 
-#include <memory>
-#include <string>
+///////////////////////////////////////////////////////////////////////////////
+//
+// macro to validator function
+//
+///////////////////////////////////////////////////////////////////////////////
+#define DECLARE_METHOD_VALIDATOR(class_name, config_var, config_type)      \
+    bool class_name ::validate_value__##config_var(config_type config_var, \
+                                                   config_type default_value)
 
-#include "app_ws_client.h"
-#include "config_motion.h"
-#include "config_streamer.h"
-#include "websocket_server.h"
+#define DECLARE_FUNCTION_VALIDATOR(config_var, config_type)   \
+    bool validate_value__##config_var(config_type config_var, \
+                                      config_type default_value)
 
-class AppChannel : public LibWebSocketServer {
-   public:
-    explicit AppChannel();
-    ~AppChannel();
-    bool AppInitialize(StreamerProxy* proxy, ConfigStreamer& config_streamer,
-                       ConfigMotion& config_motion);
-
-   private:
-    bool is_inited_;
-    std::unique_ptr<AppWsClient> ws_client_;
-};
-
-#endif  // APP_CHANNEL_H_
+#endif  // CONFIG_DEFS_H_

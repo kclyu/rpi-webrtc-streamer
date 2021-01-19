@@ -79,7 +79,9 @@ static const int kDefaultMotionPersistentPeriod = 500;  // ms
 static const int kDefaultMotionCoolingDown = 3000;      // ms
 
 RaspiMotionVector::RaspiMotionVector(int x, int y, int framerate,
-                                     bool use_imv_coordination) {
+                                     bool use_imv_coordination,
+                                     float blob_cancel_threshold,
+                                     int blob_tracking_threshold) {
     if (use_imv_coordination) {
         mvx_ = x + 1;
         mvy_ = y;
@@ -101,6 +103,8 @@ RaspiMotionVector::RaspiMotionVector(int x, int y, int framerate,
     imv_observer_ = nullptr;
     blob_active_count_ = 0;
     blob_active_updates_ = 0;
+    blob_cancel_threshold_ = blob_cancel_threshold;
+    blob_tracking_threshold_ = blob_tracking_threshold;
 }
 
 RaspiMotionVector::~RaspiMotionVector() {
@@ -277,7 +281,8 @@ void RaspiMotionVector::SetBlobEnable(bool blob_enable) {
     RTC_LOG(INFO) << "Blob Analyse Enable: " << blob_enable;
     if (blob_enable) {
         blob_enable_ = true;
-        blob_.reset(new RaspiMotionBlob(mvx_, mvy_));
+        blob_.reset(new RaspiMotionBlob(mvx_, mvy_, blob_cancel_threshold_,
+                                        blob_tracking_threshold_));
     } else {
         blob_enable_ = false;
         blob_.reset();

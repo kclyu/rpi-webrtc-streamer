@@ -88,12 +88,12 @@ class DummySetSessionDescriptionObserver
     ~DummySetSessionDescriptionObserver() {}
 };
 
-Streamer::Streamer(SocketServerObserver* session, StreamerConfig* config)
+Streamer::Streamer(SocketServerObserver* session, ConfigStreamer* config)
     : peer_id_(-1) {
     RTC_DCHECK(session != nullptr);
     session_ = session;
     session->RegisterObserver(this);
-    streamer_config_ = config;
+    config_streamer_ = config;
 }
 
 Streamer::~Streamer() { RTC_DCHECK(!peer_connection_); }
@@ -136,7 +136,7 @@ bool Streamer::InitializePeerConnection() {
     // Current WebRTC native stack have problem with setting callback of
     // dummy audio
     /****
-    if(streamer_config_->GetAudioEnable() == false ) {
+    if(config_streamer_->GetAudioEnable() == false ) {
     //  The default value of AudioEnable is false. To use audio,
     //  you must set audio_enable to true in webrtc_streamer.conf.
     adm_ = webrtc::AudioDeviceModule::Create(
@@ -203,7 +203,7 @@ bool Streamer::CreatePeerConnection() {
     utils::RTCConfiguration config;
     config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
     config.enable_dtls_srtp =
-        streamer_config_->GetSrtpEnable();  // get Dtls config
+        config_streamer_->GetSrtpEnable();  // get Dtls config
     std::string json_rtc_config, error_message;
     if ((json_rtc_config = pc_config_.GetRtcConfig()).empty() == false) {
         if (utils::RTCConfigFromJson(config, json_rtc_config, error_message) ==
@@ -214,7 +214,7 @@ bool Streamer::CreatePeerConnection() {
 
     } else {
         // load RTCConfiguration from local configuration
-        streamer_config_->GetRtcConfig(config);
+        config_streamer_->GetRtcConfig(config);
     }
     utils::PrintRTCConfig(config);
 
@@ -506,7 +506,7 @@ void Streamer::AddTracks() {
         return;  // Already added.
     }
 
-    if (streamer_config_->GetAudioEnable() == true) {
+    if (config_streamer_->GetAudioEnable() == true) {
         cricket::AudioOptions options;
 
         GetAudioOptions(options);
@@ -522,7 +522,7 @@ void Streamer::AddTracks() {
         }
     }
 
-    if (streamer_config_->GetVideoEnable() == true) {
+    if (config_streamer_->GetVideoEnable() == true) {
         video_track_sources_.clear();
         video_track_sources_.emplace_back(
             webrtc::FakeVideoTrackSource::Create(false));

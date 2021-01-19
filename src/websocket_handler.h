@@ -27,13 +27,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef WEBSOCKET_HANDLER_H_
+#define WEBSOCKET_HANDLER_H_
+
 #include <map>
 #include <memory>
 #include <set>
 #include <string>
 
-#ifndef WEBSOCKET_HANDLER_H_
-#define WEBSOCKET_HANDLER_H_
 
 enum WebSocketHandlerType {
     SINGLE_INSTANCE,    // allow only one handler runtime

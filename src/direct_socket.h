@@ -27,9 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RPI_DIRECT_SOCKET_H_
-#define RPI_DIRECT_SOCKET_H_
-#pragma once
+#ifndef DIRECT_SOCKET_H_
+#define DIRECT_SOCKET_H_
 
 #include <memory>
 #include <string>
@@ -50,7 +49,7 @@ class DirectSocketServer : public SocketServerHelper,
                            public rtc::MessageHandler,
                            public sigslot::has_slots<> {
    public:
-    DirectSocketServer();
+    DirectSocketServer(StreamerProxy* proxy);
     ~DirectSocketServer();
 
     bool Listen(const rtc::SocketAddress& address);
@@ -86,4 +85,4 @@ class DirectSocketServer : public SocketServerHelper,
     int connection_reject_count_;
 };
 
-#endif  // RPI_DIRECT_SOCKET_H_
+#endif  // DIRECT_SOCKET_H_

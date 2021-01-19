@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2021, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -33,11 +33,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <string>
 
-#include "config_defines.h"
+#include "config_defs.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
 #include "rtc_base/strings/string_format.h"
+#include "system_wrappers/include/field_trial.h"
 #include "utils.h"
 #include "utils_pc_strings.h"
 
@@ -46,36 +47,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Default values
 //
 ////////////////////////////////////////////////////////////////////////////////
-static const char kDefaultStreamerConfig[] = "etc/webrtc_streamer.conf";
+static const char kDefaultConfigStreamer[] = "etc/webrtc_streamer.conf";
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-// streamer config key name and constants values
-//
-////////////////////////////////////////////////////////////////////////////////
-
-CONFIG_DEFINE(WebSocketEnable, websocket_enable, bool, true);
-CONFIG_DEFINE(WebSocketPort, websocket_port, int, 8889);
-CONFIG_DEFINE(DirectSocketPort, direct_socket_port, int, 8888);
-CONFIG_DEFINE(DirectSocketEnable, direct_socket_enable, bool, false);
-CONFIG_DEFINE(MediaConfig, media_config, std::string, "etc/media_config.conf");
-CONFIG_DEFINE(MotionConfig, motion_config, std::string,
-              "etc/motion_config.conf");
-CONFIG_DEFINE(FieldTrials, fieldtrials, std::string, "");
-
-CONFIG_DEFINE(DisableLogBuffering, disable_log_buffering, bool, true);
-CONFIG_DEFINE(LibraryDebug, libwebsocket_debug, bool, false);
-
-CONFIG_DEFINE(AudioEnable, audio_enable, bool, false);
-CONFIG_DEFINE(VideoEnable, video_enable, bool, true);
-CONFIG_DEFINE(SrtpEnable, srtp_enable, bool, true);
-
-CONFIG_DEFINE(WebRoot, web_root, std::string, INSTALL_DIR "/web-root");
-CONFIG_DEFINE(RWS_WS_URL, rws_ws_url, std::string, "/rws/ws");
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Config Key
+// Ice Config Key
 //
 ////////////////////////////////////////////////////////////////////////////////
 // Ice Servers configuration keys
@@ -99,150 +75,186 @@ constexpr int kMaxIceServers = 10;
 // config validation helper functions
 //
 ////////////////////////////////////////////////////////////////////////////////
-static bool validate__portnumber(int& port_number, int default_value) {
-    if ((port_number < 1) || (port_number > 65535)) {
-        RTC_LOG(LS_ERROR) << "Error in port value," << port_number
-                          << " is not a valid port";
-        RTC_LOG(LS_ERROR) << "Resetting to default value";
-        port_number = default_value;
+
+DECLARE_METHOD_VALIDATOR(ConfigStreamer, websocket_port, int) {
+    if (websocket_port < 0 || websocket_port > 65535) {
+        std::cerr << "Error in port value," << websocket_port
+                  << " is not a valid port\n";
+        RTC_LOG(LS_ERROR) << "Resetting to default value\n";
         return false;
     }
     return true;
 }
 
+DECLARE_METHOD_VALIDATOR(ConfigStreamer, direct_socket_port, int) {
+    if (direct_socket_port < 0 || direct_socket_port > 65535) {
+        std::cerr << "Error in port value," << direct_socket_port
+                  << " is not a valid port\n";
+        std::cerr << "Resetting to default value\n";
+        return false;
+    }
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigStreamer, media_config, std::string) {
+    return utils::IsFile(media_config);
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigStreamer, motion_config, std::string) {
+    return utils::IsFile(motion_config);
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigStreamer, web_root, std::string) {
+    return utils::IsFolder(web_root);
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigStreamer, rws_ws_url, std::string) {
+    // Nothing to validate
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigStreamer, fieldtrials, std::string) {
+    return webrtc::field_trial::FieldTrialsStringIsValid(fieldtrials.c_str());
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
-// StreamerConfig, main config loading
+// ConfigStreamer, Getter methods
 //
 ////////////////////////////////////////////////////////////////////////////////
-StreamerConfig::StreamerConfig(const std::string& config_file)
-    : config_loaded_(false), config_file_(config_file), verbose_(false) {}
 
-bool StreamerConfig::LoadConfig(bool verbose) {
-    std::string file_path;
-    verbose_ = verbose;
+#define _CR(name, config_var, config_remote_access, config_type, \
+            default_value)                                       \
+    config_type ConfigStreamer::Get##name(void) const { return config_var; }
 
+#define _CR_B _CR
+#define _CR_I _CR
+
+#include "def/config_streamer.def"
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// ConfigStreamer
+//
+////////////////////////////////////////////////////////////////////////////////
+ConfigStreamer::ConfigStreamer(const std::string& config_file, bool dump_config)
+    : config_loaded_(false),
+      config_file_(config_file),
+      dump_config_(dump_config) {
     // trying to check flag config_file is regular file
     if (utils::IsFile(config_file_) == false) {
         // there is no config file in command line flag
         // so, trying to load config from installation directory config path
-        file_path = std::string(INSTALL_DIR) + "/" +
-                    std::string(kDefaultStreamerConfig);
+        config_file_ = std::string(INSTALL_DIR) + "/" +
+                       std::string(kDefaultConfigStreamer);
 
-        if (utils::IsFile(file_path) == false) {
-            std::cerr << "Failed to find config options:" << file_path
-                      << std::endl;
-            return false;
+        if (utils::IsFile(config_file_) == false) {
+            std::cerr << "Failed to find config file :" << config_file_ << "\n";
         };
-    } else {
-        file_path = config_file_;
     }
 
-    config_.reset(new rtc::OptionsFile(file_path));
-    if (config_->Load(verbose) == false) {
-        std::cerr << "Failed to load config options:" << file_path << std::endl;
-        return false;
-    }
-
-    config_file_ = file_path;
-    config_dir_basename_ = utils::GetParentFolder(file_path);
+    config_dir_basename_ = utils::GetParentFolder(config_file_);
     std::cout << "Using config file base path:"
               << ((config_dir_basename_.size() == 0) ? "CWD"
                                                      : config_dir_basename_)
-              << std::endl;
-    config_loaded_ = true;
+              << "\n";
+}
 
+bool ConfigStreamer::Load() {
+    options_file_.reset(new rtc::OptionsFile(config_file_));
+    if (options_file_->Load() == false) {
+        std::cerr << "Failed to load config options:" << config_file_ << "\n";
+        return false;
+    }
+
+    // Inititialize the config variables with default value
+#define _CR(name, config_var, config_remote_access, config_type, \
+            default_value)                                       \
+    config_var = default_value;                                  \
+    isloaded__##config_var = false;
+
+#define _CR_B _CR
+#define _CR_I _CR
+
+#include "def/config_streamer.def"
+
+#define _CR(name, config_var, config_remote_access, config_type,             \
+            default_value)                                                   \
+    {                                                                        \
+        std::string config_value;                                            \
+        if (options_file_->GetStringValue(#config_var, &config_value) ==     \
+            true) {                                                          \
+            if (validate_value__##config_var(config_value, default_value) == \
+                true) {                                                      \
+                isloaded__##config_var = true;                               \
+                config_var = config_value;                                   \
+            } else {                                                         \
+                std::cerr << "Config " << #config_var                        \
+                          << " error in value : " << config_value << "\n";   \
+            };                                                               \
+        }                                                                    \
+    }
+
+#define _CR_B(name, config_var, config_remote_access, config_type,         \
+              default_value)                                               \
+    {                                                                      \
+        std::string config_value;                                          \
+        if (options_file_->GetStringValue(#config_var, &config_value) ==   \
+            true) {                                                        \
+            if (config_value.compare("true") == 0)                         \
+                config_var = true;                                         \
+            else if (config_value.compare("false") == 0)                   \
+                config_var = false;                                        \
+            else {                                                         \
+                std::cerr << "Config " << #config_var                      \
+                          << " error in value : " << config_value << "\n"; \
+            }                                                              \
+        };                                                                 \
+    }
+
+#define _CR_I(name, config_var, config_remote_access, config_type,            \
+              default_value)                                                  \
+    {                                                                         \
+        int config_value;                                                     \
+        if (options_file_->GetIntValue(#config_var, &config_value) == true) { \
+            if (validate_value__##config_var(config_value, default_value) ==  \
+                true) {                                                       \
+                isloaded__##config_var = true;                                \
+                config_var = config_value;                                    \
+            } else {                                                          \
+                std::cerr << "Config " << #config_var                         \
+                          << " error in value : " << config_value << "\n";    \
+            };                                                                \
+        }                                                                     \
+    }
+
+#include "def/config_streamer.def"
+
+    config_loaded_ = true;
+    if (dump_config_) DumpConfig();
     return true;
 }
 
-// DisableLogBuffering
-bool StreamerConfig::GetDisableLogBuffering() {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(DisableLogBuffering);
-}
-
-// WebSocketEnable
-bool StreamerConfig::GetWebSocketEnable() {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(WebSocketEnable);
-}
-
-// WebSocketPort
-bool StreamerConfig::GetWebSocketPort(int& port) {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_INT_WITH_RETURN(WebSocketPort, port,
-                                       validate__portnumber);
-}
-
-// LibwebsocketDebugEnable
-bool StreamerConfig::GetLibwebsocketDebugEnable() {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(LibraryDebug);
-}
-
-// WebRootPath
-bool StreamerConfig::GetWebRootPath(std::string& path) {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(WebRoot, path);
-}
-
-// RWS WS URL
-bool StreamerConfig::GetRwsWsURL(std::string& ws_url) {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(RWS_WS_URL, ws_url);
-}
-
-// DirectSocketEnable
-bool StreamerConfig::GetDirectSocketEnable() {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(DirectSocketEnable);
-}
-
-// DirectSocketPort
-bool StreamerConfig::GetDirectSocketPort(int& port) {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_INT_WITH_RETURN(DirectSocketPort, port,
-                                       validate__portnumber);
-}
-
-// SrtpEnable
-bool StreamerConfig::GetSrtpEnable() {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(SrtpEnable);
-}
-
-// AudioEnable
-bool StreamerConfig::GetAudioEnable() {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(AudioEnable);
-}
-
-// VideoEnable
-bool StreamerConfig::GetVideoEnable() {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_BOOL_WITH_RETURN(VideoEnable);
-}
-
 // loading RTCConfiguration from config file
-bool StreamerConfig::GetRtcConfig(utils::RTCConfiguration& config) {
+bool ConfigStreamer::GetRtcConfig(utils::RTCConfiguration& config) {
     RTC_DCHECK(config_loaded_ == true);
 
     std::string config_value;
-    if (config_->GetStringValue(kConfigIceTransportsType, &config_value) ==
-        true) {
+    if (options_file_->GetStringValue(kConfigIceTransportsType,
+                                      &config_value) == true) {
         config.type = utils::StrToIceTransportsType(config_value);
     }
-    if (config_->GetStringValue(kConfigIceBundlePolicy, &config_value) ==
+    if (options_file_->GetStringValue(kConfigIceBundlePolicy, &config_value) ==
         true) {
         config.bundle_policy = utils::StrToBundlePolicy(config_value);
     }
-    if (config_->GetStringValue(kConfigIceRtcpMuxPolicy, &config_value) ==
+    if (options_file_->GetStringValue(kConfigIceRtcpMuxPolicy, &config_value) ==
         true) {
         config.rtcp_mux_policy = utils::StrToRtcpMuxPolicy(config_value);
     }
 
     for (int config_index = 0; config_index < kMaxIceServers; config_index++) {
-        if (config_->GetStringValue(
+        if (options_file_->GetStringValue(
                 rtc::StringFormat("%s_%d", kConfigIceServerUrls, config_index),
                 &config_value) == true) {
             webrtc::PeerConnectionInterface::IceServer ice_server;
@@ -250,28 +262,28 @@ bool StreamerConfig::GetRtcConfig(utils::RTCConfiguration& config) {
             ice_server.urls = utils::StrToIceUrls(config_value);
 
             // IceServerUsername
-            if (config_->GetStringValue(
+            if (options_file_->GetStringValue(
                     rtc::StringFormat("%s_%d", kConfigIceServerUsername,
                                       config_index),
                     &config_value)) {
                 ice_server.username = config_value;
             }
             // IceServerPassword
-            if (config_->GetStringValue(
+            if (options_file_->GetStringValue(
                     rtc::StringFormat("%s_%d", kConfigIceServerPassword,
                                       config_index),
                     &config_value)) {
                 ice_server.password = config_value;
             }
             // IceServerHostname
-            if (config_->GetStringValue(
+            if (options_file_->GetStringValue(
                     rtc::StringFormat("%s_%d", kConfigIceServerHostname,
                                       config_index),
                     &config_value)) {
                 ice_server.hostname = config_value;
             }
             // IceServerCertPolicy
-            if (config_->GetStringValue(
+            if (options_file_->GetStringValue(
                     rtc::StringFormat("%s_%d", kConfigIceServerTlsCertPolicy,
                                       config_index),
                     &config_value)) {
@@ -279,7 +291,7 @@ bool StreamerConfig::GetRtcConfig(utils::RTCConfiguration& config) {
                     utils::StrToTlsCertPolicy(config_value);
             }
             // IceServerAlpnProtocols
-            if (config_->GetStringValue(
+            if (options_file_->GetStringValue(
                     rtc::StringFormat("%s_%d", kConfigIceServerTlsAlpnProtocols,
                                       config_index),
                     &config_value)) {
@@ -287,7 +299,7 @@ bool StreamerConfig::GetRtcConfig(utils::RTCConfiguration& config) {
                     utils::StrToVector(config_value);
             }
             // TlsEllipticCurves
-            if (config_->GetStringValue(
+            if (options_file_->GetStringValue(
                     rtc::StringFormat("%s_%d",
                                       kConfigIceServerTlsEllipticCurves,
                                       config_index),
@@ -304,7 +316,7 @@ bool StreamerConfig::GetRtcConfig(utils::RTCConfiguration& config) {
 }
 
 // JSON RTCConfig
-bool StreamerConfig::GetJsonRtcConfig(std::string& json_rtcconfig) {
+bool ConfigStreamer::GetJsonRtcConfig(std::string& json_rtcconfig) {
     utils::RTCConfiguration rtc_config;
     Json::Value jsonPCConfig;
     Json::StyledWriter json_writer;
@@ -344,40 +356,19 @@ bool StreamerConfig::GetJsonRtcConfig(std::string& json_rtcconfig) {
     return true;
 }
 
-bool StreamerConfig::GetMediaConfigFilePath(std::string& conf) {
+std::string ConfigStreamer::GetMediaConfigFile() {
     RTC_DCHECK(config_loaded_ == true);
-    // default media config value is "etc/media_config.conf"
-    if (config_->GetStringValue(kConfigMediaConfig, &conf) == true) {
-        conf = config_dir_basename_ + conf;
-        config_loaded__MediaConfig = true;  // to suppress warning
-        return true;
-    }
-    conf = config_dir_basename_ + kDefaultMediaConfig;
-    return false;
+    return config_dir_basename_ + GetMediaConfig();
 }
 
-bool StreamerConfig::GetMotionConfigFilePath(std::string& conf) {
+std::string ConfigStreamer::GetMotionConfigFile() {
     RTC_DCHECK(config_loaded_ == true);
-    // default media config value is "etc/motion_config.conf"
-    if (config_->GetStringValue(kConfigMotionConfig, &conf) == true) {
-        conf = config_dir_basename_ + conf;
-        config_loaded__MotionConfig = true;  // to supporess warning
-        return true;
-    }
-    conf = config_dir_basename_ + kDefaultMediaConfig;
-    RTC_LOG(LS_ERROR) << "Using Fallback Config :" << conf;
-    return false;
-}
-
-// FieldTrials string for WebRTC native code package
-bool StreamerConfig::GetFieldTrials(std::string& fieldtrials) {
-    RTC_DCHECK(config_loaded_ == true);
-    DEFINE_CONFIG_LOAD_STR_WITH_RETURN(FieldTrials, fieldtrials);
+    return config_dir_basename_ + GetMotionConfig();
 }
 
 // Just validate the log path,
 // if the log path does not found, it will return false
-bool StreamerConfig::GetLogPath(std::string& log_path) {
+bool ConfigStreamer::GetLogPath(std::string& log_path) {
     RTC_DCHECK(config_loaded_ == true);
 
     if (utils::GetFolder(log_path).size() == 0) {
@@ -405,9 +396,33 @@ bool StreamerConfig::GetLogPath(std::string& log_path) {
     return true;
 }
 
-const std::string StreamerConfig::GetConfigFilename() {
-    RTC_DCHECK(config_loaded_ == true);
-    return config_file_;
+void ConfigStreamer::DumpConfig(void) {
+    RTC_LOG(INFO) << "Config Dump : "
+                  << " Filename : " << config_file_;
+    RTC_LOG(INFO) << "Config Rows : ";
+
+#define _CR(name, config_var, config_remote_access, config_type,               \
+            default_value)                                                     \
+    {                                                                          \
+        const char* loaded_str = (isloaded__##config_var) ? "*" : " ";         \
+        RTC_LOG(INFO) << "Config: " << loaded_str << "\"" << #config_var       \
+                      << "\": " << config_var << " -- (type: " << #config_type \
+                      << ", default: " << default_value << ")";                \
+    }
+
+#define _CR_B(name, config_var, config_remote_access, config_type,           \
+              default_value)                                                 \
+    {                                                                        \
+        const char* loaded_str = (isloaded__##config_var) ? "*" : " ";       \
+        const char* bool_str = (config_var) ? "true" : "false";              \
+        const char* bool_default_str = (default_value) ? "true" : "false";   \
+        RTC_LOG(INFO) << "Config: " << loaded_str << "\"" << #config_var     \
+                      << "\": " << bool_str << " -- (type: " << #config_type \
+                      << ", default: " << bool_default_str << ")";           \
+    }
+#define _CR_I _CR
+
+#include "def/config_streamer.def"
 }
 
-StreamerConfig::~StreamerConfig() {}
+ConfigStreamer::~ConfigStreamer() {}

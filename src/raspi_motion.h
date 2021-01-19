@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
+#include "config_motion.h"
 #include "mmal_wrapper.h"
 #include "raspi_httpnoti.h"
 #include "raspi_motionfile.h"
@@ -46,8 +47,9 @@ class RaspiMotion : public MotionBlobObserver,
                     public MotionImvObserver,
                     public rtc::Event {
    public:
-    explicit RaspiMotion(int width, int height, int framerate, int bitrate);
-    explicit RaspiMotion();
+    explicit RaspiMotion(ConfigMotion* config_motion, int width, int height,
+                         int framerate, int bitrate);
+    explicit RaspiMotion(ConfigMotion* config_motion);
     ~RaspiMotion();
 
     bool IsActive() const;
@@ -112,6 +114,8 @@ class RaspiMotion : public MotionBlobObserver,
     rtc::MovingAverage motion_active_average_;
     int motion_active_percent_clear_threshold_;
     int motion_active_percent_trigger_threshold_;
+
+    ConfigMotion* config_motion_;
 
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotion);
 };

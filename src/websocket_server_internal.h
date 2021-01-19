@@ -27,6 +27,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#ifndef WEBSOCKET_SERVER_INTERNAL_H_
+#define WEBSOCKET_SERVER_INTERNAL_H_
+
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -35,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+
 
 #include "libwebsockets.h"
 
@@ -49,3 +53,6 @@ const char* to_httpstatus_str(int status);
 #ifdef __cplusplus
 };
 #endif  // __cplusplus
+
+#endif // WEBSOCKET_SERVER_INTERNAL_H_
+

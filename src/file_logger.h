@@ -14,10 +14,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef RPI_FILELOGGER_H_
-#define RPI_FILELOGGER_H_
-
-#pragma once
+#ifndef FILE_LOGGER_H_
+#define FILE_LOGGER_H_
 
 #include <assert.h>
 
@@ -51,4 +49,4 @@ class FileLogger {
 
 };  // namespace utils
 
-#endif  // RPI_FILELOGGER_H_
+#endif  // FILE_LOGGER_H_

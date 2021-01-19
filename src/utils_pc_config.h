@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef UTILS_PC_CONFIG_H_
-#define UTILS_PC_CONFIG_H_
+#ifndef STREAMER_UTILS_PC_CONFIG_H_
+#define STREAMER_UTILS_PC_CONFIG_H_
 
 #pragma once
 
@@ -80,4 +80,4 @@ bool validateIceServerUrl(const std::string url, std::string& error_message,
 
 };  // namespace utils
 
-#endif  // UTILS_PC_CONFIG_H_
+#endif  // STREAMER_UTILS_PC_CONFIG_H_

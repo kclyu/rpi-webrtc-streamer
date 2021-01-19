@@ -1,0 +1,50 @@
+
+// Configuration Row Macro
+//
+// CR   : String
+// CR_I : Integer Type
+// CR_B : Boolean Type
+// CR_F : Float Type
+//
+// Configuration Rearod Argument
+//
+// Argument Index:
+//   0 :  confiugration item name
+//   1 :  string to be used as config name in config file
+//   2 :  whether the json message can be modified from remote.
+//   3 :  define cpp type of configuration value
+//   4 :  default value
+//
+
+#define MOTION_CONFIG_ROW_LIST \
+	_CR_B(DetectionEnable, 	motion_detection_enable, false, bool, false) \
+	_CR_I(Width, 			motion_width, 			false, int, 1024) \
+	_CR_I(Height, 			motion_height, 			false, int, 768) \
+	_CR_I(Fps, 				motion_fps, 			false, int, 30) \
+	_CR_I(Bitrate, 			motion_bitrate, 		false, int, 3500) \
+	_CR_I(ClearPercent, 	motion_clear_percent, 	false, int, 5) \
+	_CR_I(ClearWaitPeriod, 	motion_clear_wait_period, false, int, 5000) \
+	_CR(Directory, 			motion_directory, 		false, std::string, "/opt/rws/motion_captured") \
+	_CR(FilePrefix, 		motion_file_prefix, 	false, std::string, "motion") \
+	_CR_I(FileSizeLimit, 	motion_file_size_limit, false, int, 6000) \
+	_CR_B(SaveImvFile, 		motion_save_imv_file, 	false, bool, false) \
+	_CR_B(EnableAnnotateText, motion_enable_annotate_text, false, bool, true) \
+	_CR(AnnotateText, 		motion_annotate_text, 	false, std::string, "") \
+	_CR_I(AnnotateTextSize, motion_annotate_text_size, false, int, 32) \
+	_CR_F(BlobCancelThreshold, blob_cancel_threshold, false, float, 0.5 ) \
+	_CR_I(BlobTrackingThreshold, blob_tracking_threshold, false, int, 15) \
+	_CR_I(TotalFileSizeLimit, motion_file_total_size_limit, false, int, 4000)
+
+// DO actual macro expansion
+MOTION_CONFIG_ROW_LIST
+
+
+// Removing configuraiton row definition macros
+#undef _CR
+#undef _CR_B
+#undef _CR_I
+#undef _CR_F
+
+#undef MOTION_CONFIG_ROW_LIST
+
+

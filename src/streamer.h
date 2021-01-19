@@ -17,9 +17,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RPI_STREAMER_H_
-#define RPI_STREAMER_H_
-#pragma once
+#ifndef STREAMER_H_
+#define STREAMER_H_
 
 #include <deque>
 #include <map>
@@ -37,7 +36,7 @@ class Streamer : public webrtc::PeerConnectionObserver,
                  public webrtc::CreateSessionDescriptionObserver,
                  public StreamerObserver {
    public:
-    Streamer(SocketServerObserver* session, StreamerConfig* config);
+    Streamer(SocketServerObserver* session, ConfigStreamer* config);
     void AddObserver(SocketServerObserver* session);
     bool connection_active() const;
     virtual void Close();
@@ -127,9 +126,9 @@ class Streamer : public webrtc::PeerConnectionObserver,
         video_track_sources_;
 
     SocketServerObserver* session_;
-    StreamerConfig* streamer_config_;
+    ConfigStreamer* config_streamer_;
     webrtc::PeerConnectionInterface::IceConnectionState ice_state_;
     webrtc::PeerConnectionInterface::PeerConnectionState peerconnection_state_;
 };
 
-#endif  // RPI_STREAMER_H_
+#endif  // STREAMER_H_

@@ -29,14 +29,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "app_channel.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <iostream>
 #include <vector>
 
-#include "config_motion.h"
 #include "utils.h"
 #include "websocket_server.h"
 
@@ -47,34 +42,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ////////////////////////////////////////////////////////////////////////////////
 AppChannel::AppChannel() : is_inited_(false) {}
 
-bool AppChannel::AppInitialize(StreamerConfig& config) {
-    std::string ws_url;
+bool AppChannel::AppInitialize(StreamerProxy* proxy,
+                               ConfigStreamer& config_streamer,
+                               ConfigMotion& config_motion) {
+    std::string rws_url_path;
     int port_num;
     std::string web_root;
 
     // LibWebSocket debug log
-    if (config.GetLibwebsocketDebugEnable()) {
+    if (config_streamer.GetLwsDebugEnable()) {
         RTC_LOG(INFO) << "enabling debug logging message of websocket library";
         LogLevel(LibWebSocketServer::DEBUG_LEVEL_ALL);
     };
 
     // need to initialize the motion mount after WebRoot initialization.
-    config.GetWebRootPath(web_root);
+    web_root = config_streamer.GetWebRootPath();
     RTC_LOG(INFO) << "Using http file mapping : " << web_root;
     RTC_LOG(INFO) << "Using motion video mapping : "
-                  << config_motion::motion_directory;
-    AddHttpWebMount(config_motion::motion_detection_enable, web_root,
-                    config_motion::motion_directory);
+                  << config_motion.GetDirectory();
+    AddHttpWebMount(config_motion.GetDetectionEnable(), web_root,
+                    config_motion.GetDirectory());
 
-    config.GetWebSocketPort(port_num);
+    port_num = config_streamer.GetWebSocketPort();
     RTC_LOG(INFO) << "WebSocket port num : " << port_num;
     if (Init(port_num) == false) return false;
 
-    config.GetRwsWsURL(ws_url);
-    RTC_LOG(INFO) << "Using RWS WS client url : " << ws_url;
-    ws_client_.RegisterWebSocketMessage(this);
-    ws_client_.RegisterConfigStreamer(&config);
-    AddWebSocketHandler(ws_url, SINGLE_INSTANCE, &ws_client_);
+    ws_client_.reset(new AppWsClient(proxy));
+
+    rws_url_path = config_streamer.GetRwsWsUrlPath();
+    RTC_LOG(INFO) << "Using RWS WS client url : " << rws_url_path;
+    ws_client_->RegisterWebSocketMessage(this);
+    ws_client_->RegisterConfigStreamer(&config_streamer);
+    AddWebSocketHandler(rws_url_path, SINGLE_INSTANCE, ws_client_.get());
 
     is_inited_ = true;
     return true;

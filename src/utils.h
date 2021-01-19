@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef RPI_STREAMER_UTILS_H_
-#define RPI_STREAMER_UTILS_H_
+#ifndef STREAMER_UTILS_H_
+#define STREAMER_UTILS_H_
 
 #pragma once
 
@@ -48,4 +48,4 @@ bool GetHardwareDeviceId(std::string* deviceid);
 
 };  // namespace utils
 
-#endif  // RPI_STREAMER_UTILS_H_
+#endif  // STREAMER_UTILS_H_

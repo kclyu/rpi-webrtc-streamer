@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef __MDNS_PUBLISH__
-#define __MDNS_PUBLISH__
+#ifndef MDNS_PUBLISH_H_
+#define MDNS_PUBLISH_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,4 +46,4 @@ int mdns_run_loop(int timeout);
 }  // extern "C"
 #endif  // __cplusplus
 
-#endif /* __MDNS_PUBLISH__ */
+#endif /* MDNS_PUBLISH_H_ */

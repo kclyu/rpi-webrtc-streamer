@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <string>
 
+#include "config_defs.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/string_encode.h"
@@ -262,11 +263,8 @@ bool ConfigMedia::RemoveSessionRtcConfig(const int sockid) {
 // config value validation functions
 //
 ////////////////////////////////////////////////////////////////////////////////
-#define DECLARE_VALIDATOR(class_name, config_var, config_type)             \
-    bool class_name ::validate_value__##config_var(config_type config_var, \
-                                                   config_type default_value)
 
-DECLARE_VALIDATOR(ConfigMedia, camera_select, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, camera_select, int) {
     if (camera_select < 0 || camera_select > 2) {
         RTC_LOG(LS_ERROR) << "Error in video camera select num : "
                           << camera_select
@@ -276,7 +274,7 @@ DECLARE_VALIDATOR(ConfigMedia, camera_select, int) {
     return true;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_rotation, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_rotation, int) {
     if (!((video_rotation == 0) || (video_rotation == 90) ||
           (video_rotation == 180) || (video_rotation == 270))) {
         RTC_LOG(LS_ERROR) << "Error in video roration value: " << video_rotation
@@ -286,7 +284,7 @@ DECLARE_VALIDATOR(ConfigMedia, video_rotation, int) {
     return true;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, max_bitrate, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, max_bitrate, int) {
     // 17000000 values from RaspiVid.c bitrate for 1080p
     if ((max_bitrate < 200) || (max_bitrate > 17000000)) {
         RTC_LOG(LS_ERROR) << "Error in video max bitrate value: " << max_bitrate
@@ -296,7 +294,7 @@ DECLARE_VALIDATOR(ConfigMedia, max_bitrate, int) {
     return true;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, fixed_video_fps, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, fixed_video_fps, int) {
     if ((fixed_video_fps < 5) || (fixed_video_fps > 30)) {
         RTC_LOG(LS_ERROR) << "Error in video frame rate value: "
                           << fixed_video_fps
@@ -306,7 +304,7 @@ DECLARE_VALIDATOR(ConfigMedia, fixed_video_fps, int) {
     return true;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, fixed_video_resolution, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, fixed_video_resolution, std::string) {
     int width, height;
     if (utils::ParseVideoResolution(fixed_video_resolution, &width, &height) ==
         true) {
@@ -321,79 +319,79 @@ DECLARE_VALIDATOR(ConfigMedia, fixed_video_resolution, std::string) {
     return true;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_resolution_list_4_3, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_resolution_list_4_3, std::string) {
     return parse_vidio_resolution(video_resolution_list_4_3,
                                   video_resolution_list_4_3_);
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_resolution_list_16_9, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_resolution_list_16_9, std::string) {
     return parse_vidio_resolution(video_resolution_list_16_9,
                                   video_resolution_list_16_9_);
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_roi, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_roi, std::string) {
     return parse_video_roi(video_roi, video_roi_);
 }
 
 //
 //  Video setting validation
 //
-DECLARE_VALIDATOR(ConfigMedia, video_sharpness, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_sharpness, int) {
     if (video_sharpness >= -100 && video_sharpness <= 100) return true;
     RTC_LOG(LS_ERROR) << "Error in sharpness value: " << video_sharpness;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_contrast, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_contrast, int) {
     if (video_contrast >= -100 && video_contrast <= 100) return true;
     RTC_LOG(LS_ERROR) << "Error in video_contrast value: " << video_contrast;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_brightness, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_brightness, int) {
     if (video_brightness >= 0 && video_brightness <= 100) return true;
     RTC_LOG(LS_ERROR) << "Error in brightness value: " << video_brightness;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_saturation, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_saturation, int) {
     if (video_saturation >= -100 && video_saturation <= 100) return true;
     RTC_LOG(LS_ERROR) << "Error in saturation value: " << video_saturation;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_ev, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_ev, int) {
     if (video_ev >= -10 && video_ev <= 10) return true;
     RTC_LOG(LS_ERROR) << "Error in EC value: " << video_ev;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_exposure_mode, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_exposure_mode, std::string) {
     if (check_optionvalue_exposure_mode(video_exposure_mode.c_str()))
         return true;
     RTC_LOG(LS_ERROR) << "Unknown exposure_mode: " << video_exposure_mode;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_flicker_mode, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_flicker_mode, std::string) {
     if (check_optionvalue_flicker_mode(video_flicker_mode.c_str())) return true;
     RTC_LOG(LS_ERROR) << "Unknown flicker mode: " << video_flicker_mode;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_awb_mode, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_awb_mode, std::string) {
     if (check_optionvalue_awb_mode(video_awb_mode.c_str())) return true;
     RTC_LOG(LS_ERROR) << "Unknown AWB mode: " << video_awb_mode;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_drc_mode, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_drc_mode, std::string) {
     if (check_optionvalue_drc_mode(video_drc_mode.c_str())) return true;
     RTC_LOG(LS_ERROR) << "Unknown DRC level : " << video_drc_mode;
     return false;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, video_annotate_text, std::string) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_annotate_text, std::string) {
     // MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2 is 256,
     // but, it is too big to display on video frame
     if (video_annotate_text.length() == 0 || video_annotate_text.length() > 64)
@@ -403,7 +401,7 @@ DECLARE_VALIDATOR(ConfigMedia, video_annotate_text, std::string) {
 
 // Returns true if the specifiec text size within valid range
 // or return false otherwise.
-DECLARE_VALIDATOR(ConfigMedia, video_annotate_text_size_ratio, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, video_annotate_text_size_ratio, int) {
     if (video_annotate_text_size_ratio < 2 ||
         video_annotate_text_size_ratio >= 10) {
         RTC_LOG(LS_ERROR)
@@ -416,7 +414,7 @@ DECLARE_VALIDATOR(ConfigMedia, video_annotate_text_size_ratio, int) {
     return true;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, audio_jitter_buffer_max_packets, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, audio_jitter_buffer_max_packets, int) {
     if (audio_jitter_buffer_max_packets < 0) {
         RTC_LOG(LS_ERROR) << "jitter buffer max packets is not valid\""
                           << audio_jitter_buffer_max_packets
@@ -426,7 +424,7 @@ DECLARE_VALIDATOR(ConfigMedia, audio_jitter_buffer_max_packets, int) {
     return true;
 }
 
-DECLARE_VALIDATOR(ConfigMedia, audio_jitter_buffer_min_delay_ms, int) {
+DECLARE_METHOD_VALIDATOR(ConfigMedia, audio_jitter_buffer_min_delay_ms, int) {
     if (audio_jitter_buffer_min_delay_ms < 0) {
         RTC_LOG(LS_ERROR) << "jitter buffer main delay ms is not valid\""
                           << audio_jitter_buffer_min_delay_ms
@@ -443,7 +441,7 @@ DECLARE_VALIDATOR(ConfigMedia, audio_jitter_buffer_min_delay_ms, int) {
 ////////////////////////////////////////////////////////////////////////////////
 ConfigMedia::ConfigMedia(void)
     : media_optionfile_(nullptr), config_file_loaded_(false) {
-    LoadConfigWithDefault();
+    Reset();
 }
 
 ConfigMedia::~ConfigMedia(void) {}
@@ -472,10 +470,7 @@ bool ConfigMedia::GetFixedVideoResolution(int &width, int &height) {
 
 #define _CR(name, config_var, config_remote_access, config_type, \
             default_value)                                       \
-    config_type ConfigMedia::Get##name(void) {                   \
-        webrtc::MutexLock lock(&mutex_);                         \
-        return config_var;                                       \
-    }
+    config_type ConfigMedia::Get##name(void) const { return config_var; }
 // ignore CR_L type
 #define _CR_L(name, config_var, config_remote_access, config_type, \
               default_value)
@@ -483,14 +478,6 @@ bool ConfigMedia::GetFixedVideoResolution(int &width, int &height) {
 #define _CR_I _CR
 
 #include "def/config_media.def"
-
-MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
 
 //
 // Setter Method definition
@@ -518,20 +505,12 @@ MEDIA_CONFIG_ROW_LIST
 
 #include "def/config_media.def"
 
-MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // config loading and saving function
 //
 ////////////////////////////////////////////////////////////////////////////////
-void ConfigMedia::LoadConfigWithDefault(void) {
+void ConfigMedia::Reset(void) {
 #define _CR(name, config_var, config_remote_access, config_type, \
             default_value)                                       \
     config_var = default_value;                                  \
@@ -547,17 +526,10 @@ void ConfigMedia::LoadConfigWithDefault(void) {
 #define _CR_I _CR
 
 #include "def/config_media.def"
-
-    MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
 }
 
-bool ConfigMedia::Load(const std::string config_filename) {
+bool ConfigMedia::Load(const std::string config_filename,
+                       const bool dump_config) {
     media_optionfile_.reset(new rtc::OptionsFile(config_filename));
     if (media_optionfile_->Load() == false) {
         RTC_LOG(LS_ERROR) << "Failed to load config file, : " << config_file_
@@ -623,13 +595,7 @@ bool ConfigMedia::Load(const std::string config_filename) {
 
 #include "def/config_media.def"
 
-    MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
+    if (dump_config) DumpConfig();
 
     return true;
 }
@@ -682,14 +648,6 @@ bool ConfigMedia::Save(void) {
     }
 
 #include "def/config_media.def"
-
-    MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
 
     if (media_optionfile_->Save() == false) {
         RTC_LOG(LS_ERROR) << "Failed to save config file, : " << config_file_;
@@ -748,19 +706,10 @@ void ConfigMedia::DumpConfig(void) {
 #define _CR_I _CR
 
 #include "def/config_media.def"
-
-    MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
 }
 
-bool ConfigMedia::ConfigFromJson(const std::string &config_message,
-                                 std::string *config_updated,
-                                 std::string &error) {
+bool ConfigMedia::FromJson(const std::string &config_message,
+                           std::string *config_updated, std::string &error) {
     Json::StyledWriter json_writer;
     Json::Reader json_reader;
     Json::Value json_value;
@@ -885,14 +834,6 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
 
 #include "def/config_media.def"
 
-        MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
-
     } else {
         std::string parse_error_msg = "Parsing Error : ";
         // Failed to parse json
@@ -907,7 +848,7 @@ bool ConfigMedia::ConfigFromJson(const std::string &config_message,
     return true;
 }
 
-bool ConfigMedia::ConfigToJson(std::string &config_message) {
+bool ConfigMedia::ToJson(std::string &config_message) {
     Json::StyledWriter json_writer;
     Json::Value json_config;
 
@@ -921,14 +862,6 @@ bool ConfigMedia::ConfigToJson(std::string &config_message) {
 #define _CR_I _CR
 
 #include "def/config_media.def"
-
-    MEDIA_CONFIG_ROW_LIST
-
-#undef _CR
-#undef _CR_L
-#undef _CR_B
-#undef _CR_I
-#undef MEDIA_CONFIG_ROW_LIST
 
     config_message = json_writer.write(json_config);
     return true;

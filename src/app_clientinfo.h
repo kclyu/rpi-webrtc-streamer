@@ -24,8 +24,10 @@ ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
+
+#ifndef APP_CLIENTINFO_H_
+#define APP_CLIENTINFO_H_
 
 #include <list>
 #include <memory>
@@ -34,9 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/json.h"
 #include "rtc_base/synchronization/mutex.h"
-
-#ifndef APP_CLINETINFO_H_
-#define APP_CLINETINFO_H_
 
 // AppClient does not have room concept and only one clinet connection..
 // so room_id and client_id will be held within AppClientInfo
@@ -67,4 +66,4 @@ class AppClientInfo {
     int sockid_;
 };
 
-#endif  // APP_CLINETINFO_H_
+#endif  // APP_CLIENTINFO_H_

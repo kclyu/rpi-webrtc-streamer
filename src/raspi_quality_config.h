@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RPI_QUALITY_CONFIG_
-#define RPI_QUALITY_CONFIG_
+#ifndef RPI_QUALITY_CONFIG_H_
+#define RPI_QUALITY_CONFIG_H_
 
 #include <list>
 #include <utility>
@@ -87,4 +87,4 @@ class QualityConfig {
     bool use_initial_resolution_;
 };
 
-#endif  // RPI_QUALITY_CONFIG_
+#endif  // RPI_QUALITY_CONFIG_H_

@@ -27,12 +27,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RPI_STREAMER_OBSERVER_
-#define RPI_STREAMER_OBSERVER_
-#pragma once
+#ifndef STREAMER_OBSERVER_H_
+#define STREAMER_OBSERVER_H_
 
 #include <memory>
 
+#include "config_motion.h"
 #include "raspi_motion.h"
 #include "session_config.h"
 
@@ -66,10 +66,10 @@ class StreamerProxy;  // forward declaration
 class RaspiMotion;    // forward declaration
 class SocketServerHelper : public SocketServerObserver {
    public:
-    SocketServerHelper();
     void RegisterObserver(StreamerObserver* callback){};
 
    protected:
+    SocketServerHelper(StreamerProxy* proxy);
     virtual ~SocketServerHelper() {}
     // Offer will be generated at server side.
     bool ActivateStreamSession(const int peer_id,
@@ -86,13 +86,14 @@ class SocketServerHelper : public SocketServerObserver {
    private:
     bool streamsession_active_;
     StreamerObserver* streamer_callback_;
-    StreamerProxy* streamer_proxy_;
+    StreamerProxy* proxy_;
     int peer_id_;
 };
 
 class StreamerProxy : public SocketServerObserver {
    public:
-    static StreamerProxy* GetInstance();
+    StreamerProxy(ConfigMotion* config_motion);
+    ~StreamerProxy() {}
     bool ObtainStreamer(SocketServerObserver* socket_server, int peer_id,
                         const SessionConfig::Config& config);
     bool ObtainStreamer(SocketServerObserver* socket_server, int peer_id,
@@ -114,21 +115,17 @@ class StreamerProxy : public SocketServerObserver {
 #endif /* __NOTI_ENABLE__ */
 
    private:
-    StreamerProxy() {}
-    StreamerProxy(const StreamerProxy&) {}
-    ~StreamerProxy() {}
-
-    static StreamerProxy* streamer_proxy_;
     std::unique_ptr<RaspiMotion> raspi_motion_;
 #ifdef __NOTI_ENABLE__
     std::unique_ptr<RaspiHttpNoti> http_noti_;
 #endif /* __NOTI_ENABLE__ */
     SocketServerObserver* active_socket_observer_;
     StreamerObserver* streamer_callback_;  // streamer callback
+    ConfigMotion* config_motion_;
     int active_peer_id_;
     std::string active_peer_name_;
     bool noti_enable_;
     std::string noti_url_;
 };
 
-#endif  // RPI_STREAMER_OBSERVER_
+#endif  // STREAMER_OBSERVER_H_

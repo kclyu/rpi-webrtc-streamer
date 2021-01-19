@@ -48,7 +48,8 @@ static const int kDefaultMotionActiveClearPercent = 5;
 static const int kDefaultMotionClearWaitPeriod = 5000;   // 5 seconds
 static const int kDefaultMotionAveragePrintDiff = 1000;  // 1 second
 
-RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
+RaspiMotion::RaspiMotion(ConfigMotion *config_motion, int width, int height,
+                         int framerate, int bitrate)
     : Event(false, false),
       motion_active_(false),
       motion_drain_quit_(false),
@@ -59,18 +60,24 @@ RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
       bitrate_(bitrate),
       mmal_encoder_(nullptr),
       clock_(webrtc::Clock::GetRealTimeClock()),
-      motion_analysis_(width, height, framerate, false),
-      motion_active_average_(kDefaultMotionAverageSize) {
+      motion_analysis_(width, height, framerate, false,
+                       config_motion->GetBlobCancelThreshold(),
+                       config_motion->GetBlobTrackingThreshold()),
+      motion_active_average_(kDefaultMotionAverageSize),
+      config_motion_(config_motion) {
     queue_capacity_ = (framerate * VIDEO_INTRAFRAME_PERIOD * 2) * 1.2;
     frame_queue_size_ = (width * height * kKushGaugeConstant * 2) / 8;
     mv_queue_size_ = (width / 16 + 1) * (height / 16) * 4;
+    motion_clear_wait_period_ = config_motion->GetClearWaitPeriod();
+    motion_active_percent_clear_threshold_ = config_motion->GetClearPercent();
 
     mv_shared_buffer_.reset(
         new rtc::BufferQueue(queue_capacity_, mv_queue_size_));
 
-    motion_file_.reset(new RaspiMotionFile(
-        config_motion::motion_directory, config_motion::motion_file_prefix,
-        queue_capacity_, frame_queue_size_, mv_queue_size_));
+    motion_file_.reset(
+        new RaspiMotionFile(config_motion, config_motion->GetDirectory(),
+                            config_motion->GetFilePrefix(), queue_capacity_,
+                            frame_queue_size_, mv_queue_size_));
 
     motion_analysis_.SetBlobEnable(true);
     motion_analysis_.RegisterBlobObserver(this);
@@ -85,13 +92,10 @@ RaspiMotion::RaspiMotion(int width, int height, int framerate, int bitrate)
     motion_active_percent_clear_threshold_ = kDefaultMotionActiveClearPercent;
 }
 
-RaspiMotion::RaspiMotion()
-    : RaspiMotion(config_motion::motion_width, config_motion::motion_height,
-                  config_motion::motion_fps, config_motion::motion_bitrate) {
-    motion_clear_wait_period_ = config_motion::motion_clear_wait_period;
-    motion_active_percent_clear_threshold_ =
-        config_motion::motion_clear_percent;
-}
+RaspiMotion::RaspiMotion(ConfigMotion *config_motion)
+    : RaspiMotion(config_motion, config_motion->GetWidth(),
+                  config_motion->GetHeight(), config_motion->GetFps(),
+                  config_motion->GetBitrate()) {}
 
 bool RaspiMotion::IsActive() const { return motion_active_; }
 
@@ -116,12 +120,13 @@ bool RaspiMotion::StartCapture() {
     // Setting Intra Frame period
     mmal_encoder_->SetIntraPeriod(framerate_ * VIDEO_INTRAFRAME_PERIOD);
 
-    mmal_encoder_->SetVideoAnnotate(config_motion::motion_enable_annotate_text);
-    if (config_motion::motion_enable_annotate_text == true) {
+    if (config_motion_->GetEnableAnnotateText() == true) {
+        mmal_encoder_->SetVideoAnnotate(
+            config_motion_->GetEnableAnnotateText());
         mmal_encoder_->SetVideoAnnotateUserText(
-            config_motion::motion_annotate_text);
+            config_motion_->GetAnnotateText());
         mmal_encoder_->SetVideoAnnotateTextSize(
-            config_motion::motion_annotate_text_size);
+            config_motion_->GetAnnotateTextSize());
     };
 
     RTC_LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_

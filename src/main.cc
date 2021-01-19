@@ -101,6 +101,8 @@ ABSL_FLAG(
     "--fieldtrials=WebRTC-FooFeature/Enabled/ "
     "will assign the group Enabled to field trial WebRTC-FooFeature. Multiple "
     "trials are separated by \"/\"");
+ABSL_FLAG(bool, dump_config, false,
+          "dump the configration options after loading");
 
 bool RWsContrainHelpFlags(absl::string_view f) {
     // accept help message flags which is defined in main.cc
@@ -142,10 +144,11 @@ int main(int argc, char** argv) {
     std::string conf_filename = absl::GetFlag(FLAGS_conf);
     std::cerr << "config file :" << conf_filename << "\n";
     // Load the streamer configuration from file
-    StreamerConfig streamer_config(conf_filename);
-    if (streamer_config.LoadConfig() == false) {
-        std::cerr << "Failed to load config options:"
-                  << streamer_config.GetConfigFilename() << "\n";
+    ConfigStreamer config_streamer(conf_filename,
+                                   absl::GetFlag(FLAGS_dump_config));
+    if (config_streamer.Load() == false) {
+        std::cerr << "Failed to load config options for streamer: "
+                  << conf_filename << "\n";
         return -1;
     };
 
@@ -158,8 +161,8 @@ int main(int argc, char** argv) {
         std::cerr << "Using CommandLine FieldTrials :" << fieldtrials << "\n";
         webrtc::field_trial::InitFieldTrialsFromString(fieldtrials.c_str());
     } else {
-        std::string fieldtrials;
-        if (streamer_config.GetFieldTrials(fieldtrials) == true) {
+        std::string fieldtrials = config_streamer.GetFieldTrials();
+        if (!fieldtrials.empty()) {
             std::cerr << "Using Config FieldTrials :" << fieldtrials << "\n";
             webrtc::field_trial::InitFieldTrialsFromString(fieldtrials.c_str());
         }
@@ -177,14 +180,14 @@ int main(int argc, char** argv) {
         //      1. Use command line flag when path of command line flag exists
         //      2. If not, use the INSTALL_DIR + log path
         log_base_dir = absl::GetFlag(FLAGS_log);
-        if (streamer_config.GetLogPath(log_base_dir) == false) {
+        if (config_streamer.GetLogPath(log_base_dir) == false) {
             std::cerr << "Failed to get log directory : " << log_base_dir
                       << "\n";
             return -1;
         };
 
         file_logger.reset(new utils::FileLogger(
-            log_base_dir, severity, streamer_config.GetDisableLogBuffering()));
+            log_base_dir, severity, config_streamer.GetDisableLogBuffering()));
         // file logging will be enabled only when verbose flag is disabled.
         if (!file_logger->Init()) {
             std::cerr << "Failed to init file message logger\n";
@@ -192,22 +195,25 @@ int main(int argc, char** argv) {
         }
     }
 
-    if (streamer_config.GetMediaConfigFilePath(config_filename) == true) {
-        // media configuration sigleton reference
-        ConfigMedia* config_media = ConfigMediaSingleton::Instance();
-        RTC_DCHECK(config_media != nullptr);
-        // return value does not have meaning
-        config_media->Load(config_filename);
-        RTC_LOG(INFO) << "Using Media Config file: " << config_filename;
-    };
+    // loading media confiratuion options
+    config_filename = config_streamer.GetMediaConfigFile();
+    // media configuration sigleton reference
+    ConfigMedia* config_media = ConfigMediaSingleton::Instance();
 
-    if (streamer_config.GetMotionConfigFilePath(config_filename) == true) {
-        if (config_motion::config_load(config_filename) == false) {
-            RTC_LOG(LS_WARNING) << "Failed to load motion option config file:"
-                                << config_filename;
-        }
+    // return value does not have meaning
+    config_media->Load(config_filename, absl::GetFlag(FLAGS_dump_config));
+    RTC_LOG(INFO) << "Using Media Config file: " << config_filename;
+
+    // loading motion confiratuion options
+    config_filename = config_streamer.GetMotionConfigFile();
+    // Load the streamer configuration from file
+    ConfigMotion config_motion(config_filename,
+                               absl::GetFlag(FLAGS_dump_config));
+    if (config_motion.Load() == false) {
+        RTC_LOG(LS_WARNING)
+            << "Failed to load motion option config file:" << config_filename;
+    } else
         RTC_LOG(INFO) << "Using Motion Config file: " << config_filename;
-    };
 
     std::unique_ptr<DirectSocketServer> direct_socket_server;
     std::unique_ptr<AppChannel> app_channel;
@@ -217,20 +223,15 @@ int main(int argc, char** argv) {
 
     rtc::InitializeSSL();
 
-    // DirectSocket
-    if (streamer_config.GetDirectSocketEnable() == true) {
-        int direct_socket_port_num;
+    StreamerProxy streamer_proxy(&config_motion);
 
-        if (!streamer_config.GetDirectSocketPort(direct_socket_port_num)) {
-            RTC_LOG(LS_ERROR) << "Error in getting direct socket port number: "
-                              << direct_socket_port_num;
-            rtc::CleanupSSL();
-            return -1;
-        }
+    // DirectSocket
+    if (config_streamer.GetDirectSocketEnable() == true) {
+        int direct_socket_port_num = config_streamer.GetDirectSocketPort();
         RTC_LOG(INFO) << "Direct socket port num: " << direct_socket_port_num;
         rtc::SocketAddress addr("0.0.0.0", direct_socket_port_num);
 
-        direct_socket_server.reset(new DirectSocketServer());
+        direct_socket_server.reset(new DirectSocketServer(&streamer_proxy));
         if (direct_socket_server->Listen(addr) == false) {
             rtc::CleanupSSL();
             return -1;
@@ -238,32 +239,31 @@ int main(int argc, char** argv) {
     }
 
     // WebSocket
-    if (streamer_config.GetWebSocketEnable() == true) {
+    if (config_streamer.GetWebSocketEnable() == true) {
         app_channel.reset(new AppChannel());
-        app_channel->AppInitialize(streamer_config);
+        app_channel->AppInitialize(&streamer_proxy, config_streamer,
+                                   config_motion);
 
         socket_server.set_websocket_server(app_channel.get());
 
         // mDNS publish initialization
         // mDNS only publishes the WebSocket information used by RWS.
-        int websocket_port;
-        std::string websocket_url_path;
+        int websocket_port = config_streamer.GetWebSocketPort();
+        std::string websocket_url_path = config_streamer.GetRwsWsUrlPath();
         std::string deviceid;
-        streamer_config.GetWebSocketPort(websocket_port);
-        streamer_config.GetRwsWsURL(websocket_url_path);
-        utils::GetHardwareDeviceId(&deviceid);
-        if (mdns_init_clientinfo(websocket_port, websocket_url_path.c_str(),
-                                 deviceid.c_str()) == MDNS_FAILED) {
-            RTC_LOG(LS_ERROR) << "mDNS: Failed to initialize mdns client info";
-        } else {
+        if (utils::GetHardwareDeviceId(&deviceid) == true &&
+            mdns_init_clientinfo(websocket_port, websocket_url_path.c_str(),
+                                 deviceid.c_str()) == MDNS_SUCCESS) {
             // enabling mDNS publish event loop
             socket_server.set_mdns_publish_enable(true);
+        } else {
+            RTC_LOG(LS_ERROR) << "mDNS: Failed to initialize mdns client info";
         }
     };
 
     // starting streamer
-    rtc::scoped_refptr<Streamer> streamer(new rtc::RefCountedObject<Streamer>(
-        StreamerProxy::GetInstance(), &streamer_config));
+    rtc::scoped_refptr<Streamer> streamer(
+        new rtc::RefCountedObject<Streamer>(&streamer_proxy, &config_streamer));
 
     // Running Loop
     thread.Run();

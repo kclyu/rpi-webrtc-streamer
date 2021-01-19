@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 
 #include "compat/file.h"
+#include "config_motion.h"
 #include "rtc_base/buffer_queue.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
@@ -42,7 +43,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class RaspiMotionFile : public rtc::Event {
    public:
-    explicit RaspiMotionFile(const std::string base_path,
+    explicit RaspiMotionFile(ConfigMotion* config_motion,
+                             const std::string base_path,
                              const std::string prefix, int queue_capacity,
                              int frame_queue_size, int motion_queue_size);
     ~RaspiMotionFile();
@@ -99,6 +101,7 @@ class RaspiMotionFile : public rtc::Event {
 
     webrtc::Mutex mutex_;
     webrtc::Clock* const clock_;
+    ConfigMotion* config_motion_;
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotionFile);
 };
 

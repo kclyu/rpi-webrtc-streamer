@@ -27,51 +27,55 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef RPI_STREAMER_CONFIG_
-#define RPI_STREAMER_CONFIG_
+#ifndef CONFIG_STREAMER_H_
+#define CONFIG_STREAMER_H_
 
-#include "api/peer_connection_interface.h"
 #include "compat/optionsfile.h"
 #include "rtc_base/checks.h"
 #include "utils_pc_config.h"
 
-class StreamerConfig {
+class ConfigStreamer {
    public:
-    explicit StreamerConfig(const std::string& config_file);
-    ~StreamerConfig();
+    explicit ConfigStreamer(const std::string& config_file,
+                            bool verbose = false);
+    ~ConfigStreamer();
 
     // Load Config
-    bool LoadConfig(bool verbose = false);
-    const std::string GetConfigFilename();
+    bool Load();
 
-    bool GetDisableLogBuffering();
-    bool GetLibwebsocketDebugEnable();
-    bool GetWebRootPath(std::string& path);
-    bool GetRwsWsURL(std::string& path);
-    bool GetWebSocketEnable();
-    bool GetWebSocketPort(int& port);
-    bool GetFieldTrials(std::string& fieldtrials);
+// define expasion macros for Getter
+//      type Get##name();
 
-    bool GetDirectSocketEnable();
-    bool GetDirectSocketPort(int& port);
+// define expasion macros for Getter
+//      type GetName();
+#define _CR(name, config_var, config_remote_access, config_type, \
+            config_default)                                      \
+    config_type Get##name(void) const;                           \
+    config_type config_var;                                      \
+    bool isloaded__##config_var;                                 \
+    bool validate_value__##config_var(config_type value,         \
+                                      config_type default_value);
+#define _CR_B _CR
+#define _CR_I _CR
 
-    bool GetSrtpEnable();
-    bool GetAudioEnable();
-    bool GetVideoEnable();
+#include "def/config_streamer.def"
 
     bool GetJsonRtcConfig(std::string& json_rtcconfig);
     bool GetRtcConfig(utils::RTCConfiguration& config);
 
-    bool GetMediaConfigFilePath(std::string& conf);
-    bool GetMotionConfigFilePath(std::string& conf);
     bool GetLogPath(std::string& log_dir);
+
+    std::string GetMediaConfigFile();
+    std::string GetMotionConfigFile();
+
+    void DumpConfig(void);
 
    private:
     bool config_loaded_;
     std::string config_file_;
-    bool verbose_;
-    std::unique_ptr<rtc::OptionsFile> config_;
+    bool dump_config_;
+    std::unique_ptr<rtc::OptionsFile> options_file_;
     std::string config_dir_basename_;
 };
 
-#endif  // RPI_STREAMER_CONFIG_
+#endif  // CONFIG_STREAMER_H_

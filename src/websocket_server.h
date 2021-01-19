@@ -26,6 +26,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#ifndef WEBSOCKET_SERVER_H_
+#define WEBSOCKET_SERVER_H_
 
 #include <algorithm>
 #include <ctime>
@@ -34,14 +36,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <map>
 #include <string>
 
+
 // __RWS_VERSION__ defined in Makefile
 #define WEBSOCKET_SERVER_NAME __RWS_VERSION__
 
 #include "websocket_handler.h"
 #include "websocket_server_internal.h"
 
-#ifndef WEBSOCKET_SERVER_H_
-#define WEBSOCKET_SERVER_H_
 
 //////////////////////////////////////////////////////////////////////
 //

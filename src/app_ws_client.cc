@@ -199,11 +199,11 @@ static const int kMaxChunkedFrames = 5;
 // App Websocket only Channel
 //
 ////////////////////////////////////////////////////////////////////////////////
-AppWsClient::AppWsClient()
-    : websocket_message_(nullptr), num_chunked_frames_(0) {
+AppWsClient::AppWsClient(StreamerProxy* proxy)
+    : SocketServerHelper(proxy), num_chunked_frames_(0) {
     deviceid_inited_ = utils::GetHardwareDeviceId(&deviceid_);
     config_media_ = ConfigMediaSingleton::Instance();
-    streamer_config_ = nullptr;
+    config_streamer_ = nullptr;
     if (deviceid_inited_)
         RTC_LOG(INFO) << "Using Device ID : " << deviceid_;
     else
@@ -214,8 +214,8 @@ void AppWsClient::RegisterWebSocketMessage(WebSocketMessage* server_instance) {
     websocket_message_ = server_instance;
 }
 
-void AppWsClient::RegisterConfigStreamer(StreamerConfig* streamer_config) {
-    streamer_config_ = streamer_config;
+void AppWsClient::RegisterConfigStreamer(ConfigStreamer* config_streamer) {
+    config_streamer_ = config_streamer;
 }
 
 void AppWsClient::OnConnect(int sockid) {
@@ -467,7 +467,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 return true;
             } else {
                 // loading json RTC config from configuration file
-                if (streamer_config_->GetJsonRtcConfig(json_rtcconfig)) {
+                if (config_streamer_->GetJsonRtcConfig(json_rtcconfig)) {
                     SendResponse(sockid, true, kValueTypeRTCConfig, transaction,
                                  json_rtcconfig, "");
                 } else {
@@ -502,7 +502,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 // sends the entire media_config to the client.
                 std::string media_config;
 
-                config_media_->ConfigToJson(media_config);
+                config_media_->ToJson(media_config);
                 SendResponse(sockid, true, kValueTypeConfig, transaction,
                              media_config, "");
                 return true;
@@ -520,7 +520,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                     // save successufl,
                     // and sends the entire media_config to the client.
                     std::string media_config;
-                    config_media_->ConfigToJson(media_config);
+                    config_media_->ToJson(media_config);
                     SendResponse(sockid, true, kValueTypeConfig, transaction,
                                  media_config, "");
                     return true;
@@ -531,12 +531,12 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             //
             else if (data.compare(kValueDataReset) == 0) {
                 // reset to default media configurations
-                config_media_->LoadConfigWithDefault();
+                config_media_->Reset();
 
                 // sends the entire media_config to the client.
                 std::string media_config;
 
-                config_media_->ConfigToJson(media_config);
+                config_media_->ToJson(media_config);
                 SendResponse(sockid, true, kValueTypeConfig, transaction,
                              media_config, "");
                 return true;
@@ -567,8 +567,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 return true;
             }
 
-            if (config_media_->ConfigFromJson(data, &updated_config,
-                                              json_error) == false) {
+            if (config_media_->FromJson(data, &updated_config, json_error) ==
+                false) {
                 RTC_LOG(LS_ERROR) << "Failed to parse config data";
                 SendResponse(sockid, false, kValueTypeConfig, transaction, "",
                              json_error);

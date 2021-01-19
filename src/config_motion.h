@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2021, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -30,37 +30,44 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef CONFIG_MOTION_H_
 #define CONFIG_MOTION_H_
 
-#include "config_defines.h"
+#include <memory>
 
-//
-// The config part for global config is required.
-//
-namespace config_motion {
+#include "compat/optionsfile.h"
 
-CONFIG_DEFINE_H(MotionDetectionEnable, motion_detection_enable, bool);
-CONFIG_DEFINE_H(MotionWidth, motion_width, int);
-CONFIG_DEFINE_H(MotionHeight, motion_height, int);
-CONFIG_DEFINE_H(MotionFps, motion_fps, int);
-CONFIG_DEFINE_H(MotionBitrate, motion_bitrate, int);
-CONFIG_DEFINE_H(MotionClearPercent, motion_clear_percent, int);
-CONFIG_DEFINE_H(MotionClearWaitPeriod, motion_clear_wait_period, int);
+class ConfigMotion {
+   public:
+    explicit ConfigMotion(const std::string& config_file, bool verbose = false);
+    ~ConfigMotion();
 
-CONFIG_DEFINE_H(MotionDirBase, motion_directory, std::string);
-CONFIG_DEFINE_H(MotionFilePrefix, motion_file_prefix, std::string);
-CONFIG_DEFINE_H(MotionFileSizeLimit, motion_file_size_limit, int);
-CONFIG_DEFINE_H(MotionSaveImvFile, motion_save_imv_file, bool);
+    // Load Config
+    bool Load();
 
-CONFIG_DEFINE_H(MotionEnableAnnotateText, motion_enable_annotate_text, bool);
-CONFIG_DEFINE_H(MotionAnnotateText, motion_annotate_text, std::string);
-CONFIG_DEFINE_H(MotionAnnotateTextSize, motion_annotate_text_size, int);
+// define expasion macros for Getter
+//      type Get##name();
 
-CONFIG_DEFINE_H(MotionBlobCancelThreshold, blob_cancel_threshold, float);
-CONFIG_DEFINE_H(MotionBlobTrackingThreshold, blob_tracking_threshold, int);
+// define expasion macros for Getter
+//      type GetName();
+#define _CR(name, config_var, config_remote_access, config_type, \
+            config_default)                                      \
+    config_type Get##name(void) const;                           \
+    config_type config_var;                                      \
+    bool isloaded__##config_var;                                 \
+    bool validate_value__##config_var(config_type value,         \
+                                      config_type default_value);
+#define _CR_B _CR
+#define _CR_I _CR
+#define _CR_F _CR
 
-CONFIG_DEFINE_H(MotionTotalFileSizeLimit, motion_file_total_size_limit, int);
+#include "def/config_motion.def"
 
-bool config_load(const std::string config_filename);
+    void DumpConfig(void);
 
-}  // namespace config_motion
+   private:
+    bool config_loaded_;
+    std::string config_file_;
+    bool dump_config_;
+    std::unique_ptr<rtc::OptionsFile> options_file_;
+    std::string config_dir_basename_;
+};
 
 #endif  // CONFIG_MOTION_H_
