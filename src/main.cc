@@ -37,7 +37,7 @@
 #include "rtc_base/physical_socket_server.h"
 #include "rtc_base/ssl_adapter.h"
 #include "streamer.h"
-#include "streamer_observer.h"
+#include "streamer_signaling.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
 #include "utils.h"
@@ -134,8 +134,8 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    // To initialize the MMAL library at the beginning of the program,
-    // first import the MMAL wrapper instance.
+    // first get the MMAL wrapper instanc to initialize the MMAL library
+    // at the beginning of the program,
     if ((mmal_encoder = webrtc::MMALWrapper::Instance()) == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to get MMALEncoderWrapper";
         return -1;

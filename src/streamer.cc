@@ -52,7 +52,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
-#include "streamer_observer.h"
+#include "streamer_signaling.h"
 #include "test/vcm_capturer.h"
 #include "utils_pc_strings.h"
 
@@ -88,11 +88,12 @@ class DummySetSessionDescriptionObserver
     ~DummySetSessionDescriptionObserver() {}
 };
 
-Streamer::Streamer(SocketServerObserver* session, ConfigStreamer* config)
+Streamer::Streamer(SignalingOutbound* signaling_outbound,
+                   ConfigStreamer* config)
     : peer_id_(-1) {
-    RTC_DCHECK(session != nullptr);
-    session_ = session;
-    session->RegisterObserver(this);
+    RTC_DCHECK(signaling_outbound != nullptr);
+    signaling_outbound_ = signaling_outbound;
+    signaling_outbound_->SetSignalingInbound(this);
     config_streamer_ = config;
 }
 
@@ -329,7 +330,7 @@ void Streamer::OnInterestingUsage(int usage_pattern) {
 }
 
 //
-// StreamerObserver implementation.
+// SignalingInbound implementation.
 //
 void Streamer::OnPeerConnected(int peer_id,
                                const SessionConfig::Config& config) {
@@ -560,10 +561,10 @@ void Streamer::OnFailure(webrtc::RTCError error) {
 
 void Streamer::SendMessage(const std::string& message) {
     RTC_LOG(INFO) << "Sending Message to Peer: " << message;
-    session_->SendMessageToPeer(peer_id_, message);
+    signaling_outbound_->SendMessageToPeer(peer_id_, message);
 }
 
 void Streamer::ReportEvent(bool drop_connection, const std::string message) {
     RTC_LOG(INFO) << "Sending Event Message to Peer: " << message;
-    session_->ReportEvent(peer_id_, drop_connection, message);
+    signaling_outbound_->ReportEvent(peer_id_, drop_connection, message);
 }

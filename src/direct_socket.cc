@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/string_utils.h"
 #include "rtc_base/time_utils.h"
 #include "session_config.h"
-#include "streamer_observer.h"
+#include "streamer_signaling.h"
 #include "utils.h"
 
 // delay of message to use for stream release
@@ -48,7 +48,7 @@ static const std::string kDirectSocketDelimiter = "\n";
 ////////////////////////////////////////////////////////////////////////////////
 
 DirectSocketServer::DirectSocketServer(StreamerProxy* proxy)
-    : SocketServerHelper(proxy), listener_(nullptr), direct_socket_(nullptr) {
+    : SignalingChannelHelper(proxy), listener_(nullptr), direct_socket_(nullptr) {
     last_reject_time_ms_ = connection_reject_count_ = 0;
 }
 DirectSocketServer::~DirectSocketServer() {}
@@ -86,7 +86,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
     // TODO: direct socket also need session config too.
     SessionConfig::Config session_config;
 
-    if (IsStreamSessionActive() == false) {
+    if (IsSignalingSessionActive() == false) {
         // stream session is not active, it will start to new stream session
         connection_reject_count_ = 0;  // reinitialize the reject counter
 
@@ -95,7 +95,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
                             incoming->GetRemoteAddress().ToString();
         RTC_LOG(INFO) << "New Session Name: " << socket_peer_name_;
 
-        if (ActivateStreamSession(socket_peer_id_, session_config) == true) {
+        if (StartSignalingSession(socket_peer_id_, session_config) == true) {
             direct_socket_.reset(incoming);
             // Close event will be handled in DirectSocketServer
             incoming->SignalCloseEvent.connect(this,
@@ -131,7 +131,7 @@ void DirectSocketServer::OnAccept(rtc::AsyncSocket* socket) {
 }
 
 //
-void DirectSocketServer::RegisterObserver(StreamerObserver* callback) {
+void DirectSocketServer::SetSignalingInbound(SignalingInbound* inbound) {
     RTC_LOG(INFO) << __FUNCTION__;
 }
 
@@ -142,7 +142,7 @@ void DirectSocketServer::OnClose(rtc::AsyncSocket* socket, int err) {
     socket->SignalCloseEvent.disconnect(this);
     socket->Close();
 
-    DeactivateStreamSession();
+    StopSignalingSession();
 }
 
 void DirectSocketServer::OnRead(rtc::AsyncSocket* socket) {
@@ -211,10 +211,10 @@ void DirectSocketServer::OnMessage(rtc::Message* msg) {
     //  Internally, there is no reason to keep the session anymore,
     //  so it terminates the session that is currently being held.
     RTC_LOG(INFO) << __FUNCTION__ << "Drop Direct Socket Connection.";
-    if (IsStreamSessionActive() == true) {
+    if (IsSignalingSessionActive() == true) {
         // Release the current active stream session
         OnClose(direct_socket_.get(), 0);
-        DeactivateStreamSession();
+        StopSignalingSession();
     };
     return;
 }

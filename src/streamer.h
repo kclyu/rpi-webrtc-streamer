@@ -30,14 +30,14 @@
 #include "config_streamer.h"
 #include "pc/video_track_source.h"
 #include "session_config.h"
-#include "streamer_observer.h"
+#include "streamer_signaling.h"
 
 class Streamer : public webrtc::PeerConnectionObserver,
                  public webrtc::CreateSessionDescriptionObserver,
-                 public StreamerObserver {
+                 public SignalingInbound {
    public:
-    Streamer(SocketServerObserver* session, ConfigStreamer* config);
-    void AddObserver(SocketServerObserver* session);
+    Streamer(SignalingOutbound* signaling_outbound, ConfigStreamer* config);
+    void AddObserver(SignalingOutbound* session);
     bool connection_active() const;
     virtual void Close();
 
@@ -125,7 +125,7 @@ class Streamer : public webrtc::PeerConnectionObserver,
     std::vector<rtc::scoped_refptr<webrtc::VideoTrackSource>>
         video_track_sources_;
 
-    SocketServerObserver* session_;
+    SignalingOutbound* signaling_outbound_;
     ConfigStreamer* config_streamer_;
     webrtc::PeerConnectionInterface::IceConnectionState ice_state_;
     webrtc::PeerConnectionInterface::PeerConnectionState peerconnection_state_;

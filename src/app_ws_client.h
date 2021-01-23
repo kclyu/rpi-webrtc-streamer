@@ -41,13 +41,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config_streamer.h"
 #include "rtc_base/message_handler.h"
 #include "session_config.h"
-#include "streamer_observer.h"
+#include "streamer_signaling.h"
 #include "utils.h"
 #include "websocket_server.h"
 
 class AppWsClient : public rtc::MessageHandler,
                     public WebSocketHandler,
-                    public SocketServerHelper {
+                    public SignalingChannelHelper {
    public:
     enum EventType { EventNotice, EventError };
 
@@ -64,7 +64,7 @@ class AppWsClient : public rtc::MessageHandler,
     void OnDisconnect(int sockid) override;
     void OnError(int sockid, const std::string& message) override;
 
-    // StreamerObserver interface
+    // SignalingInbound interface
     bool SendMessageToPeer(const int peer_id,
                            const std::string& message) override;
     void ReportEvent(const int peer_id, bool drop_connection,

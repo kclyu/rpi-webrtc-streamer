@@ -200,7 +200,7 @@ static const int kMaxChunkedFrames = 5;
 //
 ////////////////////////////////////////////////////////////////////////////////
 AppWsClient::AppWsClient(StreamerProxy* proxy)
-    : SocketServerHelper(proxy), num_chunked_frames_(0) {
+    : SignalingChannelHelper(proxy), num_chunked_frames_(0) {
     deviceid_inited_ = utils::GetHardwareDeviceId(&deviceid_);
     config_media_ = ConfigMediaSingleton::Instance();
     config_streamer_ = nullptr;
@@ -303,10 +303,10 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
         RTC_LOG(INFO) << "Add session rtc config mapping sockid: " << sockid
                       << ", client id: " << client_id;
 
-        if (IsStreamSessionActive() == false) {
+        if (IsSignalingSessionActive() == false) {
             SessionConfig::Config config;
             session_config_.GetConfig(sockid, config);
-            if (ActivateStreamSession(client_id, config) == true) {
+            if (StartSignalingSession(client_id, config) == true) {
                 RTC_LOG(INFO) << "New WebSocket Name: " << client_id;
             };
             return true;
@@ -346,8 +346,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 // reset the app_clientinfo and deactivate the streaming
                 if (app_client_.IsRegistered(sockid) == true) {
                     app_client_.Reset();
-                    if (IsStreamSessionActive() == true) {
-                        DeactivateStreamSession();
+                    if (IsSignalingSessionActive() == true) {
+                        StopSignalingSession();
                     };
                 };
                 return true;
@@ -545,7 +545,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             // Apply Command
             //
             else if (data.compare(kValueDataApply) == 0) {
-                if (IsStreamSessionActive() == true) {
+                if (IsSignalingSessionActive() == true) {
                     webrtc::MMALWrapper::Instance()->SetMediaConfigParams();
                     if (webrtc::MMALWrapper::Instance()
                             ->ReinitEncoderInternal() == true) {
@@ -595,8 +595,8 @@ void AppWsClient::OnDisconnect(int sockid) {
     // Ignore if websocket id is not the registered websocket id.
     if (app_client_.Disconnect(sockid) == true) {
         app_client_.Reset();
-        if (IsStreamSessionActive() == true) {
-            DeactivateStreamSession();
+        if (IsSignalingSessionActive() == true) {
+            StopSignalingSession();
         };
     }
 }
@@ -660,8 +660,8 @@ void AppWsClient::OnMessage(rtc::Message* msg) {
     websocket_message_->Close(sockid, 0, "");
     if (app_client_.Disconnect(sockid) == true) {
         app_client_.Reset();
-        if (IsStreamSessionActive() == true) {
-            DeactivateStreamSession();
+        if (IsSignalingSessionActive() == true) {
+            StopSignalingSession();
         };
     }
     return;

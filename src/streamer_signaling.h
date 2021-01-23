@@ -27,8 +27,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef STREAMER_OBSERVER_H_
-#define STREAMER_OBSERVER_H_
+#ifndef STREAMER_SIGNALING_H_
+#define STREAMER_SIGNALING_H_
 
 #include <memory>
 
@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "raspi_httpnoti.h"
 #endif /* __NOTI_ENABLE__ */
 
-struct StreamerObserver {
+struct SignalingInbound {
     virtual void OnPeerConnected(int peer_id,
                                  const SessionConfig::Config& config) = 0;
     virtual void OnPeerDisconnected(int peer_id) = 0;
@@ -48,62 +48,63 @@ struct StreamerObserver {
     virtual void OnMessageSent(int err) = 0;
 
    protected:
-    virtual ~StreamerObserver() {}
+    virtual ~SignalingInbound() {}
 };
 
-struct SocketServerObserver {
-    virtual void RegisterObserver(StreamerObserver* callback) = 0;
+struct SignalingOutbound {
+    virtual void SetSignalingInbound(SignalingInbound* inbound) = 0;
     virtual bool SendMessageToPeer(const int peer_id,
                                    const std::string& message) = 0;
     virtual void ReportEvent(const int peer_id, bool drop_connection,
                              const std::string& message) = 0;
 
    protected:
-    virtual ~SocketServerObserver() {}
+    virtual ~SignalingOutbound() {}
 };
 
 class StreamerProxy;  // forward declaration
 class RaspiMotion;    // forward declaration
-class SocketServerHelper : public SocketServerObserver {
+class SignalingChannelHelper : public SignalingOutbound {
    public:
-    void RegisterObserver(StreamerObserver* callback){};
+    void SetSignalingInbound(SignalingInbound* inbound){};
 
    protected:
-    SocketServerHelper(StreamerProxy* proxy);
-    virtual ~SocketServerHelper() {}
+    SignalingChannelHelper(StreamerProxy* proxy);
+    virtual ~SignalingChannelHelper() {}
     // Offer will be generated at server side.
-    bool ActivateStreamSession(const int peer_id,
+    bool StartSignalingSession(const int peer_id,
                                const SessionConfig::Config& config);
     // the messsage is offer message from client
-    bool ActivateStreamSession(const int peer_id,
+    bool StartSignalingSession(const int peer_id,
                                const SessionConfig::Config& config,
                                const std::string& message);
-    void DeactivateStreamSession();
+    void StopSignalingSession();
     void MessageFromPeer(const std::string& message);
     int GetActivePeerId();
-    bool IsStreamSessionActive();
+    bool IsSignalingSessionActive();
 
    private:
     bool streamsession_active_;
-    StreamerObserver* streamer_callback_;
+    SignalingInbound* signaling_inbound_;
     StreamerProxy* proxy_;
     int peer_id_;
 };
 
-class StreamerProxy : public SocketServerObserver {
+class StreamerProxy : public SignalingOutbound {
    public:
     StreamerProxy(ConfigMotion* config_motion);
     ~StreamerProxy() {}
-    bool ObtainStreamer(SocketServerObserver* socket_server, int peer_id,
-                        const SessionConfig::Config& config);
-    bool ObtainStreamer(SocketServerObserver* socket_server, int peer_id,
-                        const SessionConfig::Config& config,
-                        const std::string& message);
-    void ReleaseStreamer(SocketServerObserver* socket_server, int peer_id);
+
+    bool StartStremerSignaling(SignalingOutbound* outbound, int peer_id,
+                               const SessionConfig::Config& config);
+    bool StartStremerSignaling(SignalingOutbound* outbound, int peer_id,
+                               const SessionConfig::Config& config,
+                               const std::string& message);
+    void StopStreamerSignaling(SignalingOutbound* outbound, int peer_id);
     void MessageFromPeer(int peer_id, const std::string& message);
     void MessageSent(int err);
-    // SocketServerObserver
-    void RegisterObserver(StreamerObserver* callback) override;
+    // SignalingOutbound
+    void SetSignalingInbound(SignalingInbound* inbound) override;
     bool SendMessageToPeer(const int peer_id,
                            const std::string& message) override;
     void ReportEvent(const int peer_id, bool drop_connection,
@@ -119,8 +120,8 @@ class StreamerProxy : public SocketServerObserver {
 #ifdef __NOTI_ENABLE__
     std::unique_ptr<RaspiHttpNoti> http_noti_;
 #endif /* __NOTI_ENABLE__ */
-    SocketServerObserver* active_socket_observer_;
-    StreamerObserver* streamer_callback_;  // streamer callback
+    SignalingOutbound* active_signaling_outbound_;
+    SignalingInbound* signaling_inbound_;  // inbound signaling channel
     ConfigMotion* config_motion_;
     int active_peer_id_;
     std::string active_peer_name_;
@@ -128,4 +129,4 @@ class StreamerProxy : public SocketServerObserver {
     std::string noti_url_;
 };
 
-#endif  // STREAMER_OBSERVER_H_
+#endif  // STREAMER_SIGNALING_H_

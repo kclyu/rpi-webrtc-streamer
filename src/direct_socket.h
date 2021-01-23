@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/physical_socket_server.h"
 #include "rtc_base/signal_thread.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "streamer_observer.h"
+#include "streamer_signaling.h"
 
 #define FORCE_CONNECTION_DROP_VALID_DURATION 3000
 #define FORCE_CONNECTION_DROP_TRYCOUNT_THRESHOLD 3
@@ -45,7 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DIRECTSOCKET_FAKE_PEERID 100
 #define DIRECTSOCKET_FAKE_NAME_PREFIX "DS"
 
-class DirectSocketServer : public SocketServerHelper,
+class DirectSocketServer : public SignalingChannelHelper,
                            public rtc::MessageHandler,
                            public sigslot::has_slots<> {
    public:
@@ -55,7 +55,7 @@ class DirectSocketServer : public SocketServerHelper,
     bool Listen(const rtc::SocketAddress& address);
     void StopListening(void);
 
-    void RegisterObserver(StreamerObserver* callback) override;
+    void SetSignalingInbound(SignalingInbound* inbound) override;
     bool SendMessageToPeer(const int peer_id,
                            const std::string& message) override;
     void ReportEvent(const int peer_id, bool drop_connection,
