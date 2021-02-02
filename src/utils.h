@@ -10,8 +10,6 @@
 #ifndef STREAMER_UTILS_H_
 #define STREAMER_UTILS_H_
 
-#pragma once
-
 #include <assert.h>
 
 #include <string>

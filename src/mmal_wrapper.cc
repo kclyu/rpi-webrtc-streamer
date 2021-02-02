@@ -434,7 +434,7 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
 
         if (state_.verbose)
             RTC_LOG(INFO)
-                << "Connecting camera stills port to encoder input port";
+                << "Connecting camera video port to encoder input port";
 
         // Now connect the camera to the encoder
         status = connect_ports(camera_video_port_, encoder_input_port_,
@@ -684,9 +684,9 @@ size_t MMALEncoderWrapper::GetRecommandedBufferNum(MMAL_PORT_T *port) {
     // normally, it required  the doube of port recommanded size
     // for safety,,
     if (state_.inlineMotionVectors)
-        return port->buffer_num_recommended * 3;
-    else
         return port->buffer_num_recommended * 3 * 2;
+    else
+        return port->buffer_num_recommended * 3;
 }
 
 bool MMALEncoderWrapper::UninitEncoder() {

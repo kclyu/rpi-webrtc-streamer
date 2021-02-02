@@ -33,9 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctime>
 #include <memory>
 
-#include "compat/file.h"
 #include "config_motion.h"
-#include "rtc_base/buffer_queue.h"
+#include "file_writer_handle.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/synchronization/mutex.h"
@@ -45,8 +44,8 @@ class RaspiMotionFile : public rtc::Event {
    public:
     explicit RaspiMotionFile(ConfigMotion* config_motion,
                              const std::string base_path,
-                             const std::string prefix, int queue_capacity,
-                             int frame_queue_size, int motion_queue_size);
+                             const std::string prefix, int frame_queue_size,
+                             int motion_queue_size);
     ~RaspiMotionFile();
 
     // Frame queuing
@@ -60,44 +59,24 @@ class RaspiMotionFile : public rtc::Event {
     bool StartWriter(void);
     bool StopWriter(void);
 
-    bool ManagingVideoFolder(void);
-    std::string VideoPathname(void) const;
-    std::string VideoFilename(void) const;
+    bool LimitingTotalDirSize(void);
 
    private:
-    static int kEventWaitPeriod;  // minimal wait period between frame
-    const std::string GetDateTimeString(void);
-    bool OpenWriterFiles(void);
-    bool CloseWriterFiles(void);
-    bool ImvFileWrite(void);
-    bool FrameFileWrite(void);
-
     static void WriterThread(void*);
     bool WriterProcess();
 
     std::string base_path_;
     std::string prefix_;
+    bool writer_thread_active_;
 
     // Frame and MV queue for saving frame and mv
-    std::unique_ptr<rtc::BufferQueue> frame_queue_;
-    std::unique_ptr<rtc::BufferQueue> imv_queue_;
+    std::unique_ptr<webrtc::FileWriterHandle> frame_writer_handle_;
+    std::unique_ptr<webrtc::FileWriterHandle> imv_writer_handle_;
 
     // thread for file writing
-    bool writer_active_;
-    bool writer_quit_;
     std::unique_ptr<rtc::PlatformThread> writerThread_;
 
-    rtc::File frame_file_;
-    rtc::File imv_file_;
-    size_t total_frame_written_size_;
     size_t frame_file_size_limit_;
-    uint32_t frame_counter_;
-    uint32_t imv_counter_;
-
-    std::string h264_filename_;
-    std::string h264_temp_;
-
-    uint8_t* frame_writer_buffer_;
 
     webrtc::Mutex mutex_;
     webrtc::Clock* const clock_;

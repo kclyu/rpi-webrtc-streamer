@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "interface/mmal/util/mmal_util_params.h"
 #include "interface/vcos/vcos.h"
 #include "interface/vmcs_host/vc_vchi_gencmd.h"
+#include "mmal_video.h"
 #include "raspicli.h"
 
 // clang-format off

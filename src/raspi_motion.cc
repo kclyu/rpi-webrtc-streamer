@@ -39,8 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/thread.h"
 
 static const float kKushGaugeConstant = 0.07;
-static const uint64_t kDrainProcessDelayMaximumInMicro = 32000;  // 32 ms
-static const int kEventWaitPeriod = 5;
+static const float kKushGaugeRank = 2;
+static const float kBufferCalculationFactor = 1.2;
 
 static const int kDefaultMotionAverageSize = 32;
 static const int kDefaultMotionActiveTriggerPercent = 10;
@@ -48,12 +48,53 @@ static const int kDefaultMotionActiveClearPercent = 5;
 static const int kDefaultMotionClearWaitPeriod = 5000;   // 5 seconds
 static const int kDefaultMotionAveragePrintDiff = 1000;  // 1 second
 
+#ifdef PRINT_PROCESS_DELAYS
+static const int kDefaultMotionFrameProcessingSize = 30 * 3;
+#endif  // PRINT_PROCESS_DELAYS
+
+RaspiMotionHolder::RaspiMotionHolder(ConfigMotion *config_motion)
+    : config_motion_(config_motion) {}
+
+RaspiMotionHolder::~RaspiMotionHolder() {}
+
+bool RaspiMotionHolder::Start() {
+    if (config_motion_->GetDetectionEnable() == false) return false;
+    RTC_LOG(INFO) << "RaspMotion Starting";
+    RTC_LOG(INFO) << "RaspiMotion is Active: "
+                  << (raspi_motion_ && raspi_motion_->IsActive());
+    if (!raspi_motion_) {
+        RTC_LOG(INFO) << "Starting RaspiMotion Detection";
+        raspi_motion_.reset(new RaspiMotion(config_motion_));
+        return raspi_motion_->StartCapture();
+    }
+    RTC_LOG(LS_ERROR) << "RaspiMotion is already running!";
+    return false;
+}
+
+bool RaspiMotionHolder::Stop() {
+    if (config_motion_->GetDetectionEnable() == false) return false;
+    RTC_LOG(INFO) << "RaspMotion Stopping";
+    RTC_LOG(INFO) << "RaspiMotion is Active: "
+                  << (raspi_motion_ && raspi_motion_->IsActive());
+    if (raspi_motion_ && raspi_motion_->IsActive() == true) {
+        RTC_LOG(INFO) << "Stopping RaspiMotion Detection";
+        raspi_motion_->StopCapture();
+        raspi_motion_.reset();
+        return true;
+    }
+    RTC_LOG(LS_ERROR) << "RaspiMotion is not running!";
+    return false;
+}
+
+bool RaspiMotionHolder::SetNotificationUrl(bool enable, const std::string url) {
+    return true;
+}
+
 RaspiMotion::RaspiMotion(ConfigMotion *config_motion, int width, int height,
                          int framerate, int bitrate)
     : Event(false, false),
       motion_active_(false),
       motion_drain_quit_(false),
-      motion_vector_quit_(false),
       width_(width),
       height_(height),
       framerate_(framerate),
@@ -64,20 +105,28 @@ RaspiMotion::RaspiMotion(ConfigMotion *config_motion, int width, int height,
                        config_motion->GetBlobCancelThreshold(),
                        config_motion->GetBlobTrackingThreshold()),
       motion_active_average_(kDefaultMotionAverageSize),
+#ifdef PRINT_PROCESS_DELAYS
+      imv_process_delay_(kDefaultMotionFrameProcessingSize),
+      frame_process_delay_(kDefaultMotionFrameProcessingSize),
+      drain_process_delay_(kDefaultMotionFrameProcessingSize),
+#endif  // PRINT_PROCESS_DELAYS
+      notification_enable_(false),
       config_motion_(config_motion) {
-    queue_capacity_ = (framerate * VIDEO_INTRAFRAME_PERIOD * 2) * 1.2;
-    frame_queue_size_ = (width * height * kKushGaugeConstant * 2) / 8;
-    mv_queue_size_ = (width / 16 + 1) * (height / 16) * 4;
+    frame_buffer_size_ =
+        static_cast<int>(((width * height * framerate * kKushGaugeConstant *
+                           kKushGaugeRank * VIDEO_INTRAFRAME_PERIOD) /
+                          8 /* bits to bytes */) *
+                         kBufferCalculationFactor);
+    mv_buffer_size_ = ((width / 16 + 1) * (height / 16) * 4) *
+                      VIDEO_INTRAFRAME_PERIOD * 30 /*fps*/;
     motion_clear_wait_period_ = config_motion->GetClearWaitPeriod();
     motion_active_percent_clear_threshold_ = config_motion->GetClearPercent();
+    RTC_LOG(INFO) << ", Frame Queue Size: " << frame_buffer_size_
+                  << ", MV Queue Size: " << mv_buffer_size_;
 
-    mv_shared_buffer_.reset(
-        new rtc::BufferQueue(queue_capacity_, mv_queue_size_));
-
-    motion_file_.reset(
-        new RaspiMotionFile(config_motion, config_motion->GetDirectory(),
-                            config_motion->GetFilePrefix(), queue_capacity_,
-                            frame_queue_size_, mv_queue_size_));
+    motion_file_.reset(new RaspiMotionFile(
+        config_motion, config_motion->GetDirectory(),
+        config_motion->GetFilePrefix(), frame_buffer_size_, mv_buffer_size_));
 
     motion_analysis_.SetBlobEnable(true);
     motion_analysis_.RegisterBlobObserver(this);
@@ -98,6 +147,9 @@ RaspiMotion::RaspiMotion(ConfigMotion *config_motion)
                   config_motion->GetBitrate()) {}
 
 bool RaspiMotion::IsActive() const { return motion_active_; }
+bool RaspiMotion::IsEnabled() const {
+    return config_motion_->GetDetectionEnable();
+}
 
 bool RaspiMotion::StartCapture() {
     RTC_LOG(INFO) << "Raspi Motion Starting";
@@ -145,17 +197,6 @@ bool RaspiMotion::StartCapture() {
         drainThread_.reset(new rtc::PlatformThread(
             RaspiMotion::DrainThread, this, "FrameDrain", rtc::kHighPriority));
         drainThread_->Start();
-        drainThreadStarted_ = true;
-    }
-
-    // start Motion Vector thread ;
-    if (!motionVectorThread_) {
-        RTC_LOG(INFO) << "Motion Vector analyse thread initialized.";
-        motionVectorThread_.reset(
-            new rtc::PlatformThread(RaspiMotion::MotionVectorThread, this,
-                                    "MotionVector", rtc::kHighPriority));
-        motionVectorThread_->Start();
-        motionVectorThreadStarted_ = true;
     }
 
     motion_active_ = true;
@@ -165,16 +206,8 @@ bool RaspiMotion::StartCapture() {
 void RaspiMotion::StopCapture() {
     motion_active_ = false;
 
-    if (motionVectorThread_) {
-        motion_vector_quit_ = true;
-        motionVectorThreadStarted_ = false;
-        motionVectorThread_->Stop();
-        motionVectorThread_.reset();
-    }
-
     if (drainThread_) {
         motion_drain_quit_ = true;
-        drainThreadStarted_ = false;
         drainThread_->Stop();
         drainThread_.reset();
     }
@@ -237,6 +270,21 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points) {
             if (motion_state_ == TRIGGERED || motion_state_ == WAIT_CLEAR) {
                 RTC_LOG(INFO) << "Motion active percent:  " << *moving_average;
             };
+
+#ifdef PRINT_PROCESS_DELAYS
+            // printing average delay in processing
+            absl::optional<int> frame_process_delay =
+                frame_process_delay_.GetAverageRoundedDown();
+            absl::optional<int> imv_process_delay =
+                imv_process_delay_.GetAverageRoundedDown();
+            absl::optional<int> drain_waiting_delay =
+                drain_process_delay_.GetAverageRoundedDown();
+            if (frame_process_delay) {
+                RTC_LOG(INFO) << "Process Delay Frame: " << *frame_process_delay
+                              << ", IMV: " << *imv_process_delay
+                              << ", Drain(w/ wait): " << *drain_waiting_delay;
+            }
+#endif  // PRINT_PROCESS_DELAYS
         }
         if (motion_state_ == WAIT_CLEAR) {
             if (*moving_average < motion_active_percent_clear_threshold_ &&
@@ -260,8 +308,30 @@ void RaspiMotion::DrainThread(void *obj) {
     }
 }
 
+#ifdef PRINT_PROCESS_DELAYS
+#define __CLOCK_MARK_START__ start_time = clock_->TimeInMicroseconds();
+#define __CLOCK_MARK_FRAME_END__              \
+    mark_time = clock_->TimeInMicroseconds(); \
+    frame_process_delay_.AddSample(mark_time - start_time);
+
+#define __CLOCK_MARK_IMV_END__                \
+    mark_time = clock_->TimeInMicroseconds(); \
+    imv_process_delay_.AddSample(mark_time - start_time);
+
+#define __CLOCK_MARK_DRAIN_END__              \
+    mark_time = clock_->TimeInMicroseconds(); \
+    drain_process_delay_.AddSample(mark_time - start_time);
+#else
+#define __CLOCK_MARK_START__
+#define __CLOCK_MARK_FRAME_END__
+#define __CLOCK_MARK_IMV_END__
+#define __CLOCK_MARK_DRAIN_END__
+#endif  // PRINT_PROCESS_DELAYS
+
 bool RaspiMotion::DrainProcess() {
-    uint64_t current_timestamp, timestamp;
+#ifdef PRINT_PROCESS_DELAYS
+    uint64_t start_time, mark_time;
+#endif  // PRINT_PROCESS_DELAYS
     webrtc::FrameBuffer *buf = nullptr;
     size_t length;
 
@@ -269,9 +339,12 @@ bool RaspiMotion::DrainProcess() {
         return false;
     };
 
-    current_timestamp = clock_->TimeInMicroseconds();
+    __CLOCK_MARK_START__;
     buf = mmal_encoder_->ReadFront();
+    __CLOCK_MARK_DRAIN_END__;
     if (buf && buf->length() > 0) {
+        __CLOCK_MARK_START__;
+
         bool is_keyframe = buf->isKeyFrame();
 
         if (buf->isMotionVector()) {
@@ -281,67 +354,33 @@ bool RaspiMotion::DrainProcess() {
                 RTC_LOG(LS_ERROR) << "Failed to WriteBack in MV queue ";
             };
 
-            // queuing motion vector for motion analysis
-            if (mv_shared_buffer_->WriteBack(buf->data(), buf->length(),
-                                             &length) == false) {
-                RTC_LOG(LS_ERROR) << "Faild to queue in MV shared buffer";
-            };
-            Set();  // Event Set to wake up motion vector process
-        } else if (buf->isFrame()) {
+            // Doing motion analysis based on the new MV
+            motion_analysis_.Analyse(buf->data(), buf->length());
+
+            if ((motion_state_ == CLEARED) &&
+                (motion_file_->WriterActive() == true)) {
+                motion_file_->StopWriter();
+            } else if ((motion_state_ == TRIGGERED) &&
+                       (motion_file_->WriterActive() == false)) {
+                motion_file_->StartWriter();
+            }
+            __CLOCK_MARK_IMV_END__;
+
+        } else if (buf->isFrameEnd()) {
             if (motion_file_->FrameQueuing(buf->data(), buf->length(), &length,
                                            is_keyframe) == false) {
-                RTC_LOG(LS_ERROR) << "Failed to WriteBack in frame queue ";
+                RTC_LOG(LS_ERROR) << "Failed to WriteBack in frame buffer ";
             };
-            RTC_DCHECK(buf->length() == length);
+            RTC_DCHECK(buf->length() == length)
+                << "Failed to FrameQueueing buffer: " << buf->length()
+                << ", length: " << length;
+            __CLOCK_MARK_FRAME_END__;
+
         } else {
-            RTC_LOG(LS_ERROR) << "Motion Buffer error: " << buf->toString();
-        }
-    }
-
-    timestamp = clock_->TimeInMicroseconds();
-    if (timestamp - current_timestamp > kDrainProcessDelayMaximumInMicro)
-        RTC_LOG(LS_ERROR) << "Frame DrainProcess Time : "
-                          << timestamp - current_timestamp;
-    // TODO: if encoded_size is zero, we need to reset encoder itself
-    return true;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Raspi motion vector processing
-//
-///////////////////////////////////////////////////////////////////////////////
-void RaspiMotion::MotionVectorThread(void *obj) {
-    RaspiMotion *raspi_motion = static_cast<RaspiMotion *>(obj);
-    while (raspi_motion->MotionVectorProcess()) {
-    }
-}
-
-bool RaspiMotion::MotionVectorProcess() {
-    uint8_t buffer[mv_queue_size_];
-    size_t bytes;
-
-    if (motion_vector_quit_ == true) {
-        return false;
-    };
-
-    if (mv_shared_buffer_->size() == 0)
-        Wait(kEventWaitPeriod);  // Waiting for Event or Timeout
-
-    if (mv_shared_buffer_->ReadFront(buffer, mv_queue_size_, &bytes)) {
-        RTC_DCHECK(bytes == mv_queue_size_) << "Error in Motion Vector size";
-        motion_analysis_.Analyse(buffer, bytes);
-
-        if ((motion_state_ == CLEARED) &&
-            (motion_file_->WriterActive() == true)) {
-            motion_file_->StopWriter();
-
-            //
-            motion_file_->ManagingVideoFolder();
-        } else if ((motion_state_ == TRIGGERED) &&
-                   (motion_file_->WriterActive() == false)) {
-            motion_file_->StartWriter();
+            RTC_LOG(LS_ERROR) << "FrameBuffer is not frame nor motionvector : "
+                              << buf->toString();
         }
     }
     return true;
 }
+

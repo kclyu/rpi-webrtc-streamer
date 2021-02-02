@@ -73,8 +73,8 @@ SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc 
 	file_logger.cc app_ws_client.cc raspi_motion.cc raspi_motionvector.cc \
 	raspi_motionblob.cc raspi_motionfile.cc config_media.cc config_streamer.cc \
 	config_motion.cc utils_pc_config.cc utils_pc_strings.cc optionsfile.cc \
-	directory_iterator.cc file.cc file_posix.cc filestream.cc platform_file.cc \
-	session_config.cc frame_queue.cc
+	filestream.cc directory_iterator.cc session_config.cc frame_queue.cc \
+	file_writer_handle.cc
 
 SOURCES.C = websocket_server_util.c mmal_video.c mmal_video_reset.c mmal_util.c \
 	raspicli.c raspicamcontrol.c raspipreview.c mdns_publish.c

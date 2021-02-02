@@ -36,10 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "raspi_motion.h"
 #include "session_config.h"
 
-#ifdef __NOTI_ENABLE__
-#include "raspi_httpnoti.h"
-#endif /* __NOTI_ENABLE__ */
-
 struct SignalingInbound {
     virtual void OnPeerConnected(int peer_id,
                                  const SessionConfig::Config& config) = 0;
@@ -92,7 +88,7 @@ class SignalingChannelHelper : public SignalingOutbound {
 
 class StreamerProxy : public SignalingOutbound {
    public:
-    StreamerProxy(ConfigMotion* config_motion);
+    StreamerProxy(RaspiMotionHolder* motion_holder);
     ~StreamerProxy() {}
 
     bool StartStremerSignaling(SignalingOutbound* outbound, int peer_id,
@@ -110,23 +106,13 @@ class StreamerProxy : public SignalingOutbound {
     void ReportEvent(const int peer_id, bool drop_connection,
                      const std::string& message) override;
 
-#ifdef __NOTI_ENABLE__
-    // http noti config information (URL) and enable/disable noti feature
-    void UpdateNotiConfig(bool noti_enable, const std::string url);
-#endif /* __NOTI_ENABLE__ */
-
    private:
-    std::unique_ptr<RaspiMotion> raspi_motion_;
-#ifdef __NOTI_ENABLE__
-    std::unique_ptr<RaspiHttpNoti> http_noti_;
-#endif /* __NOTI_ENABLE__ */
     SignalingOutbound* active_signaling_outbound_;
     SignalingInbound* signaling_inbound_;  // inbound signaling channel
-    ConfigMotion* config_motion_;
+    RaspiMotionHolder* motion_holder_;
+    bool motion_enabled_;
     int active_peer_id_;
     std::string active_peer_name_;
-    bool noti_enable_;
-    std::string noti_url_;
 };
 
 #endif  // STREAMER_SIGNALING_H_

@@ -114,11 +114,16 @@ bool SignalingChannelHelper::IsSignalingSessionActive() {
 ////////////////////////////////////////////////////////////////////////////////
 // StreamerProxy
 ////////////////////////////////////////////////////////////////////////////////
-StreamerProxy::StreamerProxy(ConfigMotion* config_motion)
+StreamerProxy::StreamerProxy(RaspiMotionHolder* motion_holder)
     : active_signaling_outbound_(nullptr),
       signaling_inbound_(nullptr),
-      config_motion_(config_motion),
-      active_peer_id_(0) {}
+      motion_holder_(motion_holder),
+      active_peer_id_(0) {
+    if (motion_holder_) {
+        RTC_LOG(INFO) << __FUNCTION__ << "Starting the RaspiMotion";
+        motion_holder_->Start();
+    }
+}
 
 void StreamerProxy::SetSignalingInbound(SignalingInbound* inbound) {
     RTC_LOG(INFO) << __FUNCTION__;
@@ -143,9 +148,10 @@ void StreamerProxy::ReportEvent(const int peer_id, bool drop_connection,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+//
 // StreamerProxy Streamer Observer bridging
+//
 ////////////////////////////////////////////////////////////////////////////////
-
 bool StreamerProxy::StartStremerSignaling(SignalingOutbound* outbound,
                                           int peer_id,
                                           const SessionConfig::Config& config) {
@@ -155,10 +161,11 @@ bool StreamerProxy::StartStremerSignaling(SignalingOutbound* outbound,
         RTC_LOG(INFO) << "Streamer already occupied by another socket server";
         return false;
     } else {
-        if (config_motion_->GetDetectionEnable() == true) {
-            if (raspi_motion_ && raspi_motion_->IsActive()) {
-                raspi_motion_->StopCapture();
-            }
+        // need to stop the motion detection feature before signaling message
+        // exchanging
+        if (motion_holder_) {
+            RTC_LOG(INFO) << __FUNCTION__ << "Stopping the RaspiMotion";
+            motion_holder_->Stop();
         }
         active_peer_id_ = peer_id;
         active_signaling_outbound_ = outbound;
@@ -177,10 +184,11 @@ bool StreamerProxy::StartStremerSignaling(SignalingOutbound* outbound,
         RTC_LOG(INFO) << "Streamer already occupied by another socket server";
         return false;
     } else {
-        if (config_motion_->GetDetectionEnable() == true) {
-            if (raspi_motion_ && raspi_motion_->IsActive()) {
-                raspi_motion_->StopCapture();
-            }
+        // need to stop the motion detection feature before signaling message
+        // exchanging
+        if (motion_holder_) {
+            RTC_LOG(INFO) << __FUNCTION__ << "Stopping the RaspiMotion";
+            motion_holder_->Stop();
         }
         active_peer_id_ = peer_id;
         active_signaling_outbound_ = outbound;
@@ -197,52 +205,14 @@ void StreamerProxy::StopStreamerSignaling(SignalingOutbound* outbound,
         active_peer_id_ = 0;
         signaling_inbound_->OnPeerDisconnected(peer_id);
 
-        if (config_motion_->GetDetectionEnable() == true) {
-            if (raspi_motion_ && raspi_motion_->IsActive() == false) {
-                raspi_motion_.reset(new RaspiMotion(config_motion_));
-                //  TODO
-                // setting HttpNoti callback
-#ifdef __NOTI_ENABLE__
-                if (noti_enable_) raspi_motion_->SetHttpNoti(http_noti_.get());
-#endif /* __NOTI_ENABLE__ */
-                raspi_motion_->StartCapture();
-            }
+        // need to start the motion detection feature after signaling message
+        // disconnection
+        if (motion_holder_) {
+            RTC_LOG(INFO) << __FUNCTION__ << "Starting the RaspiMotion";
+            motion_holder_->Start();
         }
     }
 }
-
-// TODO:
-#ifdef __NOTI_ENABLE__
-// Temporarily implement the relevant part of the HttpNoti object in the Proxy
-// class. It need to move that http noti part to manage all HttpNoti in the
-// Motion class.
-void StreamerProxy::UpdateNotiConfig(bool noti_enable, const std::string url) {
-    RTC_LOG(INFO) << __FUNCTION__;
-    // make sure that the current value is different from the new value.
-    if (noti_enable_ == noti_enable && noti_url_ == url) {
-        RTC_LOG(INFO) << "The Http Noti Config value has not changed."
-                      << "Enable : " << noti_enable_ << ", URL: " << noti_url_;
-        return;
-    }
-    noti_enable_ = noti_enable;
-    noti_url_ = url;
-
-    RTC_LOG(INFO) << "Applying updated Http Noti Config "
-                  << "Enable : " << noti_enable_ << ", URL: " << noti_url_;
-    if (noti_enable) {
-        http_noti_.reset(new RaspiHttpNoti());
-        http_noti_->Initialize(url);
-        raspi_motion_->SetHttpNoti(http_noti_.get());
-        if (raspi_motion_->IsActive() == true) {
-            // pass http noti
-            raspi_motion_->SetHttpNoti(http_noti_.get());
-        }
-        return;
-    }
-    http_noti_.reset();
-    raspi_motion_->SetHttpNoti(nullptr);
-}
-#endif /* __NOTI_ENABLE__ */
 
 void StreamerProxy::MessageFromPeer(int peer_id, const std::string& message) {
     RTC_LOG(INFO) << __FUNCTION__;

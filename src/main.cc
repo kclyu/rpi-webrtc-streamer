@@ -142,7 +142,7 @@ int main(int argc, char** argv) {
     }
 
     std::string conf_filename = absl::GetFlag(FLAGS_conf);
-    std::cerr << "config file :" << conf_filename << "\n";
+    std::cerr << "Using streamer config file : " << conf_filename << "\n";
     // Load the streamer configuration from file
     ConfigStreamer config_streamer(conf_filename,
                                    absl::GetFlag(FLAGS_dump_config));
@@ -196,24 +196,23 @@ int main(int argc, char** argv) {
     }
 
     // loading media confiratuion options
-    config_filename = config_streamer.GetMediaConfigFile();
     // media configuration sigleton reference
     ConfigMedia* config_media = ConfigMediaSingleton::Instance();
-
-    // return value does not have meaning
-    config_media->Load(config_filename, absl::GetFlag(FLAGS_dump_config));
-    RTC_LOG(INFO) << "Using Media Config file: " << config_filename;
+    RTC_LOG(INFO) << "Using media config file: "
+                  << config_streamer.GetMediaConfigFile();
+    config_media->Load(config_streamer.GetMediaConfigFile(),
+                       absl::GetFlag(FLAGS_dump_config));
 
     // loading motion confiratuion options
-    config_filename = config_streamer.GetMotionConfigFile();
     // Load the streamer configuration from file
-    ConfigMotion config_motion(config_filename,
+    ConfigMotion config_motion(config_streamer.GetMotionConfigFile(),
                                absl::GetFlag(FLAGS_dump_config));
     if (config_motion.Load() == false) {
-        RTC_LOG(LS_WARNING)
-            << "Failed to load motion option config file:" << config_filename;
+        RTC_LOG(LS_WARNING) << "Failed to load motion option config file:"
+                            << config_streamer.GetMotionConfigFile();
     } else
-        RTC_LOG(INFO) << "Using Motion Config file: " << config_filename;
+        RTC_LOG(INFO) << "Using motion config file: "
+                      << config_streamer.GetMotionConfigFile();
 
     std::unique_ptr<DirectSocketServer> direct_socket_server;
     std::unique_ptr<AppChannel> app_channel;
@@ -223,7 +222,8 @@ int main(int argc, char** argv) {
 
     rtc::InitializeSSL();
 
-    StreamerProxy streamer_proxy(&config_motion);
+    RaspiMotionHolder motion_holder(&config_motion);
+    StreamerProxy streamer_proxy(&motion_holder);
 
     // DirectSocket
     if (config_streamer.GetDirectSocketEnable() == true) {

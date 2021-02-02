@@ -64,12 +64,12 @@ class RaspiMotionVector {
                                int blob_tracking_threshold);
     ~RaspiMotionVector();
 
-    bool Analyse(uint8_t *buffer, int len);
+    bool Analyse(uint8_t *buffer, size_t len);
 
-    void GetIMVImage(uint8_t *buffer, int buflen);
-    void GetMotionImage(uint8_t *buffer, int buflen);
+    void GetIMVImage(uint8_t *buffer, size_t buflen);
+    void GetMotionImage(uint8_t *buffer, size_t buflen);
     // available only when blob is enabled
-    bool GetBlobImage(uint8_t *buffer, int buflen);
+    bool GetBlobImage(uint8_t *buffer, size_t buflen);
 
     void SetBlobEnable(bool blob_enable);
     void SetMotionActiveTreshold(int max, int min);
@@ -85,8 +85,8 @@ class RaspiMotionVector {
     // http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel
     int BitCount(uint32_t motion_value);
 
-    uint32_t mvx_, mvy_;
-    uint32_t valid_mv_frame_size_;
+    size_t mvx_, mvy_;
+    size_t valid_mv_frame_size_;
     bool blob_enable_;
 
     uint32_t binary_oper_;

@@ -65,6 +65,13 @@ struct FrameBuffer {
         data_.reset(new uint8_t[capacity]);
         capacity_ = capacity;
         length_ = 0;
+        temporary_ = false;
+    }
+    explicit FrameBuffer(size_t capacity, bool temporary) {
+        data_.reset(new uint8_t[capacity]);
+        capacity_ = capacity;
+        length_ = 0;
+        temporary_ = temporary;
     }
     inline bool isKeyFrame() const { return flags_[kFrameFlagKeyFrame]; }
     inline bool isFrame() const {
@@ -84,6 +91,7 @@ struct FrameBuffer {
         return flags_.to_string<char, std::string::traits_type,
                                 std::string::allocator_type>();
     }
+    inline bool isTemporary() const { return temporary_; }
     // disable copy consructor
     FrameBuffer(const FrameBuffer &) = delete;
     FrameBuffer &operator=(const FrameBuffer &) = delete;
@@ -91,6 +99,7 @@ struct FrameBuffer {
     bool append(const MMAL_BUFFER_HEADER_T *buffer);
 
    private:
+    bool temporary_;
     std::bitset<kFrameBufferFlagSize> flags_;
     std::unique_ptr<uint8_t[]> data_;
     size_t length_;
@@ -125,7 +134,7 @@ class FrameQueue : public rtc::Event {
     void destroy();
 
     bool inited_;
-    int capacity_, buffer_size_;
+    size_t capacity_, buffer_size_;
     std::deque<FrameBuffer *> encoded_frame_queue_;
     std::deque<FrameBuffer *> free_list_;
     std::vector<FrameBuffer *> pending_;

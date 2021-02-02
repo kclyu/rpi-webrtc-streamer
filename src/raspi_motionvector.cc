@@ -62,9 +62,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DEBUG_IMV_DO(a)
 #endif  //  DEBUG_IMV
 
-#define MAX(x, y) (((x) > (y)) ? (x) : (y))
-#define MIN(x, y) (((x) < (y)) ? (x) : (y))
-
 // Motion Vector Default Parameters
 static const int kMvPixelWidth = 16;
 
@@ -73,10 +70,7 @@ static const int kMotionBitSetNumber = 31;
 static const int kMotionCutBitThreshold = 2;
 
 // Default Motion Active Max/Min Treshold
-static const int kDefaultMotionTriggerPercent = 20;
-static const int kDefaultMotionClearPercent = 10;
-static const int kDefaultMotionPersistentPeriod = 500;  // ms
-static const int kDefaultMotionCoolingDown = 3000;      // ms
+static const int kDefaultMotionCoolingDown = 3000;  // ms
 
 RaspiMotionVector::RaspiMotionVector(int x, int y, int framerate,
                                      bool use_imv_coordination,
@@ -136,7 +130,7 @@ int RaspiMotionVector::BitCount(uint32_t motion_value) {
     return bit_count;
 }
 
-bool RaspiMotionVector::Analyse(uint8_t *buffer, int len) {
+bool RaspiMotionVector::Analyse(uint8_t *buffer, size_t len) {
     RTC_DCHECK(valid_mv_frame_size_ == len) << "Motion Vector size mismatch!";
     MotionVector *imv = (MotionVector *)buffer;
     uint32_t base_my, mx, my;
@@ -146,7 +140,7 @@ bool RaspiMotionVector::Analyse(uint8_t *buffer, int len) {
 
     // motion max/avg
     float motion_max, motion_min, motion_avg, motion_sum;
-    uint32_t motion_value;
+    float motion_value;
     int motion_active;
 
     magni_avg = magni_value = magni_sum = 0;
@@ -167,8 +161,8 @@ bool RaspiMotionVector::Analyse(uint8_t *buffer, int len) {
                     candidate_[base_my + mx] >> 1;
             }
 
-            motion_max = MAX(motion_max, motion_value);
-            motion_min = MIN(motion_min, motion_value);
+            motion_max = std::max(motion_max, motion_value);
+            motion_min = std::min(motion_min, motion_value);
             motion_sum += motion_value;
             magni_sum += magni_value;
         }
@@ -244,13 +238,13 @@ bool RaspiMotionVector::Analyse(uint8_t *buffer, int len) {
     return 0;
 }
 
-void RaspiMotionVector::GetMotionImage(uint8_t *buffer, int len) {
+void RaspiMotionVector::GetMotionImage(uint8_t *buffer, size_t len) {
     RTC_DCHECK(len >= (mvx_ * mvy_))
         << "Motion buffer size is too small to copy!";
     std::memcpy(buffer, motion_, mvx_ * mvy_);
 }
 
-void RaspiMotionVector::GetIMVImage(uint8_t *buffer, int len) {
+void RaspiMotionVector::GetIMVImage(uint8_t *buffer, size_t len) {
     uint16_t base_sy, sx, sy;
     uint32_t latest_image_mask = 0b1;
     latest_image_mask <<= kMotionBitSetNumber;
@@ -266,7 +260,7 @@ void RaspiMotionVector::GetIMVImage(uint8_t *buffer, int len) {
     }
 }
 
-bool RaspiMotionVector::GetBlobImage(uint8_t *buffer, int len) {
+bool RaspiMotionVector::GetBlobImage(uint8_t *buffer, size_t len) {
     RTC_DCHECK(len >= (mvx_ * mvy_))
         << "Blob Image buffer size is too small to copy!";
     if (blob_enable_) {

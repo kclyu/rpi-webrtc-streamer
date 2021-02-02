@@ -30,6 +30,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef RASPI_MOTION_H_
 #define RASPI_MOTION_H_
 
+// to print average delays of processing
+// #define PRINT_PROCESS_DELAYS
+
 #include <memory>
 #include <vector>
 
@@ -52,6 +55,7 @@ class RaspiMotion : public MotionBlobObserver,
     explicit RaspiMotion(ConfigMotion* config_motion);
     ~RaspiMotion();
 
+    bool IsEnabled() const;
     bool IsActive() const;
 
     // Motion Capture will use fixed resolution
@@ -59,9 +63,9 @@ class RaspiMotion : public MotionBlobObserver,
     void StopCapture();
 
     // Motion Observers
-    virtual void OnMotionTriggered(int active_nums) override;
-    virtual void OnMotionCleared(int updates) override;
-    virtual void OnActivePoints(int total_points, int active_points) override;
+    void OnMotionTriggered(int active_nums) override;
+    void OnMotionCleared(int updates) override;
+    void OnActivePoints(int total_points, int active_points) override;
 
     enum MOTION_STATE {
         CLEARED = 0,
@@ -75,34 +79,21 @@ class RaspiMotion : public MotionBlobObserver,
     static void DrainThread(void*);
     bool DrainProcess();
 
-    bool motion_vector_quit_;
-    static void MotionVectorThread(void*);
-    bool MotionVectorProcess();
-
     // Motion Capture params
     int width_, height_, framerate_, bitrate_;
 
     webrtc::MMALEncoderWrapper* mmal_encoder_;
     webrtc::Clock* const clock_;
 
-    // buffer for motion vector processing
-    std::unique_ptr<rtc::BufferQueue> mv_shared_buffer_;
-
     // motion file
     std::unique_ptr<RaspiMotionFile> motion_file_;
 
     // Encoded frame process thread
-    bool drainThreadStarted_;
     std::unique_ptr<rtc::PlatformThread> drainThread_;
 
-    // Motion Vector process thread
-    bool motionVectorThreadStarted_;
-    std::unique_ptr<rtc::PlatformThread> motionVectorThread_;
-
     // making buffer queue_capacity based on IntraFrame Period
-    size_t queue_capacity_;
-    size_t frame_queue_size_;  // Default Frame buffer queue size
-    size_t mv_queue_size_;     // Default Frame buffer queue size
+    size_t frame_buffer_size_;  // Default Frame buffer size
+    size_t mv_buffer_size_;     // Default Frame buffer size
 
     // MotionVector Analysis
     RaspiMotionVector motion_analysis_;
@@ -112,12 +103,31 @@ class RaspiMotion : public MotionBlobObserver,
     uint32_t motion_clear_wait_period_;
 
     rtc::MovingAverage motion_active_average_;
+#ifdef PRINT_PROCESS_DELAYS
+    rtc::MovingAverage imv_process_delay_;
+    rtc::MovingAverage frame_process_delay_;
+    rtc::MovingAverage drain_process_delay_;
+#endif  // PRINT_PROCESS_DELAYS
     int motion_active_percent_clear_threshold_;
     int motion_active_percent_trigger_threshold_;
+    bool notification_enable_;
+    std::string notification_url_;
 
     ConfigMotion* config_motion_;
 
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotion);
+};
+
+struct RaspiMotionHolder {
+    RaspiMotionHolder(ConfigMotion* config_motion);
+    ~RaspiMotionHolder();
+    bool Start();
+    bool Stop();
+    bool SetNotificationUrl(bool enable, const std::string url);
+
+   private:
+    std::unique_ptr<RaspiMotion> raspi_motion_;
+    ConfigMotion* config_motion_;
 };
 
 #endif  // RASPI_MOTION_H_

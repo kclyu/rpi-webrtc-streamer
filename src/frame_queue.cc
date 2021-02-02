@@ -142,8 +142,14 @@ FrameBuffer *FrameQueue::ReadFront(bool wait_until_timeout) {
     webrtc::MutexLock lock(&mutex_);
     FrameBuffer *buffer = encoded_frame_queue_.front();
     encoded_frame_queue_.pop_front();
-    // keep the frame buffer in free_list again
-    free_list_.push_back(buffer);
+    if (buffer->isTemporary()) {
+        // If there is no buffer in the freelist, a buffer is created and used
+        // temporarily. These temporary buffers are deleted without being put
+        // back into the freelist.
+        delete buffer;
+    } else
+        // keep the frame buffer in free_list again
+        free_list_.push_back(buffer);
 
     return buffer;
 }
@@ -152,9 +158,19 @@ FrameBuffer *FrameQueue::ReadFront(bool wait_until_timeout) {
 bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
     RTC_DCHECK(inited_ == true);
     RTC_DCHECK(mmal_frame != NULL);
-    RTC_DCHECK(!free_list_.empty());
-    // RTC_DCHECK(mmal_frame.length > 0);
-    // RTC_DCHECK(buffer_size_ > mmal_frame.length);
+
+    webrtc::MutexLock lock(&mutex_);
+    if (free_list_.empty()) {
+        // If there is no buffer in the freelist, a buffer is created and used
+        // temporarily.
+        RTC_LOG(INFO) << "capacity: " << capacity_
+                      << ", encoded queue size: " << encoded_frame_queue_.size()
+                      << ", free_list size: " << free_list_.size()
+                      << ", pending: " << pending_.size();
+
+        FrameBuffer *buffer = new FrameBuffer(buffer_size_, true);
+        free_list_.push_back(buffer);
+    }
     // ignore the EOS(?)
     if (mmal_frame->length == 0 && mmal_frame->flags == 0) return true;
     if (mmal_frame->length > buffer_size_ || mmal_frame->length < 0) {
@@ -169,8 +185,6 @@ bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
     }
 
     FrameBuffer *buffer;
-
-    webrtc::MutexLock lock(&mutex_);
     if (!pending_.empty()) {
         // there is pending frame which need to
         buffer = pending_.back();
@@ -179,6 +193,7 @@ bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
                 << "Failed to append the frame, buffer size is not enough: "
                 << buffer->length() + mmal_frame->length
                 << ", buffer_size: " << buffer_size_;
+            pending_.clear();
             return false;
         }
         mmal_buffer_header_mem_lock(mmal_frame);
