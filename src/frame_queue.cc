@@ -193,6 +193,7 @@ bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
                 << "Failed to append the frame, buffer size is not enough: "
                 << buffer->length() + mmal_frame->length
                 << ", buffer_size: " << buffer_size_;
+            free_list_.push_back(pending_.front());
             pending_.clear();
             return false;
         }
