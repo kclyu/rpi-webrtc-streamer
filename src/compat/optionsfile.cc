@@ -19,7 +19,6 @@
 #include "rtc_base/string_utils.h"
 
 // clang format off
-#include "compat/filestream.h"
 #include "compat/optionsfile.h"
 // clang format on
 
@@ -83,43 +82,19 @@ bool OptionsFile::Load(bool verbose) {
 
 bool OptionsFile::Save() {
     // Open file.
-    FileStream stream;
-    int err;
-    if (!stream.Open(path_, "w", &err)) {
-        RTC_LOG_F(LS_ERROR) << "Could not open file, err=" << err;
+
+    // TODO: need to save comments which is already in config file
+    std::ofstream file(path_, std::ofstream::out);
+    if (!file.is_open()) {
         return false;
     }
-    // Write out all the data.
-    StreamResult res = SR_SUCCESS;
-    size_t written;
-    int error;
     for (OptionsMap::const_iterator i = options_.begin(); i != options_.end();
          ++i) {
-        res = stream.WriteAll(i->first.c_str(), i->first.length(), &written,
-                              &error);
-        if (res != SR_SUCCESS) {
-            break;
-        }
-        res = stream.WriteAll("=", 1, &written, &error);
-        if (res != SR_SUCCESS) {
-            break;
-        }
-        res = stream.WriteAll(i->second.c_str(), i->second.length(), &written,
-                              &error);
-        if (res != SR_SUCCESS) {
-            break;
-        }
-        res = stream.WriteAll("\n", 1, &written, &error);
-        if (res != SR_SUCCESS) {
-            break;
-        }
+        file << i->first << "=" << i->second << "\n";
     }
-    if (res != SR_SUCCESS) {
-        RTC_LOG_F(LS_ERROR) << "Unable to write to file";
-        return false;
-    } else {
-        return true;
-    }
+
+    file.close();
+    return true;
 }
 
 bool OptionsFile::IsLegalName(const std::string& name) {

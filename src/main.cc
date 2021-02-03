@@ -30,7 +30,7 @@
 #include "config_motion.h"
 #include "config_streamer.h"
 #include "direct_socket.h"
-#include "file_logger.h"
+#include "file_log_sink.h"
 #include "mdns_publish.h"
 #include "mmal_wrapper.h"
 #include "raspi_motion.h"
@@ -117,7 +117,7 @@ int main(int argc, char** argv) {
     std::string config_filename;
     std::string log_base_dir;
     webrtc::MMALEncoderWrapper* mmal_encoder;
-    std::unique_ptr<utils::FileLogger> file_logger;
+    std::unique_ptr<utils::FileLogSink> file_log_sink;
 
     //
     flag_config.contains_helpshort_flags = &RWsContrainHelpFlags;
@@ -186,10 +186,10 @@ int main(int argc, char** argv) {
             return -1;
         };
 
-        file_logger.reset(new utils::FileLogger(
+        file_log_sink.reset(new utils::FileLogSink(
             log_base_dir, severity, config_streamer.GetDisableLogBuffering()));
         // file logging will be enabled only when verbose flag is disabled.
-        if (!file_logger->Init()) {
+        if (!file_log_sink->Init()) {
             std::cerr << "Failed to init file message logger\n";
             return -1;
         }

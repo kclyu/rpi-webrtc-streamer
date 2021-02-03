@@ -9,8 +9,6 @@ include ../mk/libavahi_arm.mk
 #
 # including compat as source directory
 #
-VPATH = .:./compat
-
 RWS_INSTALL_DIR=\"/opt/rws\"
 RWS_VERSION=\"$(shell git describe --abbrev=16 --dirty --always --tags)\"
 WEBRTC_GIT=$(shell (cd $(WEBRTC_ROOT)/src/; git describe --abbrev=16 --dirty --always --tags))
@@ -70,11 +68,10 @@ SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc 
 	app_channel.cc direct_socket.cc raspi_decoder_dummy.cc raspi_decoder.cc \
 	raspi_encoder.cc raspi_encoder_impl.cc mmal_wrapper.cc utils.cc \
 	streamer_signaling.cc streamer.cc main.cc raspi_quality_config.cc \
-	file_logger.cc app_ws_client.cc raspi_motion.cc raspi_motionvector.cc \
+	file_log_sink.cc app_ws_client.cc raspi_motion.cc raspi_motionvector.cc \
 	raspi_motionblob.cc raspi_motionfile.cc config_media.cc config_streamer.cc \
-	config_motion.cc utils_pc_config.cc utils_pc_strings.cc optionsfile.cc \
-	filestream.cc directory_iterator.cc session_config.cc frame_queue.cc \
-	file_writer_handle.cc
+	config_motion.cc utils_pc_config.cc utils_pc_strings.cc compat/optionsfile.cc \
+	session_config.cc frame_queue.cc file_writer_handle.cc log_rotating_stream.cc
 
 SOURCES.C = websocket_server_util.c mmal_video.c mmal_video_reset.c mmal_util.c \
 	raspicli.c raspicamcontrol.c raspipreview.c mdns_publish.c
@@ -99,7 +96,7 @@ $(TARGET): $(OBJECTS)
 	$(CXX) $(LDFLAGS) -o $(TARGET) -Wl,--start-group $(OBJECTS) $(BUILD_LIBS) -Wl,--end-group $(SYSLIBS)
 
 clean:
-	rm -f *.o  *.o.d  *.dwo $(TARGET)
+	rm -f *.o *.dwo compat/*.o compat/*.dwo $(TARGET)
 
 distclean: clean
 	rm -fr ../lib/libwebsockets
