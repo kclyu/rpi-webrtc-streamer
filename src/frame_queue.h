@@ -61,12 +61,7 @@ constexpr int kFrameFlagConfig = 5;
 constexpr int kFrameFlagIdeInfo = 7;  // inline motion vector
 
 struct FrameBuffer {
-    explicit FrameBuffer(size_t capacity) {
-        data_.reset(new uint8_t[capacity]);
-        capacity_ = capacity;
-        length_ = 0;
-        temporary_ = false;
-    }
+    explicit FrameBuffer(size_t capacity) : FrameBuffer(capacity, false) {}
     explicit FrameBuffer(size_t capacity, bool temporary) {
         data_.reset(new uint8_t[capacity]);
         capacity_ = capacity;

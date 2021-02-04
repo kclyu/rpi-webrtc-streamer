@@ -33,18 +33,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 #include "absl/strings/match.h"
-#include "common_video/h264/h264_bitstream_parser.h"
-#include "common_video/h264/h264_common.h"
-#include "common_video/h264/profile_level_id.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "config_media.h"
-#include "media/base/media_constants.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "raspi_encoder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/platform_thread.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -432,13 +426,12 @@ bool RaspiEncoderImpl::DrainProcess() {
     //
     if (encoded_image_callback_ && buf && !buf->isMotionVector()) {
         CodecSpecificInfo codec_specific;
-        int qp;
 
         // Parsing h264 frame
-        h264_bitstream_parser_.ParseBitstream(buf->data(), buf->length());
-        if (h264_bitstream_parser_.GetLastSliceQp(&qp)) {
-            encoded_image_.qp_ = qp;
-        };
+        h264_bitstream_parser_.ParseBitstream(
+            rtc::ArrayView<const uint8_t>(buf->data(), buf->length()));
+        encoded_image_.qp_ =
+            h264_bitstream_parser_.GetLastSliceQp().value_or(-1);
 
         // Search the NAL unit in the stream
         const std::vector<H264::NaluIndex> nalu_indexes =
