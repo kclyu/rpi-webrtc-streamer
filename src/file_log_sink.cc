@@ -39,11 +39,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/stream.h"
 #include "utils.h"
 
-static constexpr int kLogFileSizeLimit = 3 * 1024 * 1024;  // 3M bytes;
-static constexpr char kLogFilenamePrefix[] = "rws.log";
-static constexpr size_t kMaxLogFileNums = 10;
-
 namespace utils {
+
+namespace {
+
+constexpr int kLogFileSizeLimit = 3 * 1024 * 1024;  // 3M bytes;
+constexpr char kLogFilenamePrefix[] = "rws.log";
+constexpr size_t kMaxLogFileNums = 10;
+
+}  // namespace
 
 //////////////////////////////////////////////////////////////////////////////////////////
 //

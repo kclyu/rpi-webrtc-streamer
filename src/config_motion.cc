@@ -37,6 +37,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/logging.h"
 #include "utils.h"
 
+namespace {
+
+constexpr int kMaxClearWaitPeriod = 10000;  // 10 seconds
+constexpr int kMinClearWaitPeriod = 2000;   // 10 seconds
+constexpr int kMaxClearPercent = 10;
+constexpr int kMinClearPercent = 3;
+constexpr int kMaxMotionFps = 30;
+constexpr int kMaxAnnotationTextLength = 256;
+
+}  // namespace
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
 // config validation helper functions
@@ -57,9 +68,6 @@ DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_bitrate, int) {
     return true;
 }
 
-static constexpr int kMaxClearWaitPeriod = 10000;  // 10 seconds
-static constexpr int kMinClearWaitPeriod = 2000;   // 10 seconds
-
 DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_clear_wait_period, int) {
     if (motion_clear_wait_period < kMinClearWaitPeriod ||
         motion_clear_wait_period > kMaxClearWaitPeriod) {
@@ -71,9 +79,6 @@ DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_clear_wait_period, int) {
     return true;
 }
 
-static constexpr int kMaxClearPercent = 10;
-static constexpr int kMinClearPercent = 3;
-
 DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_clear_percent, int) {
     if (motion_clear_percent < kMinClearPercent ||
         motion_clear_percent > kMaxClearPercent) {
@@ -83,8 +88,6 @@ DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_clear_percent, int) {
     }
     return true;
 }
-
-static constexpr int kMaxMotionFps = 30;
 
 DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_fps, int) {
     if (motion_fps < 0 || motion_fps > kMaxMotionFps) {
@@ -129,8 +132,6 @@ DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_directory, std::string) {
     }
     return true;
 }
-
-static constexpr int kMaxAnnotationTextLength = 256;
 
 DECLARE_METHOD_VALIDATOR(ConfigMotion, motion_annotate_text, std::string) {
     if (motion_annotate_text.length() > kMaxAnnotationTextLength) {

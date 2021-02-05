@@ -39,11 +39,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
-static const uint32_t kClientIDLength = 8;
-static const uint32_t kRoomIDLength = 9;
-static const uint32_t kMaxClientID = 99999999;
-static const uint32_t kMaxRoomID = 999999999;
-static const uint64_t kWaitTimeout = 1000;
+namespace {
+
+const uint32_t kClientIDLength = 8;
+const uint32_t kRoomIDLength = 9;
+const uint32_t kMaxClientID = 99999999;
+const uint32_t kMaxRoomID = 999999999;
+const uint64_t kWaitTimeout = 1000;
+
+}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 //

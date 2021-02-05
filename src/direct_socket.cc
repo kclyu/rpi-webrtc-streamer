@@ -39,16 +39,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "streamer_signaling.h"
 #include "utils.h"
 
+namespace {
+
 // delay of message to use for stream release
-static const int kStreamReleaseDelay = 1000;
-static const std::string kDirectSocketDelimiter = "\n";
+const int kStreamReleaseDelay = 1000;
+const std::string kDirectSocketDelimiter = "\n";
+
+}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 // DirectSocketServer
 ////////////////////////////////////////////////////////////////////////////////
 
 DirectSocketServer::DirectSocketServer(StreamerProxy* proxy)
-    : SignalingChannelHelper(proxy), listener_(nullptr), direct_socket_(nullptr) {
+    : SignalingChannelHelper(proxy),
+      listener_(nullptr),
+      direct_socket_(nullptr) {
     last_reject_time_ms_ = connection_reject_count_ = 0;
 }
 DirectSocketServer::~DirectSocketServer() {}

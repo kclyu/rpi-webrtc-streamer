@@ -38,19 +38,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/thread.h"
 
-static const float kKushGaugeConstant = 0.07;
-static const float kKushGaugeRank = 2;
-static const float kBufferCalculationFactor = 1.2;
+namespace {
 
-static const int kDefaultMotionAverageSize = 32;
-static const int kDefaultMotionActiveTriggerPercent = 10;
-static const int kDefaultMotionActiveClearPercent = 5;
-static const int kDefaultMotionClearWaitPeriod = 5000;   // 5 seconds
-static const int kDefaultMotionAveragePrintDiff = 1000;  // 1 second
+const float kKushGaugeConstant = 0.07;
+const float kKushGaugeRank = 2;
+const float kBufferCalculationFactor = 1.2;
+
+const int kDefaultMotionAverageSize = 32;
+const int kDefaultMotionActiveTriggerPercent = 10;
+const int kDefaultMotionActiveClearPercent = 5;
+const int kDefaultMotionClearWaitPeriod = 5000;   // 5 seconds
+const int kDefaultMotionAveragePrintDiff = 1000;  // 1 second
 
 #ifdef PRINT_PROCESS_DELAYS
-static const int kDefaultMotionFrameProcessingSize = 30 * 3;
+const int kDefaultMotionFrameProcessingSize = 30 * 3;
 #endif  // PRINT_PROCESS_DELAYS
+
+}  // namespace
 
 RaspiMotionHolder::RaspiMotionHolder(ConfigMotion *config_motion)
     : config_motion_(config_motion) {}

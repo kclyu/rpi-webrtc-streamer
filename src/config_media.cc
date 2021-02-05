@@ -45,6 +45,73 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/strings/json.h"
 #include "utils.h"
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// media config key name and constants values
+//
+////////////////////////////////////////////////////////////////////////////////
+namespace {
+
+const char kConfigVideoResolutionDelimiter = ',';
+const double kVideoRoiMin = 0.2f;
+const double kVideoRoiMax = 1.0f;
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// additional validation helper functions
+//
+////////////////////////////////////////////////////////////////////////////////
+
+bool parse_vidio_resolution(
+    const std::string resolution_list,
+    std::list<ConfigMedia::VideoResolution> &resolution) {
+    std::list<ConfigMedia::VideoResolution> res;
+
+    std::vector<std::string> splited_list;
+    rtc::split(resolution_list, kConfigVideoResolutionDelimiter, &splited_list);
+    for (auto token : splited_list) {
+        int width, height;
+        if (utils::ParseVideoResolution(token, &width, &height) == true) {
+            res.push_back(ConfigMedia::VideoResolution(width, height));
+        } else {
+            RTC_LOG(LS_ERROR) << "Failed to parse resolution : " << token;
+            // there is error, so do not assign local list to resolution
+            return false;
+        }
+    }
+    resolution = res;
+    return true;
+}
+
+bool parse_video_roi(const std::string video_roi, ConfigMedia::VideoRoi &roi) {
+    std::vector<std::string> splited_list;
+    ConfigMedia::VideoRoi parsed_roi;
+    rtc::split(video_roi, kConfigVideoResolutionDelimiter, &splited_list);
+    if (splited_list.size() != 4) {
+        RTC_LOG(LS_ERROR) << "Error, ROI value must be specified as 4 values :"
+                          << video_roi;
+        return false;
+    }
+    for (auto it = splited_list.begin(); it != splited_list.end(); ++it) {
+        double value = 0.0f;
+        int index = std::distance(splited_list.begin(), it);
+        if (!(rtc::FromString(*it, &value) == true &&
+              isgreater(value, 1.0f) == false &&
+              parsed_roi.access(index, value) == true)) {
+            RTC_LOG(LS_ERROR) << "Error in Roi Value at index: " << index
+                              << ", Value: " << *it;
+            return false;
+        }
+    }
+
+    if (parsed_roi.isValid() == false) return false;
+
+    roi = parsed_roi;  // all validation passed, store
+    return true;
+}
+
+}  // namespace
+
 ////////////////////////////////////////////////////////////////////////////////////////
 //
 // ConfigMediaSingleton interface
@@ -60,15 +127,6 @@ ConfigMediaSingleton::~ConfigMediaSingleton() {
 }
 
 ConfigMediaSingleton::ConfigMediaSingleton() { RTC_NOTREACHED(); }
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// media config key name and constants values
-//
-////////////////////////////////////////////////////////////////////////////////
-static const char kConfigVideoResolutionDelimiter = ',';
-static const double kVideoRoiMin = 0.2f;
-static const double kVideoRoiMax = 1.0f;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -129,61 +187,6 @@ bool ConfigMedia::VideoRoi::isValid(void) {
             << ", roi y: " << y_ << "roi heigth: " << height_;
         return false;
     }
-    return true;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// additional validation helper functions
-//
-////////////////////////////////////////////////////////////////////////////////
-
-static bool parse_vidio_resolution(
-    const std::string resolution_list,
-    std::list<ConfigMedia::VideoResolution> &resolution) {
-    std::list<ConfigMedia::VideoResolution> res;
-
-    std::vector<std::string> splited_list;
-    rtc::split(resolution_list, kConfigVideoResolutionDelimiter, &splited_list);
-    for (auto token : splited_list) {
-        int width, height;
-        if (utils::ParseVideoResolution(token, &width, &height) == true) {
-            res.push_back(ConfigMedia::VideoResolution(width, height));
-        } else {
-            RTC_LOG(LS_ERROR) << "Failed to parse resolution : " << token;
-            // there is error, so do not assign local list to resolution
-            return false;
-        }
-    }
-    resolution = res;
-    return true;
-}
-
-static bool parse_video_roi(const std::string video_roi,
-                            ConfigMedia::VideoRoi &roi) {
-    std::vector<std::string> splited_list;
-    ConfigMedia::VideoRoi parsed_roi;
-    rtc::split(video_roi, kConfigVideoResolutionDelimiter, &splited_list);
-    if (splited_list.size() != 4) {
-        RTC_LOG(LS_ERROR) << "Error, ROI value must be specified as 4 values :"
-                          << video_roi;
-        return false;
-    }
-    for (auto it = splited_list.begin(); it != splited_list.end(); ++it) {
-        double value = 0.0f;
-        int index = std::distance(splited_list.begin(), it);
-        if (!(rtc::FromString(*it, &value) == true &&
-              isgreater(value, 1.0f) == false &&
-              parsed_roi.access(index, value) == true)) {
-            RTC_LOG(LS_ERROR) << "Error in Roi Value at index: " << index
-                              << ", Value: " << *it;
-            return false;
-        }
-    }
-
-    if (parsed_roi.isValid() == false) return false;
-
-    roi = parsed_roi;  // all validation passed, store
     return true;
 }
 

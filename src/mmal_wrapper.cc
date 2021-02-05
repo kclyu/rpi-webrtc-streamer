@@ -44,8 +44,12 @@ namespace webrtc {
 // MMAL Encoder Delayed Reinit
 //
 ////////////////////////////////////////////////////////////////////////////////
-static const int kDelayInitialDurationMs = 4000;
-static const int kDelayTaskInterval = 100;
+namespace {
+
+const int kDelayInitialDurationMs = 4000;
+const int kDelayTaskInterval = 100;
+
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 //

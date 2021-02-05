@@ -62,15 +62,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DEBUG_IMV_DO(a)
 #endif  //  DEBUG_IMV
 
+namespace {
+
 // Motion Vector Default Parameters
-static const int kMvPixelWidth = 16;
+const int kMvPixelWidth = 16;
 
 // Bit Operation
-static const int kMotionBitSetNumber = 31;
-static const int kMotionCutBitThreshold = 2;
+const int kMotionBitSetNumber = 31;
+const int kMotionCutBitThreshold = 2;
 
 // Default Motion Active Max/Min Treshold
-static const int kDefaultMotionCoolingDown = 3000;  // ms
+const int kDefaultMotionCoolingDown = 3000;  // ms
+
+}  // namespace
 
 RaspiMotionVector::RaspiMotionVector(int x, int y, int framerate,
                                      bool use_imv_coordination,

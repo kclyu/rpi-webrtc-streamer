@@ -56,20 +56,24 @@
 #include "test/vcm_capturer.h"
 #include "utils_pc_strings.h"
 
+namespace {
+
 // Names used for SDP label
-static const char kAudioLabel[] = "audio_label";
-static const char kVideoLabel[] = "video_label";
-static const char kStreamId[] = "stream_id";
+const char kAudioLabel[] = "audio_label";
+const char kVideoLabel[] = "video_label";
+const char kStreamId[] = "stream_id";
 
 // Names used for a Android Direct IceCandidate JSON object.
-static const char kCandidateSdpMidName[] = "id";
-static const char kCandidateSdpMlineIndexName[] = "label";
-static const char kCandidateSdpName[] = "candidate";
-static const char kCandidateType[] = "type";
+const char kCandidateSdpMidName[] = "id";
+const char kCandidateSdpMlineIndexName[] = "label";
+const char kCandidateSdpName[] = "candidate";
+const char kCandidateType[] = "type";
 
 // Names used for a SessionDescription JSON object.
-static const char kSessionDescriptionTypeName[] = "type";
-static const char kSessionDescriptionSdpName[] = "sdp";
+const char kSessionDescriptionTypeName[] = "type";
+const char kSessionDescriptionSdpName[] = "sdp";
+
+}  // namespace
 
 class DummySetSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {

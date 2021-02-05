@@ -32,7 +32,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "utils.h"
 #include "websocket_server.h"
 
-static size_t LWS_PRE_SIZE = LWS_PRE;
+namespace {
+
+const size_t LWS_PRE_SIZE = LWS_PRE;
+const char *kReason_UriTooLong = "URI is too long";
+const char *kReason_UriNotExist = "URI does not exist";
+
+}  // namespace
 
 // ring buffer message
 struct msg {
@@ -191,8 +197,6 @@ int LibWebSocketServer::CallbackLibWebsockets(struct lws *wsi,
             return 0;
 
         case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION: {
-            static const char *kReason_UriTooLong = "URI is too long";
-            static const char *kReason_UriNotExist = "URI does not exist";
             dump_handshake_info(wsi);
 
             if (user)

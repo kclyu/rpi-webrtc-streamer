@@ -104,50 +104,52 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //      command: in/out/reset
 //
 
+namespace {
+
 // message keywords
-static const char kKeyCmd[] = "cmd";
+const char kKeyCmd[] = "cmd";
 
 // notice/error event
-static const char kValueCmdEvent[] = "event";
-static const char kValueTypeError[] = "error";
-static const char kValueTypeNotice[] = "notice";
+const char kValueCmdEvent[] = "event";
+const char kValueTypeError[] = "error";
+const char kValueTypeNotice[] = "notice";
 
 // register
-static const char kValueCmdRegister[] = "register";
-static const char kKeyRegisterRoomId[] = "roomid";
-static const char kKeyRegisterClientId[] = "clientid";
+const char kValueCmdRegister[] = "register";
+const char kKeyRegisterRoomId[] = "roomid";
+const char kKeyRegisterClientId[] = "clientid";
 
 // send
-static const char kValueCmdSend[] = "send";
-static const char kKeySendMessage[] = "msg";
-static const char kKeySendType[] = "type";
-static const char kValueCmdSendTypeBye[] = "bye";
+const char kValueCmdSend[] = "send";
+const char kKeySendMessage[] = "msg";
+const char kKeySendType[] = "type";
+const char kValueCmdSendTypeBye[] = "bye";
 
 // request/response
-static const char kValueCmdRequest[] = "request";
-static const char kValueCmdResponse[] = "response";
+const char kValueCmdRequest[] = "request";
+const char kValueCmdResponse[] = "response";
 
-static const char kKeyCmdType[] = "type";
-static const char kValueTyepDeviceId[] = "deviceid";
-static const char kValueTyepMcVersion[] = "mcversion";
+const char kKeyCmdType[] = "type";
+const char kValueTyepDeviceId[] = "deviceid";
+const char kValueTyepMcVersion[] = "mcversion";
 
-static const char kValueTypeRTCConfig[] = "rtcconfig";
-static const char kValueTypeConfig[] = "config";
+const char kValueTypeRTCConfig[] = "rtcconfig";
+const char kValueTypeConfig[] = "config";
 
-static const char kKeyEventMesg[] = "mesg";
+const char kKeyEventMesg[] = "mesg";
 
-static const char kKeyData[] = "data";
-static const char kKeyTransaction[] = "transaction";
+const char kKeyData[] = "data";
+const char kKeyTransaction[] = "transaction";
 
-static const char kValueDataSave[] = "save";
-static const char kValueDataRead[] = "read";
-static const char kValueDataReset[] = "reset-to-default";
-static const char kValueDataApply[] = "apply";
+const char kValueDataSave[] = "save";
+const char kValueDataRead[] = "read";
+const char kValueDataReset[] = "reset-to-default";
+const char kValueDataApply[] = "apply";
 
-static const char kKeyRequestResult[] = "result";
-static const char kValueResultSuccess[] = "SUCCESS";
-static const char kValueResultFailed[] = "FAILED";
-static const char kKeyRequestError[] = "error";
+const char kKeyRequestResult[] = "result";
+const char kValueResultSuccess[] = "SUCCESS";
+const char kValueResultFailed[] = "FAILED";
+const char kKeyRequestError[] = "error";
 
 // { cmd: message, type: "zoom", data: { x: value, y: value, command:
 // command_type } }
@@ -156,43 +158,45 @@ static const char kKeyRequestError[] = "error";
 //
 // request/response
 
-static const char kValueCmdMessage[] = "message";
-static const char kKeyDataCommand[] = "command";
-static const char kValueTypeZoom[] = "zoom";
-static const char kValueDataX[] = "x";
-static const char kValueDataY[] = "y";
-static const char kValueCommandZoomIn[] = "in";
-static const char kValueCommandZoomOut[] = "out";
-static const char kValueCommandZoomReset[] = "reset";
-static const char kValueCommandZoomMove[] = "move";
+const char kValueCmdMessage[] = "message";
+const char kKeyDataCommand[] = "command";
+const char kValueTypeZoom[] = "zoom";
+const char kValueDataX[] = "x";
+const char kValueDataY[] = "y";
+const char kValueCommandZoomIn[] = "in";
+const char kValueCommandZoomOut[] = "out";
+const char kValueCommandZoomReset[] = "reset";
+const char kValueCommandZoomMove[] = "move";
 
 //
 //  Media Config Version
 //
-static const char kMediaConfigVersion[] = "v0.73";
+const char kMediaConfigVersion[] = "v0.73";
 
 //
 // Error messages
 //
-static const char kErrDataKeyMissing[] = "data key missing";
-static const char kErrInternalError[] = "Unknown Internal Error";
-static const char kErrClientOrRoomIdNotFound[] =
+const char kErrDataKeyMissing[] = "data key missing";
+const char kErrInternalError[] = "Unknown Internal Error";
+const char kErrClientOrRoomIdNotFound[] =
     "No Client/Room ID found in register command";
-static const char kErrRegisterClientOrRoomId[] =
+const char kErrRegisterClientOrRoomId[] =
     "Failed to register Client/Room ID in clientinfo";
-static const char kErrInvalidJsonMessage[] =
+const char kErrInvalidJsonMessage[] =
     "Failed to parse Json Message in send command";
-static const char kNotiSessionAlreadyOccupied[] =
+const char kNotiSessionAlreadyOccupied[] =
     "Streamer session is already in use by another user";
-static const char kErrMessageEmpy[] = "No json message in cmd send";
-static const char kErrUnknownCommandType[] = "Unknown Command Type";
-static const char kErrUnknownRequestType[] = "Unknown Request Type";
-static const char kErrUnknownProtocolMessage[] = "Unknown Protocol Message";
-static const char kErrRTCConfig[] = "Failed to get RTC Configuration";
+const char kErrMessageEmpy[] = "No json message in cmd send";
+const char kErrUnknownCommandType[] = "Unknown Command Type";
+const char kErrUnknownRequestType[] = "Unknown Request Type";
+const char kErrUnknownProtocolMessage[] = "Unknown Protocol Message";
+const char kErrRTCConfig[] = "Failed to get RTC Configuration";
 
 // delay of message to use for stream release
-static const int kStreamReleaseDelay = 1000;
-static const int kMaxChunkedFrames = 5;
+const int kStreamReleaseDelay = 1000;
+const int kMaxChunkedFrames = 5;
+
+}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 //

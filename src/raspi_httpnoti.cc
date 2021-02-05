@@ -33,16 +33,20 @@
 #include "utils.h"  // GetHardwareDeviceId
 #include "utils_url.h"
 
-// Do not allow buffer sizes larger than the specified max value.
-static const int kMaxBufferSize = 4096;
-static const int kDelaySendActivate = 1000;
-static const int kDelayResendActivate = 3000;
-static const int kDelayResolveIfAddr = 5000;  // 5 seconds
+namespace {
 
-static const char* kDefaultMotionNotiIP = "localhost";
-static const char* kDefaultMotionNotiPath = "/motion_notification";
-static const int kDefaultMotionNotiPort = 8890;
-static const int kDefaultMotionFileServingPort = 8889;
+// Do not allow buffer sizes larger than the specified max value.
+const int kMaxBufferSize = 4096;
+const int kDelaySendActivate = 1000;
+const int kDelayResendActivate = 3000;
+const int kDelayResolveIfAddr = 5000;  // 5 seconds
+
+const char* kDefaultMotionNotiIP = "localhost";
+const char* kDefaultMotionNotiPath = "/motion_notification";
+const int kDefaultMotionNotiPort = 8890;
+const int kDefaultMotionFileServingPort = 8889;
+
+}  // namespace
 
 rtc::AsyncSocket* RaspiHttpNoti::CreateClientSocket(int family) {
     rtc::Thread* thread = rtc::Thread::Current();

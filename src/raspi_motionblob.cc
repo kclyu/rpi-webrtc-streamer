@@ -102,10 +102,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static const uint8_t BLOB_ID_NOT_USED = 0;  // not used for blob id
-static const uint8_t BLOB_ID_CRUMBS = 1;    // used for bread crumbs
-static const uint8_t BLOB_ID_MIN = 2;
-static const uint8_t BLOB_ID_MAX = 255;
+namespace {
+
+const uint8_t BLOB_ID_NOT_USED = 0;  // not used for blob id
+const uint8_t BLOB_ID_CRUMBS = 1;    // used for bread crumbs
+const uint8_t BLOB_ID_MIN = 2;
+const uint8_t BLOB_ID_MAX = 255;
+
+}  // namespace
 
 RaspiMotionBlob::RaspiMotionBlob(int mvx, int mvy, float blob_cancel_threshold,
                                  int blob_tracking_threshold)

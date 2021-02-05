@@ -36,10 +36,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace webrtc {
 
-static constexpr size_t kFileWriterBufferSize = 65536;
-static constexpr char kTemporaryFileNameExtension[] = ".saving";
+namespace {
 
-static const std::string GetDateTimeString(void) {
+constexpr size_t kFileWriterBufferSize = 65536;
+constexpr char kTemporaryFileNameExtension[] = ".saving";
+
+const std::string GetDateTimeString(void) {
     // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
     time_t now = time(0);
     struct tm tstruct;
@@ -51,6 +53,8 @@ static const std::string GetDateTimeString(void) {
 
     return buf;
 }
+
+}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 //

@@ -36,18 +36,22 @@
 
 namespace utils {
 
-static const char FOLDER_DELIMS = '/';
+namespace {
+
+const char FOLDER_DELIMS = '/';
 
 #ifdef LOCAL_DEVICEID
-static const char *kCPUInfoPath = "./cpuinfo";  // testing purpose
+const char *kCPUInfoPath = "./cpuinfo";  // testing purpose
 #else
-static const char *kCPUInfoPath = "/proc/cpuinfo";
+const char *kCPUInfoPath = "/proc/cpuinfo";
 #endif  // LOCAL_DEVICEID
-static const char *kCPUInfoSeperator = ":";
-static const char *kCPUInfoDeviceToken = "Serial";
-static const char *kProgramDescription =
+const char *kCPUInfoSeperator = ":";
+const char *kCPUInfoDeviceToken = "Serial";
+const char *kProgramDescription =
     "RWS is a WebRTC H.264 streamer designed "
     "to run on Raspberry PI \nand Raspberry PI camera board hardware.\n";
+
+}  // namespace
 
 // return verion information for command line version flag
 std::string GetVersionInfo() {

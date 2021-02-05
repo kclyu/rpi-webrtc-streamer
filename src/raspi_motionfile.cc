@@ -42,10 +42,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/thread.h"
 #include "utils.h"
 
-static constexpr char kVideoFileExtension[] = ".h264";
-static constexpr char kImvFileExtension[] = ".imv";
+namespace {
+
+constexpr char kVideoFileExtension[] = ".h264";
+constexpr char kImvFileExtension[] = ".imv";
 // minimal wait period
-static constexpr int kWaitPeriodforMotionWriterThread = 10;
+constexpr int kWaitPeriodforMotionWriterThread = 10;
+
+}  // namespace
 
 RaspiMotionFile::RaspiMotionFile(ConfigMotion* config_motion,
                                  const std::string base_path,

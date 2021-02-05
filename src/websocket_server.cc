@@ -41,19 +41,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // LibWebSocket struct for initialization
 //
 ///////////////////////////////////////////////////////////////////////////////
-static const char *kProtocolHandlerName = "websocket-http";
-static const char *kMotionMount = "/motion/";
-static const char *kHttpMount = "/";
-static const char *DefaultHtml = "index.html";
 
-static const struct lws_protocol_vhost_options mjs_extension = {
+namespace {
+
+const char *kProtocolHandlerName = "websocket-http";
+const char *kMotionMount = "/motion/";
+const char *kHttpMount = "/";
+const char *DefaultHtml = "index.html";
+
+const struct lws_protocol_vhost_options mjs_extension = {
     nullptr,          /* "next" pvo linked-list */
     nullptr,          /* "child" pvo linked-list */
     ".mjs",           /* file suffix to match */
     "text/javascript" /* mimetype to use */
 };
 
-static const struct lws_protocol_vhost_options h264_extension = {
+const struct lws_protocol_vhost_options h264_extension = {
     &mjs_extension, /* "next" pvo linked-list */
     nullptr,        /* "child" pvo linked-list */
     ".h264",        /* file suffix to match */
@@ -61,7 +64,7 @@ static const struct lws_protocol_vhost_options h264_extension = {
 };
 
 /* list of supported protocols and callbacks */
-static struct lws_protocols protocols[] = {
+struct lws_protocols protocols[] = {
     /* first protocol must always be HTTP handler */
     {
         kProtocolHandlerName,                      /* name */
@@ -74,12 +77,14 @@ static struct lws_protocols protocols[] = {
     {NULL, NULL, 0, 0} /* terminator */
 };
 
-static const struct lws_extension extensions[] = {
+const struct lws_extension extensions[] = {
     {"permessage-deflate", lws_extension_callback_pm_deflate,
      "permessage-deflate"
      "; client_no_context_takeover"
      "; client_max_window_bits"},
     {NULL, NULL, NULL /* terminator */}};
+
+}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 //

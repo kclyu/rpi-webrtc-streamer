@@ -33,15 +33,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
-static const int kAverageDuration = 30;  // Approximately 30 samples per second
+namespace {
 
-static const float kKushGaugeConstant = 0.07;
-static const int kMaxMontionFactor = 3;
-static const int kMinMontionFactor = 1;  //  original value is 1 ~ 4
-static const float kDefaultMontionFactor = 1.8f;
-static const int kMonitorFactorWeight = 0.8f;
+const int kAverageDuration = 30;  // Approximately 30 samples per second
 
-static const int kMaxFrameRate = 30;  // using 30 as raspberry pi max FPS
+const float kKushGaugeConstant = 0.07;
+const int kMaxMontionFactor = 3;
+const int kMinMontionFactor = 1;  //  original value is 1 ~ 4
+const float kDefaultMontionFactor = 1.8f;
+const int kMonitorFactorWeight = 0.8f;
+
+const int kMaxFrameRate = 30;  // using 30 as raspberry pi max FPS
+
+}  // namespace
 
 QualityConfig::ResolutionConfigEntry::ResolutionConfigEntry(int width,
                                                             int height,
