@@ -112,18 +112,15 @@ class RaspiEncoderImpl : public RaspiEncoder {
     bool has_reported_init_;
     bool has_reported_error_;
 
-    //
     // Encoded frame process thread
     std::unique_ptr<rtc::PlatformThread> drainThread_;
 
     EncodedImageCallback* encoded_image_callback_;
-    EncodedImage encoded_image_;
 
     // H264 bitstream parser, used to extract QP from encoded bitstreams.
     H264BitstreamParser h264_bitstream_parser_;
 
     Clock* const clock_;
-    int64_t last_keyframe_request_;
 
     VideoCodecMode mode_;
     size_t max_payload_size_;

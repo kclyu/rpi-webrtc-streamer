@@ -53,9 +53,6 @@ enum H264EncoderImplEvent {
 };
 }  // namespace
 
-static const int kDelayForStackCalmDown = 300;
-static const uint32_t kKeyFrameAllowedInterval = 3000;  // 3 secs
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Raspi Encoder Impl
@@ -68,8 +65,6 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
       has_reported_error_(false),
       encoded_image_callback_(nullptr),
       clock_(Clock::GetRealTimeClock()),
-      last_keyframe_request_(clock_->TimeInMilliseconds()),
-
       mode_(VideoCodecMode::kRealtimeVideo),
       max_payload_size_(0),
       key_frame_interval_(0),
@@ -163,14 +158,6 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
-
-    // Find the largest video resolution among the resolutions registered
-    // in the video resolution, and set the recommended EncodedImageBufer
-    // capacity to the frame buffer.
-    size_t required_capacity = mmal_encoder_->GetBufferSize();
-    RTC_LOG(INFO) << "EncodedImageBuffer capacity: " << required_capacity;
-    encoded_image_.SetEncodedData(
-        EncodedImageBuffer::Create(required_capacity));
 
     // start capture in here
     mmal_encoder_->StartCapture();
@@ -285,7 +272,6 @@ int32_t RaspiEncoderImpl::Encode(
         return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
     }
 
-    bool send_key_frame = false;
     if (frame_types != nullptr) {
         // We only support a single stream.
         RTC_DCHECK_EQ(frame_types->size(), static_cast<size_t>(1));
@@ -296,20 +282,10 @@ int32_t RaspiEncoderImpl::Encode(
 
         if ((*frame_types)[0] == VideoFrameType::kVideoFrameKey &&
             frame_flow_.IsEnabled()) {
-            send_key_frame = true;
+            mmal_encoder_->SetForceNextKeyFrame();
         }
     }
 
-    if (send_key_frame) {
-        // function forces a key frame regardless of the |bIDR| argument's
-        // value. (If every frame is a key frame we get lag/delays.)
-        if (clock_->TimeInMilliseconds() - last_keyframe_request_ >
-            kKeyFrameAllowedInterval) {
-            mmal_encoder_->SetForceNextKeyFrame();
-            last_keyframe_request_ = clock_->TimeInMilliseconds();
-            RTC_LOG(INFO) << "KeyFrame requested.";
-        }
-    }
     // No more thing to do
     return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -387,6 +363,7 @@ bool RaspiEncoderImpl::FrameFlowCtl::CheckKeyframe(bool is_keyframe) {
         return true;
     }
 
+    static const int kDelayForStackCalmDown = 300;
     if ((clock_->TimeInMilliseconds() - keyframe_wait_start_time_) >
         kDelayForStackCalmDown) {
         if (flow_state_ == FLOW_WAITING_KEYFRAME) {
@@ -425,12 +402,13 @@ bool RaspiEncoderImpl::DrainProcess() {
     // transmitted.
     //
     if (encoded_image_callback_ && buf && !buf->isMotionVector()) {
+        EncodedImage encoded_image(buf->data(), buf->length(), buf->length());
         CodecSpecificInfo codec_specific;
 
         // Parsing h264 frame
         h264_bitstream_parser_.ParseBitstream(
             rtc::ArrayView<const uint8_t>(buf->data(), buf->length()));
-        encoded_image_.qp_ =
+        encoded_image.qp_ =
             h264_bitstream_parser_.GetLastSliceQp().value_or(-1);
 
         // Search the NAL unit in the stream
@@ -454,33 +432,29 @@ bool RaspiEncoderImpl::DrainProcess() {
         int64_t capture_time_ms = clock_->TimeInMilliseconds() - 10;
         int64_t ntp_capture_time_ms = clock_->CurrentNtpInMilliseconds() - 10;
 
-        encoded_image_._encodedWidth = mmal_encoder_->GetWidth();
-        encoded_image_._encodedHeight = mmal_encoder_->GetHeight();
-        encoded_image_.SetTimestamp(capture_time_ms);
-        encoded_image_.ntp_time_ms_ = ntp_capture_time_ms;
-        encoded_image_.capture_time_ms_ = capture_time_ms;
-
-        // encoded_image_.set_buffer(buf->data, buf->alloc_size);
-        memcpy((uint8_t*)encoded_image_.data(), buf->data(), buf->length());
-        encoded_image_.set_size(buf->length());
-        encoded_image_._frameType = buf->isKeyFrame()
-                                        ? VideoFrameType::kVideoFrameKey
-                                        : VideoFrameType::kVideoFrameDelta;
+        encoded_image._encodedWidth = mmal_encoder_->GetWidth();
+        encoded_image._encodedHeight = mmal_encoder_->GetHeight();
+        encoded_image.SetTimestamp(capture_time_ms);
+        encoded_image.ntp_time_ms_ = ntp_capture_time_ms;
+        encoded_image.capture_time_ms_ = capture_time_ms;
+        encoded_image._frameType = buf->isKeyFrame()
+                                       ? VideoFrameType::kVideoFrameKey
+                                       : VideoFrameType::kVideoFrameDelta;
 
         // SimulCast is not implemented
-        encoded_image_.SetSpatialIndex(0);
+        encoded_image.SetSpatialIndex(0);
 
         codec_specific.codecType = kVideoCodecH264;
         codec_specific.codecSpecific.H264.packetization_mode =
             packetization_mode_;
         codec_specific.codecSpecific.H264.temporal_idx = kNoTemporalIdx;
         codec_specific.codecSpecific.H264.idr_frame =
-            encoded_image_._frameType == VideoFrameType::kVideoFrameKey;
+            encoded_image._frameType == VideoFrameType::kVideoFrameKey;
         codec_specific.codecSpecific.H264.base_layer_sync = false;
 
         // Deliver encoded image.
         EncodedImageCallback::Result result =
-            encoded_image_callback_->OnEncodedImage(encoded_image_,
+            encoded_image_callback_->OnEncodedImage(encoded_image,
                                                     &codec_specific);
         if (result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED) {
             RTC_LOG(LS_ERROR) << "Error in passng EncodedImage";
