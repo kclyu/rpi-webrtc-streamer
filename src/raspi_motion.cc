@@ -115,7 +115,10 @@ RaspiMotion::RaspiMotion(ConfigMotion *config_motion, int width, int height,
       drain_process_delay_(kDefaultMotionFrameProcessingSize),
 #endif  // PRINT_PROCESS_DELAYS
       notification_enable_(false),
-      config_motion_(config_motion) {
+      config_motion_(config_motion),
+      task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
+      worker_queue_(task_queue_factory_->CreateTaskQueue(
+          "Packet Sender", webrtc::TaskQueueFactory::Priority::HIGH)) {
     frame_buffer_size_ =
         static_cast<int>(((width * height * framerate * kKushGaugeConstant *
                            kKushGaugeRank * VIDEO_INTRAFRAME_PERIOD) /
@@ -360,15 +363,23 @@ bool RaspiMotion::DrainProcess() {
 
             // Doing motion analysis based on the new MV
             motion_analysis_.Analyse(buf->data(), buf->length());
+            __CLOCK_MARK_IMV_END__;
 
             if ((motion_state_ == CLEARED) &&
                 (motion_file_->WriterActive() == true)) {
                 motion_file_->StopWriter();
+                // After the file writer ends, old files are deleted so that the
+                // directory where the file is stored does not exceed the
+                // specified size limit.
+                worker_queue_.PostTask(std::make_unique<LimitTotalDirSizeTask>(
+                    config_motion_->GetDirectory(),
+                    config_motion_->GetFilePrefix(),
+                    (size_t)config_motion_->GetTotalFileSizeLimit() * 1000000));
+
             } else if ((motion_state_ == TRIGGERED) &&
                        (motion_file_->WriterActive() == false)) {
                 motion_file_->StartWriter();
             }
-            __CLOCK_MARK_IMV_END__;
 
         } else if (buf->isFrameEnd()) {
             if (motion_file_->FrameQueuing(buf->data(), buf->length(), &length,

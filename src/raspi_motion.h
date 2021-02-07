@@ -36,6 +36,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 
+#include "api/task_queue/default_task_queue_factory.h"
+#include "api/task_queue/queued_task.h"
+#include "api/task_queue/task_queue_base.h"
 #include "config_motion.h"
 #include "mmal_wrapper.h"
 #include "raspi_httpnoti.h"
@@ -114,6 +117,8 @@ class RaspiMotion : public MotionBlobObserver,
     std::string notification_url_;
 
     ConfigMotion* config_motion_;
+    std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
+    rtc::TaskQueue worker_queue_;
 
     RTC_DISALLOW_COPY_AND_ASSIGN(RaspiMotion);
 };

@@ -49,7 +49,61 @@ constexpr char kImvFileExtension[] = ".imv";
 // minimal wait period
 constexpr int kWaitPeriodforMotionWriterThread = 10;
 
+struct FileInfo {
+    std::string filename;
+    size_t size;
+};
+
+static bool FilenameCompare(const FileInfo& a, const FileInfo& b) {
+    return a.filename.compare(b.filename) < 0;
+}
+
 }  // namespace
+
+bool LimitTotalDirSizeTask::Run() {
+    std::list<FileInfo> file_list;
+    std::string file_folder;
+    size_t total_dir_size = 0;
+    size_t file_counter = 0;
+
+    // check video path is folder
+    if (!utils::GetFolderWithTailingDelimiter(base_path_, file_folder)) {
+        RTC_LOG(LS_ERROR) << "Motion file path is not folder : " << file_folder;
+        return true;  // always return true to stop task
+    };
+
+    DIR* dirp = ::opendir(file_folder.c_str());
+    if (dirp == nullptr) return true;
+    for (struct dirent* dirent = ::readdir(dirp); dirent;
+         dirent = ::readdir(dirp)) {
+        std::string name = dirent->d_name;
+        if (name.compare(0, prefix_.size(), prefix_) == 0) {
+            FileInfo file_info;
+            file_info.filename = name;
+            file_info.size = utils::GetFileSize(file_folder + name).value_or(0);
+            file_list.emplace_back(file_info);
+
+            file_counter++;
+            total_dir_size += file_info.size;
+        }
+    }
+    // not needed it anymore
+    ::closedir(dirp);
+    file_list.sort(FilenameCompare);
+
+    RTC_LOG(INFO) << "Directory \"" << file_folder << "\" " << file_counter
+                  << " files, total size: " << total_dir_size;
+
+    while (file_list.size() > 0 &&
+           ((total_dir_size - file_list.front().size) > size_limit_)) {
+        total_dir_size -= file_list.front().size;
+        std::string file_full_path = file_folder + file_list.front().filename;
+        RTC_LOG(INFO) << "Removing Video File :" << file_list.front().filename;
+        utils::DeleteFile(file_full_path);
+        file_list.pop_front();
+    };
+    return true;  // always return true to stop task
+}
 
 RaspiMotionFile::RaspiMotionFile(ConfigMotion* config_motion,
                                  const std::string base_path,
@@ -123,7 +177,6 @@ void RaspiMotionFile::WriterThread(void* obj) {
     while (motion_file->WriterProcess()) {
     }
     //  Delete old files to limit the size defined in config.
-    motion_file->LimitingTotalDirSize();
 }
 
 bool RaspiMotionFile::WriterProcess() {
@@ -189,60 +242,4 @@ bool RaspiMotionFile::StopWriter() {
 // TODO: need to replace writer_thread_active_ with Thread.IsRunning()
 // candidate: if( writerThread_ && writerThread->IsRunning() )
 bool RaspiMotionFile::WriterActive() { return writer_thread_active_; }
-
-struct FileInfo {
-    std::string filename;
-    size_t size;
-};
-
-static bool FilenameCompare(const FileInfo& a, const FileInfo& b) {
-    return a.filename.compare(b.filename) < 0;
-}
-
-bool RaspiMotionFile::LimitingTotalDirSize(void) {
-    std::list<FileInfo> file_list;
-    std::string file_folder;
-    size_t total_dir_size = 0;
-    size_t file_counter = 0;
-
-    // check video path is folder
-    if (!utils::GetFolderWithTailingDelimiter(base_path_, file_folder)) {
-        RTC_LOG(LS_ERROR) << "Motion file path is not folder : " << file_folder;
-        return false;
-    };
-
-    DIR* dirp = ::opendir(file_folder.c_str());
-    if (dirp == nullptr) return false;
-    for (struct dirent* dirent = ::readdir(dirp); dirent;
-         dirent = ::readdir(dirp)) {
-        std::string name = dirent->d_name;
-        if (name.compare(0, prefix_.size(), prefix_) == 0) {
-            FileInfo file_info;
-            file_info.filename = name;
-            file_info.size = utils::GetFileSize(file_folder + name).value_or(0);
-            file_list.emplace_back(file_info);
-
-            file_counter++;
-            total_dir_size += file_info.size;
-        }
-    }
-    // not needed it anymore
-    ::closedir(dirp);
-    file_list.sort(FilenameCompare);
-
-    RTC_LOG(INFO) << "Directory \"" << file_folder << "\" " << file_counter
-                  << " files, total size: " << total_dir_size;
-
-    while (file_list.size() > 0 &&
-           ((total_dir_size - file_list.front().size) >
-            (size_t)config_motion_->GetTotalFileSizeLimit() * 1000000)) {
-        total_dir_size -= file_list.front().size;
-        std::string file_full_path = file_folder + file_list.front().filename;
-        RTC_LOG(INFO) << "Removing Video File :" << file_list.front().filename;
-        utils::DeleteFile(file_full_path);
-        file_list.pop_front();
-    };
-
-    return true;
-}
 

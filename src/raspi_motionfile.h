@@ -33,12 +33,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctime>
 #include <memory>
 
+#include "api/task_queue/default_task_queue_factory.h"
+#include "api/task_queue/queued_task.h"
+#include "api/task_queue/task_queue_base.h"
 #include "config_motion.h"
 #include "file_writer_handle.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
+
+class LimitTotalDirSizeTask : public webrtc::QueuedTask {
+   public:
+    explicit LimitTotalDirSizeTask(const std::string& base_path,
+                                   const std::string& prefix, size_t size_limit)
+        : base_path_(base_path), prefix_(prefix), size_limit_(size_limit) {}
+
+   private:
+    bool Run() override;
+    const std::string base_path_, prefix_;
+    size_t size_limit_;
+};
 
 class RaspiMotionFile : public rtc::Event {
    public:
@@ -58,8 +73,6 @@ class RaspiMotionFile : public rtc::Event {
     bool WriterActive(void);
     bool StartWriter(void);
     bool StopWriter(void);
-
-    bool LimitingTotalDirSize(void);
 
    private:
     static void WriterThread(void*);
