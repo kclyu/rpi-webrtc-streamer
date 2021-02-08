@@ -176,7 +176,6 @@ void RaspiMotionFile::WriterThread(void* obj) {
     RaspiMotionFile* motion_file = static_cast<RaspiMotionFile*>(obj);
     while (motion_file->WriterProcess()) {
     }
-    //  Delete old files to limit the size defined in config.
 }
 
 bool RaspiMotionFile::WriterProcess() {

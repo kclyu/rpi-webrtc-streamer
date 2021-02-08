@@ -241,7 +241,6 @@ void RaspiMotion::OnMotionTriggered(int active_nums) {
     if (motion_state_ == CLEARED) {
         RTC_LOG(INFO) << "Motion Changing state CLEAR to TRIGGERED. active num:"
                       << active_nums;
-        // motion_file_->StartWriterThread();
     } else if (motion_state_ == WAIT_CLEAR) {
         RTC_LOG(INFO)
             << "Motion Changing state WAIT_CLEAR to TRIGGERED. active num:"
@@ -343,6 +342,12 @@ bool RaspiMotion::DrainProcess() {
     size_t length;
 
     if (motion_drain_quit_ == true) {
+        // need to stop Wwriter thread at this drain process before quit this
+        // because the writer thread created in this drain process
+        if (motion_file_->WriterActive() == true) {
+            RTC_LOG(INFO) << "Stopping motion video writer thread";
+            motion_file_->StopWriter();
+        }
         return false;
     };
 
