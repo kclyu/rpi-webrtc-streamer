@@ -38,7 +38,7 @@ namespace webrtc {
 
 namespace {
 
-constexpr size_t kFileWriterBufferSize = 65536;
+constexpr size_t kFileWriterBufferSize = 1024 * 8;
 constexpr char kTemporaryFileNameExtension[] = ".saving";
 
 const std::string GetDateTimeString(void) {

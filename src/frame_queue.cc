@@ -78,7 +78,7 @@ bool FrameBuffer::append(const MMAL_BUFFER_HEADER_T *buffer) {
 // Frame Queue
 //
 ////////////////////////////////////////////////////////////////////////////////
-int FrameQueue::kEventWaitPeriod = 30;  // minimal wait period between frame
+int FrameQueue::kEventWaitPeriod = 10;  // minimal wait period between frame
 
 FrameQueue::FrameQueue() : Event(false, false), inited_(false) {}
 
@@ -142,14 +142,8 @@ FrameBuffer *FrameQueue::ReadFront(bool wait_until_timeout) {
     webrtc::MutexLock lock(&mutex_);
     FrameBuffer *buffer = encoded_frame_queue_.front();
     encoded_frame_queue_.pop_front();
-    if (buffer->isTemporary()) {
-        // If there is no buffer in the freelist, a buffer is created and used
-        // temporarily. These temporary buffers are deleted without being put
-        // back into the freelist.
-        delete buffer;
-    } else
-        // keep the frame buffer in free_list again
-        free_list_.push_back(buffer);
+    // keep the frame buffer in free_list again
+    free_list_.push_back(buffer);
 
     return buffer;
 }
@@ -157,20 +151,10 @@ FrameBuffer *FrameQueue::ReadFront(bool wait_until_timeout) {
 // Making FrameBuffer from MMAL Frame
 bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
     RTC_DCHECK(inited_ == true);
-    RTC_DCHECK(mmal_frame != NULL);
+    RTC_DCHECK(mmal_frame != nullptr);
 
     webrtc::MutexLock lock(&mutex_);
-    if (free_list_.empty()) {
-        // If there is no buffer in the freelist, a buffer is created and used
-        // temporarily.
-        RTC_LOG(INFO) << "capacity: " << capacity_
-                      << ", encoded queue size: " << encoded_frame_queue_.size()
-                      << ", free_list size: " << free_list_.size()
-                      << ", pending: " << pending_.size();
 
-        FrameBuffer *buffer = new FrameBuffer(buffer_size_, true);
-        free_list_.push_back(buffer);
-    }
     // ignore the EOS(?)
     if (mmal_frame->length == 0 && mmal_frame->flags == 0) return true;
     if (mmal_frame->length > buffer_size_ || mmal_frame->length < 0) {
@@ -184,7 +168,7 @@ bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
         return false;
     }
 
-    FrameBuffer *buffer;
+    FrameBuffer *buffer = nullptr;
     if (!pending_.empty()) {
         // there is pending frame which need to
         buffer = pending_.back();
@@ -197,9 +181,7 @@ bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
             pending_.clear();
             return false;
         }
-        mmal_buffer_header_mem_lock(mmal_frame);
         buffer->append(mmal_frame);
-        mmal_buffer_header_mem_unlock(mmal_frame);
         // FRame Ended, so forward to encoded frame queue
         if (buffer->isFrameEnd()) {
             // remove the buffer from pending container
@@ -210,13 +192,31 @@ bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
         return true;
     }
 
-    // new frame
-    buffer = free_list_.front();
+    if (free_list_.empty()) {
+        // If there is no buffer in the freelist, a buffer is created and mark
+        // it as tempoary.
+        RTC_LOG(INFO) << "capacity: " << capacity_
+                      << ", encoded queue size: " << encoded_frame_queue_.size()
+                      << ", free_list size: " << free_list_.size()
+                      << ", pending: " << pending_.size();
+
+        buffer = new FrameBuffer(buffer_size_, /* isTemporary */ true);
+    } else {
+        // get one frame buffer from free_list
+        while ((buffer = free_list_.front())->isTemporary() == true) {
+            RTC_LOG(INFO) << "Removing temporary frame buffer : "
+                          << ", encoded queue size: "
+                          << encoded_frame_queue_.size()
+                          << ", free_list size: " << free_list_.size()
+                          << ", pending: " << pending_.size();
+            free_list_.pop_front();
+            delete buffer;
+        }
+        free_list_.pop_front();
+    }
+
     buffer->reset();
-    free_list_.pop_front();
-    mmal_buffer_header_mem_lock(mmal_frame);
     buffer->copy(mmal_frame);
-    mmal_buffer_header_mem_unlock(mmal_frame);
     if (buffer->isConfig()) {
         // this is config frame so it need to append the key frame after it
         pending_.push_back(buffer);
