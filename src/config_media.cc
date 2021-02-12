@@ -30,9 +30,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config_media.h"
 
 #include <math.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #include <memory>
 #include <string>
@@ -45,16 +42,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/strings/json.h"
 #include "utils.h"
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// media config key name and constants values
-//
-////////////////////////////////////////////////////////////////////////////////
 namespace {
 
 const char kConfigVideoResolutionDelimiter = ',';
-const double kVideoRoiMin = 0.2f;
-const double kVideoRoiMax = 1.0f;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -62,17 +52,16 @@ const double kVideoRoiMax = 1.0f;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-bool parse_vidio_resolution(
-    const std::string resolution_list,
-    std::list<ConfigMedia::VideoResolution> &resolution) {
-    std::list<ConfigMedia::VideoResolution> res;
+bool parse_vidio_resolution(const std::string resolution_list,
+                            std::list<wstreamer::VideoResolution> &resolution) {
+    std::list<wstreamer::VideoResolution> res;
 
     std::vector<std::string> splited_list;
     rtc::split(resolution_list, kConfigVideoResolutionDelimiter, &splited_list);
     for (auto token : splited_list) {
         int width, height;
         if (utils::ParseVideoResolution(token, &width, &height) == true) {
-            res.push_back(ConfigMedia::VideoResolution(width, height));
+            res.push_back(wstreamer::VideoResolution(width, height));
         } else {
             RTC_LOG(LS_ERROR) << "Failed to parse resolution : " << token;
             // there is error, so do not assign local list to resolution
@@ -83,9 +72,9 @@ bool parse_vidio_resolution(
     return true;
 }
 
-bool parse_video_roi(const std::string video_roi, ConfigMedia::VideoRoi &roi) {
+bool parse_video_roi(const std::string video_roi, wstreamer::VideoRoi &roi) {
     std::vector<std::string> splited_list;
-    ConfigMedia::VideoRoi parsed_roi;
+    wstreamer::VideoRoi parsed_roi;
     rtc::split(video_roi, kConfigVideoResolutionDelimiter, &splited_list);
     if (splited_list.size() != 4) {
         RTC_LOG(LS_ERROR) << "Error, ROI value must be specified as 4 values :"
@@ -97,7 +86,8 @@ bool parse_video_roi(const std::string video_roi, ConfigMedia::VideoRoi &roi) {
         int index = std::distance(splited_list.begin(), it);
         if (!(rtc::FromString(*it, &value) == true &&
               isgreater(value, 1.0f) == false &&
-              parsed_roi.access(index, value) == true)) {
+              parsed_roi.Set(static_cast<wstreamer::VideoRoi::ACCESS>(index),
+                             value) == true)) {
             RTC_LOG(LS_ERROR) << "Error in Roi Value at index: " << index
                               << ", Value: " << *it;
             return false;
@@ -127,68 +117,6 @@ ConfigMediaSingleton::~ConfigMediaSingleton() {
 }
 
 ConfigMediaSingleton::ConfigMediaSingleton() { RTC_NOTREACHED(); }
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// VideoRoi helpers
-//
-////////////////////////////////////////////////////////////////////////////////
-bool ConfigMedia::VideoRoi::access(size_t index, double value) {
-    switch (index) {
-        case 0:
-            x_ = value;
-            if (isless(value, 0.0f) == true ||
-                isgreater(value, kVideoRoiMax) == true) {
-                RTC_LOG(LS_ERROR) << "Error, out of valid value range";
-                return false;
-            }
-            return true;
-        case 1:
-            y_ = value;
-            if (isless(value, 0.0f) == true ||
-                isgreater(value, kVideoRoiMax) == true) {
-                RTC_LOG(LS_ERROR) << "Error, out of valid value range";
-                return false;
-            }
-            return true;
-        case 2:
-            width_ = value;
-            if (isgreater(value, kVideoRoiMin) == false) {
-                RTC_LOG(LS_ERROR) << "Error, the value of width must be "
-                                     "greater than 0.2."
-                                  << ", roi width: " << width_;
-                return false;
-            }
-            return true;
-        case 3:
-            height_ = value;
-            if (isgreater(value, kVideoRoiMin) == false) {
-                RTC_LOG(LS_ERROR) << "Error, the value of width must be "
-                                     "greater than 0.2."
-                                  << ", roi height: " << height_;
-                return false;
-            }
-            return true;
-    }
-    return false;
-}
-
-bool ConfigMedia::VideoRoi::isValid(void) {
-    // validate correlation between value
-    if (isgreater(x_ + width_, kVideoRoiMax) == true) {
-        RTC_LOG(LS_ERROR)
-            << "Error, the value of x + width must be less than 1.0."
-            << ", roi x: " << x_ << "roi width: " << width_;
-        return false;
-    }
-    if (isgreater(y_ + height_, kVideoRoiMax) == true) {
-        RTC_LOG(LS_ERROR)
-            << "Error, the value of y + height must be less than 1.0."
-            << ", roi y: " << y_ << "roi heigth: " << height_;
-        return false;
-    }
-    return true;
-}
 
 // Returns true if the resolution exists in the resolution_list,
 // or false otherwise.
@@ -237,7 +165,7 @@ void ConfigMedia::GetMaxVideoResolution(int &width, int &height) const {
     height = max_height;
 }
 
-ConfigMedia::VideoRoi &ConfigMedia::GetVideoROI(void) { return video_roi_; }
+wstreamer::VideoRoi &ConfigMedia::GetVideoROI(void) { return video_roi_; }
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -315,8 +243,9 @@ DECLARE_METHOD_VALIDATOR(ConfigMedia, fixed_video_resolution, std::string) {
             fixed_resolution_.width_ = width;
             fixed_resolution_.height_ = height;
         } else {
-            RTC_LOG(LS_ERROR) << "Default resolution \"" << width << "x"
+            RTC_LOG(LS_ERROR) << "Fixed video resolution \"" << width << "x"
                               << height << "\" is not valid";
+            return false;
         }
     };
     return true;
@@ -449,7 +378,7 @@ ConfigMedia::ConfigMedia(void)
 
 ConfigMedia::~ConfigMedia(void) {}
 
-std::list<ConfigMedia::VideoResolution> ConfigMedia::GetVideoResolutionList(
+std::list<wstreamer::VideoResolution> ConfigMedia::GetVideoResolutionList(
     void) {
     if (resolution_4_3_enable == true) {
         return video_resolution_list_4_3_;
@@ -680,7 +609,7 @@ void ConfigMedia::DumpConfig(void) {
         char res_buffer[64];                                                   \
         std::string dump_list;                                                 \
         dump_list += "{";                                                      \
-        for (std::list<VideoResolution>::iterator iter =                       \
+        for (std::list<wstreamer::VideoResolution>::iterator iter =            \
                  config_var##_.begin();                                        \
              iter != config_var##_.end(); iter++) {                            \
             snprintf(res_buffer, sizeof(res_buffer), "%dx%d,", iter->width_,   \

@@ -81,6 +81,10 @@ class EncoderDelayedInit::DelayInitTask : public webrtc::QueuedTask {
         stop_ = true;
     }
 
+    ~DelayInitTask() {
+        RTC_LOG(INFO) << "*** *** DelayInitTask Terminated!!!";
+    }  // REMOVE ME
+
    private:
     bool Run() override {
         if (stop_) return true;  // TaskQueue will free this task.
@@ -234,7 +238,7 @@ void MMALEncoderWrapper::SetVideoRotation(int rotation) {
     state_.camera_parameters.rotation = rotation;
 }
 
-void MMALEncoderWrapper::SetVideoROI(ConfigMedia::VideoRoi roi) {
+void MMALEncoderWrapper::SetVideoROI(wstreamer::VideoRoi roi) {
     state_.camera_parameters.roi.x = roi.x_;
     state_.camera_parameters.roi.y = roi.y_;
     state_.camera_parameters.roi.h = roi.height_;
@@ -330,7 +334,7 @@ void MMALEncoderWrapper::SetVideoVideoStabilisation(bool stab_enable) {
     state_.camera_parameters.videoStabilisation = stab_enable;
 }
 
-void MMALEncoderWrapper::SetMediaConfigParams() {
+void MMALEncoderWrapper::SetVideoConfigParams() {
     // reset encoder setting to default state
     if (mmal_initialized_ == false) {
         //  state_ resetting to default is done only if the Encoder is not

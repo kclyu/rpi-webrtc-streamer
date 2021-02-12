@@ -61,12 +61,7 @@ namespace webrtc {
 //
 //
 class MMALEncoderWrapper;  // forward
-enum EncoderDelayedInitStatus {
-    INIT_UNKNOWN = 0,
-    INIT_PASS,
-    INIT_DELAY,
-    INIT_WAITING
-};
+enum EncoderDelayedInitStatus { INIT_PASS = 1, INIT_DELAY, INIT_WAITING };
 
 struct EncoderDelayedInit {
     explicit EncoderDelayedInit(MMALEncoderWrapper *mmal_encoder);
@@ -133,7 +128,7 @@ class MMALEncoderWrapper : public FrameQueue {
     void SetIntraPeriod(int frame_period);
     void SetInlineMotionVectors(bool motion_enable);
     void SetVideoRotation(int rotation);
-    void SetVideoROI(ConfigMedia::VideoRoi roi);
+    void SetVideoROI(wstreamer::VideoRoi roi);
     void SetVideoFlip(bool vflip, bool hflip);
     void SetVideoAnnotate(bool annotate_enable);
     void SetVideoAnnotateUserText(const std::string user_text);
@@ -153,7 +148,7 @@ class MMALEncoderWrapper : public FrameQueue {
     void SetVideoVideoStabilisation(bool stab_enable);
 
     // Set the necessary media config information.
-    void SetMediaConfigParams(void);
+    void SetVideoConfigParams(void);
 
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);

@@ -203,7 +203,8 @@ bool FrameQueue::WriteBack(MMAL_BUFFER_HEADER_T *mmal_frame) {
         buffer = new FrameBuffer(buffer_size_, /* isTemporary */ true);
     } else {
         // get one frame buffer from free_list
-        while ((buffer = free_list_.front())->isTemporary() == true) {
+        while (free_list_.size() >= 1 /* stop before empty */ &&
+               (buffer = free_list_.front())->isTemporary() == true) {
             RTC_LOG(INFO) << "Removing temporary frame buffer : "
                           << ", encoded queue size: "
                           << encoded_frame_queue_.size()

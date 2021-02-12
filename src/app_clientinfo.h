@@ -41,8 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  */
 // so room_id and client_id will be held within AppClientInfo
 class AppClientInfo {
     enum ClientState {
-        CLIENT_UNKNOWN = 0,
-        CLIENT_DISCONNECTED,
+        CLIENT_DISCONNECTED = 0,
         CLIENT_REGISTERED,
         CLIENT_DISCONNECT_WAIT
     };

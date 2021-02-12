@@ -120,9 +120,7 @@ bool AppClientInfo::GetSockId(int client_id, int& sockid) {
 }
 
 bool AppClientInfo::IsRegistered(int sockid) {
-    if (state_ == ClientState::CLIENT_REGISTERED && sockid_ == sockid)
-        return true;
-    return false;
+    return state_ == ClientState::CLIENT_REGISTERED && sockid_ == sockid;
 }
 
 void AppClientInfo::Reset() {

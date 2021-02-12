@@ -128,7 +128,7 @@ RaspiMotion::RaspiMotion(ConfigMotion *config_motion, int width, int height,
                       VIDEO_INTRAFRAME_PERIOD * 30 /*fps*/;
     motion_clear_wait_period_ = config_motion->GetClearWaitPeriod();
     motion_active_percent_clear_threshold_ = config_motion->GetClearPercent();
-    RTC_LOG(INFO) << ", Frame Queue Size: " << frame_buffer_size_
+    RTC_LOG(INFO) << "Frame Queue Size: " << frame_buffer_size_
                   << ", MV Queue Size: " << mv_buffer_size_;
 
     motion_file_.reset(new RaspiMotionFile(
@@ -168,7 +168,7 @@ bool RaspiMotion::StartCapture() {
     }
 
     // Set media config params at first.
-    mmal_encoder_->SetMediaConfigParams();
+    mmal_encoder_->SetVideoConfigParams();
 
     //
     // Overriding media config params for Motion Video

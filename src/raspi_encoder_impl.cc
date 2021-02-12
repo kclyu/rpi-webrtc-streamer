@@ -138,7 +138,7 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     }
 
     // Set media config params
-    mmal_encoder_->SetMediaConfigParams();
+    mmal_encoder_->SetVideoConfigParams();
 
     // clear InlineMotionVectors enable flag
     mmal_encoder_->SetInlineMotionVectors(false);

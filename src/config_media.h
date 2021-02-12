@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <memory>
 
+#include "common_types.h"
 #include "compat/optionsfile.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
@@ -63,26 +64,6 @@ class ConfigMedia {
     ConfigMedia();
     ~ConfigMedia();
 
-    struct VideoResolution {
-        explicit VideoResolution(int width, int height)
-            : width_(width), height_(height){};
-        explicit VideoResolution(void) : width_(640), height_(480){};
-        virtual ~VideoResolution(){};
-        int width_;
-        int height_;
-    };
-
-    struct VideoRoi {
-        explicit VideoRoi(float x, float y, float width, float height)
-            : x_(x), y_(y), width_(width), height_(height){};
-        explicit VideoRoi() : x_(0), y_(0), width_(0), height_(0){};
-        virtual ~VideoRoi(){};
-        double x_, y_, width_, height_;
-
-        bool access(size_t index, double value);
-        bool isValid(void);
-    };
-
     bool Load(std::string config_filename, const bool dump_config = false);
     bool Save(void);
     bool FromJson(const std::string &config_message,
@@ -90,11 +71,11 @@ class ConfigMedia {
     bool ToJson(std::string &config_message);
     void Reset(void);
     void DumpConfig(void);
-    std::list<VideoResolution> GetVideoResolutionList();
+    std::list<wstreamer::VideoResolution> GetVideoResolutionList();
     bool GetFixedVideoResolution(int &width, int &height);
     void GetMaxVideoResolution(int &width, int &height) const;
     size_t GetRecommandedBufferSize() const;
-    ConfigMedia::VideoRoi &GetVideoROI(void);
+    wstreamer::VideoRoi &GetVideoROI(void);
 
     // The rtc_config configured through the websocket interface can be used
     // only in the websocket that requested the configuration.
@@ -139,10 +120,10 @@ class ConfigMedia {
     webrtc::Mutex mutex_;
     std::string config_file_;
     bool config_file_loaded_;
-    struct VideoResolution fixed_resolution_;
-    std::list<VideoResolution> video_resolution_list_4_3_;
-    std::list<VideoResolution> video_resolution_list_16_9_;
-    VideoRoi video_roi_;
+    wstreamer::VideoResolution fixed_resolution_;
+    std::list<wstreamer::VideoResolution> video_resolution_list_4_3_;
+    std::list<wstreamer::VideoResolution> video_resolution_list_16_9_;
+    wstreamer::VideoRoi video_roi_;
     std::map<int, std::string> session_rtcconfig_;
 
     // Additional config value validator

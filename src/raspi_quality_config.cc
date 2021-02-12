@@ -66,11 +66,11 @@ QualityConfig::QualityConfig()
       target_bitrate_(300) /*kbps*/,
       average_mf_(3 * 30) {
     config_media_ = ConfigMediaSingleton::Instance();
-    std::list<ConfigMedia::VideoResolution> resolution_list =
+    std::list<wstreamer::VideoResolution> resolution_list =
         config_media_->GetVideoResolutionList();
     use_dynamic_resolution_ = config_media_->GetVideoDynamicResolution();
 
-    for (std::list<ConfigMedia::VideoResolution>::iterator iter =
+    for (std::list<wstreamer::VideoResolution>::iterator iter =
              resolution_list.begin();
          iter != resolution_list.end(); iter++) {
         resolution_config_.push_back(
