@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utility>
 
 #include "absl/types/optional.h"
+#include "common_types.h"
 #include "config_media.h"
 #include "rtc_base/numerics/moving_average.h"
 #include "system_wrappers/include/clock.h"
@@ -44,37 +45,20 @@ class QualityConfig {
     explicit QualityConfig();
     ~QualityConfig();
 
-    struct Resolution {
-        Resolution() : width_(0), height_(0), framerate_(0), bitrate_(0){};
-        Resolution(int width, int height)
-            : width_(width), height_(height), bitrate_(0){};
-        int width_;
-        int height_;
-        int framerate_;
-        int bitrate_;
-    };
-
-    struct ResolutionConfigEntry {
-        ResolutionConfigEntry(int width, int height, int max_fps, int min_fps);
-        int width_;
-        int height_;
-        int max_fps_;
-        int min_fps_;
-        int average_bandwidth_;
-        int max_bandwidth_;
-        int min_bandwidth_;
-    };
-
-    void ReportFrame(int frame_size);
+    void ReportFrameSize(int frame_size);
     void ReportFrameRate(int framerate);
     void ReportTargetBitrate(int bitrate);  // kbps
 
-    bool GetBestMatch(int target_bitrate,
-                      QualityConfig::Resolution& resolution);
-    bool GetBestMatch(QualityConfig::Resolution& resolution);
-    bool GetInitialBestMatch(QualityConfig::Resolution& resolution);
+    wstreamer::VideoEncodingParams& GetBestMatch(int target_bitrate);
+    wstreamer::VideoEncodingParams& GetBestMatch();
+    wstreamer::VideoEncodingParams& GetInitialBestMatch();
 
    private:
+    struct ResolutionConfigEntry {
+        ResolutionConfigEntry(int width, int height, int max_fps, int min_fps);
+        int width_, height_, max_fps_, min_fps_;
+        int average_bandwidth_, max_bandwidth_, min_bandwidth_;
+    };
     // media configuration sigleton reference
     ConfigMedia* config_media_;
 
@@ -82,7 +66,7 @@ class QualityConfig {
     int target_framerate_;
     int target_bitrate_;
     rtc::MovingAverage average_mf_; /* average motion factor */
-    Resolution current_res_;
+    wstreamer::VideoEncodingParams current_res_;
     bool use_dynamic_resolution_;
     bool use_initial_resolution_;
 };

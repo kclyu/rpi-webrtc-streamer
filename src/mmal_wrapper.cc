@@ -112,40 +112,35 @@ EncoderDelayedInit::~EncoderDelayedInit() {
     if (delayinit_task_) delayinit_task_->Stop();
 }
 
-bool EncoderDelayedInit::InitEncoder(int width, int height, int framerate,
-                                     int bitrate) {
+bool EncoderDelayedInit::InitEncoder(wstreamer::VideoEncodingParams config) {
     if (mmal_encoder_->IsInited()) {
         RTC_LOG(LS_ERROR) << "MMAL Encoder already initialized.";
         return true;
     };
 
-    RTC_LOG(INFO) << "InitEncoder " << width << "x" << height << "@"
-                  << framerate << ", " << bitrate << " kbps";
+    RTC_LOG(INFO) << "InitEncoder " << config.ToString();
     delayinit_task_ = new EncoderDelayedInit::DelayInitTask(this);
 
     // InitEncoder does not need to do any init delay
     RTC_LOG(INFO) << "EncoderDelay Status changed from INIT_PASS to WAITING";
     last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
     status_ = INIT_WAITING;
-    return mmal_encoder_->InitEncoder(width, height, framerate, bitrate);
+    return mmal_encoder_->InitEncoder(config);
 }
 
-bool EncoderDelayedInit::ReinitEncoder(int width, int height, int framerate,
-                                       int bitrate) {
+bool EncoderDelayedInit::ReinitEncoder(wstreamer::VideoEncodingParams config) {
     if (mmal_encoder_->IsInited() == false) {
         RTC_LOG(LS_ERROR) << "MMAL Encoder does not initialized.";
         return false;
     };
-    RTC_LOG(INFO) << "ReinitEncoder " << width << "x" << height << "@"
-                  << framerate << ", " << bitrate << " kbps";
+    RTC_LOG(INFO) << "ReinitEncoder " << config.ToString();
 
     if (status_ == INIT_PASS) {
         last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
         status_ = INIT_WAITING;
         RTC_LOG(INFO)
             << "EncoderDelay Status changed from INIT_PASS to WAITING";
-        if (mmal_encoder_->ReinitEncoder(width, height, framerate, bitrate) ==
-            false) {
+        if (mmal_encoder_->ReinitEncoder(config) == false) {
             RTC_LOG(LS_ERROR) << "Failed to reinitialize MMAL encoder";
             return false;
         };
@@ -153,10 +148,9 @@ bool EncoderDelayedInit::ReinitEncoder(int width, int height, int framerate,
         mmal_encoder_->StartCapture();
         return true;
     } else if (status_ == INIT_DELAY) {
-        mmal_encoder_->SetEncodingParams(width, height, framerate, bitrate);
+        mmal_encoder_->SetEncodingParams(config);
     } else if (status_ == INIT_WAITING) {
-        if (mmal_encoder_->SetEncodingParams(width, height, framerate,
-                                             bitrate)) {
+        if (mmal_encoder_->SetEncodingParams(config)) {
             last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
             status_ = INIT_DELAY;
             RTC_LOG(INFO)
@@ -234,107 +228,8 @@ size_t MMALEncoderWrapper::GetBufferNum() const {
     return recommanded_buffer_num_;
 }
 
-void MMALEncoderWrapper::SetVideoRotation(int rotation) {
-    state_.camera_parameters.rotation = rotation;
-}
-
-void MMALEncoderWrapper::SetVideoROI(wstreamer::VideoRoi roi) {
-    state_.camera_parameters.roi.x = roi.x_;
-    state_.camera_parameters.roi.y = roi.y_;
-    state_.camera_parameters.roi.h = roi.height_;
-    state_.camera_parameters.roi.w = roi.width_;
-}
-
-void MMALEncoderWrapper::SetVideoFlip(bool vflip, bool hflip) {
-    state_.camera_parameters.vflip = (vflip ? 1 : 0);
-    state_.camera_parameters.hflip = (hflip ? 1 : 0);
-}
-
-void MMALEncoderWrapper::SetVideoAnnotate(bool annotate_enable) {
-    if (annotate_enable) {
-        state_.camera_parameters.enable_annotate =
-            (ANNOTATE_DATE_TEXT | ANNOTATE_TIME_TEXT |
-             ANNOTATE_BLACK_BACKGROUND);
-    } else {
-        // disable annotation
-        state_.camera_parameters.enable_annotate = 0;
-        // clear previous setting value
-        strcpy(state_.camera_parameters.annotate_string, "");
-    }
-}
-
-void MMALEncoderWrapper::SetVideoAnnotateUserText(const std::string user_text) {
-    if (user_text.length() > 0) {
-        if (user_text.length() < MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2) {
-            strcpy(state_.camera_parameters.annotate_string, user_text.c_str());
-        } else {
-            strncpy(state_.camera_parameters.annotate_string, user_text.c_str(),
-                    MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2);
-        }
-        state_.camera_parameters.enable_annotate |= ANNOTATE_USER_TEXT;
-    }
-}
-
-void MMALEncoderWrapper::SetVideoAnnotateTextSize(const int text_size) {
-    state_.camera_parameters.annotate_text_size = text_size;
-}
-
-void MMALEncoderWrapper::SetVideoAnnotateTextSizeRatio(
-    const int text_size_ratio) {
-    state_.camera_parameters.annotate_text_size_ratio = text_size_ratio;
-}
-
-void MMALEncoderWrapper::SetInlineMotionVectors(bool motion_enable) {
-    state_.inlineMotionVectors = motion_enable;
-}
-
-void MMALEncoderWrapper::SetIntraPeriod(int frame_period) {
-    state_.intraperiod = frame_period;
-}
-
-void MMALEncoderWrapper::SetVideoSharpness(const int sharpness) {
-    state_.camera_parameters.sharpness = sharpness;
-}
-
-void MMALEncoderWrapper::SetVideoContrast(const int contrast) {
-    state_.camera_parameters.contrast = contrast;
-}
-
-void MMALEncoderWrapper::SetVideoBrightness(const int brightness) {
-    state_.camera_parameters.brightness = brightness;
-}
-
-void MMALEncoderWrapper::SetVideoSaturation(const int saturation) {
-    state_.camera_parameters.saturation = saturation;
-}
-
-void MMALEncoderWrapper::SetVideoEV(const int ev) {
-    state_.camera_parameters.exposureCompensation = ev;
-}
-
-void MMALEncoderWrapper::SetVideoExposureMode(const std::string exposure_mode) {
-    state_.camera_parameters.exposureMode =
-        exposure_mode_from_string(exposure_mode.c_str());
-}
-
-void MMALEncoderWrapper::SetVideoFlickerMode(const std::string flicker_mode) {
-    state_.camera_parameters.flickerAvoidMode =
-        flicker_avoid_mode_from_string(flicker_mode.c_str());
-}
-
-void MMALEncoderWrapper::SetVideoAwbMode(const std::string awb_mode) {
-    state_.camera_parameters.awbMode = awb_mode_from_string(awb_mode.c_str());
-}
-
-void MMALEncoderWrapper::SetVideoDrcMode(const std::string drc_mode) {
-    state_.camera_parameters.drc_level = drc_mode_from_string(drc_mode.c_str());
-}
-
-void MMALEncoderWrapper::SetVideoVideoStabilisation(bool stab_enable) {
-    state_.camera_parameters.videoStabilisation = stab_enable;
-}
-
-void MMALEncoderWrapper::SetVideoConfigParams() {
+void MMALEncoderWrapper::SetEncoderConfigParams(
+    wstreamer::EncoderSettings *params) {
     // reset encoder setting to default state
     if (mmal_initialized_ == false) {
         //  state_ resetting to default is done only if the Encoder is not
@@ -346,55 +241,127 @@ void MMALEncoderWrapper::SetVideoConfigParams() {
     state_.cameraNum = config_media_->GetCameraSelect();
 
     // Setting Video ROI
-    SetVideoROI(config_media_->GetVideoROI());
+    {
+        wstreamer::VideoRoi roi = config_media_->GetVideoROI();
+        state_.camera_parameters.roi.x = roi.x_;
+        state_.camera_parameters.roi.y = roi.y_;
+        state_.camera_parameters.roi.h = roi.height_;
+        state_.camera_parameters.roi.w = roi.width_;
+    }
 
     // Setting Video Rotation and Flip setting
-    SetVideoRotation(config_media_->GetVideoRotation());
-    SetVideoFlip(config_media_->GetVideoVFlip(),
-                 config_media_->GetVideoHFlip());
+    state_.camera_parameters.rotation = config_media_->GetVideoRotation();
 
-    // Video Image related parameter settings
-    SetVideoSharpness(config_media_->GetVideoSharpness());
-    SetVideoContrast(config_media_->GetVideoContrast());
-    SetVideoBrightness(config_media_->GetVideoBrightness());
-    SetVideoSaturation(config_media_->GetVideoSaturation());
-    SetVideoEV(config_media_->GetVideoEV());
-    SetVideoExposureMode(config_media_->GetVideoExposureMode());
-    SetVideoFlickerMode(config_media_->GetVideoFlickerMode());
-    SetVideoAwbMode(config_media_->GetVideoAwbMode());
-    SetVideoDrcMode(config_media_->GetVideoDrcMode());
-    SetVideoVideoStabilisation(config_media_->GetVideoStabilisation());
+    state_.camera_parameters.vflip = (config_media_->GetVideoVFlip() ? 1 : 0);
+    state_.camera_parameters.hflip = (config_media_->GetVideoHFlip() ? 1 : 0);
 
-    // Video Annotation
-    bool video_enable_annotate_text =
-        config_media_->GetVideoEnableAnnotateText();
-    SetVideoAnnotate(video_enable_annotate_text);
-    if (video_enable_annotate_text == true) {
-        SetVideoAnnotateUserText(config_media_->GetVideoAnnotateText());
-        SetVideoAnnotateTextSizeRatio(
-            config_media_->GetVideoAnnotateTextSizeRatio());
-    };
+    state_.camera_parameters.sharpness = config_media_->GetVideoSharpness();
+    state_.camera_parameters.contrast = config_media_->GetVideoContrast();
+    state_.camera_parameters.brightness = config_media_->GetVideoBrightness();
+    state_.camera_parameters.saturation = config_media_->GetVideoSaturation();
+    state_.camera_parameters.exposureCompensation = config_media_->GetVideoEV();
+
+    state_.camera_parameters.exposureMode = exposure_mode_from_string(
+        config_media_->GetVideoExposureMode().c_str());
+    state_.camera_parameters.flickerAvoidMode = flicker_avoid_mode_from_string(
+        config_media_->GetVideoFlickerMode().c_str());
+
+    state_.camera_parameters.awbMode =
+        awb_mode_from_string(config_media_->GetVideoAwbMode().c_str());
+
+    state_.camera_parameters.drc_level =
+        drc_mode_from_string(config_media_->GetVideoDrcMode().c_str());
+
+    state_.camera_parameters.videoStabilisation =
+        config_media_->GetVideoStabilisation();
+
+    // annotation config from ConfigMedia
+    if (config_media_->GetVideoEnableAnnotateText()) {
+        state_.camera_parameters.enable_annotate =
+            (ANNOTATE_DATE_TEXT | ANNOTATE_TIME_TEXT |
+             ANNOTATE_BLACK_BACKGROUND);
+
+        const std::string annotation_user_text =
+            config_media_->GetVideoAnnotateText();
+        if (annotation_user_text.length() > 0) {
+            if (annotation_user_text.length() <
+                MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2) {
+                strcpy(state_.camera_parameters.annotate_string,
+                       annotation_user_text.c_str());
+            } else {
+                strncpy(state_.camera_parameters.annotate_string,
+                        annotation_user_text.c_str(),
+                        MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2);
+            }
+            state_.camera_parameters.annotate_text_size_ratio =
+                config_media_->GetVideoAnnotateTextSizeRatio();
+        } else {
+            state_.camera_parameters.enable_annotate |= ANNOTATE_USER_TEXT;
+        }
+
+    } else {
+        // disable annotation
+        state_.camera_parameters.enable_annotate = 0;
+        // clear previous setting value
+        strcpy(state_.camera_parameters.annotate_string, "");
+    }
+
+    // setting additional params
+    if (params) {
+        // default boolean value of Inline Motion Vector is false
+        state_.inlineMotionVectors = params->imv_enable.value_or(false);
+        // default the value of intraperiod is 3 seconds
+        state_.intraperiod = params->intra_period.value_or(
+            state_.framerate * VIDEO_INTRAFRAME_PERIOD);
+        if (params->annotation_enable.value_or(false)) {
+            // custom Annotation settings
+            state_.camera_parameters.enable_annotate = true;
+            const std::string annotation_user_text =
+                params->annotation_text.value_or("");
+            if (annotation_user_text.length() > 0) {
+                if (annotation_user_text.length() <
+                    MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2) {
+                    strcpy(state_.camera_parameters.annotate_string,
+                           annotation_user_text.c_str());
+                } else {
+                    strncpy(state_.camera_parameters.annotate_string,
+                            annotation_user_text.c_str(),
+                            MMAL_CAMERA_ANNOTATE_MAX_TEXT_LEN_V2);
+                }
+            } else {
+                state_.camera_parameters.enable_annotate |= ANNOTATE_USER_TEXT;
+            }
+            state_.camera_parameters.annotate_text_size =
+                params->annotation_text_size.value_or(32);
+        }
+        // annotation config from Params arguments
+    } else {
+        state_.inlineMotionVectors = false;  // default is false
+        state_.intraperiod = state_.framerate * VIDEO_INTRAFRAME_PERIOD;
+        state_.camera_parameters.enable_annotate = false;
+    }
 }
 
-bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
-                                     int bitrate) {
+bool MMALEncoderWrapper::InitEncoder(wstreamer::VideoEncodingParams config) {
     MMAL_STATUS_T status = MMAL_SUCCESS;
 
-    RTC_LOG(INFO) << "Start initialize the MMAL encode wrapper." << width << "x"
-                  << height << "@" << framerate << ", " << bitrate << "kbps";
+    RTC_LOG(INFO) << "Start initialize the MMAL encode wrapper."
+                  << config.ToString();
 
     webrtc::MutexLock lock(&mutex_);
     if (mmal_initialized_ == true) return true;
 
-    state_.width = width;
-    state_.height = height;
-    state_.framerate = framerate;
-    state_.bitrate = bitrate * 1000;
+    state_.width = config.width_;
+    state_.height = config.height_;
+    state_.framerate = config.framerate_;
+    state_.bitrate = config.bitrate_ * 1000;
 
-    // set annotation text size based on text size ratio
+    // set annotation text size ratio based on video resolution
     if (state_.camera_parameters.annotate_text_size_ratio != 0) {
         state_.camera_parameters.annotate_text_size =
-            (width * state_.camera_parameters.annotate_text_size_ratio) / 100 +
+            (config.width_ *
+             state_.camera_parameters.annotate_text_size_ratio) /
+                100 +
             1;
     }
 
@@ -489,12 +456,11 @@ bool MMALEncoderWrapper::InitEncoder(int width, int height, int framerate,
 }
 
 bool MMALEncoderWrapper::ReinitEncoderInternal() {
-    return ReinitEncoder(state_.width, state_.height, state_.framerate,
-                         state_.bitrate / 1000);
+    return ReinitEncoder(wstreamer::VideoEncodingParams(
+        state_.width, state_.height, state_.framerate, state_.bitrate / 1000));
 }
 
-bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate,
-                                       int bitrate /* kbps */) {
+bool MMALEncoderWrapper::ReinitEncoder(wstreamer::VideoEncodingParams config) {
     MMAL_STATUS_T status = MMAL_SUCCESS;
 
     if (mmal_initialized_ == false) {
@@ -503,23 +469,25 @@ bool MMALEncoderWrapper::ReinitEncoder(int width, int height, int framerate,
         return false;
     }
 
-    state_.width = width;
-    state_.height = height;
-    state_.framerate = framerate;
-    state_.bitrate = bitrate * 1000;
+    state_.width = config.width_;
+    state_.height = config.height_;
+    state_.framerate = config.framerate_;
+    state_.bitrate = config.bitrate_ * 1000;
 
-    // set annotation text size based on text size ratio
+    // The text size ratio is recalculated to make the test size look similar
+    // to the changed video resolution.
     if (state_.camera_parameters.annotate_text_size_ratio != 0) {
         state_.camera_parameters.annotate_text_size =
-            (width * state_.camera_parameters.annotate_text_size_ratio) / 100 +
+            (config.width_ *
+             state_.camera_parameters.annotate_text_size_ratio) /
+                100 +
             1;
     }
 
     webrtc::MutexLock lock(&mutex_);
 
-    RTC_LOG(INFO) << "Start reinitialize the MMAL encode wrapper." << width
-                  << "x" << height << "@" << framerate << ", " << bitrate
-                  << "kbps";
+    RTC_LOG(INFO) << "Start reinitialize the MMAL encode wrapper."
+                  << config.ToString();
 
     //
     // disable all component
@@ -813,16 +781,17 @@ bool MMALEncoderWrapper::StopCapture() {
 }
 
 //
-bool MMALEncoderWrapper::SetEncodingParams(int width, int height, int framerate,
-                                           int bitrate) {
-    if (state_.width != width || state_.height != height ||
-        state_.framerate != framerate || state_.bitrate != bitrate) {
+bool MMALEncoderWrapper::SetEncodingParams(
+    wstreamer::VideoEncodingParams config) {
+    if (state_.width != config.width_ || state_.height != config.height_ ||
+        state_.framerate != config.framerate_ ||
+        state_.bitrate != config.bitrate_ * 1000) {
         webrtc::MutexLock lock(&mutex_);
 
-        state_.width = width;
-        state_.height = height;
-        state_.framerate = framerate;
-        state_.bitrate = bitrate;
+        state_.width = config.width_;
+        state_.height = config.height_;
+        state_.framerate = config.framerate_;
+        state_.bitrate = config.bitrate_ * 1000;
         return true;
     }
     return false;
@@ -869,10 +838,10 @@ bool MMALEncoderWrapper::SetRate(int framerate, int bitrate) {
     return true;
 }
 
-bool MMALEncoderWrapper::SetForceNextKeyFrame() {
+bool MMALEncoderWrapper::RequestKeyFrame() {
     if (mmal_initialized_ == false) return true;
     webrtc::MutexLock lock(&mutex_);
-    RTC_LOG(INFO) << "MMAL force key frame encoding";
+    RTC_LOG(INFO) << "Send a request to generate a KeyFrame";
 
     if (mmal_port_parameter_set_boolean(encoder_output_port_,
                                         MMAL_PARAMETER_VIDEO_REQUEST_I_FRAME,

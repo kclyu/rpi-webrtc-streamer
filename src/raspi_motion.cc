@@ -167,31 +167,21 @@ bool RaspiMotion::StartCapture() {
         return false;
     }
 
+    wstreamer::EncoderSettings params;
+    params.imv_enable = true;
+    if (config_motion_->GetEnableAnnotateText()) {
+        params.annotation_enable = config_motion_->GetEnableAnnotateText();
+        params.annotation_text = config_motion_->GetAnnotateText();
+        params.annotation_text_size = config_motion_->GetAnnotateTextSize();
+    }
+
     // Set media config params at first.
-    mmal_encoder_->SetVideoConfigParams();
+    mmal_encoder_->SetEncoderConfigParams(&params);
 
-    //
-    // Overriding media config params for Motion Video
-    //
-    // Enable InlineMotionVectors
-    mmal_encoder_->SetInlineMotionVectors(true);
-
-    // Setting Intra Frame period
-    mmal_encoder_->SetIntraPeriod(framerate_ * VIDEO_INTRAFRAME_PERIOD);
-
-    if (config_motion_->GetEnableAnnotateText() == true) {
-        mmal_encoder_->SetVideoAnnotate(
-            config_motion_->GetEnableAnnotateText());
-        mmal_encoder_->SetVideoAnnotateUserText(
-            config_motion_->GetAnnotateText());
-        mmal_encoder_->SetVideoAnnotateTextSize(
-            config_motion_->GetAnnotateTextSize());
-    };
-
-    RTC_LOG(INFO) << "Initial Motion Video : " << width_ << " x " << height_
+    RTC_LOG(INFO) << "Motion Video Params: " << width_ << " x " << height_
                   << "@" << framerate_ << ", " << bitrate_ << " kbps";
-    if (mmal_encoder_->InitEncoder(width_, height_, framerate_, bitrate_) ==
-        false) {
+    if (mmal_encoder_->InitEncoder(wstreamer::VideoEncodingParams(
+            width_, height_, framerate_, bitrate_)) == false) {
         return false;
     }
 

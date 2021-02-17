@@ -35,15 +35,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace {
 
-const int kAverageDuration = 30;  // Approximately 30 samples per second
-
+// TODO validate the motion factor related constant values
 const float kKushGaugeConstant = 0.07;
 const int kMaxMontionFactor = 3;
-const int kMinMontionFactor = 1;  //  original value is 1 ~ 4
 const float kDefaultMontionFactor = 1.8f;
-const int kMonitorFactorWeight = 0.8f;
 
-const int kMaxFrameRate = 30;  // using 30 as raspberry pi max FPS
+const int kMaxFrameRate = 30;
+const int kMinFrameRate = 20;
 
 }  // namespace
 
@@ -66,16 +64,12 @@ QualityConfig::QualityConfig()
       target_bitrate_(300) /*kbps*/,
       average_mf_(3 * 30) {
     config_media_ = ConfigMediaSingleton::Instance();
-    std::list<wstreamer::VideoResolution> resolution_list =
-        config_media_->GetVideoResolutionList();
     use_dynamic_resolution_ = config_media_->GetVideoDynamicResolution();
 
-    for (std::list<wstreamer::VideoResolution>::iterator iter =
-             resolution_list.begin();
-         iter != resolution_list.end(); iter++) {
-        resolution_config_.push_back(
-            ResolutionConfigEntry(iter->width_, iter->height_, kMaxFrameRate,
-                                  20 /* min_framerate */));
+    for (auto resolution : config_media_->GetVideoResolutionList()) {
+        resolution_config_.push_back(ResolutionConfigEntry(
+            resolution.width_, resolution.height_, kMaxFrameRate,
+            kMinFrameRate /* min_framerate */));
     }
 }
 
@@ -90,7 +84,7 @@ void QualityConfig::ReportTargetBitrate(int bitrate /* kbps */) {
     target_bitrate_ = bitrate;
 }
 
-void QualityConfig::ReportFrame(int frame_length) {
+void QualityConfig::ReportFrameSize(int frame_length) {
     int motion_factor;
     // Moves the decimal point of the moving factor by 1000
     motion_factor = static_cast<int>(
@@ -100,12 +94,12 @@ void QualityConfig::ReportFrame(int frame_length) {
     average_mf_.AddSample(motion_factor);
 }
 
-bool QualityConfig::GetBestMatch(QualityConfig::Resolution& resolution) {
-    return GetBestMatch(target_bitrate_, resolution);
+wstreamer::VideoEncodingParams& QualityConfig::GetBestMatch() {
+    return GetBestMatch(target_bitrate_);
 }
 
-bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
-    Resolution candidate;
+wstreamer::VideoEncodingParams& QualityConfig::GetInitialBestMatch() {
+    wstreamer::VideoEncodingParams candidate;
     if (use_dynamic_resolution_ == false) {
         // using fixed resolution
         config_media_->GetFixedVideoResolution(candidate.width_,
@@ -115,11 +109,10 @@ bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
             (candidate.width_ * candidate.height_ * kMaxFrameRate *
              kKushGaugeConstant * kMaxMontionFactor) /
             1000);
-        resolution = current_res_ = candidate;
-        return true;
+        return current_res_ = candidate;
     }
 
-    return GetBestMatch(target_bitrate_, resolution);
+    return GetBestMatch(target_bitrate_);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -128,9 +121,11 @@ bool QualityConfig::GetInitialBestMatch(QualityConfig::Resolution& resolution) {
 // Simply find the nearest target_bitrate at the expected bitrate and change
 // the resolution to the resolution.
 ////////////////////////////////////////////////////////////////////////////////
-bool QualityConfig::GetBestMatch(int target_bitrate,
-                                 QualityConfig::Resolution& resolution) {
-    Resolution candidate;
+wstreamer::VideoEncodingParams& QualityConfig::GetBestMatch(
+    int target_bitrate) {
+    RTC_DCHECK(resolution_config_.size() > 0)
+        << "length of resolution config is zero";
+    wstreamer::VideoEncodingParams candidate;
     float motion_factor;
     int candidate_diff = std::numeric_limits<int>::max();
     int diff = 0;
@@ -138,14 +133,13 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
     if (use_dynamic_resolution_ == false) {
         // The encoder does not use the Bitrate Estimation delivered by BWE,
         // but keeps the initially generated resolution.
-        resolution = current_res_;
-        return false;  // Do not change resoltuion
+        return current_res_;
     };
 
     target_bitrate_ = target_bitrate;
     absl::optional<int> average_movingfactor =
         average_mf_.GetAverageRoundedDown();
-    if (average_movingfactor) {
+    if (average_movingfactor.has_value()) {
         motion_factor = *average_movingfactor / 1000;
         if (motion_factor < kDefaultMontionFactor)
             motion_factor = kDefaultMontionFactor;
@@ -153,36 +147,33 @@ bool QualityConfig::GetBestMatch(int target_bitrate,
         motion_factor = kDefaultMontionFactor;
     }
 
-    for (std::list<ResolutionConfigEntry>::iterator iter =
-             resolution_config_.begin();
-         iter != resolution_config_.end(); iter++) {
+    for (auto entry : resolution_config_) {
+        // TODO: need to evaluate average bitrate which is calculated with
+        // motion_factor
         int avg_bitrate =
-            static_cast<int>((iter->width_ * iter->height_ * 25 *
+            static_cast<int>((entry.width_ * entry.height_ * 25 *
                               kKushGaugeConstant * motion_factor) /
                              1000);
         diff = abs(avg_bitrate - target_bitrate);
 
         if (candidate_diff > diff) {
-            candidate.width_ = iter->width_;
-            candidate.height_ = iter->height_;
+            candidate.width_ = entry.width_;
+            candidate.height_ = entry.height_;
             candidate.bitrate_ = target_bitrate_;
+            // TODO: need to check whether to keep the framerate when video
+            // resolution changing
             candidate.framerate_ = target_framerate_;
             // candidate.framerate_ = 25;
             candidate_diff = diff;
         }
     }
 
-    if (candidate.width_ != current_res_.width_ ||
-        candidate.height_ != current_res_.height_) {
-        current_res_ = resolution = candidate;
-        RTC_LOG(INFO) << "BestMatch Resolution " << candidate.width_ << "x"
-                      << candidate.height_
+    if (current_res_.IsSameResolution(candidate) == false) {
+        current_res_ = candidate;
+        RTC_LOG(INFO) << "BestMatch Resolution changed " << candidate.ToString()
                       << ", for target bitrate: " << target_bitrate_
                       << ", moving factor: " << motion_factor;
-
-        return true;
     }
-    resolution = candidate;
-    return false;
+    return current_res_;
 }
 

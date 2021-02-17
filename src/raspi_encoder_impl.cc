@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 #include "absl/strings/match.h"
+#include "common_types.h"
 #include "config_media.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
@@ -138,22 +139,16 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     }
 
     // Set media config params
-    mmal_encoder_->SetVideoConfigParams();
-
-    // clear InlineMotionVectors enable flag
-    mmal_encoder_->SetInlineMotionVectors(false);
+    mmal_encoder_->SetEncoderConfigParams();
 
     // Settings for Quality
     // GetInitialBestMatch should be used only when initializing
     // the Encoder, and only when the use_default_resolution flag is on.
-    QualityConfig::Resolution initial_res;
-    quality_config_.GetInitialBestMatch(initial_res);
+    wstreamer::VideoEncodingParams initial_res =
+        quality_config_.GetInitialBestMatch();
 
-    RTC_LOG(INFO) << "InitEncode request: " << initial_res.width_ << " x "
-                  << initial_res.height_;
-    if (mmal_encoder_->encoder_initdelay_.InitEncoder(
-            initial_res.width_, initial_res.height_, initial_res.framerate_,
-            initial_res.bitrate_) == false) {
+    RTC_LOG(INFO) << "InitEncode request: " << initial_res.ToString();
+    if (mmal_encoder_->encoder_initdelay_.InitEncoder(initial_res) == false) {
         Release();
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERROR;
@@ -205,7 +200,7 @@ int32_t RaspiEncoderImpl::RegisterEncodeCompleteCallback(
 }
 
 void RaspiEncoderImpl::SetRates(const RateControlParameters& parameters) {
-    QualityConfig::Resolution resolution;
+    wstreamer::VideoEncodingParams resolution;
     int target_bitrate = parameters.bitrate.get_sum_bps() / 1000;  // kbps
     uint32_t framerate = static_cast<uint32_t>(parameters.framerate_fps);
 
@@ -243,14 +238,15 @@ void RaspiEncoderImpl::SetRates(const RateControlParameters& parameters) {
 
     quality_config_.ReportFrameRate(static_cast<int>(framerate));
     quality_config_.ReportTargetBitrate(target_bitrate);
-    if (quality_config_.GetBestMatch(resolution) == true) {
+    resolution = quality_config_.GetBestMatch();
+    if (resolution.width_ != mmal_encoder_->GetHeight() &&
+        resolution.height_ != mmal_encoder_->GetHeight()) {
         RTC_LOG(INFO) << "Resolution Changing by Bitrate Changing "
                       << "To : " << resolution.width_ << "x"
                       << resolution.height_;
 
-        if (mmal_encoder_->encoder_initdelay_.ReinitEncoder(
-                resolution.width_, resolution.height_, resolution.framerate_,
-                resolution.bitrate_) == false) {
+        if (mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution) ==
+            false) {
             RTC_LOG(LS_ERROR) << "Failed to reinit MMAL encoder";
         }
     } else
@@ -282,7 +278,7 @@ int32_t RaspiEncoderImpl::Encode(
 
         if ((*frame_types)[0] == VideoFrameType::kVideoFrameKey &&
             frame_flow_.IsEnabled()) {
-            mmal_encoder_->SetForceNextKeyFrame();
+            mmal_encoder_->RequestKeyFrame();
         }
     }
 
@@ -368,7 +364,7 @@ bool RaspiEncoderImpl::FrameFlowCtl::CheckKeyframe(bool is_keyframe) {
         kDelayForStackCalmDown) {
         if (flow_state_ == FLOW_WAITING_KEYFRAME) {
             flow_state_ = FLOW_KEYFRAME_REQUSTED;
-            mmal_encoder_->SetForceNextKeyFrame();
+            mmal_encoder_->RequestKeyFrame();
         }
     }
     return true;
@@ -459,7 +455,7 @@ bool RaspiEncoderImpl::DrainProcess() {
         if (result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED) {
             RTC_LOG(LS_ERROR) << "Error in passng EncodedImage";
         }
-        quality_config_.ReportFrame(buf->length());
+        quality_config_.ReportFrameSize(buf->length());
     }
     return true;
 }

@@ -550,7 +550,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             //
             else if (data.compare(kValueDataApply) == 0) {
                 if (IsSignalingSessionActive() == true) {
-                    webrtc::MMALWrapper::Instance()->SetVideoConfigParams();
+                    webrtc::MMALWrapper::Instance()->SetEncoderConfigParams();
                     if (webrtc::MMALWrapper::Instance()
                             ->ReinitEncoderInternal() == true) {
                         RTC_LOG(INFO) << "ReinitEncoderInternal Success";
