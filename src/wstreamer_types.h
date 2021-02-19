@@ -116,6 +116,14 @@ struct EncoderSettings {
     absl::optional<int> annotation_text_size;
 };
 
+struct ZoomOptions {
+    enum CMD { IS_ACTIVE = 1, IN, OUT, MOVE, RESET };
+
+    CMD cmd;
+    absl::optional<double> center_x;
+    absl::optional<double> center_y;
+};
+
 };  // namespace wstreamer
 
 #endif  // COMMON_TYPES_H_

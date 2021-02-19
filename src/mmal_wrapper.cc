@@ -214,20 +214,6 @@ MMALEncoderWrapper::MMALEncoderWrapper()
 
 MMALEncoderWrapper::~MMALEncoderWrapper() { RTC_LOG(INFO) << __FUNCTION__; }
 
-int MMALEncoderWrapper::GetWidth() { return state_.width; }
-
-int MMALEncoderWrapper::GetHeight() { return state_.height; }
-
-bool MMALEncoderWrapper::IsInited() { return mmal_initialized_; }
-
-size_t MMALEncoderWrapper::GetBufferSize() const {
-    return recommanded_buffer_size_;
-}
-
-size_t MMALEncoderWrapper::GetBufferNum() const {
-    return recommanded_buffer_num_;
-}
-
 void MMALEncoderWrapper::SetEncoderConfigParams(
     wstreamer::EncoderSettings *params) {
     // reset encoder setting to default state
@@ -609,35 +595,36 @@ bool MMALEncoderWrapper::ReinitEncoder(wstreamer::VideoEncodingParams config) {
     return false;
 }
 
-bool MMALEncoderWrapper::IsDigitalZoomActive() {
-    if (state_.camera_parameters.roi.w == MAX_VIDEO_ROI_WIDTH &&
-        state_.camera_parameters.roi.h == MAX_VIDEO_ROI_HEIGHT)
-        return true;  // using 1.0/1.0 width/height
-    return false;
-}
-
-bool MMALEncoderWrapper::IncreaseDigitalZoom(double cx, double cy) {
-    return raspicamcontrol_zoom_with_coordination(
-        state_.camera_component, ZOOM_IN, cx, cy,
-        &(state_.camera_parameters).roi);
-}
-
-bool MMALEncoderWrapper::DecreaseDigitalZoom() {
-    return raspicamcontrol_zoom_with_coordination(
-        state_.camera_component, ZOOM_OUT, 0.0, 0.0,
-        &(state_.camera_parameters).roi);
-}
-
-bool MMALEncoderWrapper::ResetDigitalZoom() {
-    return raspicamcontrol_zoom_with_coordination(
-        state_.camera_component, ZOOM_RESET, 0.0, 0.0,
-        &(state_.camera_parameters).roi);
-}
-
-bool MMALEncoderWrapper::MoveDigitalZoom(double cx, double cy) {
-    return raspicamcontrol_zoom_with_coordination(
-        state_.camera_component, ZOOM_MOVE, cx, cy,
-        &(state_.camera_parameters).roi);
+bool MMALEncoderWrapper::Zoom(wstreamer::ZoomOptions options) {
+    RTC_DCHECK(options.cmd >= wstreamer::ZoomOptions::IS_ACTIVE &&
+               options.cmd <= wstreamer::ZoomOptions::RESET);
+    using ZoomCommand = wstreamer::ZoomOptions::CMD;
+    switch (options.cmd) {
+        case ZoomCommand::IS_ACTIVE:
+            // TODO: need to decide whether
+            return !(state_.camera_parameters.roi.w == MAX_VIDEO_ROI_WIDTH &&
+                     state_.camera_parameters.roi.h == MAX_VIDEO_ROI_HEIGHT);
+        case ZoomCommand::IN:
+            RTC_DCHECK(options.center_x.has_value());
+            RTC_DCHECK(options.center_y.has_value());
+            return raspicamcontrol_zoom_with_coordination(
+                state_.camera_component, ZOOM_IN, options.center_x.value(),
+                options.center_y.value(), &(state_.camera_parameters).roi);
+        case ZoomCommand::OUT:
+            return raspicamcontrol_zoom_with_coordination(
+                state_.camera_component, ZOOM_OUT, 0.0, 0.0,
+                &(state_.camera_parameters).roi);
+        case ZoomCommand::MOVE:
+            RTC_DCHECK(options.center_x.has_value());
+            RTC_DCHECK(options.center_y.has_value());
+            return raspicamcontrol_zoom_with_coordination(
+                state_.camera_component, ZOOM_MOVE, options.center_x.value(),
+                options.center_y.value(), &(state_.camera_parameters).roi);
+        case ZoomCommand::RESET:
+            return raspicamcontrol_zoom_with_coordination(
+                state_.camera_component, ZOOM_RESET, 0.0, 0.0,
+                &(state_.camera_parameters).roi);
+    }
 }
 
 void MMALEncoderWrapper::BufferCallback(MMAL_PORT_T *port,

@@ -22,7 +22,6 @@
 #include <list>
 #include <string>
 
-#include "common_types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fileutils.h"
 #include "rtc_base/httpcommon.h"
@@ -32,6 +31,7 @@
 #include "rtc_base/stringutils.h"
 #include "utils.h"  // GetHardwareDeviceId
 #include "utils_url.h"
+#include "wstreamer_types.h"
 
 namespace {
 

@@ -33,11 +33,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <memory>
 
-#include "common_types.h"
 #include "compat/optionsfile.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/synchronization/mutex.h"
+#include "wstreamer_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,7 +74,6 @@ class ConfigMedia {
     std::list<wstreamer::VideoResolution> GetVideoResolutionList();
     bool GetFixedVideoResolution(int &width, int &height);
     void GetMaxVideoResolution(int &width, int &height) const;
-    size_t GetRecommandedBufferSize() const;
     wstreamer::VideoRoi &GetVideoROI(void);
 
     // The rtc_config configured through the websocket interface can be used

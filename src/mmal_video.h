@@ -92,17 +92,11 @@ typedef struct RASPIVID_STATE_S RASPIVID_STATE;
 /** Struct used to pass information in encoder port userdata to callback
  */
 
-// frame assemble buffer size
-#define FRAME_BUFSIZE (30 * 1000)
-
 typedef struct {
     RASPIVID_STATE
     *pstate;    /// pointer to our state in case required in callback
     int abort;  /// Set to 1 in callback if an error occurs to attempt to abort
                 /// the capture
-    int frame_buff[FRAME_BUFSIZE];  /// frame buffer to assemble segmented frame
-                                    /// from encoder
-    int frame_buff_pos;
 } PORT_USERDATA;
 
 /** Possible raw output formats
@@ -128,12 +122,6 @@ struct RASPIVID_STATE_S {
     int intraperiod;         /// Intra-refresh period (key frame rate)
     int quantisationParameter;  /// Quantisation parameter - quality. Set
                                 /// bitrate 0 and set this for variable bitrate
-
-    //  Quantization Parameters
-    int quantisationInitialParameter;  // Initial quantization parameter
-    int quantisationMaxParameter;      /// Maximum quantization parameter
-    int quantisationMinParameter;      /// Minimum quantization parameter
-    // remove
 
     int videoRateControl;  /// Video Rate Control
     int bInlineHeaders;    /// Insert inline headers to stream (SPS, PPS)

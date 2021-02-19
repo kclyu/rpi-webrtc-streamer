@@ -72,7 +72,7 @@ SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc 
 	raspi_motionblob.cc raspi_motionfile.cc config_media.cc config_streamer.cc \
 	config_motion.cc utils_pc_config.cc utils_pc_strings.cc compat/optionsfile.cc \
 	session_config.cc frame_queue.cc file_writer_handle.cc log_rotating_stream.cc \
-	common_types.cc
+	wstreamer_types.cc
 
 SOURCES.C = websocket_server_util.c mmal_video.c mmal_video_reset.c mmal_util.c \
 	raspicli.c raspicamcontrol.c raspipreview.c mdns_publish.c

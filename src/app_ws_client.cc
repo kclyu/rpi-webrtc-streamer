@@ -402,14 +402,21 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 RTC_LOG(INFO) << "Zoom Command Type " << command
                               << ", Position " << cx << ", " << cy;
                 if (command.compare(kValueCommandZoomIn) == 0) {
-                    webrtc::MMALWrapper::Instance()->IncreaseDigitalZoom(cx,
-                                                                         cy);
+                    webrtc::MMALWrapper::Instance()->Zoom(
+                        {.cmd = wstreamer::ZoomOptions::IN,
+                         .center_x = cx,
+                         .center_y = cy});
                 } else if (command.compare(kValueCommandZoomOut) == 0) {
-                    webrtc::MMALWrapper::Instance()->DecreaseDigitalZoom();
+                    webrtc::MMALWrapper::Instance()->Zoom(
+                        {.cmd = wstreamer::ZoomOptions::OUT});
                 } else if (command.compare(kValueCommandZoomReset) == 0) {
-                    webrtc::MMALWrapper::Instance()->ResetDigitalZoom();
+                    webrtc::MMALWrapper::Instance()->Zoom(
+                        {.cmd = wstreamer::ZoomOptions::RESET});
                 } else if (command.compare(kValueCommandZoomMove) == 0) {
-                    webrtc::MMALWrapper::Instance()->MoveDigitalZoom(cx, cy);
+                    webrtc::MMALWrapper::Instance()->Zoom(
+                        {.cmd = wstreamer::ZoomOptions::MOVE,
+                         .center_x = cx,
+                         .center_y = cy});
                 }
             } else {
                 RTC_LOG(LS_ERROR)

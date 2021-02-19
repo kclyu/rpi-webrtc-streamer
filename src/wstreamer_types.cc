@@ -27,7 +27,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "common_types.h"
+#include "wstreamer_types.h"
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

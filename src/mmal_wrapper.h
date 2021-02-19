@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
+#include "wstreamer_types.h"
 
 namespace webrtc {
 
@@ -91,10 +92,10 @@ class MMALEncoderWrapper : public FrameQueue {
     MMALEncoderWrapper();
     ~MMALEncoderWrapper();
 
-    bool IsInited();
+    inline bool IsInited() const { return mmal_initialized_; }
 
-    int GetWidth();
-    int GetHeight();
+    inline int GetEncodingWidth() const { return state_.width; }
+    inline int GetEncodingHeight() const { return state_.height; }
 
     bool InitEncoder(wstreamer::VideoEncodingParams config);
     bool UninitEncoder();
@@ -103,22 +104,13 @@ class MMALEncoderWrapper : public FrameQueue {
     // and used when changing the resolution.
     // TODO: merge the ReinitEncoder to SetParam and Reinit Internal
     bool ReinitEncoder(wstreamer::VideoEncodingParams config);
-
-    // Used in EncoderDelayInit. Init parameters should be initialized first
-    // and then Init must be done, so the two functions are separated.
-    bool SetEncodingParams(wstreamer::VideoEncodingParams config);
     bool ReinitEncoderInternal();
 
     bool StartCapture();
     bool StopCapture();
 
     bool SetRate(int framerate, int bitrate);
-
-    bool IsDigitalZoomActive();
-    bool IncreaseDigitalZoom(double cx, double cy);
-    bool DecreaseDigitalZoom();
-    bool ResetDigitalZoom();
-    bool MoveDigitalZoom(double cx, double cy);
+    bool Zoom(wstreamer::ZoomOptions options);
 
     // When there is a KeyFrame request, it requests the MMAL to generate a key
     // frame. MMAL generates a key frame, and then operates as it is currently
@@ -127,12 +119,13 @@ class MMALEncoderWrapper : public FrameQueue {
 
     // Set the necessary media config information.
     void SetEncoderConfigParams(wstreamer::EncoderSettings *params = nullptr);
+    // Used in EncoderDelayInit. Init parameters should be initialized first
+    // and then Init must be done, so the two functions are separated.
+    bool SetEncodingParams(wstreamer::VideoEncodingParams config);
 
     // Callback Functions
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
     static void BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
-    size_t GetBufferSize() const;
-    size_t GetBufferNum() const;
 
     EncoderDelayedInit encoder_initdelay_;
 
@@ -142,12 +135,9 @@ class MMALEncoderWrapper : public FrameQueue {
     void CheckCameraConfig();
     bool mmal_initialized_;
 
-    MMAL_PORT_T *camera_preview_port_;
-    MMAL_PORT_T *camera_video_port_;
-    MMAL_PORT_T *camera_still_port_;
+    MMAL_PORT_T *camera_preview_port_, *camera_video_port_, *camera_still_port_;
     MMAL_PORT_T *preview_input_port_;
-    MMAL_PORT_T *encoder_input_port_;
-    MMAL_PORT_T *encoder_output_port_;
+    MMAL_PORT_T *encoder_input_port_, *encoder_output_port_;
     RASPIVID_STATE state_;
 
     ConfigMedia *config_media_;

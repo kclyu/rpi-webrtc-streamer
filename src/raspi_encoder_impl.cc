@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 #include "absl/strings/match.h"
-#include "common_types.h"
 #include "config_media.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
@@ -41,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/metrics.h"
+#include "wstreamer_types.h"
 
 namespace webrtc {
 
@@ -239,8 +239,8 @@ void RaspiEncoderImpl::SetRates(const RateControlParameters& parameters) {
     quality_config_.ReportFrameRate(static_cast<int>(framerate));
     quality_config_.ReportTargetBitrate(target_bitrate);
     resolution = quality_config_.GetBestMatch();
-    if (resolution.width_ != mmal_encoder_->GetHeight() &&
-        resolution.height_ != mmal_encoder_->GetHeight()) {
+    if (resolution.width_ != mmal_encoder_->GetEncodingWidth() &&
+        resolution.height_ != mmal_encoder_->GetEncodingHeight()) {
         RTC_LOG(INFO) << "Resolution Changing by Bitrate Changing "
                       << "To : " << resolution.width_ << "x"
                       << resolution.height_;
@@ -428,8 +428,8 @@ bool RaspiEncoderImpl::DrainProcess() {
         int64_t capture_time_ms = clock_->TimeInMilliseconds() - 10;
         int64_t ntp_capture_time_ms = clock_->CurrentNtpInMilliseconds() - 10;
 
-        encoded_image._encodedWidth = mmal_encoder_->GetWidth();
-        encoded_image._encodedHeight = mmal_encoder_->GetHeight();
+        encoded_image._encodedWidth = mmal_encoder_->GetEncodingWidth();
+        encoded_image._encodedHeight = mmal_encoder_->GetEncodingHeight();
         encoded_image.SetTimestamp(capture_time_ms);
         encoded_image.ntp_time_ms_ = ntp_capture_time_ms;
         encoded_image.capture_time_ms_ = capture_time_ms;

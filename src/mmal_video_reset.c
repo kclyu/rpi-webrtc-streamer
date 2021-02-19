@@ -343,7 +343,7 @@ MMAL_STATUS_T reset_encoder_component(RASPIVID_STATE *state) {
     if (state->encoding == MMAL_ENCODING_H264 && state->quantisationParameter) {
         MMAL_PARAMETER_UINT32_T param = {
             {MMAL_PARAMETER_VIDEO_ENCODE_INITIAL_QUANT, sizeof(param)},
-            state->quantisationInitialParameter};
+            state->quantisationParameter};
         status = mmal_port_parameter_set(encoder_output, &param.hdr);
         if (status != MMAL_SUCCESS) {
             vcos_log_error("Unable to set initial QP");
@@ -352,7 +352,7 @@ MMAL_STATUS_T reset_encoder_component(RASPIVID_STATE *state) {
 
         MMAL_PARAMETER_UINT32_T param2 = {
             {MMAL_PARAMETER_VIDEO_ENCODE_MIN_QUANT, sizeof(param)},
-            state->quantisationMinParameter};
+            state->quantisationParameter};
         status = mmal_port_parameter_set(encoder_output, &param2.hdr);
         if (status != MMAL_SUCCESS) {
             vcos_log_error("Unable to set min QP");
@@ -361,7 +361,7 @@ MMAL_STATUS_T reset_encoder_component(RASPIVID_STATE *state) {
 
         MMAL_PARAMETER_UINT32_T param3 = {
             {MMAL_PARAMETER_VIDEO_ENCODE_MAX_QUANT, sizeof(param)},
-            state->quantisationMaxParameter};
+            state->quantisationParameter};
         status = mmal_port_parameter_set(encoder_output, &param3.hdr);
         if (status != MMAL_SUCCESS) {
             vcos_log_error("Unable to set max QP");
