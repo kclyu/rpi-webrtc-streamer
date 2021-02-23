@@ -148,13 +148,13 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
         quality_config_.GetInitialBestMatch();
 
     RTC_LOG(INFO) << "InitEncode request: " << initial_res.ToString();
-    if (mmal_encoder_->encoder_initdelay_.InitEncoder(initial_res) == false) {
+    if (mmal_encoder_->encoder_delayed_init_.InitEncoder(initial_res) ==
+        false) {
         Release();
         ReportError();
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 
-    // start capture in here
     mmal_encoder_->StartCapture();
 
     // start drain thread ;
@@ -245,7 +245,7 @@ void RaspiEncoderImpl::SetRates(const RateControlParameters& parameters) {
                       << "To : " << resolution.width_ << "x"
                       << resolution.height_;
 
-        if (mmal_encoder_->encoder_initdelay_.ReinitEncoder(resolution) ==
+        if (mmal_encoder_->encoder_delayed_init_.ReinitEncoder(resolution) ==
             false) {
             RTC_LOG(LS_ERROR) << "Failed to reinit MMAL encoder";
         }

@@ -46,8 +46,11 @@ namespace webrtc {
 ////////////////////////////////////////////////////////////////////////////////
 namespace {
 
-const int kDelayInitialDurationMs = 4000;
-const int kDelayTaskInterval = 100;
+constexpr int kDelayInitialDurationMs = 4000;
+constexpr int kDelayTaskActiveInterval = 100;
+constexpr int kDelayTaskIdleInterval = 1000;
+constexpr int kInitCoolingDownPeriodMs = 2000;
+constexpr int kInitDelayingPeriodMs = 2000;
 
 }  // namespace
 
@@ -70,46 +73,35 @@ const int kDelayTaskInterval = 100;
 class EncoderDelayedInit::DelayInitTask : public webrtc::QueuedTask {
    public:
     explicit DelayInitTask(EncoderDelayedInit *encoder_delay_init_)
-        : encoder_delay_init_(encoder_delay_init_) {
-        RTC_LOG(LS_INFO)
-            << "Created EncoderDelayedInit Task, Scheduling on queue...";
-        webrtc::TaskQueueBase::Current()->PostDelayedTask(
-            std::unique_ptr<webrtc::QueuedTask>(this), kDelayInitialDurationMs);
-    }
-    void Stop() {
-        RTC_LOG(LS_INFO) << "Stopping DelayInitTask task.";
-        stop_ = true;
-    }
-
-    ~DelayInitTask() {
-        RTC_LOG(INFO) << "*** *** DelayInitTask Terminated!!!";
-    }  // REMOVE ME
+        : encoder_delay_init_(encoder_delay_init_) {}
 
    private:
     bool Run() override {
-        if (stop_) return true;  // TaskQueue will free this task.
+        if (encoder_delay_init_->IsEncodingActive() == false) {
+            return true;  // TaskQueue will free this task.
+        }
 
-        // RTC_LOG(INFO) << "EncoderDelayedInit Status " <<
-        // encoder_delay_init_->status_;
-        encoder_delay_init_->UpdateStatus();
+        encoder_delay_init_->UpdateStateOrMayInit();
         webrtc::TaskQueueBase::Current()->PostDelayedTask(
-            std::unique_ptr<webrtc::QueuedTask>(this), kDelayTaskInterval);
+            std::unique_ptr<webrtc::QueuedTask>(this),
+            encoder_delay_init_->IsIdleState() ? kDelayTaskIdleInterval
+                                               : kDelayTaskActiveInterval);
         return false;  // Retain the task in order to reuse it.
     }
 
     EncoderDelayedInit *const encoder_delay_init_;
-    bool stop_ = false;
 };
 
 EncoderDelayedInit::EncoderDelayedInit(MMALEncoderWrapper *mmal_encoder)
     : clock_(Clock::GetRealTimeClock()),
       last_init_timestamp_ms_(clock_->TimeInMilliseconds()),
-      status_(INIT_PASS),
-      mmal_encoder_(mmal_encoder),
-      delayinit_task_(nullptr) {}
+      state_(IDLE),
+      mmal_encoder_(mmal_encoder) {}
 
-EncoderDelayedInit::~EncoderDelayedInit() {
-    if (delayinit_task_) delayinit_task_->Stop();
+EncoderDelayedInit::~EncoderDelayedInit() {}
+
+bool EncoderDelayedInit::IsEncodingActive() {
+    return mmal_encoder_ && mmal_encoder_->IsInited();
 }
 
 bool EncoderDelayedInit::InitEncoder(wstreamer::VideoEncodingParams config) {
@@ -119,12 +111,16 @@ bool EncoderDelayedInit::InitEncoder(wstreamer::VideoEncodingParams config) {
     };
 
     RTC_LOG(INFO) << "InitEncoder " << config.ToString();
-    delayinit_task_ = new EncoderDelayedInit::DelayInitTask(this);
+    RTC_LOG(LS_INFO)
+        << "Created EncoderDelayedInit Task, Scheduling on queue...";
+    webrtc::TaskQueueBase::Current()->PostDelayedTask(
+        std::make_unique<EncoderDelayedInit::DelayInitTask>(this),
+        kDelayInitialDurationMs);
 
     // InitEncoder does not need to do any init delay
-    RTC_LOG(INFO) << "EncoderDelay Status changed from INIT_PASS to WAITING";
+    RTC_LOG(INFO) << "EncoderDelay state changed from IDLE to COOLINGDOWN";
     last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
-    status_ = INIT_WAITING;
+    state_ = INIT_COOLINGDOWN;
     return mmal_encoder_->InitEncoder(config);
 }
 
@@ -135,11 +131,10 @@ bool EncoderDelayedInit::ReinitEncoder(wstreamer::VideoEncodingParams config) {
     };
     RTC_LOG(INFO) << "ReinitEncoder " << config.ToString();
 
-    if (status_ == INIT_PASS) {
+    if (state_ == IDLE) {
         last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
-        status_ = INIT_WAITING;
-        RTC_LOG(INFO)
-            << "EncoderDelay Status changed from INIT_PASS to WAITING";
+        state_ = INIT_COOLINGDOWN;
+        RTC_LOG(INFO) << "EncoderDelay state changed from IDLE to COOLINGDOWN";
         if (mmal_encoder_->ReinitEncoder(config) == false) {
             RTC_LOG(LS_ERROR) << "Failed to reinitialize MMAL encoder";
             return false;
@@ -147,29 +142,29 @@ bool EncoderDelayedInit::ReinitEncoder(wstreamer::VideoEncodingParams config) {
         // start capture in here
         mmal_encoder_->StartCapture();
         return true;
-    } else if (status_ == INIT_DELAY) {
+    } else if (state_ == DELAYING_INIT) {
         mmal_encoder_->SetEncodingParams(config);
-    } else if (status_ == INIT_WAITING) {
+    } else if (state_ == INIT_COOLINGDOWN) {
         if (mmal_encoder_->SetEncodingParams(config)) {
             last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
-            status_ = INIT_DELAY;
+            state_ = DELAYING_INIT;
             RTC_LOG(INFO)
-                << "EncoderDelay Status changed from WAITING to DELAY";
+                << "EncoderDelay state changed from COOLINGDOWN to DELAY";
         }
     }
 
     return true;
 }
 
-bool EncoderDelayedInit::UpdateStatus() {
+bool EncoderDelayedInit::UpdateStateOrMayInit() {
     uint64_t timestamp_diff =
         clock_->TimeInMilliseconds() - last_init_timestamp_ms_;
 
-    if (status_ == INIT_DELAY) {
-        if (timestamp_diff > kDelayInitialDurationMs) {
-            status_ = INIT_WAITING;
+    if (state_ == DELAYING_INIT) {
+        if (timestamp_diff > kInitDelayingPeriodMs) {
+            state_ = INIT_COOLINGDOWN;
             RTC_LOG(INFO)
-                << "EncoderDelay Status changed from DELAY to WAITING";
+                << "EncoderDelay state changed from DELAYING to COOLINGDOWN";
             if (mmal_encoder_->ReinitEncoderInternal() == false) {
                 RTC_LOG(LS_ERROR) << "Failed to reinitialize MMAL encoder";
                 return false;
@@ -177,13 +172,13 @@ bool EncoderDelayedInit::UpdateStatus() {
             // start capture in here
             mmal_encoder_->StartCapture();
         };
-    } else if (status_ == INIT_WAITING) {
-        if (timestamp_diff > kDelayInitialDurationMs) {
-            RTC_LOG(INFO) << "EncoderDelay Status changed from WAIT to PASS";
-            status_ = INIT_PASS;
+    } else if (state_ == INIT_COOLINGDOWN) {
+        if (timestamp_diff > kInitCoolingDownPeriodMs) {
+            RTC_LOG(INFO)
+                << "EncoderDelay state changed from COOLINGDOWN to IDLE";
+            state_ = IDLE;
         };
     }
-
     return true;
 }
 
@@ -194,7 +189,7 @@ bool EncoderDelayedInit::UpdateStatus() {
 ////////////////////////////////////////////////////////////////////////////////
 
 MMALEncoderWrapper::MMALEncoderWrapper()
-    : encoder_initdelay_(this),
+    : encoder_delayed_init_(this),
       mmal_initialized_(false),
       camera_preview_port_(nullptr),
       camera_video_port_(nullptr),

@@ -48,38 +48,35 @@ namespace webrtc {
 ////////////////////////////////////////////////////////////////////////////////
 
 //
-// PASS  : Initial Status
-//      There will be no delay/waiting to do reinit
-//      condition: time difference should be over kDelayDurationBetweenReinitMs
+// IDLE  : There will be no delaying/coolingdown to do init
 //
-// DELAY : making kDelayDurationBetweenReinitMs
-//       After kDelayDurationBetweenReinitMs, fire reinit by TaskQueue
-//      condition: time difference should be within
-//      kDelayDurationBetweenReinitMs
+// DELAYING : During the coolingdown period, init is requested, and the
+//      requested init will be delayed. All init requested during the dellaying
+//      period will be also delayed.
 //
-// WAITING: making kDelayDurationBetweenReinitMs
-//       After kDelayDurationBetweenReinitMs, status will be PASS
-//
+// COOLINGDOWN: After the encoder init, the encoder init executed within a
+//      certain period is delayed. If init is requested within the coolingdown
+//      period, the init will be delayed.
 //
 class MMALEncoderWrapper;  // forward
-enum EncoderDelayedInitStatus { INIT_PASS = 1, INIT_DELAY, INIT_WAITING };
 
 struct EncoderDelayedInit {
+    enum DelayedInitState { IDLE = 1, DELAYING_INIT, INIT_COOLINGDOWN };
     explicit EncoderDelayedInit(MMALEncoderWrapper *mmal_encoder);
     ~EncoderDelayedInit();
 
     bool InitEncoder(wstreamer::VideoEncodingParams config);
     bool ReinitEncoder(wstreamer::VideoEncodingParams config);
-    bool UpdateStatus();
+    bool UpdateStateOrMayInit();
+    bool IsEncodingActive();
+    inline bool IsIdleState() { return state_ == IDLE; }
 
    private:
     class DelayInitTask;
     Clock *const clock_;
     uint64_t last_init_timestamp_ms_;
-    EncoderDelayedInitStatus status_;
+    DelayedInitState state_;
     MMALEncoderWrapper *mmal_encoder_;
-
-    DelayInitTask *delayinit_task_;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -127,7 +124,7 @@ class MMALEncoderWrapper : public FrameQueue {
     void OnBufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
     static void BufferCallback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
 
-    EncoderDelayedInit encoder_initdelay_;
+    EncoderDelayedInit encoder_delayed_init_;
 
    private:
     size_t GetRecommandedBufferSize(MMAL_PORT_T *port);
