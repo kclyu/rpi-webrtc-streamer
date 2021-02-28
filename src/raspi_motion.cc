@@ -118,7 +118,7 @@ RaspiMotion::RaspiMotion(ConfigMotion *config_motion, int width, int height,
       config_motion_(config_motion),
       task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
       worker_queue_(task_queue_factory_->CreateTaskQueue(
-          "Packet Sender", webrtc::TaskQueueFactory::Priority::HIGH)) {
+          "Raspi Motion", webrtc::TaskQueueFactory::Priority::HIGH)) {
     frame_buffer_size_ =
         static_cast<int>(((width * height * framerate * kKushGaugeConstant *
                            kKushGaugeRank * VIDEO_INTRAFRAME_PERIOD) /
@@ -334,7 +334,7 @@ bool RaspiMotion::DrainProcess() {
     if (motion_drain_quit_ == true) {
         // need to stop Wwriter thread at this drain process before quit this
         // because the writer thread created in this drain process
-        if (motion_file_->WriterActive() == true) {
+        if (motion_file_->IsWriterActive() == true) {
             RTC_LOG(INFO) << "Stopping motion video writer thread";
             motion_file_->StopWriter();
         }
@@ -361,7 +361,7 @@ bool RaspiMotion::DrainProcess() {
             __CLOCK_MARK_IMV_END__;
 
             if ((motion_state_ == CLEARED) &&
-                (motion_file_->WriterActive() == true)) {
+                (motion_file_->IsWriterActive() == true)) {
                 motion_file_->StopWriter();
                 // After the file writer ends, old files are deleted so that the
                 // directory where the file is stored does not exceed the
@@ -372,7 +372,7 @@ bool RaspiMotion::DrainProcess() {
                     (size_t)config_motion_->GetTotalFileSizeLimit() * 1000000));
 
             } else if ((motion_state_ == TRIGGERED) &&
-                       (motion_file_->WriterActive() == false)) {
+                       (motion_file_->IsWriterActive() == false)) {
                 motion_file_->StartWriter();
             }
 

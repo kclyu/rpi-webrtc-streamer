@@ -38,7 +38,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "api/task_queue/task_queue_base.h"
 #include "config_motion.h"
 #include "file_writer_handle.h"
-#include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
@@ -55,7 +54,7 @@ class LimitTotalDirSizeTask : public webrtc::QueuedTask {
     size_t size_limit_;
 };
 
-class RaspiMotionFile : public rtc::Event {
+class RaspiMotionFile {
    public:
     explicit RaspiMotionFile(ConfigMotion* config_motion,
                              const std::string base_path,
@@ -70,24 +69,18 @@ class RaspiMotionFile : public rtc::Event {
     bool ImvQueuing(const void* data, size_t bytes, size_t* bytes_written,
                     bool is_keyframe);
 
-    bool WriterActive(void);
+    bool IsWriterActive(void);
     bool StartWriter(void);
     bool StopWriter(void);
 
    private:
-    static void WriterThread(void*);
-    bool WriterProcess();
-
     std::string base_path_;
     std::string prefix_;
-    bool writer_thread_active_;
+    bool writer_active_;
 
     // Frame and MV queue for saving frame and mv
     std::unique_ptr<webrtc::FileWriterHandle> frame_writer_handle_;
     std::unique_ptr<webrtc::FileWriterHandle> imv_writer_handle_;
-
-    // thread for file writing
-    std::unique_ptr<rtc::PlatformThread> writerThread_;
 
     size_t frame_file_size_limit_;
 

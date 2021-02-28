@@ -38,6 +38,7 @@ namespace webrtc {
 
 namespace {
 
+constexpr int kWaitPeriodforMotionWriterThread = 10;
 constexpr size_t kFileWriterBufferSize = 1024 * 8;
 constexpr char kTemporaryFileNameExtension[] = ".saving";
 
@@ -129,7 +130,8 @@ size_t FileWriterBuffer::ReadFront(void *buffer, size_t buffer_size) {
 // File Writer Handle
 //
 ////////////////////////////////////////////////////////////////////////////////
-FileWriterHandle::FileWriterHandle(const std::string name, size_t buffer_size) {
+FileWriterHandle::FileWriterHandle(const std::string name, size_t buffer_size)
+    : Event(false, false) {
     name_ = name;
     buffer_.reset(new FileWriterBuffer(buffer_size));
 }
@@ -161,10 +163,37 @@ bool FileWriterHandle::Open(const std::string dirname, const std::string prefix,
         return false;
     };
 
+    writerThread_.reset(new rtc::PlatformThread(FileWriterHandle::WriterThread,
+                                                this, "MotionFileWriter",
+                                                rtc::kHighPriority));
+    writerThread_->Start();
+
     filename_ = filename;
     file_size_limit_ = file_size_limit;
     file_written_ = 0;
     use_temporary_filename_ = use_temporary_filename;
+    return true;
+}
+
+void FileWriterHandle::WriterThread(void *obj) {
+    FileWriterHandle *writer_handle = static_cast<FileWriterHandle *>(obj);
+    while (writer_handle->WriterProcess()) {
+    }
+}
+
+bool FileWriterHandle::WriterProcess() {
+    if (is_open() == false) {
+        return false;
+    }
+
+    if (size() == 0) {
+        Wait(kWaitPeriodforMotionWriterThread);
+    };
+
+    if (is_open() && size()) {
+        Write();
+    }
+
     return true;
 }
 
@@ -179,6 +208,9 @@ bool FileWriterHandle::Close() {
             utils::MoveFile(filename_ + kTemporaryFileNameExtension, filename_);
         }
     }
+
+    if (writerThread_ && writerThread_->IsRunning()) writerThread_->Stop();
+    writerThread_.reset();
     filename_.clear();
     file_size_limit_ = file_written_ = 0;
     use_temporary_filename_ = true;  // reset with default value
@@ -228,7 +260,14 @@ size_t FileWriterHandle::ReadFront(void *buffer, size_t size) {
 }
 
 size_t FileWriterHandle::WriteBack(const void *buffer, size_t size) {
-    return buffer_->WriteBack(buffer, size);
+    size_t write_back_size = buffer_->WriteBack(buffer, size);
+    if (write_back_size != size) {
+        RTC_LOG(LS_ERROR)
+            << "Internal Error: FileWriterBuffer size mismatching";
+        return write_back_size;
+    };
+    Set();
+    return size;
 }
 
 void FileWriterHandle::clear() { return buffer_->clear(); }

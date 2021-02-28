@@ -47,7 +47,6 @@ namespace {
 constexpr char kVideoFileExtension[] = ".h264";
 constexpr char kImvFileExtension[] = ".imv";
 // minimal wait period
-constexpr int kWaitPeriodforMotionWriterThread = 10;
 
 struct FileInfo {
     std::string filename;
@@ -109,10 +108,9 @@ RaspiMotionFile::RaspiMotionFile(ConfigMotion* config_motion,
                                  const std::string base_path,
                                  const std::string prefix, int frame_queue_size,
                                  int motion_queue_size)
-    : Event(false, false),
-      base_path_(base_path),
+    : base_path_(base_path),
       prefix_(prefix),
-      writer_thread_active_(false),
+      writer_active_(false),
       clock_(webrtc::Clock::GetRealTimeClock()),
       config_motion_(config_motion) {
     frame_writer_handle_.reset(
@@ -151,7 +149,6 @@ bool RaspiMotionFile::FrameQueuing(const void* data, size_t bytes,
         return false;
     }
     *bytes_written = written;
-    Set();
     return true;
 }
 
@@ -163,42 +160,11 @@ bool RaspiMotionFile::ImvQueuing(const void* data, size_t bytes,
         return false;
     }
     *bytes_written = written;
-    Set();
-    return true;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Motion File Writer Thread
-//
-///////////////////////////////////////////////////////////////////////////////
-void RaspiMotionFile::WriterThread(void* obj) {
-    RaspiMotionFile* motion_file = static_cast<RaspiMotionFile*>(obj);
-    while (motion_file->WriterProcess()) {
-    }
-}
-
-bool RaspiMotionFile::WriterProcess() {
-    if (writer_thread_active_ == false) {
-        return false;
-    }
-
-    if (frame_writer_handle_->size() == 0 && imv_writer_handle_->size() == 0) {
-        Wait(kWaitPeriodforMotionWriterThread);
-    };
-
-    if (frame_writer_handle_->is_open() && frame_writer_handle_->size()) {
-        frame_writer_handle_->Write();
-    }
-
-    if (imv_writer_handle_->is_open() && imv_writer_handle_->size()) {
-        imv_writer_handle_->Write();
-    }
     return true;
 }
 
 bool RaspiMotionFile::StartWriter() {
-    if (writer_thread_active_ == false) {
+    if (writer_active_ == false) {
         // start motion file writer thread ;
         if (frame_writer_handle_->Open(base_path_, prefix_, kVideoFileExtension,
                                        frame_file_size_limit_) == false) {
@@ -210,25 +176,18 @@ bool RaspiMotionFile::StartWriter() {
                 return false;
             };
         }
-
-        writerThread_.reset(
-            new rtc::PlatformThread(RaspiMotionFile::WriterThread, this,
-                                    "MotionFileWriter", rtc::kHighPriority));
-        writerThread_->Start();
-        writer_thread_active_ = true;
-        RTC_LOG(LS_VERBOSE) << "Motion File Writer thread initialized.";
+        writer_active_ = true;
+        RTC_LOG(LS_VERBOSE) << "Motion File Writer started.";
         return true;
     }
-    RTC_LOG(LS_VERBOSE) << "Motion File Writer thread already initialized!";
+    RTC_LOG(LS_VERBOSE) << "Motion File Writer thread already started!";
     return false;
 }
 
 bool RaspiMotionFile::StopWriter() {
-    if (writer_thread_active_ == true) {
-        writer_thread_active_ = false;
-        writerThread_->Stop();
-        writerThread_.reset();
-        RTC_LOG(INFO) << "Motion File Writer thread terminated.";
+    if (writer_active_ == true) {
+        writer_active_ = false;
+        RTC_LOG(INFO) << "Motion File Writer stopped.";
 
         // stop motion file writer thread ;
         frame_writer_handle_->Close();
@@ -238,7 +197,5 @@ bool RaspiMotionFile::StopWriter() {
     return false;
 }
 
-// TODO: need to replace writer_thread_active_ with Thread.IsRunning()
-// candidate: if( writerThread_ && writerThread->IsRunning() )
-bool RaspiMotionFile::WriterActive() { return writer_thread_active_; }
+bool RaspiMotionFile::IsWriterActive() { return writer_active_; }
 

@@ -35,8 +35,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <thread>
 
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/event.h"
+#include "rtc_base/platform_thread.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/file_wrapper.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 
@@ -77,7 +80,7 @@ class FileWriterBuffer {
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class FileWriterHandle {
+class FileWriterHandle : public rtc::Event {
    public:
     explicit FileWriterHandle(const std::string name, size_t buffer_size);
     ~FileWriterHandle();
@@ -100,6 +103,10 @@ class FileWriterHandle {
 
    private:
     std::unique_ptr<FileWriterBuffer> buffer_;
+    // thread for file writing
+    std::unique_ptr<rtc::PlatformThread> writerThread_;
+    static void WriterThread(void *);
+    bool WriterProcess();
     FileWrapper file_;
     std::string filename_;
     int file_size_limit_;
