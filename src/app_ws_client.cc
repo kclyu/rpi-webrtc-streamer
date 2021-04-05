@@ -31,11 +31,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <memory>
 
+#include "absl/strings/str_cat.h"
+#include "mmal_still_capture.h"
 #include "mmal_wrapper.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/json.h"
 #include "utils.h"
 #include "websocket_server.h"
+
+namespace {
+
+// used as key for comand value
+const char kKeyCmd[] = "cmd";
+const char kKeyData[] = "data";
+const char kKeyCmdType[] = "type";
+const char kKeyTransaction[] = "transaction";
+
+const char kKeyRequestResult[] = "result";
+const char kValueResultSuccess[] = "SUCCESS";
+const char kValueResultFailed[] = "FAILED";
+const char kKeyRequestError[] = "error";
 
 //
 // Extended JSON message keyword for request/response
@@ -48,17 +63,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // { cmd : event, type: error, mesg: '...' }
 // { cmd : event, type: notice, mesg: '...' }
 //
+//
+const char kValueCmdEvent[] = "event";
+const char kValueTypeError[] = "error";
+const char kValueTypeNotice[] = "notice";
+const char kKeyEventMesg[] = "mesg";
+//
 // - Request/Rsponse format
 //
 // request / response is a message exchange format in which the client sends
 // a request to the server, the server processes the received request,
 // and delivers the processed message to the client in response format.
 //
-// 1. query client deviceid example
+// 1. query client info
 //
-// { cmd : request, type: deviceid }
-// { cmd : response, type: deviceid, data: { ... }, result: 'SUCCESS/FAILED',
-//          error: '...' }
+// { cmd : request, type: info }
+// { cmd : response, type: info , data: { ... },
+// 		result: 'SUCCESS/FAILED', error: '...' }
 //
 // 2. query RTCPeerConnnection config
 //
@@ -92,6 +113,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //              (applied immediately if rtc session is started.)
 //          'reset-to-default' : reset all media configuration to default
 //
+// 4. capture still image
+//
+// { cmd : request, type: still, data : { ... }, transaction: '...'  }
+//
+//      data:
+//          Json format : (all optional)
+//          'width' : width of still image
+//          'height' : height of still image
+//          'cameraNum' : the id of camera ( 0: default, ...)
+//          'filename' : the prefix of the filename to be used with captureing
+//          'quality' : specify the quality of capture image [ the default value
+//               of quality is 85 ] 'timeout' : the quality of capture image
+//          'extension' : the quality of capture image
+//          	['jpg', 'png', 'bmp',' gif']
+//          'verbose' : internal usage only for debugging
+//
+// { cmd : response, type: still, data : { ... }, transaction: '...',
+// 		result: 'SUCCESS/FAILED', error: '...' }
+//
+// 		data:
+// 			json format: when result is 'SUCCESS'
+// 			'filename' : the filename of captured image
+// 			'url' : http url path (excluding protocol, hostname and port)
+//
 // - Message format
 //
 // Similar to the send used for signaling. but, forwarding messages
@@ -103,16 +148,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //      value: double type
 //      command: in/out/reset
 //
-
-namespace {
-
-// message keywords
-const char kKeyCmd[] = "cmd";
-
-// notice/error event
-const char kValueCmdEvent[] = "event";
-const char kValueTypeError[] = "error";
-const char kValueTypeNotice[] = "notice";
+// - Signaling message format
+//   - register
 
 // register
 const char kValueCmdRegister[] = "register";
@@ -129,34 +166,24 @@ const char kValueCmdSendTypeBye[] = "bye";
 const char kValueCmdRequest[] = "request";
 const char kValueCmdResponse[] = "response";
 
-const char kKeyCmdType[] = "type";
-const char kValueTyepDeviceId[] = "deviceid";
-const char kValueTyepMcVersion[] = "mcversion";
+const char kValueTypepDeviceInfo[] = "info";
+const char kDataKeyDeviceId[] = "deviceid";
+const char kDataKeyMcVersion[] = "mcversion";
+const char kDataKeyVideo43AspectRatio[] = "video43aspectratio";
 
 const char kValueTypeRTCConfig[] = "rtcconfig";
 const char kValueTypeConfig[] = "config";
-
-const char kKeyEventMesg[] = "mesg";
-
-const char kKeyData[] = "data";
-const char kKeyTransaction[] = "transaction";
 
 const char kValueDataSave[] = "save";
 const char kValueDataRead[] = "read";
 const char kValueDataReset[] = "reset-to-default";
 const char kValueDataApply[] = "apply";
 
-const char kKeyRequestResult[] = "result";
-const char kValueResultSuccess[] = "SUCCESS";
-const char kValueResultFailed[] = "FAILED";
-const char kKeyRequestError[] = "error";
-
 // { cmd: message, type: "zoom", data: { x: value, y: value, command:
 // command_type } }
 //      value: double type
 //      command: in/out/reset
 //
-// request/response
 
 const char kValueCmdMessage[] = "message";
 const char kKeyDataCommand[] = "command";
@@ -169,9 +196,25 @@ const char kValueCommandZoomReset[] = "reset";
 const char kValueCommandZoomMove[] = "move";
 
 //
+//  still capture
+//
+const char kValueTypeStill[] = "still";
+const char kValueStillDataWidth[] = "width";
+const char kValueStillDataHeight[] = "height";
+const char kValueStillDataCameraNum[] = "cameraNum";
+const char kValueStillDataFilename[] = "filename";  // used in response also
+const char kValueStillDataQuality[] = "quality";
+const char kValueStillDataExtension[] = "extension";
+const char kValueStillDataVerbose[] = "verbose";
+const char kValueStillDataForceCapture[] = "force_capture";
+const char kValueStillDataUrl[] = "url";  // used in response only
+
+//
 //  Media Config Version
 //
-const char kMediaConfigVersion[] = "v0.73";
+//  v0.75
+//    -  The deviceid request is deleted and included in the info request.
+const char kMediaConfigVersion[] = "v0.75";
 
 //
 // Error messages
@@ -184,13 +227,14 @@ const char kErrRegisterClientOrRoomId[] =
     "Failed to register Client/Room ID in clientinfo";
 const char kErrInvalidJsonMessage[] =
     "Failed to parse Json Message in send command";
-const char kNotiSessionAlreadyOccupied[] =
+const char kErrStreamerOccupied[] =
     "Streamer session is already in use by another user";
 const char kErrMessageEmpy[] = "No json message in cmd send";
 const char kErrUnknownCommandType[] = "Unknown Command Type";
 const char kErrUnknownRequestType[] = "Unknown Request Type";
 const char kErrUnknownProtocolMessage[] = "Unknown Protocol Message";
 const char kErrRTCConfig[] = "Failed to get RTC Configuration";
+const char kErrStillDataParse[] = "Failed to parse data of still parameters";
 
 // delay of message to use for stream release
 const int kStreamReleaseDelay = 1000;
@@ -299,7 +343,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
         RTC_LOG(INFO) << "Room id: " << room_id << ", client id: " << client_id;
         if (app_client_.Register(sockid, room_id, client_id) == false) {
             RTC_LOG(LS_ERROR) << "Failed to set room_id/client_id :" << message;
-            SendEvent(sockid, EventNotice, kNotiSessionAlreadyOccupied);
+            SendEvent(sockid, EventNotice, kErrStreamerOccupied);
             return true;
         };
 
@@ -372,6 +416,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
         if (cmd_type.compare(kValueTypeZoom) == 0) {
             std::string data;
             rtc::GetStringFromJsonObject(json_value, kKeyData, &data);
+
             if (!data.empty()) {
                 Json::Value json_data_value;
                 // trying to parse msg value to check whether it is json
@@ -413,6 +458,7 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                     webrtc::MMALWrapper::Instance()->Zoom(
                         {.cmd = wstreamer::ZoomOptions::RESET});
                 } else if (command.compare(kValueCommandZoomMove) == 0) {
+                    // FIXME: problem in movve command during ROI enabled
                     webrtc::MMALWrapper::Instance()->Zoom(
                         {.cmd = wstreamer::ZoomOptions::MOVE,
                          .center_x = cx,
@@ -436,11 +482,16 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
         RTC_LOG(INFO) << "Request Ccmd: " << cmd_type
                       << ", Transaction: " << transaction;
         //
-        // Device ID request
+        // Device info request
         //
-        if (cmd_type.compare(kValueTyepDeviceId) == 0) {
-            SendResponseDeviceId(sockid, deviceid_inited_, transaction,
-                                 deviceid_);
+        if (cmd_type.compare(kValueTypepDeviceInfo) == 0) {
+            Json::Value response_data;
+            response_data[kDataKeyDeviceId] = deviceid_;
+            response_data[kDataKeyMcVersion] = kMediaConfigVersion;
+            response_data[kDataKeyVideo43AspectRatio] =
+                config_media_->GetResolution4_3();
+            SendResponse(sockid, true, kValueTypepDeviceInfo, transaction,
+                         response_data.toStyledString(), "");
             return true;
         }
         //
@@ -449,15 +500,15 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
         else if (cmd_type.compare(kValueTypeRTCConfig) == 0) {
             // { cmd : response, type: rtcconfig, data: { ... }, result:
             // 'SUCCESS/FAILED', error: '...' }
-            std::string json_rtcconfig, json_error, updated_config;
-            Json::Value request_data;
+            std::string json_rtcconfig;
+            Json::Value response_data;
             // Json::StyledWriter json_writer;
 
             if (rtc::GetValueFromJsonObject(json_value, kKeyData,
-                                            &request_data) == true) {
+                                            &response_data) == true) {
                 // it's setting request when data exists in rtcconfig request,
                 utils::RTCConfiguration rtc_config;  // for validation
-                json_rtcconfig = request_data.toStyledString();
+                json_rtcconfig = response_data.toStyledString();
                 std::string error_message;
 
                 // just validate the json message of RTCConfiguration
@@ -590,8 +641,114 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             }
             return true;
         }
-        RTC_LOG(LS_ERROR) << "Unknown Request command type: " << cmd_type;
+
+        //
+        // Still image capture request
+        //
+        else if (cmd_type.compare(kValueTypeStill) == 0) {
+            // { cmd : request, type: still, data : { ... }  }
+            Json::Value json_data_value;
+            if (IsSignalingSessionActive() == true) {
+                SendResponse(sockid, false, kValueTypeStill, transaction, "",
+                             kErrStreamerOccupied);
+                return true;
+            }
+
+            if (rtc::GetValueFromJsonObject(json_value, kKeyData,
+                                            &json_data_value) == false) {
+                RTC_LOG(LS_ERROR) << "Failed to get data key";
+                SendResponse(sockid, false, kValueTypeStill, transaction, "",
+                             kErrDataKeyMissing);
+                return true;
+            }
+
+            wstreamer::StillOptions options;
+            std::string captured_filename;
+            int int_value;
+            double double_value;
+            std::string str_value;
+            bool bool_value;
+
+            if (rtc::GetIntFromJsonObject(json_data_value, kValueStillDataWidth,
+                                          &int_value) == true) {
+                // data key is not found;
+                RTC_LOG(INFO) << "Still width: " << int_value;
+                options.width = int_value;
+            }
+            if (rtc::GetIntFromJsonObject(json_data_value,
+                                          kValueStillDataHeight,
+                                          &int_value) == true) {
+                // data key is not found;
+                RTC_LOG(INFO) << "Still height: " << int_value;
+                options.height = int_value;
+            }
+            if (rtc::GetIntFromJsonObject(json_data_value,
+                                          kValueStillDataCameraNum,
+                                          &int_value) == true) {
+                // data key is not found;
+                RTC_LOG(INFO) << "Still cameraNum: " << int_value;
+                options.cameraNum = int_value;
+            }
+            if (rtc::GetStringFromJsonObject(json_data_value,
+                                             kValueStillDataFilename,
+                                             &str_value) == true) {
+                // data key is not found;
+                RTC_LOG(INFO) << "Still filename: " << str_value;
+                options.filename = str_value;
+            }
+            if (rtc::GetDoubleFromJsonObject(json_data_value,
+                                             kValueStillDataQuality,
+                                             &double_value) == true) {
+                // data key is not found;
+                RTC_LOG(INFO) << "Still quality: " << double_value;
+                options.quality = double_value;
+            }
+            if (rtc::GetStringFromJsonObject(json_data_value,
+                                             kValueStillDataExtension,
+                                             &str_value) == true) {
+                // data key is not found;
+                RTC_LOG(INFO) << "Still extension: " << str_value;
+                options.extension = str_value;
+            }
+            if (rtc::GetBoolFromJsonObject(json_data_value,
+                                           kValueStillDataVerbose,
+                                           &bool_value) == true) {
+                // data key is not found;
+                RTC_LOG(INFO) << "Still verbose: " << bool_value;
+                options.verbose = bool_value;
+            }
+            if (rtc::GetBoolFromJsonObject(json_data_value,
+                                           kValueStillDataForceCapture,
+                                           &bool_value) == true) {
+                // data key is not found;
+                RTC_LOG(INFO) << "Still forced capture: " << bool_value;
+                options.force_capture = bool_value;
+            }
+
+            absl::Status status =
+                webrtc::StillCapture::Instance()->GetLatestOrCapture(
+                    options, &captured_filename);
+            RTC_LOG(INFO) << "Still Capture Status : " << status.ToString();
+            if (status.ok()) {
+                Json::StyledWriter json_writer;
+                Json::Value json_data;
+                RTC_LOG(INFO) << "Still Captured status " << status.ToString()
+                              << ", filename: " << captured_filename;
+                json_data[kValueStillDataFilename] = captured_filename;
+                json_data[kValueStillDataUrl] =
+                    absl::StrCat("/still/", captured_filename);
+                SendResponse(sockid, true, kValueTypeStill, transaction,
+                             json_writer.write(json_data), "");
+            } else {
+                RTC_LOG(INFO) << "Failed to capture:  " << status.ToString();
+                SendResponse(sockid, false, kValueTypeStill, transaction, "",
+                             status.ToString());
+            }
+            return true;
+        }
+        RTC_LOG(LS_ERROR) << "Unknown Request type: " << cmd_type;
         SendEvent(sockid, EventError, kErrUnknownRequestType);
+        return true;
     }
     SendEvent(sockid, EventError, kErrUnknownCommandType);
     return true;
@@ -676,35 +833,6 @@ void AppWsClient::OnMessage(rtc::Message* msg) {
         };
     }
     return;
-}
-
-void AppWsClient::SendResponseDeviceId(int sockid, bool success,
-                                       const std::string transaction,
-                                       const std::string& deviceid) {
-    RTC_LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(websocket_message_ != nullptr)
-        << "WebSocket Server instance is nullptr";
-    std::string json_resp_mesg;
-    Json::StyledWriter json_writer;
-    Json::Value json_response;
-    Json::Value json_data;
-
-    // response data
-    json_data[kValueTyepDeviceId] = deviceid;
-    json_data[kValueTyepMcVersion] = kMediaConfigVersion;
-
-    json_response[kKeyCmd] = kValueCmdResponse;
-    json_response[kKeyCmdType] = kValueTyepDeviceId;
-    if (!transaction.empty()) json_response[kKeyTransaction] = transaction;
-    if (success == true) {
-        json_response[kKeyData] = json_writer.write(json_data);
-        json_response[kKeyRequestResult] = kValueResultSuccess;
-    } else {
-        json_response[kKeyRequestResult] = kValueResultFailed;
-    }
-    json_resp_mesg = json_writer.write(json_response);
-    websocket_message_->SendMessage(sockid, json_resp_mesg);
-    RTC_LOG(INFO) << "Device ID JSON response: " << json_resp_mesg;
 }
 
 void AppWsClient::SendResponse(int sockid, bool success,

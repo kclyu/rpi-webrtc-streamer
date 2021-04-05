@@ -74,9 +74,6 @@ class AppWsClient : public rtc::MessageHandler,
     // message handler interface
     void OnMessage(rtc::Message* msg) override;
 
-    void SendResponseDeviceId(int sockid, bool success,
-                              const std::string transaction,
-                              const std::string& deviceid);
     void SendResponse(int sockid, bool success, const std::string& type,
                       const std::string& transaction, const std::string& data,
                       const std::string& error_mesg);
