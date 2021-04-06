@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <vector>
 
+#include "absl/strings/str_format.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/network.h"
 #include "utils.h"
@@ -45,9 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace {
 
 const char *kProtocolHandlerName = "websocket-http";
-const char *kMotionMount = "/motion/";
-const char *kHttpMount = "/";
-const char *DefaultHtml = "index.html";
 
 const struct lws_protocol_vhost_options mjs_extension = {
     nullptr,          /* "next" pvo linked-list */
@@ -93,14 +91,11 @@ const struct lws_extension extensions[] = {
 ////////////////////////////////////////////////////////////////////////////////
 LibWebSocketServer::LibWebSocketServer() {
     memset(&info_, 0x00, sizeof(info_));
-    memset(&webroot_http_mount_, 0x00, sizeof(webroot_http_mount_));
-    memset(&motion_http_mount_, 0x00, sizeof(motion_http_mount_));
     debug_level_ = LibWebSocketServer::DEBUG_LEVEL_NONE;
-
-    motion_mount_enabled_ = false;
 
     context_ = nullptr;
     vhost_ = nullptr;
+    web_mounts_ = nullptr;
 }
 
 void LibWebSocketServer::Log(int level, const char *line) {
@@ -129,9 +124,12 @@ void LibWebSocketServer::Log(int level, const char *line) {
 }
 
 LibWebSocketServer::~LibWebSocketServer() {
-    if (webroot_http_mount_.origin) delete webroot_http_mount_.origin;
-    if (motion_http_mount_.origin) delete motion_http_mount_.origin;
-
+    for (lws_http_mount *http_mount : vector_http_mounts_) {
+        if (http_mount->mountpoint) delete http_mount->mountpoint;
+        if (http_mount->origin) delete http_mount->origin;
+        if (http_mount->def) delete http_mount->def;
+    }
+    vector_http_mounts_.clear();
     lws_vhost_destroy(vhost_);
     lws_context_destroy(context_);
     wshandler_config_.clear();
@@ -208,15 +206,8 @@ bool LibWebSocketServer::Init(int port) {
     info_.ws_ping_pong_interval = 1;  // WebSocket Ping/Pong interval
 
     info_.server_string = WEBSOCKET_SERVER_NAME;
-
-    //  whether or not motion mount is enabled,
-    //  http mount will be initialized when webroot mount is enabled.
-    if (motion_mount_enabled_ == true) {
-        motion_http_mount_.mount_next = &webroot_http_mount_;
-        info_.mounts = &motion_http_mount_;
-    } else {
-        info_.mounts = &webroot_http_mount_;
-    }
+    // need to call AddHttpWebMount before init to add web mounts
+    info_.mounts = web_mounts_;
 
     context_ = lws_create_context(&info_);
     if (context_ == nullptr) {
@@ -232,46 +223,47 @@ bool LibWebSocketServer::Init(int port) {
     return true;
 }
 
-bool LibWebSocketServer::AddHttpWebMount(bool motion_enabled,
-                                         const std::string &web_path,
-                                         const std::string &motion_path) {
-    if (motion_enabled == true) {
-        // validate the given path is directory
-        if (utils::IsFile(motion_path) == true) {
-            RTC_LOG(LS_ERROR)
-                << "Motion path is not directory : " << motion_path;
-            return false;
-        }
-
-        motion_http_mount_.mountpoint = kMotionMount;
-        char *buf = new char[motion_path.size() + 1];
-        strcpy(buf, motion_path.c_str());
-        motion_http_mount_.origin = buf;
-
-        motion_http_mount_.def = DefaultHtml;
-        motion_http_mount_.mountpoint_len = strlen(kMotionMount);
-        motion_http_mount_.origin_protocol = LWSMPRO_FILE;
-        // adding h.264 mine type extension
-        motion_http_mount_.extra_mimetypes = &h264_extension;
-        motion_mount_enabled_ = true;
-    }
-
-    // validate the given path is directory
-    if (utils::IsFile(web_path) == true) {
-        RTC_LOG(LS_ERROR) << "WebRoot path is not directory : " << web_path;
+bool LibWebSocketServer::AddHttpWebMount(const std::string &mountpoint,
+                                         const std::string &mount_orig,
+                                         const std::string default_file) {
+    struct lws_http_mount *http_mount = nullptr;
+    if (utils::IsFolder(mount_orig) == false) {
+        RTC_LOG(LS_ERROR) << "Mounting oring path is not directory : "
+                          << mount_orig;
         return false;
     }
 
-    // webroot mount
-    webroot_http_mount_.mountpoint = kHttpMount;
-    char *buf = new char[web_path.size() + 1];
-    strcpy(buf, web_path.c_str());
-    webroot_http_mount_.origin = buf;
+    http_mount = new lws_http_mount;
+    memset(http_mount, 0x00, sizeof(struct lws_http_mount));
 
-    webroot_http_mount_.def = DefaultHtml;
-    webroot_http_mount_.mountpoint_len = strlen(kHttpMount);
-    webroot_http_mount_.origin_protocol = LWSMPRO_FILE;
-    webroot_http_mount_.extra_mimetypes = &h264_extension;
+    // make space to hold mountpoint/mount_orig/default
+    char *buf = new char[mountpoint.size() + 1];
+    strcpy(buf, mountpoint.c_str());
+    http_mount->mountpoint = buf;
+    http_mount->mountpoint_len = mountpoint.size();
+
+    buf = new char[mount_orig.size() + 1];
+    strcpy(buf, mount_orig.c_str());
+    http_mount->origin = buf;
+
+    buf = new char[default_file.size() + 1];
+    strcpy(buf, default_file.c_str());
+    http_mount->def = buf;
+
+    http_mount->origin_protocol = LWSMPRO_FILE;
+    // adding h.264 mine type extension
+    http_mount->extra_mimetypes = &h264_extension;
+
+    RTC_LOG(INFO) << absl::StrFormat("mount point : %s, orig: %s, default: %s",
+                                     http_mount->mountpoint, http_mount->origin,
+                                     http_mount->def);
+    vector_http_mounts_.push_back(http_mount);
+    if (web_mounts_ == nullptr) {
+        web_mounts_ = http_mount;
+    } else {
+        http_mount->mount_next = web_mounts_;
+        web_mounts_ = http_mount;
+    }
     return true;
 }
 

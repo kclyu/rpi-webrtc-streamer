@@ -108,7 +108,6 @@ struct VideoEncodingParams {
 // SetEncoderConfigParams sets the parameters necessary for Video Encoding,
 // and the following structure is used for required settings additionally.
 struct EncoderSettings {
-    //
     absl::optional<bool> imv_enable;
     absl::optional<int> intra_period;
     absl::optional<bool> annotation_enable;
@@ -122,6 +121,18 @@ struct ZoomOptions {
     CMD cmd;
     absl::optional<double> center_x;
     absl::optional<double> center_y;
+};
+
+struct StillOptions {
+    absl::optional<int> width;
+    absl::optional<int> height;
+    absl::optional<int> cameraNum;
+    absl::optional<std::string> filename;
+    absl::optional<int> quality;
+    absl::optional<int> timeout;
+    absl::optional<std::string> extension;
+    absl::optional<bool> verbose;
+    absl::optional<bool> force_capture;
 };
 
 };  // namespace wstreamer

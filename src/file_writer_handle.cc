@@ -42,19 +42,6 @@ constexpr int kWaitPeriodforMotionWriterThread = 10;
 constexpr size_t kFileWriterBufferSize = 1024 * 8;
 constexpr char kTemporaryFileNameExtension[] = ".saving";
 
-const std::string GetDateTimeString(void) {
-    // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
-    time_t now = time(0);
-    struct tm tstruct;
-    char buf[80];
-    tstruct = *std::localtime(&now);
-    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-    // for more information about date/time format
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
-
-    return buf;
-}
-
 }  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -147,7 +134,7 @@ bool FileWriterHandle::Open(const std::string dirname, const std::string prefix,
                           << dirname << " is not directory.";
         return false;
     }
-    const std::string date_string = GetDateTimeString();
+    const std::string date_string = utils::GetDateTimeString();
     std::string filename =
         dirname + "/" + prefix + "_" + date_string + extension;
 

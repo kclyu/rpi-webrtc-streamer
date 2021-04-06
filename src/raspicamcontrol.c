@@ -310,7 +310,7 @@ void raspicamcontrol_set_defaults(RASPICAM_CAMERA_PARAMETERS *params) {
     params->saturation = 0;
     params->ISO = 0;  // 0 = auto
     params->videoStabilisation = 0;
-    params->exposureCompensation = 0;
+    params->exposureCompensation = 3;
     params->flickerAvoidMode = MMAL_PARAM_FLICKERAVOID_OFF;
     params->exposureMode = MMAL_PARAM_EXPOSUREMODE_AUTO;
     params->exposureMeterMode = MMAL_PARAM_EXPOSUREMETERINGMODE_AVERAGE;

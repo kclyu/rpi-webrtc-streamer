@@ -1,23 +1,23 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+    <meta charset="utf-8">
+    <meta name="description" content="WebRTC code samples">
+    <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
+    <meta itemprop="description" content="WebRTC RPI-WebRTC-Stream Testing Page">
+    <meta itemprop="image" content="images/webrtc-icon-192x192.png">
+    <meta itemprop="name" content="Raspberry Pi WebRTC Streamer">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta id="theme-color" name="theme-color" content="#ffffff">
 
-  <meta charset="utf-8">
-  <meta name="description" content="WebRTC code samples">
-  <meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1, maximum-scale=1">
-  <meta itemprop="description" content="WebRTC RPI-WebRTC-Stream Testing Page">
-  <meta itemprop="image" content="images/webrtc-icon-192x192.png">
-  <meta itemprop="name" content="Raspberry WebRTC Streamer">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta id="theme-color" name="theme-color" content="#ffffff">
+    <base target="_blank">
 
-  <base target="_blank">
+    <title>Native Peer Connection (RWS)</title>
 
-  <title>Native Peer Connection (RWS)</title>
-
-  <link rel="icon" sizes="192x192" href="images/webrtc-icon-192x192.png">
-  <link href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
-  <link rel="stylesheet" href="css/main.css" />
+    <link rel="icon" sizes="192x192" href="images/webrtc-icon-192x192.png">
+    <link href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="css/main.css" />
 
 </head>
 
@@ -26,118 +26,125 @@
         <p>PeerConnection Page - RWS</a></p>
     </div>
 
-
     <section>
-    <div id="container">
-        <video id="remoteVideo" autoplay playsinline muted width="100%" height="100%"></video>
-        <div>
-            <button id="Connect">Connect</button>
-            <button id="Disconnect">Disconnect</button>
-            <button onclick="toogleOptions()" id="showConfig">Show Video Settings</button>
+        <div id="container">
+            <video id="remoteVideo" autoplay playsinline muted width="100%" height="100%"></video>
+            <div>
+                <button id="Connect">Connect</button>
+                <button id="Disconnect">Disconnect</button>
+                <button onclick="toogleOptions()" id="showConfig">Show Video Settings</button>
+            </div>
+
+            <div id="media_configurations" class="configdetails" style="display:none">
+                <div class="configdetails">
+                    <div class="configitem">
+                        <label for="video_brightness">Brightness</label>
+                        <input id="video_brightness" type="range" min="0" max="10" value="0"
+                            oninput="video_brightness_disp.value=video_brightness.value">
+                        <output id="video_brightness_disp"></output>
+                    </div>
+
+                    <div class="configitem">
+                        <label for="video_contrast">Contrast</label>
+                        <input id="video_contrast" type="range" min="0" max="10" value="0"
+                            oninput="video_contrast_disp.value=video_contrast.value">
+                        <output id="video_contrast_disp"></output>
+                    </div>
+
+                    <div class="configitem">
+                        <label for="sharpness">Sharpness</label>
+                        <input id="video_sharpness" type="range" min="0" max="10" value="0"
+                            oninput="video_sharpness_disp.value=video_sharpness.value">
+                        <output id="video_sharpness_disp"></output>
+                    </div>
+
+                    <div class="configitem">
+                        <label for="video_saturation">Saturation</label>
+                        <input id="video_saturation" type="range" min="0" max="10" value="0"
+                            oninput="video_saturation_disp.value=video_saturation.value">
+                        <output id="video_saturation_disp"></output>
+                    </div>
+
+                    <div class="configitem">
+                        <label for="video_ev">EV</label>
+                        <input id="video_ev" type="range" min="0" max="10" value="0"
+                            oninput="video_ev_disp.value=video_ev.value">
+                        <output id="video_ev_disp"></output>
+                    </div>
+                </div> <!-- configdetails -->
+                <div class="configdetails">
+                    <div class="configitem">
+                        <label for="video_hflip"><span>Horizontal Flip </span></label>
+                        <select id="video_hflip">
+                            <option value=false><span>Disable</span></option>
+                        </select>
+                    </div>
+                    <div class="configitem">
+                        <label for="vieo_vflip"><span>Vertical Flip</span></label>
+                        <select id="video_vflip">
+                            <option value=false><span>Disable</span></option>
+                        </select>
+                    </div>
+                    <div class="configitem">
+                        <label for="video_roration"><span>Rotation</span></label>
+                        <select id="video_rotation">
+                            <option value=0><span>0</span></option>
+                        </select>
+                    </div>
+                </div> <!-- configdetails -->
+                <div class="configdetails">
+                    <div class="configitem">
+                        <label for="video_exposure_mode"><span>Exposure Mode</span></label>
+                        <select id="video_exposure_mode">
+                            <option value=0><span>0</span></option>
+                        </select>
+                    </div>
+                    <div class="configitem">
+                        <label for="video_awb_mode"><span>AWB mode</span></label>
+                        <select id="video_awb_mode">
+                            <option value=0><span>0</span></option>
+                        </select>
+                    </div>
+                </div> <!-- configdetails -->
+                <div class="configButtonsDiv">
+                    <button id="resetConfig" class="configButton">Reset</button>
+                    <button id="applyConfig" class="configButton">Apply</button>
+                </div> <!-- configdetails -->
+
+            </div> <!-- media_configurations -->
+
+            <a href="https://github.com/kclyu/rpi-webrtc-streamer" title="Rpi WebRTC Stramer" id="viewSource">Visit
+                github Rpi-WebRTC-Streamer</a>
         </div>
-
-        <div id="media_configurations" class="configdetails" style="display=none">
-            <div  class="configdetails">
-                <div class="configitem">
-                    <label for="video_brightness">Brightness</label>
-                    <input id="video_brightness" type="range" min="0" max="10" value="0" oninput="video_brightness_disp.value=video_brightness.value">
-                    <output id="video_brightness_disp"></output>
-                </div>
-
-                <div class="configitem">
-                    <label for="video_contrast">Contrast</label>
-                    <input id="video_contrast" type="range" min="0" max="10" value="0" oninput="video_contrast_disp.value=video_contrast.value">
-                    <output id="video_contrast_disp"></output>
-                </div>
-
-                <div class="configitem">
-                    <label for="sharpness">Sharpness</label>
-                    <input id="video_sharpness" type="range" min="0" max="10" value="0" oninput="video_sharpness_disp.value=video_sharpness.value">
-                    <output id="video_sharpness_disp"></output>
-                </div>
-
-                <div class="configitem">
-                    <label for="video_saturation">Saturation</label>
-                    <input id="video_saturation" type="range" min="0" max="10" value="0" oninput="video_saturation_disp.value=video_saturation.value">
-                    <output id="video_saturation_disp"></output>
-                </div>
-
-                <div class="configitem">
-                    <label for="video_ev">EV</label>
-                    <input id="video_ev" type="range" min="0" max="10" value="0" oninput="video_ev_disp.value=video_ev.value">
-                    <output id="video_ev_disp"></output>
-                </div>
-            </div>  <!-- configdetails -->
-            <div  class="configdetails">
-                <div class="configitem">
-                    <label for="video_hflip"><span>Horizontal Flip </span></label>
-                    <select id="video_hflip">
-                        <option value=false><span>Disable</span></option>
-                    </select>
-                </div>
-                <div class="configitem">
-                    <label for="vieo_vflip"><span>Vertical Flip</span></label>
-                    <select id="video_vflip">
-                        <option value=false><span>Disable</span></option>
-                    </select>
-                </div>
-                <div class="configitem">
-                    <label for="video_roration"><span>Rotation</span></label>
-                    <select id="video_rotation">
-                        <option value=0 ><span>0</span></option>
-                    </select>
-                </div>
-            </div>  <!-- configdetails -->
-            <div  class="configdetails">
-                <div class="configitem">
-                    <label for="video_exposure_mode"><span>Exposure Mode</span></label>
-                    <select id="video_exposure_mode">
-                        <option value=0 ><span>0</span></option>
-                    </select>
-                </div>
-                <div class="configitem">
-                    <label for="video_awb_mode"><span>AWB mode</span></label>
-                    <select id="video_awb_mode">
-                        <option value=0 ><span>0</span></option>
-                    </select>
-                </div>
-            </div>  <!-- configdetails -->
-            <div  class="configButtonsDiv">
-                <button id="resetConfig" class="configButton">Reset</button>
-                <button id="applyConfig" class="configButton">Apply</button>
-            </div>  <!-- configdetails -->
-
-        </div> <!-- media_configurations -->
-
-        <a href="https://github.com/kclyu/rpi-webrtc-streamer" title="Rpi WebRTC Stramer" id="viewSource">Visit github Rpi-WebRTC-Streamer</a>
-    </div>
     </section>
     <section>
         <div id="snackBar">Some text some message..</div>
     </section>
 
-  <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
 
-<script type="module">
-    import StreamerController from "./js/streamer_controller.mjs";
-    const rws_streamer = new StreamerController();
-</script>
+    <script type="module">
+        import StreamerController from "./js/streamer_controller.mjs";
+        const rws_streamer = new StreamerController();
+        rws_streamer.connect();
+    </script>
 
-<script>
-document.getElementById("media_configurations").style.display="none";
+    <script>
+        document.getElementById("media_configurations").style.display = "none";
 
-function toogleOptions() {
-    let x = document.getElementById("media_configurations");
-    if (x.style.display === "none") {
-        x.style.display = "block";
-        document.getElementById("showConfig").innerText = "Hide Video Settings";
-    } else {
-        x.style.display = "none";
-        document.getElementById("showConfig").innerText = "Show Video Settings";
-    }
-}
-</script>
+        function toogleOptions() {
+            let x = document.getElementById("media_configurations");
+            if (x.style.display === "none") {
+                x.style.display = "block";
+                document.getElementById("showConfig").innerText = "Hide Video Settings";
+            } else {
+                x.style.display = "none";
+                document.getElementById("showConfig").innerText = "Show Video Settings";
+            };
+        }
+    </script>
 
 
 </body>
+
 </html>

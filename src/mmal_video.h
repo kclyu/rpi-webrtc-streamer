@@ -8,80 +8,7 @@
 extern "C" {
 #endif  // __cplusplus
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// MMAL related header files
-//
-///////////////////////////////////////////////////////////////////////////////
-#include <semaphore.h>
-
-#include "bcm_host.h"
-#include "interface/mmal/mmal.h"
-#include "interface/mmal/mmal_buffer.h"
-#include "interface/mmal/mmal_logging.h"
-#include "interface/mmal/mmal_parameters_camera.h"
-#include "interface/mmal/util/mmal_connection.h"
-#include "interface/mmal/util/mmal_default_components.h"
-#include "interface/mmal/util/mmal_util.h"
-#include "interface/mmal/util/mmal_util_params.h"
-#include "interface/vcos/vcos.h"
-#include "raspicamcontrol.h"
-#include "raspicli.h"
-#include "raspipreview.h"
-
-#define RASPI_CAM_FIXED_WIDTH 1296
-#define RASPI_CAM_FIXED_HEIGHT 972
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Log macro definition for stdout
-//
-///////////////////////////////////////////////////////////////////////////////
-#define DLOG(msg) printf("(%s:%d): %s\n", __FILE__, __LINE__, msg);
-
-#define DLOG_FORMAT(format, args...)        \
-    printf("(%s:%d):", __FILE__, __LINE__); \
-    printf(format, args);                   \
-    printf("\n");
-
-#define DLOG_ERR(msg, err)                                     \
-    fprintf(err, "(%s:%d): %s: %s\n", __FILE__, __LINE__, msg, \
-            omx_errorcode_to_str(err));
-
-#ifdef __MMAL_ENCODER_DEBUG__
-#define DEBUG_LOG(format, args...)          \
-    printf("(%s:%d):", __FILE__, __LINE__); \
-    printf(format, args)
-#else
-#define DEBUG_LOG(format, args...)
-#endif /* __MMAL_ENCODER_DEBUG__ */
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Definition from RaspiVid.c
-//
-///////////////////////////////////////////////////////////////////////////////
-// Forward
-typedef struct RASPIVID_STATE_S RASPIVID_STATE;
-
-// Standard port setting for the camera component
-#define MMAL_CAMERA_PREVIEW_PORT 0
-#define MMAL_CAMERA_VIDEO_PORT 1
-#define MMAL_CAMERA_CAPTURE_PORT 2
-
-// Port configuration for the splitter component
-#define SPLITTER_OUTPUT_PORT 0
-#define SPLITTER_PREVIEW_PORT 1
-
-// Video format information
-// 0 implies variable
-#define VIDEO_FRAME_RATE_NUM 30
-#define VIDEO_FRAME_RATE_DEN 1
-
-/// Video render needs at least 2 buffers.
-#define VIDEO_OUTPUT_BUFFERS_NUM 3
-
-#define VIDEO_INTRAFRAME_PERIOD 3  /// 3 seconds
+#include "mmal_common.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -92,6 +19,7 @@ typedef struct RASPIVID_STATE_S RASPIVID_STATE;
 /** Struct used to pass information in encoder port userdata to callback
  */
 
+typedef struct RASPIVID_STATE_S RASPIVID_STATE;
 typedef struct {
     RASPIVID_STATE
     *pstate;    /// pointer to our state in case required in callback
@@ -180,7 +108,6 @@ void default_status(RASPIVID_STATE *state);
 void dump_status(RASPIVID_STATE *state);
 void camera_control_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
 void update_annotation_data(RASPIVID_STATE *state);
-void encoder_buffer_callback(MMAL_PORT_T *port, MMAL_BUFFER_HEADER_T *buffer);
 MMAL_STATUS_T create_camera_component(RASPIVID_STATE *state);
 void destroy_camera_component(RASPIVID_STATE *state);
 MMAL_STATUS_T create_splitter_component(RASPIVID_STATE *state);
@@ -203,6 +130,7 @@ MMAL_STATUS_T reset_camera_component(RASPIVID_STATE *state);
 void check_camera_model(int cam_num);
 MMAL_STATUS_T check_installed_camera(void);
 int mmal_status_to_int(MMAL_STATUS_T status);
+const char *mmal_status_to_string(MMAL_STATUS_T status);
 void dump_component(char *prefix, MMAL_COMPONENT_T *component);
 void dump_all_mmal_component(RASPIVID_STATE *state);
 void dump_buffer_flag(char *buf, int buflen, int flags);

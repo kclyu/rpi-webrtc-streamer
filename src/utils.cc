@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -123,6 +124,19 @@ bool ParseVideoResolution(const std::string resolution, int *width,
     return true;
 }
 
+const std::string GetDateTimeString(void) {
+    // Get current date/time, format is YYYY-MM-DD.HH:mm:ss
+    time_t now = time(0);
+    struct tm tstruct;
+    char buf[80];
+    tstruct = *std::localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+
+    return buf;
+}
+
 bool IsFolder(const std::string &file) {
     struct stat st;
     int res = ::stat(file.c_str(), &st);
@@ -141,10 +155,20 @@ bool MoveFile(const std::string &old_file, const std::string &new_file) {
     return ::rename(old_file.c_str(), new_file.c_str()) == 0;
 }
 
+bool SymLink(const std::string &origin, const std::string &symbolic_link) {
+    return ::symlink(origin.c_str(), symbolic_link.c_str()) == 0;
+}
+
 absl::optional<size_t> GetFileSize(const std::string &file) {
     struct stat st;
     if (::stat(file.c_str(), &st) != 0) return absl::nullopt;
     return st.st_size;
+}
+
+absl::optional<std::time_t> GetFileChangedTime(const std::string &file) {
+    struct stat st;
+    if (::stat(file.c_str(), &st) != 0) return absl::nullopt;
+    return st.st_ctime;
 }
 
 bool GetFolderWithTailingDelimiter(const std::string &path,

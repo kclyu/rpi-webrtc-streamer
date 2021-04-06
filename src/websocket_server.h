@@ -35,14 +35,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <list>
 #include <map>
 #include <string>
-
+#include <vector>
 
 // __RWS_VERSION__ defined in Makefile
 #define WEBSOCKET_SERVER_NAME __RWS_VERSION__
 
 #include "websocket_handler.h"
 #include "websocket_server_internal.h"
-
 
 //////////////////////////////////////////////////////////////////////
 //
@@ -127,8 +126,9 @@ class LibWebSocketServer : public WebSocketMessage {
     explicit LibWebSocketServer();
     ~LibWebSocketServer();
 
-    bool AddHttpWebMount(bool motion_enabled, const std::string &web_path,
-                         const std::string &motion_path);
+    bool AddHttpWebMount(const std::string &web_mount_path,
+                         const std::string &mount_path,
+                         const std::string default_file = "index.html");
     bool Init(int port);
     bool RunLoop(int timeout);
     void LogLevel(DEBUG_LEVEL level);
@@ -153,13 +153,12 @@ class LibWebSocketServer : public WebSocketMessage {
 
    private:
     std::list<WSInternalHandlerConfig> wshandler_config_;
+    std::vector<lws_http_mount *> vector_http_mounts_;
 
     struct lws_context_creation_info info_;
     struct lws_context *context_;
     struct lws_vhost *vhost_;
-    struct lws_http_mount webroot_http_mount_;
-    struct lws_http_mount motion_http_mount_;
-    bool motion_mount_enabled_;
+    struct lws_http_mount *web_mounts_;
     int port_;
     DEBUG_LEVEL debug_level_;
 };

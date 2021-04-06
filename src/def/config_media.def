@@ -50,7 +50,7 @@
     _CR_I( VideoContrast,           video_contrast,             true, int, 0 ) \
     _CR_I( VideoBrightness,         video_brightness,           true, int, 50 ) \
     _CR_I( VideoSaturation,         video_saturation,           true, int, 0 ) \
-    _CR_I( VideoEV,                 video_ev,                   true, int, 0 ) \
+    _CR_I( VideoEV,                 video_ev,                   true, int, 2 ) \
     _CR( VideoExposureMode,         video_exposure_mode,        true, std::string, "auto" ) \
     _CR( VideoFlickerMode,          video_flicker_mode,         true, std::string, "auto" ) \
     _CR( VideoAwbMode,              video_awb_mode,             true, std::string, "auto" ) \
@@ -58,7 +58,18 @@
     _CR_B( VideoStabilisation,      video_stabilisation,        false, bool, false ) \
     _CR_B( VideoEnableAnnotateText, video_enable_annotate_text, true, bool, false ) \
     _CR( VideoAnnotateText,         video_annotate_text,        true, std::string,"" )  \
-    _CR_I( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, true, int, 3 )
+    _CR_I( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, true, int, 3 ) \
+	_CR_B( StilEnable, 				still_capture_enable, 		false, bool, false) \
+	_CR_I( StillCameraNum, 			still_camera_num, 			false, int, 0) \
+	_CR_I( StillWidth, 				still_width, 				false, int, 640) \
+	_CR_I( StillHeight, 			still_height, 				false, int, 480) \
+	_CR_I( StillMaxAge, 			still_max_age, 				false, int, 300) \
+	_CR_I( StillQuality, 			still_quality, 				false, int, 85) \
+	_CR_I( StillInterval, 			still_capture_interval, 	false, int, 300) \
+	_CR_B( StilFileAppendDataTime, 	still_append_datatime, 		false, bool, false) \
+	_CR( StillDirectory, 			still_directory, 			false, std::string, "/opt/rws/still_captured") \
+	_CR( StillFilePrefix, 			still_file_prefix, 			false, std::string, "still_capture") \
+	_CR( StillFileExtension, 		still_file_extension, 		false, std::string, "jpg")
 
 // DO actual macro expansion
 MEDIA_CONFIG_ROW_LIST

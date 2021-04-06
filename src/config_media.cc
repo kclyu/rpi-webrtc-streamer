@@ -294,7 +294,7 @@ DECLARE_METHOD_VALIDATOR(ConfigMedia, video_saturation, int) {
 
 DECLARE_METHOD_VALIDATOR(ConfigMedia, video_ev, int) {
     if (video_ev >= -10 && video_ev <= 10) return true;
-    RTC_LOG(LS_ERROR) << "Error in EC value: " << video_ev;
+    RTC_LOG(LS_ERROR) << "Error in EV compensation value: " << video_ev;
     return false;
 }
 
@@ -363,6 +363,77 @@ DECLARE_METHOD_VALIDATOR(ConfigMedia, audio_jitter_buffer_min_delay_ms, int) {
                           << "\", using default: " << default_value;
         return false;
     }
+    return true;
+}
+
+//
+//  Still capture setting validation
+//
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_camera_num, int) {
+    if (still_camera_num < 0 || still_camera_num > 3) {
+        RTC_LOG(LS_ERROR) << "camera_num is not valid\"" << still_camera_num
+                          << "\", using default: " << default_value;
+        return false;
+    }
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_width, int) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_height, int) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_max_age, int) {
+    if (still_max_age < 0 || still_max_age > 600) {  // 10 minutes
+        RTC_LOG(LS_ERROR) << "Still image max_age is not valid\""
+                          << still_max_age
+                          << "\", using default: " << default_value;
+        return false;
+    }
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_quality, int) {
+    if (still_quality < 0 || still_quality > 100) {
+        RTC_LOG(LS_ERROR) << "still_quality is not valid\"" << still_quality
+                          << "\", using default: " << default_value;
+        return false;
+    }
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_capture_interval, int) {
+    if (still_capture_interval < 0 || still_capture_interval > 3600) {
+        RTC_LOG(LS_ERROR) << "still_quality is not valid\""
+                          << still_capture_interval
+                          << "\", using default: " << default_value;
+        return false;
+    }
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_directory, std::string) {
+    if (!utils::IsFolder(still_directory)) {
+        RTC_LOG(LS_ERROR) << "Path \"" << still_directory
+                          << "\" is not directory. using default: "
+                          << default_value;
+        return false;
+    }
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_file_prefix, std::string) {
+    // do nothing
+    return true;
+}
+
+DECLARE_METHOD_VALIDATOR(ConfigMedia, still_file_extension, std::string) {
+    // do nothing
     return true;
 }
 

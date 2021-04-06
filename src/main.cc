@@ -32,6 +32,7 @@
 #include "direct_socket.h"
 #include "file_log_sink.h"
 #include "mdns_publish.h"
+#include "mmal_still_capture.h"
 #include "mmal_wrapper.h"
 #include "raspi_motion.h"
 #include "rtc_base/physical_socket_server.h"

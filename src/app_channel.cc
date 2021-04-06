@@ -29,11 +29,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "app_channel.h"
 
+#include <unistd.h>
+
 #include <iostream>
 #include <vector>
 
+#include "absl/strings/str_format.h"
+#include "config_media.h"
 #include "utils.h"
 #include "websocket_server.h"
+
+namespace {
+
+constexpr char kDefaultHttpWebMount[] = "/";
+constexpr char kMotionFileLink[] = "motion";
+constexpr char kStillFileLink[] = "still";
+
+}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -45,9 +57,9 @@ AppChannel::AppChannel() : is_inited_(false) {}
 bool AppChannel::AppInitialize(StreamerProxy* proxy,
                                ConfigStreamer& config_streamer,
                                ConfigMotion& config_motion) {
-    std::string rws_url_path;
+    std::string websocket_url_path;
+    std::string http_mount_origin;
     int port_num;
-    std::string web_root;
 
     // LibWebSocket debug log
     if (config_streamer.GetLwsDebugEnable()) {
@@ -56,12 +68,29 @@ bool AppChannel::AppInitialize(StreamerProxy* proxy,
     };
 
     // need to initialize the motion mount after WebRoot initialization.
-    web_root = config_streamer.GetWebRootPath();
-    RTC_LOG(INFO) << "Using http file mapping : " << web_root;
-    RTC_LOG(INFO) << "Using motion video mapping : "
-                  << config_motion.GetDirectory();
-    AddHttpWebMount(config_motion.GetDetectionEnable(), web_root,
-                    config_motion.GetDirectory());
+    http_mount_origin = config_streamer.GetWebRootPath();
+    RTC_LOG(INFO) << "Using http file mapping : " << http_mount_origin;
+    AddHttpWebMount(kDefaultHttpWebMount, http_mount_origin);
+
+    if (config_motion.GetDetectionEnable()) {
+        std::string motion_file_link =
+            absl::StrFormat("%s/%s", http_mount_origin, kMotionFileLink);
+        utils::DeleteFile(motion_file_link);
+        utils::SymLink(config_motion.GetDirectory(), motion_file_link);
+        RTC_LOG(INFO) << "Using motion video mapping : "
+                      << config_motion.GetDirectory()
+                      << ", link: " << motion_file_link;
+    }
+    if (ConfigMediaSingleton::Instance()->GetStilEnable()) {
+        std::string still_file_link =
+            absl::StrFormat("%s/%s", http_mount_origin, kStillFileLink);
+        utils::DeleteFile(still_file_link);
+        utils::SymLink(ConfigMediaSingleton::Instance()->GetStillDirectory(),
+                       still_file_link);
+        RTC_LOG(INFO) << "Using still image mapping : "
+                      << ConfigMediaSingleton::Instance()->GetStillDirectory()
+                      << ", link: " << still_file_link;
+    }
 
     port_num = config_streamer.GetWebSocketPort();
     RTC_LOG(INFO) << "WebSocket port num : " << port_num;
@@ -69,11 +98,11 @@ bool AppChannel::AppInitialize(StreamerProxy* proxy,
 
     ws_client_.reset(new AppWsClient(proxy));
 
-    rws_url_path = config_streamer.GetRwsWsUrlPath();
-    RTC_LOG(INFO) << "Using RWS WS client url : " << rws_url_path;
+    websocket_url_path = config_streamer.GetRwsWsUrlPath();
+    RTC_LOG(INFO) << "Using RWS WS client url : " << websocket_url_path;
     ws_client_->RegisterWebSocketMessage(this);
     ws_client_->RegisterConfigStreamer(&config_streamer);
-    AddWebSocketHandler(rws_url_path, SINGLE_INSTANCE, ws_client_.get());
+    AddWebSocketHandler(websocket_url_path, SINGLE_INSTANCE, ws_client_.get());
 
     is_inited_ = true;
     return true;

@@ -62,25 +62,28 @@ TARGET = ../webrtc-streamer
 TARGET_LWS_LIBS = $(LWS_LIBS)
 
 #
+# source from WebRTC native library for compat
+#
+COMPAT.CC = compat/optionsfile.cc compat/status.cc compat/status_payload_printer.cc \
+	compat/statusor.cc
+#
 # source & object list definition
 #
 SOURCES.CC = websocket_server.cc websocket_server_callback.cc app_clientinfo.cc \
 	app_channel.cc direct_socket.cc raspi_decoder_dummy.cc raspi_decoder.cc \
-	raspi_encoder.cc raspi_encoder_impl.cc mmal_wrapper.cc utils.cc \
-	streamer_signaling.cc streamer.cc main.cc raspi_quality_config.cc \
-	file_log_sink.cc app_ws_client.cc raspi_motion.cc raspi_motionvector.cc \
-	raspi_motionblob.cc raspi_motionfile.cc config_media.cc config_streamer.cc \
-	config_motion.cc utils_pc_config.cc utils_pc_strings.cc compat/optionsfile.cc \
-	session_config.cc frame_queue.cc file_writer_handle.cc log_rotating_stream.cc \
-	wstreamer_types.cc
+	raspi_encoder.cc raspi_encoder_impl.cc mmal_wrapper.cc utils.cc main.cc \
+	streamer_signaling.cc streamer.cc raspi_quality_config.cc app_ws_client.cc \
+	file_log_sink.cc raspi_motion.cc raspi_motionvector.cc config_streamer.cc \
+	raspi_motionblob.cc raspi_motionfile.cc config_media.cc config_motion.cc \
+	utils_pc_config.cc utils_pc_strings.cc session_config.cc frame_queue.cc \
+	file_writer_handle.cc log_rotating_stream.cc wstreamer_types.cc mmal_still_capture.cc \
 
 SOURCES.C = websocket_server_util.c mmal_video.c mmal_video_reset.c mmal_util.c \
-	raspicli.c raspicamcontrol.c raspipreview.c mdns_publish.c
+	raspicli.c raspicamcontrol.c mmal_still.c raspipreview.c mdns_publish.c
 
-OBJECTS.CC = $(SOURCES.CC:.cc=.o)
-OBJECTS.CPP = $(SOURCES.CPP:.cpp=.o)
+OBJECTS.CC = $(SOURCES.CC:.cc=.o) $(COMPAT.CC:.cc=.o)
 OBJECTS.C = $(SOURCES.C:.c=.o)
-OBJECTS = $(OBJECTS.CC) $(OBJECTS.C) $(OBJECTS.CPP)
+OBJECTS = $(OBJECTS.CC) $(OBJECTS.C)
 
 all: $(TARGET_LWS_LIBS) $(TARGET)
 

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2019, rpi-webrtc-streamer Lyu,KeunChang
+Copyright (c) 2021, rpi-webrtc-streamer Lyu,KeunChang
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -28,42 +28,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 const Constants = {
-    URL_PATH: '/rws/ws',
+  URL_PATH: '/rws/ws',
 
-    // Element Id for Video related buttons
-    ELEMENT_CONNECT: 'Connect',
-    ELEMENT_DISCONNECT: 'Disconnect',
-    ELEMENT_VIDEO: 'remoteVideo',
+  // Element Id for Video related buttons
+  ELEMENT_CONNECT: 'Connect',
+  ELEMENT_DISCONNECT: 'Disconnect',
+  ELEMENT_VIDEO: 'remoteVideo',
 
-    // Element Id for media configurations
-    ELEMENT_CONFIG_RESET: 'resetConfig',
-    ELEMENT_CONFIG_APPLY: 'applyConfig',
-    ELEMENT_CONFIG_SECTION: 'media_configurations',
-    ELEMENT_SHOW_CONFIG: 'showConfig',
-    ELEMENT_SHOW_BUTTON_TEXT: "Show Video Settings",
-    ELEMENT_SHOW_BUTTON_HIDE_TEXT: "Hide Video Settings",
+  // Element Id for media configurations
+  ELEMENT_CONFIG_RESET: 'resetConfig',
+  ELEMENT_CONFIG_APPLY: 'applyConfig',
+  ELEMENT_CONFIG_SECTION: 'media_configurations',
+  ELEMENT_SHOW_CONFIG: 'showConfig',
+  ELEMENT_SHOW_BUTTON_TEXT: 'Show Video Settings',
+  ELEMENT_SHOW_BUTTON_HIDE_TEXT: 'Hide Video Settings',
 
-    // Element Id for snackBar message
-    ELEMENT_SNACKBAR: 'snackBar',
-    SNACKBAR_TIMEOUT: 3000,
+  // Element Id for snackBar message
+  ELEMENT_SNACKBAR: 'snackBar',
+  SNACKBAR_TIMEOUT: 3000,
 
+  WEBSOCKET_CONNECT_TIMEOUT: 1000,
 
-    WEBSOCKET_CONNECT_TIMEOUT: 1000,
+  // WebSocket request result code
+  REQUEST_SUCCESS: 'SUCCESS',
+  REQUEST_FAILED: 'FAILED',
 
-    // WebSocket request result code
-    REQUEST_SUCCESS: 'SUCCESS',
-    REQUEST_FAILED: 'FAILED',
+  // Interval Values
+  RECONNECT_INTERVAL: 3000, // 3 seconds
+  STILL_IMAGE_UPDATE_INTERVAL: 300000, // 5 minutes
 
-    ERROR_INVALID_SIGNAING_CHANNEL: 'Internal Error, Signaling connection is not ready',
-    ERROR_INVALID_CALL_CONFIGMEDIA: 'Internal Error, Invalid ConfigMedia method call',
-    ERROR_SENDING_REGISTER: 'Internal Error, Sending register command failed',
-    ERROR_INVALID_DEVICEID: 'Internal Error, Invalid Device ID',
-    ERROR_FAILED_DEVICEID: 'Failed to get Device ID',
-    ERROR_FAILED_CONFIG_MEDIA: 'Failed to get Config Media',
-    ERROR_FAILED_ZOOM_COMMAND: 'Failed to send Zoom command',
-
+  ERROR_CONNECTION_NOT_ESTABLISHED: 'Connection is not established',
+  ERROR_INVALID_SIGNAING_CHANNEL:
+    'Internal Error, Signaling connection is not ready',
+  ERROR_INVALID_CALL_CONFIGMEDIA:
+    'Internal Error, Invalid ConfigMedia method call',
+  ERROR_SENDING_REGISTER: 'Internal Error, Sending register command failed',
+  ERROR_INVALID_DEVICEID: 'Internal Error, Invalid Device ID',
+  ERROR_FAILED_DEVICEID: 'Failed to get Device ID',
+  ERROR_FAILED_CONFIG_MEDIA: 'Failed to get Config Media',
+  ERROR_FAILED_ZOOM_COMMAND: 'Failed to send Zoom command',
 };
 
 export default Constants;
-
-

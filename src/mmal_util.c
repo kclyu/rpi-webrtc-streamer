@@ -176,6 +176,51 @@ int mmal_status_to_int(MMAL_STATUS_T status) {
     }
 }
 
+/**
+ * Convert a MMAL status return value to a char pointer
+ */
+const char *mmal_status_to_string(MMAL_STATUS_T status) {
+    if (status == MMAL_SUCCESS)
+        return "success";
+    else {
+        switch (status) {
+            case MMAL_ENOMEM:
+                return "Out of memory";
+            case MMAL_ENOSPC:
+                return "Out of resources (other than memory)";
+            case MMAL_EINVAL:
+                return "Argument is invalid";
+            case MMAL_ENOSYS:
+                return "Function not implemented";
+            case MMAL_ENOENT:
+                return "No such file or directory";
+            case MMAL_ENXIO:
+                return "No such device or address";
+            case MMAL_EIO:
+                return "I/O error";
+            case MMAL_ESPIPE:
+                return "Illegal seek";
+            case MMAL_ECORRUPT:
+                return "Data is corrupt attention FIXME: not POSIX";
+            case MMAL_ENOTREADY:
+                return "Component is not ready ttention FIXME: not POSIX";
+            case MMAL_ECONFIG:
+                return "Component is not configured ttention FIXME: not POSIX";
+            case MMAL_EISCONN:
+                return "Port is already connected ";
+            case MMAL_ENOTCONN:
+                return "Port is disconnected";
+                break;
+            case MMAL_EAGAIN:
+                return "Resource temporarily unavailable. Try again later";
+            case MMAL_EFAULT:
+                return "Bad address";
+            default:
+                return "Unknown status error";
+        }
+    }
+}
+
 /*****************************************************************************
  *
  * Helper functions to print component/format/port/buffer to console

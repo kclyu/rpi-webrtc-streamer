@@ -402,11 +402,6 @@ bool MMALEncoderWrapper::InitEncoder(wstreamer::VideoEncodingParams config) {
             return false;
         }
 
-        // Set up our userdata - this is passed though to the callback
-        // where we need the information.
-        state_.callback_data.pstate = &state_;
-        state_.callback_data.abort = 0;
-
         encoder_output_port_->userdata = (struct MMAL_PORT_USERDATA_T *)this;
         if (state_.verbose) RTC_LOG(INFO) << "Enabling encoder output port";
 
@@ -834,7 +829,7 @@ bool MMALEncoderWrapper::RequestKeyFrame() {
     return true;
 }
 
-// bollowed from raspicamcontrol_check_configuration in raspicomcontrol.c
+// borrowed from raspicamcontrol_check_configuration in raspicomcontrol.c
 // for camera config error message logging
 //
 // This function should be called when InitEncoder had failed
