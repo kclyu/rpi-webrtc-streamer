@@ -79,6 +79,7 @@ RaspiEncoderImpl::RaspiEncoderImpl(const cricket::VideoCodec& codec)
     }
 
     config_media_ = ConfigMediaSingleton::Instance();
+    encoded_image_.resize(1);  // simulcast is not supported
 }
 
 RaspiEncoderImpl::~RaspiEncoderImpl() { Release(); }
@@ -190,6 +191,7 @@ int32_t RaspiEncoderImpl::Release() {
         mmal_encoder_->UninitEncoder();
         mmal_encoder_ = nullptr;
     }
+    encoded_image_.clear();
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -398,13 +400,17 @@ bool RaspiEncoderImpl::DrainProcess() {
     // transmitted.
     //
     if (encoded_image_callback_ && buf && !buf->isMotionVector()) {
-        EncodedImage encoded_image(buf->data(), buf->length(), buf->length());
+        auto encoded_image_buffer =
+            EncodedImageBuffer::Create(buf->data(), buf->length());
         CodecSpecificInfo codec_specific;
 
         // Parsing h264 frame
         h264_bitstream_parser_.ParseBitstream(
             rtc::ArrayView<const uint8_t>(buf->data(), buf->length()));
-        encoded_image.qp_ =
+        encoded_image_[0].SetEncodedData(encoded_image_buffer);
+        encoded_image_[0].set_size(buf->length());
+
+        encoded_image_[0].qp_ =
             h264_bitstream_parser_.GetLastSliceQp().value_or(-1);
 
         // Search the NAL unit in the stream
@@ -428,29 +434,29 @@ bool RaspiEncoderImpl::DrainProcess() {
         int64_t capture_time_ms = clock_->TimeInMilliseconds() - 10;
         int64_t ntp_capture_time_ms = clock_->CurrentNtpInMilliseconds() - 10;
 
-        encoded_image._encodedWidth = mmal_encoder_->GetEncodingWidth();
-        encoded_image._encodedHeight = mmal_encoder_->GetEncodingHeight();
-        encoded_image.SetTimestamp(capture_time_ms);
-        encoded_image.ntp_time_ms_ = ntp_capture_time_ms;
-        encoded_image.capture_time_ms_ = capture_time_ms;
-        encoded_image._frameType = buf->isKeyFrame()
-                                       ? VideoFrameType::kVideoFrameKey
-                                       : VideoFrameType::kVideoFrameDelta;
+        encoded_image_[0]._encodedWidth = mmal_encoder_->GetEncodingWidth();
+        encoded_image_[0]._encodedHeight = mmal_encoder_->GetEncodingHeight();
+        encoded_image_[0].SetTimestamp(capture_time_ms);
+        encoded_image_[0].ntp_time_ms_ = ntp_capture_time_ms;
+        encoded_image_[0].capture_time_ms_ = capture_time_ms;
+        encoded_image_[0]._frameType = buf->isKeyFrame()
+                                           ? VideoFrameType::kVideoFrameKey
+                                           : VideoFrameType::kVideoFrameDelta;
 
         // SimulCast is not implemented
-        encoded_image.SetSpatialIndex(0);
+        encoded_image_[0].SetSpatialIndex(0);
 
         codec_specific.codecType = kVideoCodecH264;
         codec_specific.codecSpecific.H264.packetization_mode =
             packetization_mode_;
         codec_specific.codecSpecific.H264.temporal_idx = kNoTemporalIdx;
         codec_specific.codecSpecific.H264.idr_frame =
-            encoded_image._frameType == VideoFrameType::kVideoFrameKey;
+            encoded_image_[0]._frameType == VideoFrameType::kVideoFrameKey;
         codec_specific.codecSpecific.H264.base_layer_sync = false;
 
         // Deliver encoded image.
         EncodedImageCallback::Result result =
-            encoded_image_callback_->OnEncodedImage(encoded_image,
+            encoded_image_callback_->OnEncodedImage(encoded_image_[0],
                                                     &codec_specific);
         if (result.error == EncodedImageCallback::Result::ERROR_SEND_FAILED) {
             RTC_LOG(LS_ERROR) << "Error in passng EncodedImage";

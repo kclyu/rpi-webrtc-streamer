@@ -11,6 +11,7 @@
 #define STREAMER_UTILS_H_
 
 #include <assert.h>
+#include <unistd.h>
 
 #include <string>
 

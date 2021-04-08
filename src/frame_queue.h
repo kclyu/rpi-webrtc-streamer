@@ -60,11 +60,13 @@ constexpr int kFrameFlagIdeInfo = 7;  // inline motion vector
 struct FrameBuffer {
     explicit FrameBuffer(size_t capacity) : FrameBuffer(capacity, false) {}
     explicit FrameBuffer(size_t capacity, bool temporary) {
-        data_.reset(new uint8_t[capacity]);
+        data_ = static_cast<uint8_t *>(malloc(capacity));
         capacity_ = capacity;
         length_ = 0;
         temporary_ = temporary;
     }
+    ~FrameBuffer() { free(data_); }
+
     inline bool isKeyFrame() const { return flags_[kFrameFlagKeyFrame]; }
     inline bool isFrame() const {
         return flags_[kFrameFlagStart] && flags_[kFrameFlagEnd];
@@ -78,7 +80,7 @@ struct FrameBuffer {
         length_ = 0;
     }
     inline size_t length() const { return length_; }
-    inline uint8_t *data() const { return data_.get(); }
+    inline uint8_t *data() const { return data_; }
     inline std::string toString() {
         return flags_.to_string<char, std::string::traits_type,
                                 std::string::allocator_type>();
@@ -93,7 +95,7 @@ struct FrameBuffer {
    private:
     bool temporary_;
     std::bitset<kFrameBufferFlagSize> flags_;
-    std::unique_ptr<uint8_t[]> data_;
+    uint8_t *data_;
     size_t length_;
     size_t capacity_;
 };

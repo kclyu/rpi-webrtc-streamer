@@ -52,7 +52,7 @@ bool FrameBuffer::copy(const MMAL_BUFFER_HEADER_T *buffer) {
         << "Internal Error, Frame Buffer capacity is smaller then buffer "
            "capacity";
     flags_ = buffer->flags;
-    std::memcpy(data_.get(), buffer->data, buffer->length);
+    std::memcpy(data_, buffer->data, buffer->length);
     length_ = buffer->length;
     // RTC_LOG(INFO) << "Frame copy : " << toString()
     //              << ", size: " << buffer->length;
@@ -66,7 +66,7 @@ bool FrameBuffer::append(const MMAL_BUFFER_HEADER_T *buffer) {
         << "Internal Error, Frame Buffer capacity is smaller then buffer "
            "capacity";
     flags_ = buffer->flags;
-    std::memcpy(data_.get() + length_, buffer->data, buffer->length);
+    std::memcpy(data_ + length_, buffer->data, buffer->length);
     length_ += buffer->length;
     // RTC_LOG(INFO) << "Frame append : " << toString()
     //              << ", size: " << buffer->length;

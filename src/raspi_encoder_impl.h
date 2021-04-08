@@ -116,6 +116,7 @@ class RaspiEncoderImpl : public RaspiEncoder {
     std::unique_ptr<rtc::PlatformThread> drainThread_;
 
     EncodedImageCallback* encoded_image_callback_;
+    std::vector<EncodedImage> encoded_image_;
 
     // H264 bitstream parser, used to extract QP from encoded bitstreams.
     H264BitstreamParser h264_bitstream_parser_;
