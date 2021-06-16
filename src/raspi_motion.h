@@ -47,6 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "rtc_base/buffer_queue.h"
 #include "rtc_base/numerics/moving_average.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
 
 class RaspiMotion : public MotionBlobObserver,
@@ -77,10 +78,13 @@ class RaspiMotion : public MotionBlobObserver,
     };
 
    private:
+    bool DrainProcess();
+    // Encoded frame process thread
+    rtc::PlatformThread drainThread_;
+    webrtc::Mutex drain_lock_;
+
     bool motion_active_;
     bool motion_drain_quit_;
-    static void DrainThread(void*);
-    bool DrainProcess();
 
     // Motion Capture params
     int width_, height_, framerate_, bitrate_;
@@ -90,9 +94,6 @@ class RaspiMotion : public MotionBlobObserver,
 
     // motion file
     std::unique_ptr<RaspiMotionFile> motion_file_;
-
-    // Encoded frame process thread
-    std::unique_ptr<rtc::PlatformThread> drainThread_;
 
     // making buffer queue_capacity based on IntraFrame Period
     size_t frame_buffer_size_;  // Default Frame buffer size

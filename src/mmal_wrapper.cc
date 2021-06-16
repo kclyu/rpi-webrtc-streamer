@@ -646,7 +646,7 @@ bool MMALEncoderWrapper::UninitEncoder() {
     webrtc::MutexLock lock(&mutex_);
     if (mmal_initialized_ == false) return true;
 
-    RTC_LOG(INFO) << "unitialize the MMAL encode wrapper.";
+    RTC_LOG(INFO) << "uninitialize the MMAL encode wrapper.";
 
     // Disable all our ports that are not handled by connections
     check_disable_port(camera_still_port_);

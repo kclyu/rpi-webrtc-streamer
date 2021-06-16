@@ -189,24 +189,29 @@ bool RaspiMotion::StartCapture() {
     mmal_encoder_->StartCapture();
 
     // start drain thread ;
-    if (!drainThread_) {
+    if (drainThread_.empty()) {
         RTC_LOG(INFO) << "Frame drain thread initialized.";
-        drainThread_.reset(new rtc::PlatformThread(
-            RaspiMotion::DrainThread, this, "FrameDrain", rtc::kHighPriority));
-        drainThread_->Start();
+        drainThread_ = rtc::PlatformThread::SpawnJoinable(
+            [this] {
+                while (DrainProcess()) {
+                }
+            },
+            "DrainThread",
+            rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kHigh));
     }
 
     motion_active_ = true;
+    motion_drain_quit_ = false;
     return true;
 }
 
 void RaspiMotion::StopCapture() {
     motion_active_ = false;
 
-    if (drainThread_) {
+    if (drainThread_.empty() == false) {
+        webrtc::MutexLock lock(&drain_lock_);
         motion_drain_quit_ = true;
-        drainThread_->Stop();
-        drainThread_.reset();
+        drainThread_.Finalize();
     }
 
     if (mmal_encoder_) {
@@ -298,12 +303,6 @@ void RaspiMotion::OnActivePoints(int total_points, int active_points) {
 // Raspi Encoder frame drain processing
 //
 ///////////////////////////////////////////////////////////////////////////////
-void RaspiMotion::DrainThread(void *obj) {
-    RaspiMotion *raspi_motion = static_cast<RaspiMotion *>(obj);
-    while (raspi_motion->DrainProcess()) {
-    }
-}
-
 #ifdef PRINT_PROCESS_DELAYS
 #define __CLOCK_MARK_START__ start_time = clock_->TimeInMicroseconds();
 #define __CLOCK_MARK_FRAME_END__              \

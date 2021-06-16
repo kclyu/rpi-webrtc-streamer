@@ -102,11 +102,12 @@ class FileWriterHandle : public rtc::Event {
     size_t size();  // file writer buffer size
 
    private:
+    bool WriterProcess();
     std::unique_ptr<FileWriterBuffer> buffer_;
     // thread for file writing
-    std::unique_ptr<rtc::PlatformThread> writerThread_;
-    static void WriterThread(void *);
-    bool WriterProcess();
+    rtc::PlatformThread writerThread_;
+    bool writer_quit_;
+    webrtc::Mutex writer_lock_;
     FileWrapper file_;
     std::string filename_;
     int file_size_limit_;

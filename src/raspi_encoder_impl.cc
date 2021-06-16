@@ -159,14 +159,16 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
     mmal_encoder_->StartCapture();
 
     // start drain thread ;
-    if (!drainThread_) {
-        drainQuit_ = false;
+    if (drainThread_.empty()) {
+        drain_quit_ = false;
         RTC_LOG(INFO) << "MMAL encoder drain thread initialized.";
-        drainThread_.reset(
-            new rtc::PlatformThread(RaspiEncoderImpl::DrainThread, this,
-                                    "DrainThread", rtc::kHighPriority));
-        drainThread_->Start();
-        drainStarted_ = true;
+        drainThread_ = rtc::PlatformThread::SpawnJoinable(
+            [this] {
+                while (DrainProcess()) {
+                }
+            },
+            "DrainThread",
+            rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kHigh));
     }
 
     SimulcastRateAllocator init_allocator(codec_);
@@ -179,11 +181,11 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
 }
 
 int32_t RaspiEncoderImpl::Release() {
-    if (drainThread_) {
-        drainQuit_ = true;
-        drainStarted_ = false;
-        drainThread_->Stop();
-        drainThread_.reset();
+    RTC_LOG(INFO) << "*** *** RaspiEncoderImpl RELEASE";
+    if (!drainThread_.empty()) {
+        MutexLock lock(&drain_lock_);
+        drain_quit_ = true;
+        drainThread_.Finalize();
     }
 
     if (mmal_encoder_) {
@@ -191,7 +193,9 @@ int32_t RaspiEncoderImpl::Release() {
         mmal_encoder_->UninitEncoder();
         mmal_encoder_ = nullptr;
     }
+
     encoded_image_.clear();
+    RTC_LOG(INFO) << "*** *** RaspiEncoderImpl RELEASE FIN";
     return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -377,16 +381,10 @@ bool RaspiEncoderImpl::FrameFlowCtl::CheckKeyframe(bool is_keyframe) {
 // Raspi Encoder MMAL frame drain processing
 //
 ///////////////////////////////////////////////////////////////////////////////
-void RaspiEncoderImpl::DrainThread(void* obj) {
-    RaspiEncoderImpl* raspi_encoder = static_cast<RaspiEncoderImpl*>(obj);
-    while (raspi_encoder->DrainProcess()) {
-    };
-}
-
 bool RaspiEncoderImpl::DrainProcess() {
     FrameBuffer* buf = nullptr;
 
-    if (drainQuit_ == true) return false;  // quit drain thread
+    if (drain_quit_ == true) return false;  // quit drain thread
 
     //  The GetEncodedFrame function will wait in block state
     //  until there is a new buf or timeout.
@@ -400,6 +398,7 @@ bool RaspiEncoderImpl::DrainProcess() {
     // transmitted.
     //
     if (encoded_image_callback_ && buf && !buf->isMotionVector()) {
+        MutexLock lock(&drain_lock_);
         auto encoded_image_buffer =
             EncodedImageBuffer::Create(buf->data(), buf->length());
         CodecSpecificInfo codec_specific;

@@ -35,12 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/h264/h264_common.h"
-#include "common_video/h264/profile_level_id.h"
 #include "mmal_wrapper.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "raspi_encoder.h"
 #include "raspi_quality_config.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/synchronization/mutex.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -69,7 +69,7 @@ class RaspiEncoderImpl : public RaspiEncoder {
 
         void Set();
         void Clear();
-        bool IsEnabled(void);
+        bool IsEnabled();
         bool CheckKeyframe(bool keyframe);
     };
 
@@ -96,9 +96,7 @@ class RaspiEncoderImpl : public RaspiEncoder {
    private:
     bool IsInitialized() const;
 
-    static void DrainThread(void*);
-    bool drainStarted_;
-    bool drainQuit_;
+    bool drain_quit_;
     bool DrainProcess();
 
     // Reports statistics with histograms.
@@ -113,7 +111,8 @@ class RaspiEncoderImpl : public RaspiEncoder {
     bool has_reported_error_;
 
     // Encoded frame process thread
-    std::unique_ptr<rtc::PlatformThread> drainThread_;
+    rtc::PlatformThread drainThread_;
+    Mutex drain_lock_;
 
     EncodedImageCallback* encoded_image_callback_;
     std::vector<EncodedImage> encoded_image_;

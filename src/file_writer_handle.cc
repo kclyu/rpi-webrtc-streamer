@@ -138,6 +138,8 @@ bool FileWriterHandle::Open(const std::string dirname, const std::string prefix,
     std::string filename =
         dirname + "/" + prefix + "_" + date_string + extension;
 
+    RTC_DCHECK(writerThread_.empty() == true);
+
     int open_error = 0;
     if ((file_ = FileWrapper::OpenWriteOnly(
              use_temporary_filename ? filename + kTemporaryFileNameExtension
@@ -150,11 +152,15 @@ bool FileWriterHandle::Open(const std::string dirname, const std::string prefix,
         return false;
     };
 
-    writerThread_.reset(new rtc::PlatformThread(FileWriterHandle::WriterThread,
-                                                this, "MotionFileWriter",
-                                                rtc::kHighPriority));
-    writerThread_->Start();
+    writerThread_ = rtc::PlatformThread::SpawnJoinable(
+        [this] {
+            while (WriterProcess()) {
+            }
+        },
+        "WriterThread",
+        rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kHigh));
 
+    writer_quit_ = false;
     filename_ = filename;
     file_size_limit_ = file_size_limit;
     file_written_ = 0;
@@ -162,14 +168,8 @@ bool FileWriterHandle::Open(const std::string dirname, const std::string prefix,
     return true;
 }
 
-void FileWriterHandle::WriterThread(void *obj) {
-    FileWriterHandle *writer_handle = static_cast<FileWriterHandle *>(obj);
-    while (writer_handle->WriterProcess()) {
-    }
-}
-
 bool FileWriterHandle::WriterProcess() {
-    if (is_open() == false) {
+    if (is_open() == false || writer_quit_ == true) {
         return false;
     }
 
@@ -178,6 +178,7 @@ bool FileWriterHandle::WriterProcess() {
     };
 
     if (is_open() && size()) {
+        webrtc::MutexLock lock(&writer_lock_);
         Write();
     }
 
@@ -185,6 +186,7 @@ bool FileWriterHandle::WriterProcess() {
 }
 
 bool FileWriterHandle::Close() {
+    webrtc::MutexLock lock(&writer_lock_);
     if (file_.is_open()) {
         RTC_LOG(INFO) << "Closing File: " << filename_
                       << " , size: " << file_written_;
@@ -196,8 +198,10 @@ bool FileWriterHandle::Close() {
         }
     }
 
-    if (writerThread_ && writerThread_->IsRunning()) writerThread_->Stop();
-    writerThread_.reset();
+    if (!writerThread_.empty()) {
+        writer_quit_ = true;
+        writerThread_.Finalize();
+    }
     filename_.clear();
     file_size_limit_ = file_written_ = 0;
     use_temporary_filename_ = true;  // reset with default value

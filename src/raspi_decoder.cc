@@ -35,7 +35,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "absl/memory/memory.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/h264/h264_common.h"
-#include "common_video/h264/profile_level_id.h"
 #include "media/base/codec.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "raspi_decoder_dummy.h"
