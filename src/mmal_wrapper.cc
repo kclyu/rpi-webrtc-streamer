@@ -47,7 +47,7 @@ namespace webrtc {
 namespace {
 
 constexpr int kDelayInitialDurationMs = 4000;
-constexpr int kDelayTaskActiveInterval = 100;
+constexpr int kDelayTaskActiveInterval = 500;
 constexpr int kDelayTaskIdleInterval = 1000;
 constexpr int kInitCoolingDownPeriodMs = 2000;
 constexpr int kInitDelayingPeriodMs = 2000;
@@ -93,7 +93,10 @@ class EncoderDelayedInit::DelayInitTask : public webrtc::QueuedTask {
 };
 
 EncoderDelayedInit::EncoderDelayedInit(MMALEncoderWrapper *mmal_encoder)
-    : clock_(Clock::GetRealTimeClock()),
+    : task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
+      task_queue_(task_queue_factory_->CreateTaskQueue(
+          "DelayedInit", webrtc::TaskQueueFactory::Priority::HIGH)),
+      clock_(Clock::GetRealTimeClock()),
       last_init_timestamp_ms_(clock_->TimeInMilliseconds()),
       state_(IDLE),
       mmal_encoder_(mmal_encoder) {}
@@ -113,13 +116,12 @@ bool EncoderDelayedInit::InitEncoder(wstreamer::VideoEncodingParams config) {
     RTC_LOG(INFO) << "InitEncoder " << config.ToString();
     RTC_LOG(LS_INFO)
         << "Created EncoderDelayedInit Task, Scheduling on queue...";
-    webrtc::TaskQueueBase::Current()->PostDelayedTask(
+    task_queue_.PostDelayedTask(
         std::make_unique<EncoderDelayedInit::DelayInitTask>(this),
         kDelayInitialDurationMs);
 
     // InitEncoder does not need to do any init delay
     RTC_LOG(INFO) << "EncoderDelay state changed from IDLE to COOLINGDOWN";
-    last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
     state_ = INIT_COOLINGDOWN;
     return mmal_encoder_->InitEncoder(config);
 }
@@ -132,7 +134,6 @@ bool EncoderDelayedInit::ReinitEncoder(wstreamer::VideoEncodingParams config) {
     RTC_LOG(INFO) << "ReinitEncoder " << config.ToString();
 
     if (state_ == IDLE) {
-        last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
         state_ = INIT_COOLINGDOWN;
         RTC_LOG(INFO) << "EncoderDelay state changed from IDLE to COOLINGDOWN";
         if (mmal_encoder_->ReinitEncoder(config) == false) {
@@ -146,7 +147,6 @@ bool EncoderDelayedInit::ReinitEncoder(wstreamer::VideoEncodingParams config) {
         mmal_encoder_->SetEncodingParams(config);
     } else if (state_ == INIT_COOLINGDOWN) {
         if (mmal_encoder_->SetEncodingParams(config)) {
-            last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
             state_ = DELAYING_INIT;
             RTC_LOG(INFO)
                 << "EncoderDelay state changed from COOLINGDOWN to DELAY";
@@ -179,6 +179,7 @@ bool EncoderDelayedInit::UpdateStateOrMayInit() {
             state_ = IDLE;
         };
     }
+    last_init_timestamp_ms_ = clock_->TimeInMilliseconds();
     return true;
 }
 
@@ -677,28 +678,26 @@ bool MMALEncoderWrapper::UninitEncoder() {
 
 void MMALEncoderWrapper::OnBufferCallback(MMAL_PORT_T *port,
                                           MMAL_BUFFER_HEADER_T *buffer) {
-    MMAL_BUFFER_HEADER_T *new_buffer = nullptr;
-    static int64_t base_time = -1;
     static int64_t last_second = -1;
     int64_t current_time = vcos_getmicrosecs64() / 1000;
-
-    // All our segment times based on the receipt of the first encoder callback
-    if (base_time == -1) base_time = vcos_getmicrosecs64() / 1000;
 
     // We pass our file handle and other stuff in via the userdata field.
     PORT_USERDATA *pData = (PORT_USERDATA *)port->userdata;
 
+    mmal_buffer_header_mem_lock(buffer);
     if (pData) {
         WriteBack(buffer);
     } else {
         vcos_log_error("Received a encoder buffer callback with no state");
     }
+    mmal_buffer_header_mem_unlock(buffer);
 
     // release buffer back to the pool
     mmal_buffer_header_release(buffer);
 
     // and send one back to the port (if still open)
     if (port->is_enabled) {
+        MMAL_BUFFER_HEADER_T *new_buffer = nullptr;
         MMAL_STATUS_T status;
 
         new_buffer = mmal_queue_get(state_.encoder_pool->queue);
@@ -763,8 +762,6 @@ bool MMALEncoderWrapper::SetEncodingParams(
     if (state_.width != config.width_ || state_.height != config.height_ ||
         state_.framerate != config.framerate_ ||
         state_.bitrate != config.bitrate_ * 1000) {
-        webrtc::MutexLock lock(&mutex_);
-
         state_.width = config.width_;
         state_.height = config.height_;
         state_.framerate = config.framerate_;

@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MMAL_WRAPPER_H_
 #define MMAL_WRAPPER_H_
 
+#include "api/task_queue/default_task_queue_factory.h"
 #include "config_media.h"
 #include "frame_queue.h"
 #include "mmal_video.h"
@@ -73,6 +74,8 @@ struct EncoderDelayedInit {
 
    private:
     class DelayInitTask;
+    std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
+    rtc::TaskQueue task_queue_;
     Clock *const clock_;
     uint64_t last_init_timestamp_ms_;
     DelayedInitState state_;

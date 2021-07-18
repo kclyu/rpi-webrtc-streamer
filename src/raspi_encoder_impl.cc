@@ -181,11 +181,11 @@ int32_t RaspiEncoderImpl::InitEncode(const VideoCodec* codec_settings,
 }
 
 int32_t RaspiEncoderImpl::Release() {
-    RTC_LOG(INFO) << "*** *** RaspiEncoderImpl RELEASE";
+    bool thread_finalize_required = false;
     if (!drainThread_.empty()) {
         MutexLock lock(&drain_lock_);
         drain_quit_ = true;
-        drainThread_.Finalize();
+        thread_finalize_required = true;
     }
 
     if (mmal_encoder_) {
@@ -194,8 +194,12 @@ int32_t RaspiEncoderImpl::Release() {
         mmal_encoder_ = nullptr;
     }
 
+    //  Thread finalize should be done after stopping the thread and releasing
+    //  the encoder resource.
+    //  If the thread is stopped first, the process may be stopped
+    //  before releasing the encoder resouce.
+    if (thread_finalize_required == true) drainThread_.Finalize();
     encoded_image_.clear();
-    RTC_LOG(INFO) << "*** *** RaspiEncoderImpl RELEASE FIN";
     return WEBRTC_VIDEO_CODEC_OK;
 }
 

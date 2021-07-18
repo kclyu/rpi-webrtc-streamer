@@ -140,7 +140,7 @@ void default_status(RASPIVID_STATE *state) {
     state->immutableInput = 1;
     // RWS OLD state->profile = MMAL_VIDEO_PROFILE_H264_MAIN;
     state->profile = MMAL_VIDEO_PROFILE_H264_HIGH;
-    state->level = MMAL_VIDEO_LEVEL_H264_41;
+    state->level = MMAL_VIDEO_LEVEL_H264_42;
 
     state->bCapturing = 0;  // Capture start or stop
     // RaspiVid Default

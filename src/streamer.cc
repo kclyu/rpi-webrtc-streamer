@@ -169,7 +169,7 @@ bool Streamer::InitializePeerConnection() {
 
     AddTracks();
 
-    return peer_connection_.get() != nullptr;
+    return peer_connection_ != nullptr;
 }
 
 void Streamer::UpdateMaxBitrate() {
@@ -226,12 +226,13 @@ bool Streamer::CreatePeerConnection() {
     peer_connection_ = peer_connection_factory_->CreatePeerConnection(
         config, nullptr, nullptr, this);
 
-    return peer_connection_.get() != nullptr;
+    return peer_connection_ != nullptr;
 }
 
 void Streamer::DeletePeerConnection() {
     pc_config_.clear();
     adm_ = nullptr;
+    peer_connection_->Close();
     peer_connection_ = nullptr;
     peer_connection_factory_ = nullptr;
     peer_id_ = -1;
@@ -361,7 +362,7 @@ void Streamer::OnPeerConnected(int peer_id,
 
 void Streamer::OnPeerDisconnected(int peer_id) {
     RTC_LOG(INFO) << __FUNCTION__;
-    if (peer_id == peer_id_ && peer_connection_.get()) {
+    if (peer_id == peer_id_ && peer_connection_) {
         RTC_LOG(INFO) << "Peer disconnected";
         DeletePeerConnection();
     }
@@ -371,7 +372,7 @@ void Streamer::OnMessageFromPeer(int peer_id, const std::string& message) {
     RTC_CHECK(peer_id_ == peer_id || peer_id_ == -1);
     RTC_CHECK(!message.empty());
 
-    if (!peer_connection_.get()) {
+    if (!peer_connection_) {
         RTC_CHECK(peer_id_ == -1);
         peer_id_ = peer_id;
 
