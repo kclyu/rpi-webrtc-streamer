@@ -59,7 +59,7 @@
     _CR_B( VideoEnableAnnotateText, video_enable_annotate_text, true, bool, false ) \
     _CR( VideoAnnotateText,         video_annotate_text,        true, std::string,"" )  \
     _CR_I( VideoAnnotateTextSizeRatio, video_annotate_text_size_ratio, true, int, 3 ) \
-	_CR_B( StilEnable, 				still_capture_enable, 		false, bool, false) \
+	_CR_B( StillEnable, 			still_capture_enable, 		false, bool, false) \
 	_CR_I( StillCameraNum, 			still_camera_num, 			false, int, 0) \
 	_CR_I( StillWidth, 				still_width, 				false, int, 640) \
 	_CR_I( StillHeight, 			still_height, 				false, int, 480) \

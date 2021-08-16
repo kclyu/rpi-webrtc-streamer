@@ -479,6 +479,7 @@ bool WSInternalHandlerConfig::DequeueMessage(const int sockid,
 
 bool WSInternalHandlerConfig::Close(int sockid, int reason_code,
                                     const std::string &message) {
+    RTC_LOG(INFO) << "Websocket Server Closing socket " << sockid;
     for (std::list<struct WSInstanceContainer>::iterator iter =
              handler_runtime_.begin();
          iter != handler_runtime_.end(); iter++) {

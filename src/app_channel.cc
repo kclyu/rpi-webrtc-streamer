@@ -81,7 +81,7 @@ bool AppChannel::AppInitialize(StreamerProxy* proxy,
                       << config_motion.GetDirectory()
                       << ", link: " << motion_file_link;
     }
-    if (ConfigMediaSingleton::Instance()->GetStilEnable()) {
+    if (ConfigMediaSingleton::Instance()->GetStillEnable()) {
         std::string still_file_link =
             absl::StrFormat("%s/%s", http_mount_origin, kStillFileLink);
         utils::DeleteFile(still_file_link);

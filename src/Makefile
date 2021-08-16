@@ -119,7 +119,7 @@ rcp_full: $(TARGET)
 		../scripts $(RPI_HOST_URL)
 
 web: $(TARGET)
-	rsync -v -u -r --stats ../web-root  $(RPI_HOST_URL)
+	rsync -v -u -r -L --stats ../web-root  $(RPI_HOST_URL)
 
 #
 # You need to install clang-format-9 

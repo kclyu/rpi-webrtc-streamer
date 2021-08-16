@@ -85,12 +85,6 @@ class StreamerController {
     } else console.log('reconnection with streamer failed');
   }
 
-  _updateStillImageByInterval() {
-    if (this.isConnected && !this._streamer_connection.isSessionActive()) {
-      this._streamer_connection.getStillImage({}, updateVideoBackground);
-    }
-  }
-
   // connecting manager server
   connect() {
     this._streamer_connection = new StreamerConnection({
@@ -104,16 +98,6 @@ class StreamerController {
       .connect()
       .then(() => {
         console.info('connection successful');
-        return this._streamer_connection.getStillImage(
-          {},
-          updateVideoBackground
-        );
-      })
-      .then((result) => {
-        console.info('still image result ', result);
-        this.toggleButton(ButtonState.enableConnect);
-      })
-      .then(() => {
         // getting media configuration from streamer
         return this._streamer_connection
           .getMediaConfig()
@@ -121,15 +105,42 @@ class StreamerController {
             console.log('Using Media Config : ' + JSON.stringify(media_config));
             this.config_media_.setJsonConfig(media_config);
             this.config_media_.reloadConfigData();
-            this.__still_image_update_interval = setInterval(
-              this._updateStillImageByInterval.bind(this),
-              Constants.STILL_IMAGE_UPDATE_INTERVAL
-            );
             return true;
           })
           .catch((error) => {
             throw error;
           });
+      })
+      .then(() => {
+        if (this._streamer_connection.isStilCaptureEnabled === true) {
+          try {
+            // Create an interval to update the background still image
+            this.__still_image_update_interval = setInterval(() => {
+              if (
+                this.isConnected &&
+                !this._streamer_connection.isSessionActive()
+              ) {
+                this._streamer_connection.getStillImage(
+                  {},
+                  updateVideoBackground
+                );
+              }
+            }, Constants.STILL_IMAGE_UPDATE_INTERVAL);
+            // get the still image from rws.
+            return this._streamer_connection.getStillImage(
+              {},
+              updateVideoBackground
+            );
+          } catch (error) {
+            console.trace('Still image capture error: ', error);
+          }
+        } else {
+          return 'still capturing is disabled in RWS';
+        }
+      })
+      .then((result) => {
+        console.info('still image result ', result);
+        this.toggleButton(ButtonState.enableConnect);
       })
       .catch((error) => {
         // console.trace('Failed to connect:', error.toString());
@@ -186,6 +197,7 @@ class StreamerController {
   onConnectionError(error_level, error_string) {
     if (error_level === 'critical') {
       this.disconnect();
+      console.log('Connection Error : ', error_string);
       SnackbarMessage('Connection error: ' + error_string);
     }
     console.trace(`Session Connection Error: ${error_level} : ${error_string}`);

@@ -66,10 +66,20 @@ class StreamerRwsConnection {
 
     // dump traffic on console
     this._dump_traffic = params.dump_traffic === true || false;
+
+    // device info which is retrieved from device through getDeviceInfo
+    this._deviceid = null;
+    this._mcversion = null;
+    this._video_43_aspect_ratio = null;
+    this._still_capture = null;
   }
 
   get isConnected() {
     return this._connection && this._connection.readyState === WebSocket.OPEN;
+  }
+
+  get isStilCaptureEnabled() {
+    return this.isConnected && this._still_capture;
   }
 
   connect(url) {
@@ -103,6 +113,7 @@ class StreamerRwsConnection {
   // initialization and creation. used to terminate this sesion
   // and need to create new streamsession
   disconnect() {
+    console.trace('Disconnecting connection');
     // reset callback
     this._onStreamerEvent = null;
     this._onConnect = null;
@@ -126,6 +137,12 @@ class StreamerRwsConnection {
       this._connection.close();
       this._connection = null;
     }
+
+    // clear the device info
+    this._deviceid = null;
+    this._mcversion = null;
+    this._video_43_aspect_ratio = null;
+    this._still_capture = null;
   }
 
   async createSession(params) {
@@ -143,9 +160,8 @@ class StreamerRwsConnection {
         })
     );
     // setup callbacks for PeerConnection message handshacking
-    session.pcclient.sendSignalingMessage = this.sendSignalingMessage.bind(
-      this
-    );
+    session.pcclient.sendSignalingMessage =
+      this.sendSignalingMessage.bind(this);
     session.remoteVideo = document.getElementById(session.videoElement);
     console.assert(
       session.remoteVideo,
@@ -168,15 +184,17 @@ class StreamerRwsConnection {
       })
       .then(() => {
         this._streamer_session = session;
+        console.log('RWS WebRTC streaming session created');
       })
       .catch((error) => {
+        console.log('Failed to create RWS WebRTC session ');
         if (session.pcclient) {
           session.pcclient.onRemoteVideoAdded = null;
           session.pcclient.close();
           session.pcclient = null;
         }
         if (session.remoteVideo) session.remoteVideo.srcObject = null;
-        const error_mesg = `Failed to create session session  : ${error}`;
+        const error_mesg = `Failed to create session : ${error}`;
         console.error(error_mesg);
         if (typeof params.onpeerconnectionerror === 'function')
           params.onpeerconnectionerror('critical', error_mesg);
@@ -190,7 +208,7 @@ class StreamerRwsConnection {
         console.log(`destroying streamer session successful`);
       })
       .catch((error) => {
-        console.error(`Failed to destroy session ${error}`);
+        console.error(`Failed to destroy session: ${error}`);
       });
 
     // clean streaming session regardless of the result of bye comand success
@@ -323,8 +341,9 @@ class StreamerRwsConnection {
       this._deviceid = info.deviceid;
       this._mcversion = info.mcversion;
       this._video_43_aspect_ratio = info.video43aspectratio;
+      this._still_capture = info.stillcapture;
       console.log(
-        `streamer device id ${this._deviceid}, mcversion: ${this._mcversion}`
+        `streamer device id ${this._deviceid}, mcversion: ${this._mcversion}, still capture: ${this._still_capture}`
       );
     } catch (error) {
       console.trace('Failed to get media configuration from streamer: ', error);

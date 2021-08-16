@@ -169,6 +169,7 @@ const char kValueCmdResponse[] = "response";
 const char kValueTypepDeviceInfo[] = "info";
 const char kDataKeyDeviceId[] = "deviceid";
 const char kDataKeyMcVersion[] = "mcversion";
+const char kDataKeyStillCapture[] = "stillcapture";
 const char kDataKeyVideo43AspectRatio[] = "video43aspectratio";
 
 const char kValueTypeRTCConfig[] = "rtcconfig";
@@ -395,6 +396,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 if (app_client_.IsRegistered(sockid) == true) {
                     app_client_.Reset();
                     if (IsSignalingSessionActive() == true) {
+                        RTC_LOG(INFO) << "Session is not Active : "
+                                         "Stopping Signaling Session";
                         StopSignalingSession();
                     };
                 };
@@ -488,6 +491,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
             Json::Value response_data;
             response_data[kDataKeyDeviceId] = deviceid_;
             response_data[kDataKeyMcVersion] = kMediaConfigVersion;
+            response_data[kDataKeyStillCapture] =
+                config_media_->GetStillEnable();
             response_data[kDataKeyVideo43AspectRatio] =
                 config_media_->GetResolution4_3();
             SendResponse(sockid, true, kValueTypepDeviceInfo, transaction,
@@ -659,6 +664,13 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 RTC_LOG(LS_ERROR) << "Failed to get data key";
                 SendResponse(sockid, false, kValueTypeStill, transaction, "",
                              kErrDataKeyMissing);
+                return true;
+            }
+
+            if (config_media_->GetStillEnable() == false) {
+                RTC_LOG(LS_ERROR) << "Failed to get data key";
+                SendResponse(sockid, false, kValueTypeStill, transaction, "",
+                             "still capturing is not enabled");
                 return true;
             }
 
