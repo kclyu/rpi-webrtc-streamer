@@ -141,6 +141,12 @@ class StreamerController {
       .then((result) => {
         console.info('still image result ', result);
         this.toggleButton(ButtonState.enableConnect);
+        if (this._streamer_connection.isCameraEnable === false) {
+          console.warn(
+            'The camera is not enabled in rws, and only audio is supported for streaming.'
+          );
+        }
+        return true;
       })
       .catch((error) => {
         // console.trace('Failed to connect:', error.toString());

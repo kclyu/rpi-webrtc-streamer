@@ -170,6 +170,7 @@ const char kValueTypepDeviceInfo[] = "info";
 const char kDataKeyDeviceId[] = "deviceid";
 const char kDataKeyMcVersion[] = "mcversion";
 const char kDataKeyStillCapture[] = "stillcapture";
+const char kDataKeyCameraEnabled[] = "cameraenabled";
 const char kDataKeyVideo43AspectRatio[] = "video43aspectratio";
 
 const char kValueTypeRTCConfig[] = "rtcconfig";
@@ -488,6 +489,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
         // Device info request
         //
         if (cmd_type.compare(kValueTypepDeviceInfo) == 0) {
+            int supported = 0, detected = 0;
+            raspicamcontrol_get_camera(&supported, &detected);
             Json::Value response_data;
             response_data[kDataKeyDeviceId] = deviceid_;
             response_data[kDataKeyMcVersion] = kMediaConfigVersion;
@@ -495,6 +498,8 @@ bool AppWsClient::OnMessage(int sockid, const std::string& message) {
                 config_media_->GetStillEnable();
             response_data[kDataKeyVideo43AspectRatio] =
                 config_media_->GetResolution4_3();
+            response_data[kDataKeyCameraEnabled] =
+                supported > 0 && detected > 0 ? true : false;
             SendResponse(sockid, true, kValueTypepDeviceInfo, transaction,
                          response_data.toStyledString(), "");
             return true;

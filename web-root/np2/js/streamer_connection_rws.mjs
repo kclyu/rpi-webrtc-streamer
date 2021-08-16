@@ -68,10 +68,7 @@ class StreamerRwsConnection {
     this._dump_traffic = params.dump_traffic === true || false;
 
     // device info which is retrieved from device through getDeviceInfo
-    this._deviceid = null;
-    this._mcversion = null;
-    this._video_43_aspect_ratio = null;
-    this._still_capture = null;
+    this._device_info = null;
   }
 
   get isConnected() {
@@ -79,7 +76,15 @@ class StreamerRwsConnection {
   }
 
   get isStilCaptureEnabled() {
-    return this.isConnected && this._still_capture;
+    return (
+      this.isConnected && this._device_info && this._device_info.stillcapture
+    );
+  }
+
+  get isCameraEnabled() {
+    return (
+      this.isConnected && this._device_info && this._device_info.cameraenabled
+    );
   }
 
   connect(url) {
@@ -139,10 +144,7 @@ class StreamerRwsConnection {
     }
 
     // clear the device info
-    this._deviceid = null;
-    this._mcversion = null;
-    this._video_43_aspect_ratio = null;
-    this._still_capture = null;
+    this._device_info = null;
   }
 
   async createSession(params) {
@@ -337,13 +339,13 @@ class StreamerRwsConnection {
         cmd: 'request',
         type: 'info',
       });
-      let info = JSON.parse(response.data);
-      this._deviceid = info.deviceid;
-      this._mcversion = info.mcversion;
-      this._video_43_aspect_ratio = info.video43aspectratio;
-      this._still_capture = info.stillcapture;
+      // keep the device information
+      this._device_info = JSON.parse(response.data);
       console.log(
-        `streamer device id ${this._deviceid}, mcversion: ${this._mcversion}, still capture: ${this._still_capture}`
+        `streamer device id ${this._device_info.deviceid}, `,
+        `mcversion: ${this._device_info.mcversion},`,
+        `still capture: ${this._device_info.stillcapture},`,
+        `camera enabled: ${this._device_info.cameraenabled}`
       );
     } catch (error) {
       console.trace('Failed to get media configuration from streamer: ', error);
