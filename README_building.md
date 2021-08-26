@@ -67,6 +67,8 @@ Currently, the directory name is fixed for each source package. If possible, use
 mkdir -p ~/Workspace/webrtc
 cd ~/Workspace/webrtc
 fetch --nohooks webrtc
+cd src
+./build/install-build-deps.sh
 gclient sync
 git config branch.autosetupmerge always
 git config branch.autosetuprebase always
@@ -91,11 +93,11 @@ cd ~/Workspace/rpi_rootfs
 ./build_rootfs.sh download   # note1
 unzip yyyy-mm-dd-raspios-buster.zip  # yyyy-mm-dd is date format of image released
 
-./build_rootfs.sh create yyyy-mm-dd-raspios-buster.img  # note 2
+sudo ./build_rootfs.sh create yyyy-mm-dd-raspios-buster.img  # note 2
 ```
 _Note 1: If you already have an OS image, you don't need to download it_
 
-_Note 2: The create command will create raspberry pi rootfs in the rootfs directory using the downloaded img file. s/w packages are updated by 'apt update' and necessary s/w packages will be   installed also, so it takes a lot of time depending on network speed._
+_Note 2: The create command will create raspberry pi rootfs in the rootfs directory using the downloaded img file. s/w packages are updated by 'apt update' and necessary s/w packages will be installed also, so it takes a lot of time depending on network speed._
 
 If you are already using Raspberry PI, there is a way to use rsync on your Raspberry PI rather than the above. See the rpi_rootfs repo.
 
@@ -105,15 +107,16 @@ If you are already using Raspberry PI, there is a way to use rsync on your Raspb
 sudo apt install ant autoconf bison cmake gawk intltool xutils-dev xsltproc pkg-config # note 1
 cd ~/Workspace/webrtc/src
 mkdir out/arm_build
-cp ~/Workspace/rpi-webrtc-stremer/misc/webrtc_arm_build_args.gn out/arm_build/args.gn # note 2
+cp ~/Workspace/rpi-webrtc-streamer/misc/webrtc_arm_build_args.gn out/arm_build/args.gn # note 2
 gn gen out/arm_build
 ninja -C out/arm_build
 
 mkdir out/armv6_build # note 3
-cp ~/Workspace/rpi-webrtc-stremer/misc/webrtc_armv6_build_args.gn out/armv6_build/args.gn # note 2
+cp ~/Workspace/rpi-webrtc-streamer/misc/webrtc_armv6_build_args.gn out/armv6_build/args.gn # note 2
 gn gen out/armv6_build
 ninja -C out/armv6_build
 ```
+
 _note 1 : S/W package required to compile WebRTC native code package in Ubuntu._
 
 _note 2 : webrtc_arm_build_args.gn is the args.gn config file for armv7 and above, and webrtc_armv6_build_args.gn is for Raspberry Pi Zero W and armv6._
