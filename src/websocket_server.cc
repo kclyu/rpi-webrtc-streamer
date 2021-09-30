@@ -351,7 +351,7 @@ void LibWebSocketServer::Close(int sockid, int reason_code,
 ///////////////////////////////////////////////////////////////////////////////
 bool WSInternalHandlerConfig::CreateHandlerRuntime(const int sockid,
                                                    struct lws *wsi) {
-    if (handler_type_ == MULTIPLE_INSTANCE) {
+    if (handler_type_ == SINGLE_INSTANCE) {
         if (handler_runtime_.size() != 0) {
             return false;
         }
@@ -395,7 +395,7 @@ void WSInternalHandlerConfig::OnDisconnect(const int sockid) {
             handler_->OnDisconnect(sockid);
             handler_runtime_.erase(iter);
             return;
-        };
+        }
     }
 }
 
